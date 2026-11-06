@@ -34,7 +34,7 @@ const CLOUD_RELAY_URL = 'https://geronimohq-telemetry.onrender.com/api/servers';
 export async function fetchLiveTelemetry(): Promise<LiveTelemetryPayload | null> {
   // 1. Try Live Cloud Relay (for instant sub-second A2S queries across all visitors)
   try {
-    const relayRes = await fetch(CLOUD_RELAY_URL, { signal: AbortSignal.timeout(2000) });
+    const relayRes = await fetch(CLOUD_RELAY_URL, { signal: AbortSignal.timeout(4500) });
     if (relayRes.ok) {
       const liveData = await relayRes.json();
       if (liveData?.servers) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { type LiveServerInfo, formatMapElapsed, getMapStartTime } from '../utils/serverQuery';
+import { type LiveServerInfo, formatMapElapsed, getMapStartTime, fetchLiveTelemetry } from '../utils/serverQuery';
 import { 
   Gamepad2, 
   Play, 
@@ -30,19 +30,16 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
     }
     const load = async () => {
       try {
-        const res = await fetch(`/data/live_servers.json?t=${Date.now()}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.servers?.['gfl']) {
-            setInternalTelemetry(data.servers['gfl']);
-          }
+        const data = await fetchLiveTelemetry();
+        if (data?.servers?.['gfl']) {
+          setInternalTelemetry(data.servers['gfl']);
         }
       } catch {
         // ignore
       }
     };
     load();
-    const interval = setInterval(load, 10000);
+    const interval = setInterval(load, 5000);
     return () => clearInterval(interval);
   }, [propTelemetry]);
 
