@@ -31,9 +31,11 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
 }) => {
   const [internalTelemetry, setInternalTelemetry] = useState<LiveServerInfo | undefined>(propTelemetry);
   const [internalPresence, setInternalPresence] = useState<GeronimoPresence | undefined>(propPresence);
-  const [elapsedSeconds, setElapsedSeconds] = useState(6124); // Initial session time in seconds (~1h 42m)
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
+
+  // Authoritative session timer calibrated against real A2S player duration
+  const [sessionStartTime, setSessionStartTime] = useState<number>(() => Math.floor(Date.now() / 1000));
 
   // Fetch telemetry & presence if not passed via props
   useEffect(() => {
@@ -59,22 +61,33 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
     return () => clearInterval(interval);
   }, [propTelemetry, propPresence]);
 
+  const gflTelemetry = propTelemetry || internalTelemetry;
+  const presence = propPresence || internalPresence;
+
+  // Calibrate session timer with actual connected seconds from server UDP query
+  const gflGeronimoPlayer = gflTelemetry?.players_list?.find((p) => p.name.toLowerCase().includes('geronimo'));
+  const realDurationSeconds = presence?.player_duration || (gflGeronimoPlayer ? Math.floor(gflGeronimoPlayer.seconds) : 0);
+
+  useEffect(() => {
+    if (realDurationSeconds > 0) {
+      setSessionStartTime(Math.floor(Date.now() / 1000) - realDurationSeconds);
+    }
+  }, [realDurationSeconds]);
+
   // 1-second ticker for session time and map timer
   useEffect(() => {
     const timer = setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
       setNowSec(Math.floor(Date.now() / 1000));
     }, 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const gflTelemetry = propTelemetry || internalTelemetry;
-  const presence = propPresence || internalPresence;
+  const liveElapsedSeconds = Math.max(0, nowSec - sessionStartTime);
 
   const formatElapsed = (totalSecs: number) => {
     const hrs = Math.floor(totalSecs / 3600);
     const mins = Math.floor((totalSecs % 3600) / 60);
-    const secs = totalSecs % 60;
+    const secs = Math.floor(totalSecs % 60);
     if (hrs > 0) {
       return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')} elapsed`;
     }
@@ -277,7 +290,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
           <div className="text-xs font-sans text-[#949ba4] truncate flex items-center gap-1.5 mt-0.5">
             <span className="text-[#dbdee1] font-medium">{state === 'in_server' ? 'Map:' : 'Status:'}</span>
             {state === 'in_server' && (
-              <div className="w-5 h-5 rounded overflow-hidden border border-slate-700 flex-shrink-0 bg-slate-900">
+              <div className="w-12 h-8 rounded-md overflow-hidden border border-slate-700 flex-shrink-0 bg-slate-900 shadow-sm">
                 <img 
                   src={mapThumbnail} 
                   alt={currentMap} 
@@ -306,8 +319,8 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
               Party ({playerDisplay})
             </span>
             <span>&bull;</span>
-            <span className="flex items-center gap-1">
-              {formatElapsed(elapsedSeconds)}
+            <span className="flex items-center gap-1 text-slate-300">
+              {formatElapsed(liveElapsedSeconds)}
             </span>
           </div>
         </div>

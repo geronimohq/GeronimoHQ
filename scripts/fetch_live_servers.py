@@ -9,7 +9,45 @@ import json
 import time
 import socket
 import struct
+import urllib.request
+import ssl
 from typing import Dict, Any, List
+
+SSL_CTX = ssl.create_default_context()
+SSL_CTX.check_hostname = False
+SSL_CTX.verify_mode = ssl.CERT_NONE
+
+ZEGRAPH_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Referer": "https://zegraph.xyz/"
+}
+
+def fetch_gfl_intel(gfl_map: str):
+    match_data = None
+    musics_data = []
+    try:
+        url = "https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now"
+        req = urllib.request.Request(url, headers=ZEGRAPH_HEADERS)
+        with urllib.request.urlopen(req, timeout=4.0, context=SSL_CTX) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            if res.get("code") == 0 and res.get("data"):
+                match_data = res.get("data")
+    except Exception:
+        pass
+
+    clean_map = gfl_map.strip() if gfl_map else ""
+    if clean_map and clean_map != "-":
+        try:
+            murl = f"https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/{clean_map}/musics"
+            req2 = urllib.request.Request(murl, headers=ZEGRAPH_HEADERS)
+            with urllib.request.urlopen(req2, timeout=4.0, context=SSL_CTX) as resp2:
+                mres = json.loads(resp2.read().decode("utf-8"))
+                if mres.get("code") == 0:
+                    musics_data = mres.get("data", [])
+        except Exception:
+            musics_data = []
+    return match_data, musics_data
 
 def query_a2s_info(host: str, port: int, timeout: float = 1.4) -> Dict[str, Any]:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -287,11 +325,16 @@ def main():
         status_sym = "✓" if info.get("online") else "✗"
         print(f" {status_sym} [{sid}] {s['host']}:{s['port']} -> Map: {info.get('map')} | Players: {info.get('players')}")
 
+    gfl_map = results.get("gfl", {}).get("map", "")
+    match_now, map_musics = fetch_gfl_intel(gfl_map)
+
     payload = {
         "timestamp": int(time.time()),
         "iso_time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "total_servers": len(servers),
         "online_servers": sum(1 for r in results.values() if r["online"]),
+        "gfl_match_now": match_now,
+        "gfl_map_musics": map_musics,
         "servers": results
     }
 

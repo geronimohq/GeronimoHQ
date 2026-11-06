@@ -257,90 +257,112 @@ export const ServerRadarPreview: React.FC = () => {
               <span>{gflServer.name}</span>
             </h3>
 
-            {/* Live Telemetry Bar */}
-            <div className="flex flex-wrap items-center gap-3 text-xs font-code text-slate-300 mb-3">
-              <div className="flex items-center gap-2 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800">
-                {/* Map Thumbnail */}
-                <div className="w-7 h-5 rounded overflow-hidden border border-slate-700 bg-slate-950 flex-shrink-0">
-                  <img 
-                    src={getMapThumbnailUrl(gflMap)} 
-                    alt={gflMap}
-                    className="w-full h-full object-cover"
-                    onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                  />
-                </div>
-                <MapPin className="w-3.5 h-3.5 text-fuchsia-400 flex-shrink-0" />
-                <span className="text-slate-400">Current Map:</span>
-                <strong className="text-fuchsia-300 font-bold truncate max-w-[180px]">
-                  {gflMap}
-                </strong>
-                <span className="text-cyan-300 font-code text-xs font-bold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/40 flex items-center gap-1 shadow-[0_0_10px_rgba(0,240,255,0.25)] ml-1">
-                  <Clock className="w-3 h-3 text-cyan-400 animate-pulse" />
-                  {formatMapElapsed(gflMapElapsed)} on map
+            {/* Big Map Preview & Telemetry Display */}
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-slate-900/90 p-3 rounded-xl border border-slate-800 mb-3">
+              {/* Prominent Map Thumbnail */}
+              <div className="relative w-28 h-18 sm:w-32 sm:h-20 rounded-lg overflow-hidden border border-fuchsia-500/40 bg-slate-950 flex-shrink-0 shadow-[0_0_15px_rgba(255,0,128,0.15)] group">
+                <img 
+                  src={getMapThumbnailUrl(gflMap)} 
+                  alt={gflMap}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=300&q=80';
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                <span className="absolute bottom-1 left-1.5 text-[9px] font-cyber text-fuchsia-300 font-bold drop-shadow uppercase">
+                  MAP INTEL
                 </span>
-                {/* 3D Map Explorer Pill */}
-                <a
-                  href={getMap3DViewerUrl(gflMap)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-1 text-[11px] font-code px-2 py-0.5 rounded bg-blue-950/80 text-blue-300 hover:text-white border border-blue-500/40 hover:border-blue-400 flex items-center gap-1 transition-colors shadow-sm"
-                  title="Explore 3D Map layout on maps.cybo.dev (Powered by cybo)"
-                >
-                  <Globe className="w-3 h-3 text-blue-400" />
-                  <span>3D Map ↗</span>
-                </a>
               </div>
 
-              <div className="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800">
-                <Users className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-slate-400">Players:</span>
-                <strong className="text-emerald-300 font-bold">
-                  {gflLive?.players && gflLive.players !== '-/-' ? gflLive.players : '62/64'}
-                </strong>
-              </div>
+              {/* Map Information & Telemetry Stats */}
+              <div className="flex flex-col gap-2 flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-code">
+                  <div className="flex items-center gap-1.5 text-slate-300">
+                    <MapPin className="w-3.5 h-3.5 text-fuchsia-400 flex-shrink-0" />
+                    <span className="text-slate-400">Map:</span>
+                    <strong className="text-sm font-bold text-fuchsia-300 truncate max-w-[200px]">
+                      {gflMap}
+                    </strong>
+                  </div>
 
-              <div className="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800" title={`Estimated latency: ${gflRegionalPing.userLocation} ➔ ${gflRegionalPing.serverLocation}`}>
-                <Radio className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="text-slate-400">Est. Ping:</span>
-                <strong className="text-cyan-300 font-bold">
-                  {gflRegionalPing.display}
-                </strong>
-                <span className="text-[10px] text-slate-400 font-normal">({gflRegionalPing.route})</span>
-              </div>
+                  <span className="text-cyan-300 font-code text-xs font-bold bg-cyan-950/90 px-2 py-0.5 rounded-md border border-cyan-500/40 flex items-center gap-1 shadow-[0_0_10px_rgba(0,240,255,0.25)]">
+                    <Clock className="w-3 h-3 text-cyan-400 animate-pulse" />
+                    {formatMapElapsed(gflMapElapsed)} on map
+                  </span>
 
-              <div className="text-[11px] font-code text-slate-400 flex items-center gap-1">
-                <code>IP: {gflServer.host}:{gflServer.port}</code>
+                  <a
+                    href={getMap3DViewerUrl(gflMap)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-code px-2 py-0.5 rounded-md bg-blue-950/80 text-blue-300 hover:text-white border border-blue-500/40 hover:border-blue-400 flex items-center gap-1 transition-colors shadow-sm"
+                    title="Explore 3D Map layout on maps.cybo.dev (Powered by cybo)"
+                  >
+                    <Globe className="w-3 h-3 text-blue-400" />
+                    <span>3D Map ↗</span>
+                  </a>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 text-xs font-code text-slate-300">
+                  <div className="flex items-center gap-1.5 bg-slate-950/80 px-2 py-0.5 rounded-md border border-slate-800">
+                    <Users className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-slate-400">Players:</span>
+                    <strong className="text-emerald-300 font-bold">
+                      {gflLive?.players && gflLive.players !== '-/-' ? gflLive.players : '62/64'}
+                    </strong>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 bg-slate-950/80 px-2 py-0.5 rounded-md border border-slate-800" title={`Estimated latency: ${gflRegionalPing.userLocation} ➔ ${gflRegionalPing.serverLocation}`}>
+                    <Radio className="w-3.5 h-3.5 text-cyan-400" />
+                    <span className="text-slate-400">Est. Ping:</span>
+                    <strong className="text-cyan-300 font-bold">
+                      {gflRegionalPing.display}
+                    </strong>
+                    <span className="text-[10px] text-slate-400 font-normal">({gflRegionalPing.route})</span>
+                  </div>
+
+                  <div className="text-[11px] font-code text-slate-400">
+                    <code>IP: {gflServer.host}:{gflServer.port}</code>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Live Match Intelligence (Round Scores, Extends & Soundtrack) */}
-            {telemetry?.gfl_match_now && (
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className="px-2.5 py-1 rounded-lg text-xs font-code bg-slate-900/90 border border-slate-800 text-slate-300 flex items-center gap-2">
-                  <span className="text-emerald-400 font-bold flex items-center gap-1">
-                    🛡️ Humans: {telemetry.gfl_match_now.human_score}
-                  </span>
-                  <span className="text-slate-500">vs</span>
-                  <span className="text-rose-400 font-bold flex items-center gap-1">
-                    🧟 Zombies: {telemetry.gfl_match_now.zombie_score}
-                  </span>
+            {/* Live Match Intelligence (Round Scores, Extends & Soundtrack) - Always Visible */}
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <span className="px-2.5 py-1 rounded-lg text-xs font-code bg-slate-900/90 border border-slate-800 text-slate-300 flex items-center gap-2">
+                <span className="text-emerald-400 font-bold flex items-center gap-1">
+                  🛡️ Humans: {telemetry?.gfl_match_now ? telemetry.gfl_match_now.human_score : 0}
                 </span>
-                <span className="px-2.5 py-1 rounded-lg text-xs font-code bg-slate-900/90 border border-slate-800 text-amber-300 font-semibold flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-amber-400" />
-                  Extends: {telemetry.gfl_match_now.extend_count}/3
+                <span className="text-slate-500">vs</span>
+                <span className="text-rose-400 font-bold flex items-center gap-1">
+                  🧟 Zombies: {telemetry?.gfl_match_now ? telemetry.gfl_match_now.zombie_score : 0}
                 </span>
-                {telemetry.gfl_map_musics && telemetry.gfl_map_musics.length > 0 && (
-                  <button
-                    onClick={() => setShowMusicModal(true)}
-                    className="px-2.5 py-1 rounded-lg text-xs font-code bg-purple-950/80 hover:bg-purple-900/80 border border-purple-500/40 text-purple-200 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
-                    title="View map custom soundtrack with YouTube links"
-                  >
-                    <Music className="w-3.5 h-3.5 text-purple-400" />
-                    <span>Soundtrack ({telemetry.gfl_map_musics.length} Tracks)</span>
-                  </button>
-                )}
-              </div>
-            )}
+              </span>
+
+              <span className="px-2.5 py-1 rounded-lg text-xs font-code bg-slate-900/90 border border-slate-800 text-amber-300 font-semibold flex items-center gap-1">
+                <Clock className="w-3 h-3 text-amber-400" />
+                Extends: {telemetry?.gfl_match_now ? telemetry.gfl_match_now.extend_count : 0}/3
+              </span>
+
+              {/* Soundtrack Button - ALWAYS Visible */}
+              <button
+                onClick={() => setShowMusicModal(true)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-code flex items-center gap-1.5 transition-all cursor-pointer border ${
+                  telemetry?.gfl_map_musics && telemetry.gfl_map_musics.length > 0
+                    ? 'bg-purple-950/90 hover:bg-purple-900 border-purple-500/50 text-purple-200 hover:text-white shadow-[0_0_12px_rgba(168,85,247,0.3)]'
+                    : 'bg-slate-900/90 hover:bg-slate-800 border-slate-700 text-purple-300/80 hover:text-purple-200'
+                }`}
+                title="View map custom soundtrack with YouTube links"
+              >
+                <Music className="w-3.5 h-3.5 text-purple-400" />
+                <span>
+                  Soundtrack {telemetry?.gfl_map_musics && telemetry.gfl_map_musics.length > 0 
+                    ? `(${telemetry.gfl_map_musics.length} Tracks)` 
+                    : '(Intel)'}
+                </span>
+              </button>
+            </div>
 
             {/* Desktop Slot Sniper Banner */}
             <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center gap-2.5 text-xs font-tech text-slate-300">
@@ -606,35 +628,43 @@ export const ServerRadarPreview: React.FC = () => {
                 {/* Live Telemetry Pill Row */}
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   {/* Current Active Map & Live Timer */}
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code text-slate-300">
-                    {/* Map Thumbnail */}
-                    <div className="w-5 h-4 rounded overflow-hidden border border-slate-700 bg-slate-950 flex-shrink-0">
+                  <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code text-slate-300">
+                    {/* Prominent Map Thumbnail */}
+                    <div className="w-14 h-9 sm:w-16 sm:h-10 rounded-md overflow-hidden border border-slate-700 bg-slate-950 flex-shrink-0 shadow-sm group-hover:border-lime-400/50 transition-colors">
                       <img 
                         src={getMapThumbnailUrl(currentMap)} 
                         alt={currentMap} 
                         className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                        onError={(e) => { 
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=300&q=80';
+                        }}
                       />
                     </div>
-                    <MapPin className="w-3 h-3 text-fuchsia-400 flex-shrink-0" />
-                    <span className="text-slate-400">Map:</span>
-                    <span className="text-fuchsia-300 font-bold truncate max-w-[130px]">
-                      {currentMap || 'ze_escape'}
-                    </span>
-                    <span className="text-cyan-400 font-code text-[11px] font-semibold bg-cyan-950/60 px-1.5 py-0.2 rounded border border-cyan-500/30 flex items-center gap-1 flex-shrink-0">
-                      ⏱️ {formatMapElapsed(mapDuration)}
-                    </span>
-                    {/* 3D Map Explorer Link */}
-                    <a
-                      href={getMap3DViewerUrl(currentMap)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] font-code px-1.5 py-0.2 rounded bg-blue-950/80 text-blue-300 hover:text-white border border-blue-500/30 hover:border-blue-400 flex items-center gap-0.5 transition-colors"
-                      title="Explore 3D Map model on maps.cybo.dev (Powered by cybo)"
-                    >
-                      <span>3D</span>
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-1 text-[11px] text-slate-400">
+                        <MapPin className="w-3 h-3 text-fuchsia-400 flex-shrink-0" />
+                        <span>Map:</span>
+                        <strong className="text-fuchsia-300 font-bold truncate max-w-[120px] sm:max-w-[150px]">
+                          {currentMap || 'ze_escape'}
+                        </strong>
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-cyan-300 text-[10px] font-bold bg-cyan-950/80 px-1.5 py-0.2 rounded border border-cyan-500/30 flex items-center gap-0.5">
+                          <Clock className="w-2.5 h-2.5 text-cyan-400" />
+                          {formatMapElapsed(mapDuration)}
+                        </span>
+                        <a
+                          href={getMap3DViewerUrl(currentMap)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] font-code px-1.5 py-0.2 rounded bg-blue-950/80 text-blue-300 hover:text-white border border-blue-500/30 hover:border-blue-400 flex items-center gap-0.5 transition-colors"
+                          title="Explore 3D Map model on maps.cybo.dev (Powered by cybo)"
+                        >
+                          <span>3D</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Player Count */}
@@ -881,7 +911,7 @@ export const ServerRadarPreview: React.FC = () => {
       )}
 
       {/* GFL Map Soundtrack Modal */}
-      {showMusicModal && telemetry?.gfl_map_musics && telemetry.gfl_map_musics.length > 0 && (
+      {showMusicModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-slate-950 border border-purple-500/50 rounded-2xl p-6 max-w-2xl w-full max-h-[85vh] flex flex-col shadow-[0_0_50px_rgba(168,85,247,0.25)] relative">
             
@@ -893,7 +923,7 @@ export const ServerRadarPreview: React.FC = () => {
                     OFFICIAL SOUNDTRACKS
                   </span>
                   <span className="text-xs font-code text-slate-400">
-                    {telemetry.gfl_map_musics.length} Tracks Available
+                    {telemetry?.gfl_map_musics ? telemetry.gfl_map_musics.length : 0} Tracks Available
                   </span>
                 </div>
                 <h3 className="text-lg font-cyber font-bold text-white flex items-center gap-2">
@@ -913,45 +943,60 @@ export const ServerRadarPreview: React.FC = () => {
               </button>
             </div>
 
-            {/* Tracklist List */}
-            <div className="flex-1 overflow-y-auto border border-slate-800/80 rounded-xl bg-slate-900/50 divide-y divide-slate-800/60 p-2 space-y-1">
-              {telemetry.gfl_map_musics.map((song, idx) => {
-                const ytId = song.youtube_music || song.youtube_video;
-                const ytUrl = ytId ? `https://www.youtube.com/watch?v=${ytId}` : null;
-                return (
-                  <div key={idx} className="p-3 rounded-lg hover:bg-purple-950/20 transition-colors flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="w-6 text-center text-xs font-code text-purple-400/80 font-bold">
-                        {idx + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <div className="text-xs font-code font-bold text-slate-100 truncate">
-                          {song.name}
-                        </div>
-                        <div className="flex items-center gap-2 text-[11px] font-tech text-slate-400 mt-0.5">
-                          <Clock className="w-3 h-3 text-slate-500" />
-                          <span>{formatMapElapsed(Math.floor(song.duration || 0))}</span>
+            {/* Tracklist List or Empty State */}
+            {telemetry?.gfl_map_musics && telemetry.gfl_map_musics.length > 0 ? (
+              <div className="flex-1 overflow-y-auto border border-slate-800/80 rounded-xl bg-slate-900/50 divide-y divide-slate-800/60 p-2 space-y-1">
+                {telemetry.gfl_map_musics.map((song, idx) => {
+                  const ytId = song.youtube_music || song.youtube_video;
+                  const ytUrl = ytId ? `https://www.youtube.com/watch?v=${ytId}` : null;
+                  return (
+                    <div key={idx} className="p-3 rounded-lg hover:bg-purple-950/20 transition-colors flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="w-6 text-center text-xs font-code text-purple-400/80 font-bold">
+                          {idx + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-xs font-code font-bold text-slate-100 truncate">
+                            {song.name}
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] font-tech text-slate-400 mt-0.5">
+                            <Clock className="w-3 h-3 text-slate-500" />
+                            <span>{formatMapElapsed(Math.floor(song.duration || 0))}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {ytUrl ? (
-                      <a
-                        href={ytUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-300 hover:text-white text-xs font-code flex items-center gap-1.5 transition-colors"
-                      >
-                        <Play className="w-3 h-3 fill-current text-red-400" />
-                        <span>YouTube ↗</span>
-                      </a>
-                    ) : (
-                      <span className="text-[11px] font-tech text-slate-600">No stream link</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                      {ytUrl ? (
+                        <a
+                          href={ytUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-300 hover:text-white text-xs font-code flex items-center gap-1.5 transition-colors"
+                        >
+                          <Play className="w-3 h-3 fill-current text-red-400" />
+                          <span>YouTube ↗</span>
+                        </a>
+                      ) : (
+                        <span className="text-[11px] font-tech text-slate-600">No stream link</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-slate-900/40 rounded-xl border border-slate-800/80 my-4 flex-1 flex flex-col items-center justify-center">
+                <Music className="w-12 h-12 text-purple-400/50 mb-3" />
+                <h4 className="text-base font-cyber font-bold text-slate-200 mb-1">
+                  No Custom Soundtracks Cataloged for {gflMap}
+                </h4>
+                <p className="text-xs font-tech text-slate-400 max-w-md mx-auto leading-relaxed">
+                  This map either uses standard ambient soundscapes or custom music entity triggers have not been indexed in the community audio database yet.
+                </p>
+                <div className="mt-4 p-3 rounded-lg bg-purple-950/40 border border-purple-500/30 text-xs font-code text-purple-300 max-w-md mx-auto">
+                  💡 Popular maps with active soundtracks: <strong>ze_journey_p</strong> (10 tracks), <strong>ze_isla_nublar_p</strong> (3 tracks), <strong>ze_frostdrake_tower_p</strong> (4 tracks).
+                </div>
+              </div>
+            )}
 
             {/* Modal Footer */}
             <div className="pt-4 border-t border-slate-800 mt-4 flex items-center justify-between text-[11px] font-tech text-slate-400">

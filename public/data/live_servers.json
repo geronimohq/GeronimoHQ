@@ -1,1001 +1,1249 @@
 {
-  "timestamp": 1793977396,
-  "iso_time": "2026-11-06T15:03:16Z",
+  "timestamp": 1793986634,
+  "iso_time": "2026-11-06T17:37:14Z",
   "total_servers": 41,
-  "online_servers": 30,
+  "online_servers": 32,
+  "gfl_match_now": {
+    "estimated_time_end": "2026-11-06T17:41:41+00:00",
+    "extend_count": 0,
+    "human_score": 0,
+    "map": "ze_stab_town_p",
+    "occurred_at": "2026-11-06T17:35:57+00:00",
+    "player_count": 64,
+    "server_id": "65bdad6379cefd7ebcecce5c",
+    "server_time_end": "2026-11-06T17:43:14+00:00",
+    "started_at": "2026-11-06T17:18:15+00:00",
+    "time_id": 197641,
+    "zombie_score": 3
+  },
+  "gfl_map_musics": [],
   "servers": {
     "gfl": {
       "online": true,
       "status": "Online",
       "server_name": "GFL Zombie Escape 24/7 | discord.gg/gflze |",
-      "map": "ze_kitchen",
-      "players": "58/64",
-      "curr_players": 58,
+      "map": "ze_stab_town_p",
+      "players": "64/64",
+      "curr_players": 64,
       "max_players": 64,
-      "ping": "196 ms",
-      "rtt": 196,
+      "ping": "206 ms",
+      "rtt": 206,
       "players_list": [
         {
-          "name": "ka",
-          "score": 10104,
-          "time": "32m 09s",
-          "seconds": 1929.498779296875
+          "name": "Sonnelus",
+          "score": 5004,
+          "time": "16m 59s",
+          "seconds": 1019.9078979492188
         },
         {
           "name": "Guy Fieri",
-          "score": 10104,
-          "time": "23m 57s",
-          "seconds": 1437.9617919921875
+          "score": 19,
+          "time": "18m 26s",
+          "seconds": 1106.2467041015625
         },
         {
-          "name": "DabezZ",
-          "score": 10103,
-          "time": "30m 51s",
-          "seconds": 1851.776123046875
+          "name": "wauhtimato",
+          "score": 14,
+          "time": "18m 23s",
+          "seconds": 1103.7457275390625
         },
         {
-          "name": "SADIST",
-          "score": 10102,
-          "time": "32m 03s",
-          "seconds": 1923.3106689453125
+          "name": "Hunter",
+          "score": 12,
+          "time": "18m 24s",
+          "seconds": 1104.8092041015625
         },
         {
-          "name": "feyi",
-          "score": 5003,
-          "time": "31m 35s",
-          "seconds": 1895.745849609375
+          "name": "2stp",
+          "score": 12,
+          "time": "18m 22s",
+          "seconds": 1102.745361328125
         },
         {
-          "name": "Alex",
-          "score": 206,
-          "time": "32m 10s",
-          "seconds": 1930.4210205078125
+          "name": "GuY",
+          "score": 11,
+          "time": "18m 26s",
+          "seconds": 1106.028076171875
         },
         {
-          "name": "Prime",
-          "score": 206,
-          "time": "32m 01s",
-          "seconds": 1921.0599365234375
+          "name": "me",
+          "score": 10,
+          "time": "18m 14s",
+          "seconds": 1094.774658203125
         },
         {
-          "name": "DrAx",
-          "score": 206,
-          "time": "31m 53s",
-          "seconds": 1913.9810791015625
-        },
-        {
-          "name": "DoomBro",
-          "score": 203,
-          "time": "32m 08s",
-          "seconds": 1928.4371337890625
-        },
-        {
-          "name": "5_Sall_Ka_DARINDA",
-          "score": 203,
-          "time": "32m 08s",
-          "seconds": 1928.0921630859375
-        },
-        {
-          "name": "BIGO",
-          "score": 203,
-          "time": "32m 00s",
-          "seconds": 1920.372802734375
-        },
-        {
-          "name": "Monkey Fart Gaming",
-          "score": 203,
-          "time": "31m 59s",
-          "seconds": 1919.18505859375
-        },
-        {
-          "name": "Kurbo JAPE",
-          "score": 200,
-          "time": "31m 30s",
-          "seconds": 1890.090087890625
+          "name": "Niold",
+          "score": 10,
+          "time": "18m 13s",
+          "seconds": 1093.7896728515625
         },
         {
           "name": "phaze",
-          "score": 105,
-          "time": "30m 17s",
-          "seconds": 1817.660888671875
+          "score": 10,
+          "time": "16m 54s",
+          "seconds": 1014.4385375976562
         },
         {
-          "name": "Dexter",
-          "score": 104,
-          "time": "31m 34s",
-          "seconds": 1894.77734375
-        },
-        {
-          "name": "n0dng",
-          "score": 104,
-          "time": "31m 27s",
-          "seconds": 1887.5736083984375
-        },
-        {
-          "name": "Geronimo",
-          "score": 103,
-          "time": "32m 08s",
-          "seconds": 1928.7646484375
-        },
-        {
-          "name": "Komx",
-          "score": 103,
-          "time": "31m 26s",
-          "seconds": 1886.99609375
-        },
-        {
-          "name": "𝒊𝒃𝒃𝒛𝒂",
-          "score": 103,
-          "time": "28m 21s",
-          "seconds": 1701.456787109375
-        },
-        {
-          "name": "jackie ( ͡ ͡° ͜ ʖ ͡° )",
-          "score": 103,
-          "time": "24m 07s",
-          "seconds": 1447.7266845703125
-        },
-        {
-          "name": "561",
-          "score": 102,
-          "time": "31m 58s",
-          "seconds": 1918.449951171875
-        },
-        {
-          "name": "*Victor***",
-          "score": 102,
-          "time": "31m 46s",
-          "seconds": 1906.7156982421875
-        },
-        {
-          "name": "g4m1ng",
-          "score": 102,
-          "time": "31m 07s",
-          "seconds": 1867.6517333984375
-        },
-        {
-          "name": "CAPanda",
-          "score": 102,
-          "time": "31m 00s",
-          "seconds": 1860.1044921875
-        },
-        {
-          "name": "Toasty Coals",
-          "score": 102,
-          "time": "28m 47s",
-          "seconds": 1727.2689208984375
-        },
-        {
-          "name": "Mr.Ainz",
-          "score": 102,
-          "time": "19m 28s",
-          "seconds": 1168.6546630859375
-        },
-        {
-          "name": "LoLiCon♀♥",
-          "score": 100,
-          "time": "31m 52s",
-          "seconds": 1912.1219482421875
-        },
-        {
-          "name": "S̵w̵e̸͒̇͆̓et",
-          "score": 99,
-          "time": "28m 42s",
-          "seconds": 1722.0972900390625
-        },
-        {
-          "name": "ntt",
-          "score": 6,
-          "time": "30m 23s",
-          "seconds": 1823.993408203125
+          "name": "<>Opsy<>",
+          "score": 9,
+          "time": "18m 25s",
+          "seconds": 1105.2154541015625
         },
         {
           "name": "layMoon",
-          "score": 5,
-          "time": "22m 11s",
-          "seconds": 1331.251708984375
+          "score": 8,
+          "time": "18m 24s",
+          "seconds": 1104.6678466796875
         },
         {
-          "name": "ravi",
-          "score": 4,
-          "time": "32m 00s",
-          "seconds": 1920.6539306640625
+          "name": "LYLYCIA",
+          "score": 8,
+          "time": "18m 17s",
+          "seconds": 1097.102294921875
         },
         {
-          "name": "-m0kyY™",
-          "score": 4,
-          "time": "20m 16s",
-          "seconds": 1216.1395263671875
+          "name": "Lucaplum23",
+          "score": 8,
+          "time": "16m 12s",
+          "seconds": 972.8138427734375
         },
         {
-          "name": "mack06",
-          "score": 3,
-          "time": "31m 51s",
-          "seconds": 1911.168701171875
+          "name": "bubble",
+          "score": 7,
+          "time": "18m 11s",
+          "seconds": 1091.9462890625
         },
         {
-          "name": "wynkle",
-          "score": 3,
-          "time": "16m 11s",
-          "seconds": 971.7236938476562
+          "name": "Ogaraf ☠ †",
+          "score": 7,
+          "time": "18m 05s",
+          "seconds": 1085.7113037109375
         },
         {
-          "name": "yugo427",
-          "score": 2,
-          "time": "31m 16s",
-          "seconds": 1876.4171142578125
+          "name": "totopenguin",
+          "score": 7,
+          "time": "15m 30s",
+          "seconds": 930.9541625976562
         },
         {
-          "name": "Fiction | Prime",
-          "score": 2,
-          "time": "31m 06s",
-          "seconds": 1866.683349609375
+          "name": "ǝɾʞlǝɯ",
+          "score": 6,
+          "time": "18m 25s",
+          "seconds": 1105.82470703125
         },
         {
-          "name": "Kuroki",
-          "score": 1,
-          "time": "29m 43s",
-          "seconds": 1783.832275390625
-        },
-        {
-          "name": "Bojikan",
-          "score": 1,
-          "time": "28m 47s",
-          "seconds": 1727.0035400390625
-        },
-        {
-          "name": "ShiningKOCHAV",
-          "score": 1,
-          "time": "18m 51s",
-          "seconds": 1131.623291015625
-        },
-        {
-          "name": "Ren_VF",
-          "score": 1,
-          "time": "15m 56s",
-          "seconds": 956.268798828125
-        },
-        {
-          "name": "Kitsune 狐狸 :3",
-          "score": 1,
-          "time": "13m 40s",
-          "seconds": 820.91015625
-        },
-        {
-          "name": "XINGLINGDINGDONG",
-          "score": 1,
-          "time": "13m 37s",
-          "seconds": 817.6600952148438
-        },
-        {
-          "name": "R1vald0-",
-          "score": 1,
-          "time": "11m 45s",
-          "seconds": 705.9733276367188
-        },
-        {
-          "name": "LiangHit",
-          "score": 1,
-          "time": "10m 56s",
-          "seconds": 656.2694702148438
-        },
-        {
-          "name": "-Xcite-BmX-",
-          "score": 1,
-          "time": "7m 22s",
-          "seconds": 442.7553405761719
-        },
-        {
-          "name": "TikTok Wine Mom♥®",
-          "score": 0,
-          "time": "7m 20s",
-          "seconds": 440.6758728027344
-        },
-        {
-          "name": "Kotya Way",
-          "score": 0,
-          "time": "7m 08s",
-          "seconds": 428.3962707519531
-        },
-        {
-          "name": "loathing",
-          "score": 0,
-          "time": "6m 34s",
-          "seconds": 394.1419677734375
-        },
-        {
-          "name": "阿苏",
-          "score": 0,
-          "time": "5m 38s",
-          "seconds": 338.2296447753906
-        },
-        {
-          "name": "Kon",
-          "score": 0,
-          "time": "4m 41s",
-          "seconds": 281.1514587402344
-        },
-        {
-          "name": "Nightscar",
-          "score": 0,
-          "time": "3m 33s",
-          "seconds": 213.12442016601562
+          "name": "Mr. Chow",
+          "score": 6,
+          "time": "18m 24s",
+          "seconds": 1104.793701171875
         },
         {
           "name": "Sgt.Apone",
-          "score": 0,
-          "time": "3m 11s",
-          "seconds": 191.26547241210938
+          "score": 6,
+          "time": "18m 24s",
+          "seconds": 1104.668212890625
         },
         {
-          "name": ".",
-          "score": 0,
-          "time": "2m 45s",
-          "seconds": 165.87281799316406
+          "name": "阿苏",
+          "score": 6,
+          "time": "18m 16s",
+          "seconds": 1096.4940185546875
         },
         {
-          "name": "穆赞",
-          "score": 0,
-          "time": "2m 33s",
-          "seconds": 153.74853515625
+          "name": "Kulaps",
+          "score": 6,
+          "time": "18m 13s",
+          "seconds": 1093.9622802734375
         },
         {
-          "name": "NØWHERE",
-          "score": 0,
-          "time": "2m 30s",
-          "seconds": 150.06028747558594
+          "name": "yugo427",
+          "score": 6,
+          "time": "14m 20s",
+          "seconds": 860.995361328125
+        },
+        {
+          "name": "YingYingDER",
+          "score": 5,
+          "time": "18m 24s",
+          "seconds": 1104.1678466796875
+        },
+        {
+          "name": "jzapo",
+          "score": 5,
+          "time": "18m 24s",
+          "seconds": 1104.10400390625
+        },
+        {
+          "name": "TonkazZ",
+          "score": 5,
+          "time": "18m 18s",
+          "seconds": 1098.227783203125
+        },
+        {
+          "name": "𝖑𝖆 𝖋𝖆𝖓𝖊́𝖊",
+          "score": 5,
+          "time": "17m 13s",
+          "seconds": 1033.866943359375
+        },
+        {
+          "name": "hoddren",
+          "score": 4,
+          "time": "18m 26s",
+          "seconds": 1106.276611328125
+        },
+        {
+          "name": "Noah",
+          "score": 4,
+          "time": "18m 26s",
+          "seconds": 1106.02783203125
+        },
+        {
+          "name": "TW1ST3[D]~`",
+          "score": 4,
+          "time": "18m 25s",
+          "seconds": 1105.7464599609375
+        },
+        {
+          "name": "Raku",
+          "score": 4,
+          "time": "18m 24s",
+          "seconds": 1104.4810791015625
+        },
+        {
+          "name": "mercytiamercy",
+          "score": 4,
+          "time": "14m 57s",
+          "seconds": 897.9862670898438
+        },
+        {
+          "name": "YEOD",
+          "score": 3,
+          "time": "18m 25s",
+          "seconds": 1105.619140625
+        },
+        {
+          "name": "peterte91",
+          "score": 3,
+          "time": "18m 25s",
+          "seconds": 1105.2623291015625
+        },
+        {
+          "name": "Dexter",
+          "score": 3,
+          "time": "18m 24s",
+          "seconds": 1104.8399658203125
+        },
+        {
+          "name": "Emzee.",
+          "score": 3,
+          "time": "18m 23s",
+          "seconds": 1103.9945068359375
+        },
+        {
+          "name": "djik",
+          "score": 3,
+          "time": "18m 23s",
+          "seconds": 1103.775390625
+        },
+        {
+          "name": "fembobr",
+          "score": 3,
+          "time": "12m 57s",
+          "seconds": 777.9093627929688
+        },
+        {
+          "name": "Raaziel",
+          "score": 2,
+          "time": "18m 24s",
+          "seconds": 1104.590576171875
         },
         {
           "name": "IOIOIOIOIOIOIOIOIOIOI",
-          "score": 0,
-          "time": "2m 14s",
-          "seconds": 134.37034606933594
+          "score": 2,
+          "time": "18m 23s",
+          "seconds": 1103.7923583984375
         },
         {
-          "name": "Mesturpate",
-          "score": 0,
-          "time": "1m 51s",
-          "seconds": 111.12163543701172
+          "name": "BigMILK",
+          "score": 2,
+          "time": "18m 23s",
+          "seconds": 1103.7144775390625
         },
         {
-          "name": "1Nukk",
+          "name": "Can_nnnn",
+          "score": 2,
+          "time": "18m 19s",
+          "seconds": 1099.119140625
+        },
+        {
+          "name": "白咪饭",
+          "score": 2,
+          "time": "18m 14s",
+          "seconds": 1094.85302734375
+        },
+        {
+          "name": "ntt",
+          "score": 2,
+          "time": "18m 05s",
+          "seconds": 1085.7738037109375
+        },
+        {
+          "name": "[LIVE] Dominator-kick",
+          "score": 2,
+          "time": "11m 01s",
+          "seconds": 661.5615234375
+        },
+        {
+          "name": "PubStar*",
+          "score": 1,
+          "time": "18m 25s",
+          "seconds": 1105.9183349609375
+        },
+        {
+          "name": "JopeX",
+          "score": 1,
+          "time": "18m 25s",
+          "seconds": 1105.44970703125
+        },
+        {
+          "name": "Geronimo",
+          "score": 1,
+          "time": "18m 24s",
+          "seconds": 1104.542236328125
+        },
+        {
+          "name": "fr33|ORBITAL|",
+          "score": 1,
+          "time": "18m 21s",
+          "seconds": 1101.056884765625
+        },
+        {
+          "name": "TH | NongKong",
+          "score": 1,
+          "time": "18m 13s",
+          "seconds": 1093.9930419921875
+        },
+        {
+          "name": "tempname",
+          "score": 1,
+          "time": "18m 12s",
+          "seconds": 1092.3216552734375
+        },
+        {
+          "name": "*Victor***",
+          "score": 1,
+          "time": "18m 02s",
+          "seconds": 1082.0701904296875
+        },
+        {
+          "name": "asdf",
+          "score": 1,
+          "time": "17m 26s",
+          "seconds": 1046.5068359375
+        },
+        {
+          "name": "teooreo007",
+          "score": 1,
+          "time": "17m 05s",
+          "seconds": 1025.24169921875
+        },
+        {
+          "name": "natro",
+          "score": 1,
+          "time": "14m 22s",
+          "seconds": 862.1827392578125
+        },
+        {
+          "name": "「RedM00N」",
           "score": 0,
-          "time": "1m 43s",
-          "seconds": 103.44853973388672
+          "time": "18m 26s",
+          "seconds": 1106.511962890625
+        },
+        {
+          "name": "NINO",
+          "score": 0,
+          "time": "18m 25s",
+          "seconds": 1105.1978759765625
+        },
+        {
+          "name": "BhamoWah",
+          "score": 0,
+          "time": "18m 24s",
+          "seconds": 1104.9796142578125
+        },
+        {
+          "name": "cybo",
+          "score": 0,
+          "time": "15m 34s",
+          "seconds": 934.249755859375
+        },
+        {
+          "name": "DEAD MEN TELL NO TALES",
+          "score": 0,
+          "time": "14m 43s",
+          "seconds": 883.7052612304688
+        },
+        {
+          "name": "Fl2aGileXz",
+          "score": 0,
+          "time": "8m 24s",
+          "seconds": 504.27618408203125
+        },
+        {
+          "name": "Kuroki",
+          "score": 0,
+          "time": "7m 07s",
+          "seconds": 427.12799072265625
+        },
+        {
+          "name": "うちは カカシ",
+          "score": 0,
+          "time": "4m 44s",
+          "seconds": 284.7872009277344
+        },
+        {
+          "name": "temper♥",
+          "score": 0,
+          "time": "3m 29s",
+          "seconds": 209.7240753173828
+        },
+        {
+          "name": "Trusa",
+          "score": 0,
+          "time": "0m 44s",
+          "seconds": 44.88566207885742
         }
       ],
       "has_player_roster": true,
-      "map_start_time": 1793977359
+      "map_start_time": 1793985490.488037
     },
     "possession": {
       "online": true,
       "status": "Online",
       "server_name": "[JP] Zombie Escape :: POSSESSION | discord.gg/pse",
-      "map": "ze_devil_may_cry",
-      "players": "39/64",
-      "curr_players": 39,
+      "map": "ze_neko_canyon_p",
+      "players": "0/64",
+      "curr_players": 0,
       "max_players": 64,
-      "ping": "102 ms",
-      "rtt": 102,
-      "players_list": [
-        {
-          "name": "望 永远滴神",
-          "score": 1,
-          "time": "5m 48s",
-          "seconds": 348.0953063964844
-        },
-        {
-          "name": "Eevee",
-          "score": 0,
-          "time": "18m 44s",
-          "seconds": 1124.9241943359375
-        },
-        {
-          "name": "SilKaNoN",
-          "score": 0,
-          "time": "18m 42s",
-          "seconds": 1122.080322265625
-        },
-        {
-          "name": "mcx3100",
-          "score": 0,
-          "time": "18m 37s",
-          "seconds": 1117.842041015625
-        },
-        {
-          "name": "Way waY Hoy",
-          "score": 0,
-          "time": "18m 34s",
-          "seconds": 1114.5518798828125
-        },
-        {
-          "name": "yukkuriゆっくり",
-          "score": 0,
-          "time": "18m 33s",
-          "seconds": 1113.536376953125
-        },
-        {
-          "name": "usagi",
-          "score": 0,
-          "time": "18m 32s",
-          "seconds": 1112.4737548828125
-        },
-        {
-          "name": "ムラタング",
-          "score": 0,
-          "time": "18m 30s",
-          "seconds": 1110.5986328125
-        },
-        {
-          "name": "watari",
-          "score": 0,
-          "time": "18m 27s",
-          "seconds": 1107.4888916015625
-        },
-        {
-          "name": "SxLc:v",
-          "score": 0,
-          "time": "18m 25s",
-          "seconds": 1105.0361328125
-        },
-        {
-          "name": "kur4yam1",
-          "score": 0,
-          "time": "18m 21s",
-          "seconds": 1101.392333984375
-        },
-        {
-          "name": "Suihei",
-          "score": 0,
-          "time": "18m 18s",
-          "seconds": 1098.8614501953125
-        },
-        {
-          "name": ".",
-          "score": 0,
-          "time": "18m 18s",
-          "seconds": 1098.5960693359375
-        },
-        {
-          "name": "チサ Chisa",
-          "score": 0,
-          "time": "18m 12s",
-          "seconds": 1092.439697265625
-        },
-        {
-          "name": "A",
-          "score": 0,
-          "time": "17m 35s",
-          "seconds": 1055.408203125
-        },
-        {
-          "name": "SoonEphone",
-          "score": 0,
-          "time": "17m 33s",
-          "seconds": 1053.5018310546875
-        },
-        {
-          "name": "yura",
-          "score": 0,
-          "time": "17m 28s",
-          "seconds": 1048.891845703125
-        },
-        {
-          "name": "永遠にシングル部隊員",
-          "score": 0,
-          "time": "17m 22s",
-          "seconds": 1042.704345703125
-        },
-        {
-          "name": "fp",
-          "score": 0,
-          "time": "17m 13s",
-          "seconds": 1033.6737060546875
-        },
-        {
-          "name": "Tanpochan",
-          "score": 0,
-          "time": "16m 56s",
-          "seconds": 1016.09765625
-        },
-        {
-          "name": "Berty ✿",
-          "score": 0,
-          "time": "16m 55s",
-          "seconds": 1015.4724731445312
-        },
-        {
-          "name": "RiserSword",
-          "score": 0,
-          "time": "16m 54s",
-          "seconds": 1014.7227172851562
-        },
-        {
-          "name": "Qulixe",
-          "score": 0,
-          "time": "16m 47s",
-          "seconds": 1007.6436767578125
-        },
-        {
-          "name": "Mafuyu",
-          "score": 0,
-          "time": "16m 20s",
-          "seconds": 980.7060546875
-        },
-        {
-          "name": "amatias",
-          "score": 0,
-          "time": "15m 55s",
-          "seconds": 955.3780517578125
-        },
-        {
-          "name": "urumi",
-          "score": 0,
-          "time": "15m 09s",
-          "seconds": 909.1276245117188
-        },
-        {
-          "name": "BEGInner_DAYO",
-          "score": 0,
-          "time": "13m 50s",
-          "seconds": 830.37109375
-        },
-        {
-          "name": "ぽぽ",
-          "score": 0,
-          "time": "12m 15s",
-          "seconds": 735.61865234375
-        },
-        {
-          "name": "Back-On",
-          "score": 0,
-          "time": "12m 08s",
-          "seconds": 728.57275390625
-        },
-        {
-          "name": "kirigaya",
-          "score": 0,
-          "time": "11m 02s",
-          "seconds": 662.6798095703125
-        },
-        {
-          "name": "maximum",
-          "score": 0,
-          "time": "10m 37s",
-          "seconds": 637.9461669921875
-        },
-        {
-          "name": "Nia",
-          "score": 0,
-          "time": "8m 45s",
-          "seconds": 525.0708618164062
-        },
-        {
-          "name": "JOHN DOE",
-          "score": 0,
-          "time": "8m 28s",
-          "seconds": 508.89947509765625
-        },
-        {
-          "name": "QnSlayer78",
-          "score": 0,
-          "time": "6m 10s",
-          "seconds": 370.114013671875
-        },
-        {
-          "name": "FlankyKawaii",
-          "score": 0,
-          "time": "3m 56s",
-          "seconds": 236.6597900390625
-        },
-        {
-          "name": "holyc",
-          "score": 0,
-          "time": "2m 07s",
-          "seconds": 127.94223022460938
-        },
-        {
-          "name": "KIMSW",
-          "score": 0,
-          "time": "0m 53s",
-          "seconds": 53.46958923339844
-        },
-        {
-          "name": "닭국수",
-          "score": 0,
-          "time": "0m 26s",
-          "seconds": 26.56159210205078
-        }
-      ],
-      "has_player_roster": true,
-      "map_start_time": 1793977359
+      "ping": "91 ms",
+      "rtt": 91,
+      "players_list": [],
+      "has_player_roster": false,
+      "map_start_time": 1793986597
     },
     "mapeadores": {
       "online": true,
       "status": "Online",
       "server_name": "[EU] .:MAPEADORES:. CS2 ZOMBIE ESCAPE discord.gg/Mapeadores",
-      "map": "ze_exchange_innovation_p",
-      "players": "0/64",
-      "curr_players": 0,
+      "map": "ze_forius_just_run_p",
+      "players": "35/64",
+      "curr_players": 35,
       "max_players": 64,
-      "ping": "238 ms",
-      "rtt": 238,
-      "players_list": [],
-      "has_player_roster": false,
-      "map_start_time": 1793977359
+      "ping": "230 ms",
+      "rtt": 230,
+      "players_list": [
+        {
+          "name": "ZombieSlayer",
+          "score": 1,
+          "time": "16m 10s",
+          "seconds": 970.2210083007812
+        },
+        {
+          "name": "Ax7ro",
+          "score": 1,
+          "time": "16m 09s",
+          "seconds": 969.6427612304688
+        },
+        {
+          "name": "demyth",
+          "score": 1,
+          "time": "16m 03s",
+          "seconds": 963.3275146484375
+        },
+        {
+          "name": "Czarna Dziura Hash i Rura",
+          "score": 1,
+          "time": "8m 35s",
+          "seconds": 515.578125
+        },
+        {
+          "name": "Tormacoy",
+          "score": 0,
+          "time": "16m 09s",
+          "seconds": 969.6270141601562
+        },
+        {
+          "name": "✪ NhuttenThanz",
+          "score": 0,
+          "time": "16m 09s",
+          "seconds": 969.4553833007812
+        },
+        {
+          "name": "Mixaje",
+          "score": 0,
+          "time": "16m 09s",
+          "seconds": 969.4552001953125
+        },
+        {
+          "name": "FuRy",
+          "score": 0,
+          "time": "16m 09s",
+          "seconds": 969.283447265625
+        },
+        {
+          "name": "V_kamilek",
+          "score": 0,
+          "time": "16m 08s",
+          "seconds": 968.7677612304688
+        },
+        {
+          "name": "Timur J",
+          "score": 0,
+          "time": "16m 08s",
+          "seconds": 968.4236450195312
+        },
+        {
+          "name": "Ashka",
+          "score": 0,
+          "time": "16m 07s",
+          "seconds": 967.2335815429688
+        },
+        {
+          "name": "Muad'Dib",
+          "score": 0,
+          "time": "16m 06s",
+          "seconds": 966.5151977539062
+        },
+        {
+          "name": "🅶🅴🅲🅴",
+          "score": 0,
+          "time": "16m 06s",
+          "seconds": 966.4995727539062
+        },
+        {
+          "name": "ᵛˢ⁻ᵏᶠ ᵒⁿˡʸ",
+          "score": 0,
+          "time": "16m 06s",
+          "seconds": 966.2804565429688
+        },
+        {
+          "name": "Bassemprime",
+          "score": 0,
+          "time": "16m 05s",
+          "seconds": 965.7647705078125
+        },
+        {
+          "name": "Ciao Kombucha",
+          "score": 0,
+          "time": "16m 03s",
+          "seconds": 963.7650756835938
+        },
+        {
+          "name": "AdR",
+          "score": 0,
+          "time": "16m 02s",
+          "seconds": 962.6236572265625
+        },
+        {
+          "name": "ishakgr",
+          "score": 0,
+          "time": "16m 02s",
+          "seconds": 962.4681396484375
+        },
+        {
+          "name": "Sandman",
+          "score": 0,
+          "time": "16m 02s",
+          "seconds": 962.4524536132812
+        },
+        {
+          "name": "Yuichi",
+          "score": 0,
+          "time": "16m 01s",
+          "seconds": 961.4052124023438
+        },
+        {
+          "name": "้ mech",
+          "score": 0,
+          "time": "16m 01s",
+          "seconds": 961.2646484375
+        },
+        {
+          "name": "jojoganas",
+          "score": 0,
+          "time": "16m 00s",
+          "seconds": 960.1864624023438
+        },
+        {
+          "name": "GRINGO",
+          "score": 0,
+          "time": "15m 55s",
+          "seconds": 955.045654296875
+        },
+        {
+          "name": "Haze",
+          "score": 0,
+          "time": "15m 54s",
+          "seconds": 954.872802734375
+        },
+        {
+          "name": "RomeKing",
+          "score": 0,
+          "time": "15m 40s",
+          "seconds": 940.5140991210938
+        },
+        {
+          "name": "Plokalone",
+          "score": 0,
+          "time": "14m 13s",
+          "seconds": 853.163818359375
+        },
+        {
+          "name": "L.O.V.E.M.U.F.F.I.N",
+          "score": 0,
+          "time": "13m 31s",
+          "seconds": 811.3821411132812
+        },
+        {
+          "name": "21mtd",
+          "score": 0,
+          "time": "13m 13s",
+          "seconds": 793.0541381835938
+        },
+        {
+          "name": "***** ***",
+          "score": 0,
+          "time": "10m 49s",
+          "seconds": 649.0635986328125
+        },
+        {
+          "name": "Komx",
+          "score": 0,
+          "time": "9m 54s",
+          "seconds": 594.54833984375
+        },
+        {
+          "name": "Shark♿x",
+          "score": 0,
+          "time": "8m 46s",
+          "seconds": 526.39013671875
+        },
+        {
+          "name": "milkaHDB",
+          "score": 0,
+          "time": "7m 49s",
+          "seconds": 469.28094482421875
+        },
+        {
+          "name": "MEME",
+          "score": 0,
+          "time": "7m 45s",
+          "seconds": 465.3590393066406
+        },
+        {
+          "name": "Papa Kevin",
+          "score": 0,
+          "time": "7m 11s",
+          "seconds": 431.2027893066406
+        },
+        {
+          "name": "DARK-BLADE  ESP",
+          "score": 0,
+          "time": "6m 24s",
+          "seconds": 384.6251220703125
+        }
+      ],
+      "has_player_roster": true,
+      "map_start_time": 1793985626.7789917
     },
     "cola": {
       "online": true,
       "status": "Online",
       "server_name": "☣️ ZOMBIE ESCAPE ☣️ !store ☣️ discord.gg/colateam",
-      "map": "ze_minecraft_dragon_castle",
-      "players": "27/64",
-      "curr_players": 27,
+      "map": "ze_dark_souls",
+      "players": "43/64",
+      "curr_players": 43,
       "max_players": 64,
-      "ping": "225 ms",
-      "rtt": 225,
+      "ping": "209 ms",
+      "rtt": 209,
       "players_list": [
         {
-          "name": "Virix-",
-          "score": 1,
-          "time": "56m 01s",
-          "seconds": 3361.66845703125
+          "name": "Majestic Pink",
+          "score": 2,
+          "time": "1h 22m",
+          "seconds": 4964.5517578125
         },
         {
-          "name": "olá castellito",
+          "name": "Tenko Xi.",
           "score": 1,
-          "time": "55m 57s",
-          "seconds": 3357.887939453125
+          "time": "1h 22m",
+          "seconds": 4964.30322265625
         },
         {
-          "name": "E",
+          "name": "uncle kepci cola-team.es",
           "score": 1,
-          "time": "55m 54s",
-          "seconds": 3354.107177734375
-        },
-        {
-          "name": "LeoHerz",
-          "score": 1,
-          "time": "55m 42s",
-          "seconds": 3342.012939453125
+          "time": "1h 22m",
+          "seconds": 4963.67822265625
         },
         {
           "name": "βlue",
-          "score": 0,
-          "time": "56m 02s",
-          "seconds": 3362.044677734375
+          "score": 1,
+          "time": "1h 22m",
+          "seconds": 4951.5869140625
         },
         {
-          "name": "UMAD?",
-          "score": 0,
-          "time": "56m 01s",
-          "seconds": 3361.810302734375
+          "name": "CumMaster67",
+          "score": 1,
+          "time": "1h 21m",
+          "seconds": 4870.2451171875
         },
         {
-          "name": "sahaku",
+          "name": "Dazer",
           "score": 0,
-          "time": "56m 01s",
-          "seconds": 3361.591796875
+          "time": "1h 22m",
+          "seconds": 4964.76513671875
+        },
+        {
+          "name": "Laizer",
+          "score": 0,
+          "time": "1h 22m",
+          "seconds": 4964.64794921875
+        },
+        {
+          "name": "Maizer",
+          "score": 0,
+          "time": "1h 22m",
+          "seconds": 4964.60107421875
+        },
+        {
+          "name": "franoocoric",
+          "score": 0,
+          "time": "1h 22m",
+          "seconds": 4964.51904296875
+        },
+        {
+          "name": "Hirongaヌギ",
+          "score": 0,
+          "time": "1h 22m",
+          "seconds": 4964.5
         },
         {
           "name": "Rick",
           "score": 0,
-          "time": "56m 01s",
-          "seconds": 3361.560546875
-        },
-        {
-          "name": "zOeil",
-          "score": 0,
-          "time": "55m 53s",
-          "seconds": 3353.700927734375
-        },
-        {
-          "name": "SytexX",
-          "score": 0,
-          "time": "55m 40s",
-          "seconds": 3340.38818359375
-        },
-        {
-          "name": "λиúвιѕ | cola-team.es",
-          "score": 0,
-          "time": "54m 11s",
-          "seconds": 3251.357177734375
-        },
-        {
-          "name": "Tenko Xi.",
-          "score": 0,
-          "time": "43m 33s",
-          "seconds": 2613.64013671875
-        },
-        {
-          "name": ".bardak!",
-          "score": 0,
-          "time": "41m 17s",
-          "seconds": 2477.827880859375
-        },
-        {
-          "name": "Nango",
-          "score": 0,
-          "time": "41m 14s",
-          "seconds": 2474.296630859375
-        },
-        {
-          "name": "☆𝓅么 ⋆｡°✟☯ Faith",
-          "score": 0,
-          "time": "40m 12s",
-          "seconds": 2412.04345703125
-        },
-        {
-          "name": "nikosprobatas38",
-          "score": 0,
-          "time": "34m 48s",
-          "seconds": 2088.61083984375
-        },
-        {
-          "name": "WashingMachine",
-          "score": 0,
-          "time": "33m 38s",
-          "seconds": 2018.532958984375
+          "time": "1h 22m",
+          "seconds": 4964.412109375
         },
         {
           "name": "Guo | cola-team.es",
           "score": 0,
-          "time": "24m 43s",
-          "seconds": 1483.4464111328125
+          "time": "1h 22m",
+          "seconds": 4964.34814453125
         },
         {
-          "name": "CHRIS",
+          "name": "圣晶石",
           "score": 0,
-          "time": "23m 23s",
-          "seconds": 1403.2735595703125
+          "time": "1h 22m",
+          "seconds": 4964.3193359375
         },
         {
-          "name": "Hyoco",
+          "name": "Faimer",
           "score": 0,
-          "time": "15m 51s",
-          "seconds": 951.956298828125
+          "time": "1h 22m",
+          "seconds": 4963.4755859375
         },
         {
-          "name": "＃ Акв DanTe",
+          "name": "Soba | cola-team.es",
           "score": 0,
-          "time": "12m 27s",
-          "seconds": 747.3779296875
+          "time": "1h 22m",
+          "seconds": 4946.6962890625
         },
         {
-          "name": "Alucard",
+          "name": ".::RoW::. ☭NapoleoN_35☭",
           "score": 0,
-          "time": "12m 18s",
-          "seconds": 738.2529296875
-        },
-        {
-          "name": "FPTyel",
-          "score": 0,
-          "time": "10m 51s",
-          "seconds": 651.3936157226562
-        },
-        {
-          "name": "Осень",
-          "score": 0,
-          "time": "5m 41s",
-          "seconds": 341.6723327636719
+          "time": "1h 21m",
+          "seconds": 4902.56982421875
         },
         {
           "name": "KOCHENG cola-team.es",
           "score": 0,
-          "time": "5m 14s",
-          "seconds": 314.76617431640625
+          "time": "1h 21m",
+          "seconds": 4885.76416015625
         },
         {
-          "name": "patmat",
+          "name": "bakani_:3",
           "score": 0,
-          "time": "4m 11s",
-          "seconds": 251.64073181152344
+          "time": "1h 21m",
+          "seconds": 4885.029296875
         },
         {
-          "name": "Arz1k",
+          "name": "yetsze",
           "score": 0,
-          "time": "0m 28s",
-          "seconds": 28.420137405395508
+          "time": "1h 20m",
+          "seconds": 4856.0283203125
+        },
+        {
+          "name": "Virix-",
+          "score": 0,
+          "time": "1h 18m",
+          "seconds": 4720.9970703125
+        },
+        {
+          "name": "Waizer",
+          "score": 0,
+          "time": "1h 13m",
+          "seconds": 4418.37451171875
+        },
+        {
+          "name": "Chronoa❀",
+          "score": 0,
+          "time": "1h 08m",
+          "seconds": 4124.06494140625
+        },
+        {
+          "name": "the_only_straight_guy",
+          "score": 0,
+          "time": "1h 03m",
+          "seconds": 3839.71484375
+        },
+        {
+          "name": "Taizer",
+          "score": 0,
+          "time": "1h 02m",
+          "seconds": 3772.76123046875
+        },
+        {
+          "name": "ChisaDi",
+          "score": 0,
+          "time": "1h 02m",
+          "seconds": 3724.4658203125
+        },
+        {
+          "name": "Nidus",
+          "score": 0,
+          "time": "1h 00m",
+          "seconds": 3645.244873046875
+        },
+        {
+          "name": "kaizer",
+          "score": 0,
+          "time": "58m 28s",
+          "seconds": 3508.54150390625
+        },
+        {
+          "name": "Emmieee :>",
+          "score": 0,
+          "time": "57m 44s",
+          "seconds": 3464.65087890625
+        },
+        {
+          "name": "mаsЯna",
+          "score": 0,
+          "time": "54m 34s",
+          "seconds": 3274.096435546875
+        },
+        {
+          "name": "Gaizer",
+          "score": 0,
+          "time": "53m 20s",
+          "seconds": 3200.06787109375
+        },
+        {
+          "name": "fridge",
+          "score": 0,
+          "time": "41m 24s",
+          "seconds": 2484.414306640625
+        },
+        {
+          "name": "Baizer",
+          "score": 0,
+          "time": "41m 18s",
+          "seconds": 2478.802978515625
+        },
+        {
+          "name": "UniVice",
+          "score": 0,
+          "time": "39m 04s",
+          "seconds": 2344.66357421875
+        },
+        {
+          "name": ".bardak!",
+          "score": 0,
+          "time": "30m 11s",
+          "seconds": 1811.4010009765625
+        },
+        {
+          "name": "enjuuu10",
+          "score": 0,
+          "time": "30m 07s",
+          "seconds": 1807.774658203125
+        },
+        {
+          "name": "dumbazz",
+          "score": 0,
+          "time": "25m 47s",
+          "seconds": 1547.1351318359375
+        },
+        {
+          "name": "provocative",
+          "score": 0,
+          "time": "25m 28s",
+          "seconds": 1528.817138671875
+        },
+        {
+          "name": "Traicer | ze.cola-team.es",
+          "score": 0,
+          "time": "19m 00s",
+          "seconds": 1140.5133056640625
+        },
+        {
+          "name": "Haiser",
+          "score": 0,
+          "time": "15m 05s",
+          "seconds": 905.5430908203125
+        },
+        {
+          "name": "pizza familijna",
+          "score": 0,
+          "time": "10m 31s",
+          "seconds": 631.2531127929688
+        },
+        {
+          "name": "saizer",
+          "score": 0,
+          "time": "9m 09s",
+          "seconds": 549.3215942382812
+        },
+        {
+          "name": "FPTyel",
+          "score": 0,
+          "time": "2m 38s",
+          "seconds": 158.4619903564453
+        },
+        {
+          "name": "DANILA_GARILA",
+          "score": 0,
+          "time": "0m 14s",
+          "seconds": 14.056339263916016
         }
       ],
       "has_player_roster": true,
-      "map_start_time": 1793977359
+      "map_start_time": 1793981632.2348633
     },
     "rss": {
       "online": true,
       "status": "Online",
       "server_name": "[RSS] 좀비 탈출 | discord.gg/rssze",
-      "map": "ze_lotr_minas_tiret_p",
-      "players": "4/64",
-      "curr_players": 4,
+      "map": "ze_luciddreams_cs2",
+      "players": "9/64",
+      "curr_players": 9,
       "max_players": 64,
-      "ping": "90 ms",
-      "rtt": 90,
+      "ping": "259 ms",
+      "rtt": 259,
       "players_list": [
         {
-          "name": "부에에에엨2017",
+          "name": "메즈",
           "score": 0,
-          "time": "0m 24s",
-          "seconds": 24.928821563720703
+          "time": "5m 51s",
+          "seconds": 351.7899475097656
         },
         {
-          "name": "7 Wonders",
+          "name": "브랜서",
           "score": 0,
-          "time": "0m 20s",
-          "seconds": 20.44452476501465
+          "time": "5m 45s",
+          "seconds": 345.4774169921875
+        },
+        {
+          "name": "once",
+          "score": 0,
+          "time": "5m 44s",
+          "seconds": 344.71160888671875
+        },
+        {
+          "name": "Mai",
+          "score": 0,
+          "time": "5m 42s",
+          "seconds": 342.4147644042969
+        },
+        {
+          "name": "Strč prst skrz krk",
+          "score": 0,
+          "time": "5m 33s",
+          "seconds": 333.7742004394531
+        },
+        {
+          "name": "^-^",
+          "score": 0,
+          "time": "5m 32s",
+          "seconds": 332.008544921875
+        },
+        {
+          "name": "Malrang",
+          "score": 0,
+          "time": "5m 14s",
+          "seconds": 314.5236511230469
+        },
+        {
+          "name": "Trailblazer",
+          "score": 0,
+          "time": "5m 11s",
+          "seconds": 311.320556640625
         },
         {
           "name": "HARTH",
           "score": 0,
-          "time": "0m 20s",
-          "seconds": 20.24141502380371
-        },
-        {
-          "name": "겨울",
-          "score": 0,
-          "time": "0m 13s",
-          "seconds": 13.334866523742676
+          "time": "4m 03s",
+          "seconds": 243.86770629882812
         }
       ],
       "has_player_roster": true,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986245.2100525
     },
     "net4all": {
       "online": true,
       "status": "Online",
       "server_name": "Zombie::[Net4ALL.RU]::Workshop|SSD [CS 2]",
-      "map": "ze_level37_lofty",
-      "players": "23/65",
-      "curr_players": 23,
+      "map": "ze_2012_p",
+      "players": "38/65",
+      "curr_players": 38,
       "max_players": 65,
-      "ping": "242 ms",
-      "rtt": 242,
+      "ping": "248 ms",
+      "rtt": 248,
       "players_list": [
         {
-          "name": "sas-nooley",
-          "score": 1,
-          "time": "3m 50s",
-          "seconds": 230.0
+          "name": "Scottish Egg",
+          "score": 3,
+          "time": "9m 45s",
+          "seconds": 585.0
         },
         {
-          "name": "невменяемый",
-          "score": 1,
-          "time": "3m 05s",
-          "seconds": 185.0
-        },
-        {
-          "name": "DouBle-One-1",
-          "score": 1,
-          "time": "3m 30s",
-          "seconds": 210.0
+          "name": "=liroy=",
+          "score": 3,
+          "time": "11m 10s",
+          "seconds": 670.0
         },
         {
           "name": "♥ȑ£√£ñğ£♥",
-          "score": 0,
-          "time": "2m 40s",
-          "seconds": 160.0
+          "score": 2,
+          "time": "10m 25s",
+          "seconds": 625.0
         },
         {
-          "name": "EarthAMG",
-          "score": 0,
-          "time": "3m 45s",
-          "seconds": 225.0
+          "name": "DETPUL",
+          "score": 2,
+          "time": "10m 20s",
+          "seconds": 620.0
         },
         {
-          "name": "onceagaintothedream",
-          "score": 0,
-          "time": "3m 45s",
-          "seconds": 225.0
+          "name": "antoniogazho",
+          "score": 2,
+          "time": "11m 05s",
+          "seconds": 665.0
         },
         {
-          "name": "eightiesheadachetape",
+          "name": "all mute",
+          "score": 2,
+          "time": "10m 25s",
+          "seconds": 625.0
+        },
+        {
+          "name": "Head_Shot",
+          "score": 2,
+          "time": "10m 45s",
+          "seconds": 645.0
+        },
+        {
+          "name": "Dᴰᵉⁿʲⁱ",
+          "score": 2,
+          "time": "11m 00s",
+          "seconds": 660.0
+        },
+        {
+          "name": "n13b123",
+          "score": 1,
+          "time": "11m 10s",
+          "seconds": 670.0
+        },
+        {
+          "name": "karol_dota",
+          "score": 1,
+          "time": "11m 00s",
+          "seconds": 660.0
+        },
+        {
+          "name": "Argonaftt",
+          "score": 1,
+          "time": "10m 45s",
+          "seconds": 645.0
+        },
+        {
+          "name": "♪𝙜𝙤𝙙⇆ℏ",
+          "score": 1,
+          "time": "10m 50s",
+          "seconds": 650.0
+        },
+        {
+          "name": "Кроксик Up Want",
+          "score": 1,
+          "time": "10m 50s",
+          "seconds": 650.0
+        },
+        {
+          "name": "Противоречие",
+          "score": 1,
+          "time": "9m 40s",
+          "seconds": 580.0
+        },
+        {
+          "name": "Ofta",
+          "score": 0,
+          "time": "11m 10s",
+          "seconds": 670.0
+        },
+        {
+          "name": "www",
+          "score": 0,
+          "time": "1m 00s",
+          "seconds": 60.0
+        },
+        {
+          "name": "CnepmaⱭ͞ ̶͞ ̶͞ﻝﮞ",
+          "score": 0,
+          "time": "11m 05s",
+          "seconds": 665.0
+        },
+        {
+          "name": "XYX_228",
+          "score": 0,
+          "time": "11m 10s",
+          "seconds": 670.0
+        },
+        {
+          "name": "den",
+          "score": 0,
+          "time": "10m 55s",
+          "seconds": 655.0
+        },
+        {
+          "name": "Mishiko",
+          "score": 0,
+          "time": "10m 45s",
+          "seconds": 645.0
+        },
+        {
+          "name": "korbit",
+          "score": 0,
+          "time": "10m 40s",
+          "seconds": 640.0
+        },
+        {
+          "name": "Vagrant ︻ デ",
+          "score": 0,
+          "time": "10m 40s",
+          "seconds": 640.0
+        },
+        {
+          "name": "хог 2.6",
+          "score": 0,
+          "time": "5m 55s",
+          "seconds": 355.0
+        },
+        {
+          "name": "Lord Vader",
+          "score": 0,
+          "time": "11m 05s",
+          "seconds": 665.0
+        },
+        {
+          "name": "CyberKotleta057",
+          "score": 0,
+          "time": "10m 20s",
+          "seconds": 620.0
+        },
+        {
+          "name": "fenzik",
+          "score": 0,
+          "time": "10m 55s",
+          "seconds": 655.0
+        },
+        {
+          "name": "Ded",
+          "score": 0,
+          "time": "3m 40s",
+          "seconds": 220.0
+        },
+        {
+          "name": "AllMuteCantListenPhilipino",
+          "score": 0,
+          "time": "5m 40s",
+          "seconds": 340.0
+        },
+        {
+          "name": "титькастый)",
           "score": 0,
           "time": "3m 50s",
           "seconds": 230.0
+        },
+        {
+          "name": "ponosbek",
+          "score": 0,
+          "time": "3m 35s",
+          "seconds": 215.0
+        },
+        {
+          "name": "Без_нега! \"❤️🩹",
+          "score": 0,
+          "time": "1m 00s",
+          "seconds": 60.0
+        },
+        {
+          "name": "𝒉𝒐𝒔𝒕𝒊𝒍☾",
+          "score": 0,
+          "time": "1m 00s",
+          "seconds": 60.0
         },
         {
           "name": "₡҈Ⱥ҈М҈ П҈Ǿ ₡҈ɆБɆ",
           "score": 0,
           "time": "0m 10s",
           "seconds": 10.0
-        },
-        {
-          "name": "Vagrant ︻ デ",
-          "score": 0,
-          "time": "3m 30s",
-          "seconds": 210.0
-        },
-        {
-          "name": "Emma Hix",
-          "score": 0,
-          "time": "3m 25s",
-          "seconds": 205.0
-        },
-        {
-          "name": "AekherMeister",
-          "score": 0,
-          "time": "2m 15s",
-          "seconds": 135.0
-        },
-        {
-          "name": "Winnie",
-          "score": 0,
-          "time": "2m 30s",
-          "seconds": 150.0
-        },
-        {
-          "name": "Bruh",
-          "score": 0,
-          "time": "3m 50s",
-          "seconds": 230.0
-        },
-        {
-          "name": "титькастый)",
-          "score": 0,
-          "time": "2m 50s",
-          "seconds": 170.0
-        },
-        {
-          "name": "Anisttti",
-          "score": 0,
-          "time": "3m 40s",
-          "seconds": 220.0
-        },
-        {
-          "name": "misha_litvin",
-          "score": 0,
-          "time": "3m 00s",
-          "seconds": 180.0
-        },
-        {
-          "name": "raiizeuryoshi",
-          "score": 0,
-          "time": "3m 35s",
-          "seconds": 215.0
-        },
-        {
-          "name": "Ycovlev7",
-          "score": 0,
-          "time": "2m 50s",
-          "seconds": 170.0
         }
       ],
       "has_player_roster": true,
-      "map_start_time": 1793977359
+      "map_start_time": 1793985927.0
     },
     "exg_8": {
       "online": true,
       "status": "Online",
       "server_name": "EXG社区☣️僵尸逃跑 Ｑ群688291343 ZE装备 #8",
-      "map": "ze_aot_trost_v6r",
-      "players": "58/64",
-      "curr_players": 58,
+      "map": "ze_devil_may_cry",
+      "players": "63/64",
+      "curr_players": 63,
       "max_players": 64,
-      "ping": "352 ms",
-      "rtt": 352,
+      "ping": "337 ms",
+      "rtt": 337,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_3": {
       "online": true,
       "status": "Online",
       "server_name": "EXG社区☣️僵尸逃跑 Ｑ群688291343 ZE装备 #3",
-      "map": "ze_minecraft_manor_panic",
-      "players": "64/64",
-      "curr_players": 64,
+      "map": "ze_inboxed_p",
+      "players": "0/64",
+      "curr_players": 0,
       "max_players": 64,
-      "ping": "320 ms",
-      "rtt": 320,
+      "ping": "337 ms",
+      "rtt": 337,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_16": {
       "online": true,
       "status": "Online",
       "server_name": "EXG社区☣️僵尸逃跑 Ｑ群688291343 ZE装备 #16",
-      "map": "ze_obf_rampage_v24",
+      "map": "ze_obj_abyss_v2",
       "players": "64/64",
       "curr_players": 64,
       "max_players": 64,
@@ -1003,133 +1251,133 @@
       "rtt": 316,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_11": {
-      "online": true,
-      "status": "Online",
-      "server_name": "EXG社区☣️僵尸逃跑 Ｑ群688291343 ZE装备 #11",
-      "map": "ze_ruin_of_black_stone",
-      "players": "64/64",
-      "curr_players": 64,
-      "max_players": 64,
-      "ping": "333 ms",
-      "rtt": 333,
+      "online": false,
+      "status": "Offline / Query Blocked",
+      "server_name": "",
+      "map": "-",
+      "players": "-/-",
+      "curr_players": 0,
+      "max_players": 0,
+      "ping": "Timeout",
+      "rtt": 0,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_pve2": {
       "online": true,
       "status": "Online",
       "server_name": "EXG社区☣️僵尸逃跑 Ｑ群929982837 PVE模式 #2",
-      "map": "ze_backrooms_insomnia",
-      "players": "60/64",
-      "curr_players": 60,
+      "map": "ze_obj_redheart",
+      "players": "58/64",
+      "curr_players": 58,
       "max_players": 64,
-      "ping": "353 ms",
-      "rtt": 353,
+      "ping": "254 ms",
+      "rtt": 254,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_pve1": {
       "online": true,
       "status": "Online",
       "server_name": "EXG社区☣️僵尸逃跑 Ｑ群929982837 PVE模式 #1",
-      "map": "ze_incident_seasons",
-      "players": "31/64",
-      "curr_players": 31,
+      "map": "ze_mars_escape_xmas",
+      "players": "33/64",
+      "curr_players": 33,
       "max_players": 64,
-      "ping": "311 ms",
-      "rtt": 311,
+      "ping": "285 ms",
+      "rtt": 285,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_13": {
       "online": true,
       "status": "Online",
       "server_name": "EXG社区☣️僵尸逃跑 Ｑ群688291343 ZE装备 #13 ",
-      "map": "ze_mkzk_scarab_v4_remake",
-      "players": "58/64",
-      "curr_players": 58,
+      "map": "ze_crashbandicoot_p",
+      "players": "3/64",
+      "curr_players": 3,
       "max_players": 64,
-      "ping": "311 ms",
-      "rtt": 311,
+      "ping": "292 ms",
+      "rtt": 292,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_5": {
       "online": true,
       "status": "Online",
       "server_name": "EXG社区☣️僵尸逃跑 Ｑ群688291343 ZE #5",
-      "map": "ze_parking_p",
+      "map": "ze_beyond_the_boundary",
       "players": "0/64",
       "curr_players": 0,
       "max_players": 64,
-      "ping": "319 ms",
-      "rtt": 319,
+      "ping": "316 ms",
+      "rtt": 316,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_12": {
       "online": true,
       "status": "Online",
       "server_name": "EXG社区☣️僵尸逃跑 Ｑ群688291343 ZE装备 #12",
-      "map": "ze_backrooms_insomnia",
-      "players": "64/64",
-      "curr_players": 64,
+      "map": "ze_biohazard2_sewer_004",
+      "players": "1/64",
+      "curr_players": 1,
       "max_players": 64,
-      "ping": "324 ms",
-      "rtt": 324,
+      "ping": "278 ms",
+      "rtt": 278,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_6": {
       "online": true,
       "status": "Online",
       "server_name": "EXG社区☣️僵尸逃跑 Ｑ群688291343 ZE #6",
-      "map": "ze_waterpark",
+      "map": "ze_inboxed_p",
       "players": "0/64",
       "curr_players": 0,
       "max_players": 64,
-      "ping": "342 ms",
-      "rtt": 342,
+      "ping": "253 ms",
+      "rtt": 253,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_10": {
-      "online": true,
-      "status": "Online",
-      "server_name": "EXG社区☣️僵尸逃跑 Ｑ群688291343 ZE装备 #10",
-      "map": "ze_indiana_jones_004_p",
-      "players": "0/64",
+      "online": false,
+      "status": "Offline / Query Blocked",
+      "server_name": "",
+      "map": "-",
+      "players": "-/-",
       "curr_players": 0,
-      "max_players": 64,
-      "ping": "312 ms",
-      "rtt": 312,
+      "max_players": 0,
+      "ping": "Timeout",
+      "rtt": 0,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_9": {
-      "online": true,
-      "status": "Online",
-      "server_name": "EXG社区☣️僵尸逃跑 Ｑ群688291343 ZE装备 #9",
-      "map": "ze_descent_into_cerberon_p",
-      "players": "59/64",
-      "curr_players": 59,
-      "max_players": 64,
-      "ping": "314 ms",
-      "rtt": 314,
+      "online": false,
+      "status": "Offline / Query Blocked",
+      "server_name": "",
+      "map": "-",
+      "players": "-/-",
+      "curr_players": 0,
+      "max_players": 0,
+      "ping": "Timeout",
+      "rtt": 0,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_17": {
       "online": false,
@@ -1143,49 +1391,49 @@
       "rtt": 0,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_7": {
       "online": true,
       "status": "Online",
       "server_name": "EXG社区☣️僵尸逃跑 Ｑ群688291343 ZE装备 #7",
-      "map": "ze_aragami_p",
-      "players": "60/64",
-      "curr_players": 60,
+      "map": "ze_silent_hill_2_illusion",
+      "players": "63/64",
+      "curr_players": 63,
       "max_players": 64,
-      "ping": "336 ms",
-      "rtt": 336,
+      "ping": "331 ms",
+      "rtt": 331,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_18": {
       "online": true,
       "status": "Online",
       "server_name": "EXG社区☣️僵尸逃跑 Ｑ群688291343 ZE装备 #18",
-      "map": "ze_zombiemod_corporation_p",
-      "players": "13/64",
-      "curr_players": 13,
+      "map": "ze_30_seconds_p",
+      "players": "1/64",
+      "curr_players": 1,
       "max_players": 64,
-      "ping": "317 ms",
-      "rtt": 317,
+      "ping": "364 ms",
+      "rtt": 364,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "exg_14": {
       "online": true,
       "status": "Online",
       "server_name": "EXG社区☣️僵尸逃跑 Ｑ群688291343 ZE装备 #14",
-      "map": "ze_waterpark",
-      "players": "8/136",
-      "curr_players": 8,
+      "map": "ze_jurassic_life",
+      "players": "0/136",
+      "curr_players": 0,
       "max_players": 136,
-      "ping": "346 ms",
-      "rtt": 346,
+      "ping": "337 ms",
+      "rtt": 337,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "fys_8": {
       "online": true,
@@ -1195,8 +1443,8 @@
       "players": "0/64",
       "curr_players": 0,
       "max_players": 64,
-      "ping": "371 ms",
-      "rtt": 371,
+      "ping": "348 ms",
+      "rtt": 348,
       "players_list": [],
       "has_player_roster": false,
       "map_start_time": 1793977359
@@ -1205,43 +1453,43 @@
       "online": true,
       "status": "Online",
       "server_name": " ❤️【風  雲】 僵尸逃跑 03# Q群:858956231",
-      "map": "ze_imperium",
-      "players": "55/64",
-      "curr_players": 55,
+      "map": "ze_escape_the_eye_p",
+      "players": "0/64",
+      "curr_players": 0,
       "max_players": 64,
-      "ping": "364 ms",
-      "rtt": 364,
+      "ping": "360 ms",
+      "rtt": 360,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "fys_7": {
-      "online": false,
-      "status": "Offline / Query Blocked",
-      "server_name": "",
-      "map": "-",
-      "players": "-/-",
+      "online": true,
+      "status": "Online",
+      "server_name": " ❤️【風  雲】 僵尸逃跑 07# Q群:858956231",
+      "map": "ze_icecap_escape_p",
+      "players": "0/64",
       "curr_players": 0,
-      "max_players": 0,
-      "ping": "Timeout",
-      "rtt": 0,
+      "max_players": 64,
+      "ping": "357 ms",
+      "rtt": 357,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "fys_1": {
       "online": true,
       "status": "Online",
       "server_name": " ❤️【風  雲】 僵尸逃跑 01# Q群:858956231",
-      "map": "ze_undead_shrine_p",
-      "players": "47/64",
-      "curr_players": 47,
+      "map": "ze_minecraft_p",
+      "players": "64/64",
+      "curr_players": 64,
       "max_players": 64,
-      "ping": "386 ms",
-      "rtt": 386,
+      "ping": "391 ms",
+      "rtt": 391,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "fys_5": {
       "online": true,
@@ -1251,8 +1499,8 @@
       "players": "0/64",
       "curr_players": 0,
       "max_players": 64,
-      "ping": "352 ms",
-      "rtt": 352,
+      "ping": "358 ms",
+      "rtt": 358,
       "players_list": [],
       "has_player_roster": false,
       "map_start_time": 1793977359
@@ -1265,8 +1513,8 @@
       "players": "0/64",
       "curr_players": 0,
       "max_players": 64,
-      "ping": "361 ms",
-      "rtt": 361,
+      "ping": "366 ms",
+      "rtt": 366,
       "players_list": [],
       "has_player_roster": false,
       "map_start_time": 1793977359
@@ -1275,43 +1523,43 @@
       "online": true,
       "status": "Online",
       "server_name": "UB社区 CS2 僵尸逃跑 #03 Q群 647885103",
-      "map": "ze_chip_n_dale",
-      "players": "22/64",
-      "curr_players": 22,
+      "map": "ze_downstairs",
+      "players": "0/64",
+      "curr_players": 0,
       "max_players": 64,
-      "ping": "368 ms",
-      "rtt": 368,
+      "ping": "356 ms",
+      "rtt": 356,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "ub_1": {
-      "online": false,
-      "status": "Offline / Query Blocked",
-      "server_name": "",
-      "map": "-",
-      "players": "-/-",
+      "online": true,
+      "status": "Online",
+      "server_name": "UB社区 CS2 僵尸逃跑 #01 Q群 647885103",
+      "map": "ze_elevator_escape_p",
+      "players": "0/64",
       "curr_players": 0,
-      "max_players": 0,
-      "ping": "Timeout",
-      "rtt": 0,
+      "max_players": 64,
+      "ping": "360 ms",
+      "rtt": 360,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "ub_2": {
-      "online": false,
-      "status": "Offline / Query Blocked",
-      "server_name": "",
-      "map": "-",
-      "players": "-/-",
+      "online": true,
+      "status": "Online",
+      "server_name": "UB社区 CS2 僵尸逃跑 #02 Q群 647885103",
+      "map": "ze_magic_carpet_p",
+      "players": "0/64",
       "curr_players": 0,
-      "max_players": 0,
-      "ping": "Timeout",
-      "rtt": 0,
+      "max_players": 64,
+      "ping": "360 ms",
+      "rtt": 360,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "ub_11": {
       "online": true,
@@ -1321,53 +1569,53 @@
       "players": "0/64",
       "curr_players": 0,
       "max_players": 64,
-      "ping": "385 ms",
-      "rtt": 385,
+      "ping": "389 ms",
+      "rtt": 389,
       "players_list": [],
       "has_player_roster": false,
       "map_start_time": 1793977359
     },
     "ub_12": {
-      "online": false,
-      "status": "Offline / Query Blocked",
-      "server_name": "",
-      "map": "-",
-      "players": "-/-",
-      "curr_players": 0,
-      "max_players": 0,
-      "ping": "Timeout",
-      "rtt": 0,
-      "players_list": [],
-      "has_player_roster": false,
-      "map_start_time": 1793977359
-    },
-    "ub_13": {
-      "online": false,
-      "status": "Offline / Query Blocked",
-      "server_name": "",
-      "map": "-",
-      "players": "-/-",
-      "curr_players": 0,
-      "max_players": 0,
-      "ping": "Timeout",
-      "rtt": 0,
-      "players_list": [],
-      "has_player_roster": false,
-      "map_start_time": 1793977359
-    },
-    "zl_2": {
       "online": true,
       "status": "Online",
-      "server_name": "【僵尸乐园】 CS2 ZE #2",
-      "map": "ze_backroom_level4_v1",
-      "players": "59/64",
-      "curr_players": 59,
+      "server_name": "UB社区 CS2 僵尸逃跑 #12 Q群 647885103",
+      "map": "ze_einstein_p",
+      "players": "0/64",
+      "curr_players": 0,
       "max_players": 64,
-      "ping": "373 ms",
-      "rtt": 373,
+      "ping": "382 ms",
+      "rtt": 382,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
+    },
+    "ub_13": {
+      "online": true,
+      "status": "Online",
+      "server_name": "UB社区 CS2 僵尸逃跑 #13 Q群 647885103",
+      "map": "ze_little_trip",
+      "players": "0/64",
+      "curr_players": 0,
+      "max_players": 64,
+      "ping": "374 ms",
+      "rtt": 374,
+      "players_list": [],
+      "has_player_roster": false,
+      "map_start_time": 1793986597
+    },
+    "zl_2": {
+      "online": false,
+      "status": "Offline / Query Blocked",
+      "server_name": "",
+      "map": "-",
+      "players": "-/-",
+      "curr_players": 0,
+      "max_players": 0,
+      "ping": "Timeout",
+      "rtt": 0,
+      "players_list": [],
+      "has_player_roster": false,
+      "map_start_time": 1793986597
     },
     "zl_1": {
       "online": false,
@@ -1381,21 +1629,21 @@
       "rtt": 0,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "zl_3": {
       "online": true,
       "status": "Online",
       "server_name": "【僵尸乐园】 CS2 ZE #3",
-      "map": "ze_neko_canyon_p",
+      "map": "ze_30_seconds_p",
       "players": "1/64",
       "curr_players": 1,
       "max_players": 64,
-      "ping": "371 ms",
-      "rtt": 371,
+      "ping": "370 ms",
+      "rtt": 370,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "zl_4": {
       "online": false,
@@ -1409,21 +1657,21 @@
       "rtt": 0,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "zl_5": {
-      "online": false,
-      "status": "Offline / Query Blocked",
-      "server_name": "",
-      "map": "-",
-      "players": "-/-",
+      "online": true,
+      "status": "Online",
+      "server_name": "【僵尸乐园】 CS2 ZE #5",
+      "map": "ze_aztecnoob_p",
+      "players": "0/64",
       "curr_players": 0,
-      "max_players": 0,
-      "ping": "Timeout",
-      "rtt": 0,
+      "max_players": 64,
+      "ping": "355 ms",
+      "rtt": 355,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "93x_1": {
       "online": false,
@@ -1437,7 +1685,7 @@
       "rtt": 0,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     },
     "93x_2": {
       "online": false,
@@ -1451,7 +1699,7 @@
       "rtt": 0,
       "players_list": [],
       "has_player_roster": false,
-      "map_start_time": 1793977359
+      "map_start_time": 1793986597
     }
   }
 }

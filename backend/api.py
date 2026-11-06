@@ -357,34 +357,55 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
             "player_duration": 0
         }
 
+import ssl
+
+SSL_CTX = ssl.create_default_context()
+SSL_CTX.check_hostname = False
+SSL_CTX.verify_mode = ssl.CERT_NONE
+
+ZEGRAPH_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://zegraph.xyz/",
+    "Origin": "https://zegraph.xyz"
+}
+
 GFL_INTEL_CACHE = {"timestamp": 0, "match": None, "musics": []}
 
 def fetch_gfl_intel(gfl_map: str):
     now = time.time()
-    if GFL_INTEL_CACHE["match"] and (now - GFL_INTEL_CACHE["timestamp"] < 5):
+    # Cache for 4 seconds
+    if GFL_INTEL_CACHE.get("match") is not None and (now - GFL_INTEL_CACHE.get("timestamp", 0) < 4.0):
         return GFL_INTEL_CACHE["match"], GFL_INTEL_CACHE["musics"]
 
-    match_data = None
-    musics_data = []
+    # Retain existing match data as fallback
+    match_data = GFL_INTEL_CACHE.get("match")
+    musics_data = GFL_INTEL_CACHE.get("musics", [])
+
+    # 1. Match now
     try:
         url = "https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        res = json.loads(urllib.request.urlopen(req, timeout=2.5).read().decode("utf-8"))
-        if res.get("code") == 0:
-            match_data = res.get("data")
-    except Exception:
-        pass
+        req = urllib.request.Request(url, headers=ZEGRAPH_HEADERS)
+        with urllib.request.urlopen(req, timeout=4.0, context=SSL_CTX) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            if res.get("code") == 0 and res.get("data"):
+                match_data = res.get("data")
+    except Exception as e:
+        print(f"[ZEGRAPH_MATCH_ERROR] {e}")
 
+    # 2. Musics for current active map
     clean_map = gfl_map.strip() if gfl_map else ""
     if clean_map and clean_map != "-":
         try:
             murl = f"https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/{clean_map}/musics"
-            req2 = urllib.request.Request(murl, headers={"User-Agent": "Mozilla/5.0"})
-            mres = json.loads(urllib.request.urlopen(req2, timeout=2.5).read().decode("utf-8"))
-            if mres.get("code") == 0:
-                musics_data = mres.get("data", [])
+            req2 = urllib.request.Request(murl, headers=ZEGRAPH_HEADERS)
+            with urllib.request.urlopen(req2, timeout=4.0, context=SSL_CTX) as resp2:
+                mres = json.loads(resp2.read().decode("utf-8"))
+                if mres.get("code") == 0:
+                    musics_data = mres.get("data", [])
         except Exception:
-            pass
+            musics_data = []
 
     GFL_INTEL_CACHE["match"] = match_data
     GFL_INTEL_CACHE["musics"] = musics_data
@@ -436,6 +457,15 @@ def get_servers():
     CACHE["data"] = fresh_data
     CACHE["timestamp"] = now
     return fresh_data
+
+@app.get("/api/debug/gfl-intel")
+def debug_gfl_intel():
+    match, musics = fetch_gfl_intel("ze_journey_p")
+    return {
+        "match": match,
+        "sample_musics_count": len(musics),
+        "cache": GFL_INTEL_CACHE
+    }
 
 @app.get("/api/servers/{server_id}")
 def get_server_detail(server_id: str):
