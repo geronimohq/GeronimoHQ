@@ -24,7 +24,10 @@ import {
   X,
   Clock,
   Trophy,
-  Rocket
+  Rocket,
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 
 type PrimaryTab = 'global' | 'china';
@@ -37,9 +40,22 @@ export const ServerRadarPreview: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<LiveTelemetryPayload | null>(null);
 
-  // Player Roster Modal State
+  // Player Modal State & Sorting
+  type PlayerSortField = 'name' | 'score' | 'duration';
+  type PlayerSortOrder = 'asc' | 'desc';
   const [activeModalServer, setActiveModalServer] = useState<ZEServer | null>(null);
   const [modalSearch, setModalSearch] = useState('');
+  const [playerSortField, setPlayerSortField] = useState<PlayerSortField>('duration');
+  const [playerSortOrder, setPlayerSortOrder] = useState<PlayerSortOrder>('desc');
+
+  const handlePlayerSort = (field: PlayerSortField) => {
+    if (playerSortField === field) {
+      setPlayerSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setPlayerSortField(field);
+      setPlayerSortOrder(field === 'name' ? 'asc' : 'desc');
+    }
+  };
 
   // Initial & periodic telemetry fetch (auto-refreshes every 5s with cache-busting)
   const loadTelemetry = useCallback(async () => {
@@ -123,15 +139,27 @@ export const ServerRadarPreview: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Modal player filtering
+  // Modal player filtering & sorting
   const activePlayersList = useMemo(() => {
     if (!activeModalServer) return [];
     const serverLive = telemetry?.servers?.[activeModalServer.id];
     const list: PlayerEntry[] = serverLive?.players_list || [];
-    if (!modalSearch.trim()) return list;
-    const q = modalSearch.toLowerCase();
-    return list.filter((p) => p.name.toLowerCase().includes(q));
-  }, [activeModalServer, telemetry, modalSearch]);
+    const filtered = !modalSearch.trim()
+      ? [...list]
+      : list.filter((p) => p.name.toLowerCase().includes(modalSearch.toLowerCase()));
+
+    return filtered.sort((a, b) => {
+      let cmp = 0;
+      if (playerSortField === 'name') {
+        cmp = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+      } else if (playerSortField === 'score') {
+        cmp = a.score - b.score;
+      } else if (playerSortField === 'duration') {
+        cmp = (a.seconds || 0) - (b.seconds || 0);
+      }
+      return playerSortOrder === 'asc' ? cmp : -cmp;
+    });
+  }, [activeModalServer, telemetry, modalSearch, playerSortField, playerSortOrder]);
 
   return (
     <section id="server-radar" className="relative w-full max-w-6xl mx-auto px-4 py-12">
@@ -176,20 +204,50 @@ export const ServerRadarPreview: React.FC = () => {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           {/* Left Info */}
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="px-2 py-0.5 text-[10px] font-code rounded bg-amber-950/90 text-amber-300 border border-amber-500/60 font-bold flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-400" />
-                PREMIER FEATURED SERVER
-              </span>
-              <span className="text-[10px] font-code px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300 font-bold">
-                🇺🇸 US CHICAGO
-              </span>
-              <span className="text-[10px] font-code px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 font-bold">
-                GLOBAL SERVER
-              </span>
-              <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold">
-                128 TICK
-              </span>
+            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2 py-0.5 text-[10px] font-code rounded bg-amber-950/90 text-amber-300 border border-amber-500/60 font-bold flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-amber-400" />
+                  PREMIER FEATURED SERVER
+                </span>
+                <span className="text-[10px] font-code px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300 font-bold">
+                  🇺🇸 US CHICAGO
+                </span>
+                <span className="text-[10px] font-code px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 font-bold">
+                  GLOBAL SERVER
+                </span>
+                <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold">
+                  128 TICK
+                </span>
+              </div>
+
+              {/* GFL Community Links (Website & Discord) */}
+              <div className="flex items-center gap-3">
+                {gflServer.website && (
+                  <a
+                    href={gflServer.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-code text-slate-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
+                    title="Visit GFL Clan Portal"
+                  >
+                    <span>Portal</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                {gflServer.discord && (
+                  <a
+                    href={gflServer.discord}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-code text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors font-medium"
+                    title="Join GFL Clan Official Discord"
+                  >
+                    <span>Discord</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
+              </div>
             </div>
 
             <h3 className="text-xl md:text-2xl font-cyber font-black text-white mb-2 flex items-center gap-2">
@@ -553,7 +611,7 @@ export const ServerRadarPreview: React.FC = () => {
                     title="View real-time player list"
                   >
                     <Users className="w-3.5 h-3.5 text-cyan-400" />
-                    <span className="hidden sm:inline">ROSTER</span>
+                    <span className="hidden sm:inline">PLAYERS</span>
                   </button>
                 ) : (
                   <div
@@ -610,7 +668,7 @@ export const ServerRadarPreview: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="px-2 py-0.5 text-[10px] font-code rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 font-bold">
-                    ACTIVE ROSTER
+                    ACTIVE PLAYERS
                   </span>
                   <span className="text-xs font-code text-slate-400">
                     A2S_PLAYER LIVE STREAM
@@ -658,10 +716,49 @@ export const ServerRadarPreview: React.FC = () => {
               <table className="w-full text-left text-xs font-code">
                 <thead className="bg-slate-900 border-b border-slate-800 text-slate-400 sticky top-0">
                   <tr>
-                    <th className="py-2.5 px-3 w-12 text-center">#</th>
-                    <th className="py-2.5 px-3">Player Name</th>
-                    <th className="py-2.5 px-3 text-right">Score</th>
-                    <th className="py-2.5 px-3 text-center">Session Duration</th>
+                    <th className="py-2.5 px-3 w-12 text-center text-slate-500">#</th>
+                    <th 
+                      onClick={() => handlePlayerSort('name')}
+                      className="py-2.5 px-3 cursor-pointer hover:text-cyan-300 transition-colors select-none group"
+                      title="Sort by Player Name (A-Z / Z-A)"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Player Name</span>
+                        {playerSortField === 'name' ? (
+                          playerSortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-cyan-400" /> : <ChevronDown className="w-3.5 h-3.5 text-cyan-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handlePlayerSort('score')}
+                      className="py-2.5 px-3 text-right cursor-pointer hover:text-emerald-300 transition-colors select-none group"
+                      title="Sort by Score (Highest First / Lowest First)"
+                    >
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span>Score</span>
+                        {playerSortField === 'score' ? (
+                          playerSortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-emerald-400" /> : <ChevronDown className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handlePlayerSort('duration')}
+                      className="py-2.5 px-3 text-center cursor-pointer hover:text-cyan-300 transition-colors select-none group"
+                      title="Sort by Session Duration (Longest Played / Recently Joined)"
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span>Session Duration</span>
+                        {playerSortField === 'duration' ? (
+                          playerSortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-cyan-400" /> : <ChevronDown className="w-3.5 h-3.5 text-cyan-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                        )}
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/50 text-slate-300">

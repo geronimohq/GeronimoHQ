@@ -20,11 +20,25 @@ export interface LiveServerInfo {
   map_start_time?: number;
 }
 
+export interface GeronimoPresence {
+  online: boolean;
+  in_game: boolean;
+  state: 'in_server' | 'main_menu' | 'other_game' | 'online' | 'offline';
+  game: string | null;
+  server_id: string | null;
+  server_name: string | null;
+  map: string;
+  players: string;
+  connect_url: string | null;
+  player_duration?: number;
+}
+
 export interface LiveTelemetryPayload {
   timestamp: number;
   iso_time: string;
   total_servers: number;
   online_servers: number;
+  geronimo_presence?: GeronimoPresence;
   servers: Record<string, LiveServerInfo>;
 }
 
@@ -62,27 +76,41 @@ export async function fetchLiveTelemetry(): Promise<LiveTelemetryPayload | null>
 }
 
 /**
- * Persists and returns the timestamp (in seconds) when the current map started.
- * Resets back to current time whenever the map changes.
+ * Returns the timestamp (in seconds) when the current map started.
+ * Prioritizes the authoritative serverTimestamp (calibrated from live player connection durations)
+ * and falls back to client-side localStorage tracking if unavailable.
  */
 export function getMapStartTime(serverId: string, currentMap?: string, serverTimestamp?: number): number {
   if (!currentMap || currentMap === '-' || currentMap === 'Unknown') {
     return Math.floor(Date.now() / 1000);
   }
   const key = `ze_map_start_${serverId}`;
+  const now = Math.floor(Date.now() / 1000);
+
+  // 1. Authoritative serverTimestamp from Render A2S player duration calibration
+  if (serverTimestamp && serverTimestamp > 0 && serverTimestamp <= now) {
+    try {
+      localStorage.setItem(key, JSON.stringify({ map: currentMap, startTime: serverTimestamp }));
+    } catch {
+      // ignore
+    }
+    return serverTimestamp;
+  }
+
+  // 2. Client fallback via localStorage
   try {
     const stored = localStorage.getItem(key);
     if (stored) {
       const parsed = JSON.parse(stored);
-      if (parsed.map === currentMap && typeof parsed.startTime === 'number') {
+      if (parsed.map === currentMap && typeof parsed.startTime === 'number' && parsed.startTime <= now) {
         return parsed.startTime;
       }
     }
   } catch {
-    // ignore localStorage errors
+    // ignore
   }
 
-  const startTime = serverTimestamp || Math.floor(Date.now() / 1000);
+  const startTime = now;
   try {
     localStorage.setItem(key, JSON.stringify({ map: currentMap, startTime }));
   } catch {

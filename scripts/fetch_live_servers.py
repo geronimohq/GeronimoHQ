@@ -252,10 +252,23 @@ def main():
         prev_map = prev_info.get("map")
         prev_start = prev_info.get("map_start_time")
 
+        # Derive actual map duration from players in the server
+        max_player_dur = 0
+        if player_list:
+            valid_durs = [p.get("seconds", 0) for p in player_list if p.get("seconds", 0) > 0]
+            if valid_durs:
+                max_player_dur = max(valid_durs)
+
         if current_map and current_map != "-" and current_map == prev_map and prev_start:
-            map_start_time = prev_start
+            if max_player_dur > 0 and abs((now_ts - prev_start) - max_player_dur) > 30:
+                map_start_time = now_ts - max_player_dur
+            else:
+                map_start_time = prev_start
         else:
-            map_start_time = now_ts
+            if max_player_dur > 0:
+                map_start_time = now_ts - max_player_dur
+            else:
+                map_start_time = now_ts
 
         results[sid] = {
             "online": info.get("online", False),
