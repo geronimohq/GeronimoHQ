@@ -68,13 +68,15 @@ export interface LiveTelemetryPayload {
 const CLOUD_RELAY_URL = 'https://geronimohq-telemetry.onrender.com/api/servers';
 
 export async function fetchLiveTelemetry(): Promise<LiveTelemetryPayload | null> {
+  let payload: LiveTelemetryPayload | null = null;
+
   // 1. Try Live Cloud Relay (for instant sub-second A2S queries across all visitors)
   try {
     const relayRes = await fetch(CLOUD_RELAY_URL, { signal: AbortSignal.timeout(4500) });
     if (relayRes.ok) {
       const liveData = await relayRes.json();
       if (liveData?.servers) {
-        return liveData;
+        payload = liveData;
       }
     }
   } catch {
@@ -82,19 +84,78 @@ export async function fetchLiveTelemetry(): Promise<LiveTelemetryPayload | null>
   }
 
   // 2. Fallback to static GitHub Pages telemetry
-  try {
-    const res = await fetch(`/data/live_servers.json?t=${Date.now()}`, {
-      cache: 'no-cache',
-    });
-    if (!res.ok) {
-      return null;
+  if (!payload) {
+    try {
+      const res = await fetch(`/data/live_servers.json?t=${Date.now()}`, {
+        cache: 'no-cache',
+      });
+      if (res.ok) {
+        payload = await res.json();
+      }
+    } catch (err) {
+      console.warn('[Telemetry] Could not fetch live_servers.json:', err);
     }
-    const data: LiveTelemetryPayload = await res.json();
-    return data;
-  } catch (err) {
-    console.warn('[Telemetry] Could not fetch live_servers.json:', err);
-    return null;
   }
+
+  if (!payload) return null;
+
+  // 3. Direct Browser GFL Intel Enrichment (Human Score, Zombie Score, Extends Left)
+  // Cloudflare rejects datacenter IPs (like Render/AWS) with 403 Forbidden,
+  // but residential & visitor browsers have full direct access via CORS
+  // (Access-Control-Allow-Origin: https://geronimohq.com).
+  try {
+    const matchRes = await fetch('https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now', {
+      signal: AbortSignal.timeout(3500),
+    });
+    if (matchRes.ok) {
+      const matchJson = await matchRes.json();
+      if (matchJson?.data) {
+        payload.gfl_match_now = matchJson.data;
+        // Calibrate GFL map start time from match started_at if valid
+        if (matchJson.data.started_at && payload.servers?.gfl) {
+          const startedSec = Math.floor(new Date(matchJson.data.started_at).getTime() / 1000);
+          if (startedSec > 0) {
+            payload.servers.gfl.map_start_time = startedSec;
+          }
+        }
+      }
+    }
+  } catch {
+    // Keep cached/fallback data if client network is restricted
+  }
+
+  // 4. Direct Browser GFL Soundtrack Intel Enrichment
+  const activeMap = payload.servers?.gfl?.map || payload.gfl_match_now?.map;
+  if (activeMap && activeMap !== '-' && (!payload.gfl_map_musics || payload.gfl_map_musics.length === 0)) {
+    try {
+      let mRes = await fetch(
+        `https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/${encodeURIComponent(activeMap)}/musics`,
+        { signal: AbortSignal.timeout(3000) }
+      );
+      if (mRes.ok) {
+        const mJson = await mRes.json();
+        if (Array.isArray(mJson?.data) && mJson.data.length > 0) {
+          payload.gfl_map_musics = mJson.data;
+        }
+      } else if (activeMap.endsWith('_p')) {
+        const stripped = activeMap.slice(0, -2);
+        mRes = await fetch(
+          `https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/${encodeURIComponent(stripped)}/musics`,
+          { signal: AbortSignal.timeout(3000) }
+        );
+        if (mRes.ok) {
+          const mJson = await mRes.json();
+          if (Array.isArray(mJson?.data) && mJson.data.length > 0) {
+            payload.gfl_map_musics = mJson.data;
+          }
+        }
+      }
+    } catch {
+      // Optional soundtrack enrichment
+    }
+  }
+
+  return payload;
 }
 
 /**
