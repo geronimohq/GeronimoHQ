@@ -186,8 +186,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             {state === 'in_server' ? 'PLAYING CS2 ZOMBIE ESCAPE' : 
              state === 'main_menu' ? 'COUNTER-STRIKE 2' : 
              state === 'other_game' ? `PLAYING ${presence?.game?.toUpperCase() || 'ON STEAM'}` : 
-             state === 'online' ? 'ONLINE ON STEAM' :
-             'OFFLINE ON STEAM'}
+             'STEAM LIVE PRESENCE'}
           </span>
         </div>
 
@@ -250,23 +249,20 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
               <span className="px-1.5 py-0.2 rounded text-[9px] font-sans font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1">
                 <Flame className="w-2 h-2" /> IN-GAME
               </span>
-            ) : state === 'online' ? (
-              <span className="px-1.5 py-0.2 rounded text-[9px] font-sans font-bold bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1">
-                <Clock className="w-2 h-2 text-slate-400" /> IDLE
-              </span>
-            ) : (
-              <span className="px-1.5 py-0.2 rounded text-[9px] font-sans font-bold bg-slate-800 text-slate-400 border border-slate-700/60 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block" /> OFFLINE
-              </span>
-            )}
+            ) : null}
           </div>
 
           {/* Activity Subtitle */}
           <div className="text-xs font-medium font-sans text-[#f2f3f5] truncate flex items-center gap-1.5">
-            {state === 'in_server' || state === 'main_menu' ? (
+            {state === 'in_server' ? (
               <>
-                <Gamepad2 className="w-3.5 h-3.5 text-[#5865f2] flex-shrink-0" />
-                <span className="truncate font-bold">Counter-Strike 2</span>
+                <Gamepad2 className="w-3.5 h-3.5 text-[#23a55a] flex-shrink-0" />
+                <span className="truncate font-bold">Counter-Strike 2 &bull; Zombie Escape</span>
+              </>
+            ) : state === 'main_menu' ? (
+              <>
+                <Gamepad2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                <span className="truncate font-bold text-amber-300">Counter-Strike 2 &bull; Standby in Lobby</span>
               </>
             ) : state === 'other_game' ? (
               <>
@@ -276,12 +272,12 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             ) : state === 'online' ? (
               <>
                 <Compass className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
-                <span className="truncate text-slate-300">Online on Steam &bull; Standby</span>
+                <span className="truncate text-slate-300">Online on Steam &bull; Available</span>
               </>
             ) : (
               <>
                 <span className="w-2 h-2 rounded-full bg-slate-500 flex-shrink-0" />
-                <span className="truncate text-slate-400">Currently offline on Steam</span>
+                <span className="truncate text-slate-400">Offline</span>
               </>
             )}
           </div>
