@@ -26,7 +26,7 @@ export const DeployHudFooter: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-slate-400 font-tech leading-relaxed">
-              To point your domain <strong className="text-cyan-300">geronimohq.com</strong> from Porkbun to Vercel or Cloudflare Pages, add these records in your Porkbun Domain Management panel:
+              To point your domain <strong className="text-cyan-300">geronimohq.com</strong> from Porkbun to GitHub Pages, use these records:
             </p>
 
             <div className="space-y-2 text-xs font-code">
@@ -34,10 +34,10 @@ export const DeployHudFooter: React.FC = () => {
               <div className="p-3 bg-slate-900/90 border border-cyan-500/30 rounded-lg flex items-center justify-between">
                 <div>
                   <div className="text-[10px] text-slate-500">ROOT DOMAIN (A RECORD)</div>
-                  <div className="text-cyan-300 font-bold">@ &rarr; 76.76.21.21</div>
+                  <div className="text-cyan-300 font-bold">@ &rarr; 185.199.108.153</div>
                 </div>
                 <button
-                  onClick={() => copyToClipboard('76.76.21.21', 'a-record')}
+                  onClick={() => copyToClipboard('185.199.108.153', 'a-record')}
                   className="px-2.5 py-1 bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 rounded text-[11px] border border-cyan-500/50 flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <Copy className="w-3 h-3" />
@@ -49,10 +49,10 @@ export const DeployHudFooter: React.FC = () => {
               <div className="p-3 bg-slate-900/90 border border-fuchsia-500/30 rounded-lg flex items-center justify-between">
                 <div>
                   <div className="text-[10px] text-slate-500">SUBDOMAIN (CNAME RECORD)</div>
-                  <div className="text-fuchsia-300 font-bold">www &rarr; cname.vercel-dns.com</div>
+                  <div className="text-fuchsia-300 font-bold">www &rarr; geronimohq.github.io</div>
                 </div>
                 <button
-                  onClick={() => copyToClipboard('cname.vercel-dns.com', 'cname-record')}
+                  onClick={() => copyToClipboard('geronimohq.github.io', 'cname-record')}
                   className="px-2.5 py-1 bg-fuchsia-950/80 hover:bg-fuchsia-900 text-fuchsia-300 rounded text-[11px] border border-fuchsia-500/50 flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <Copy className="w-3 h-3" />
@@ -63,7 +63,7 @@ export const DeployHudFooter: React.FC = () => {
 
             <div className="text-[11px] font-code text-slate-500 flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-              Automated Free SSL / Let's Encrypt certificate will issue within ~5 mins of propagation.
+              Automated Free SSL / HTTPS certificate provided natively by GitHub Pages.
             </div>
           </div>
 
@@ -72,25 +72,25 @@ export const DeployHudFooter: React.FC = () => {
             <div className="flex items-center gap-2">
               <Server className="w-5 h-5 text-fuchsia-400" />
               <h3 className="font-cyber font-bold text-white text-base tracking-wider">
-                PRODUCTION BUILD PIPELINE
+                GITHUB PAGES CI/CD PIPELINE
               </h3>
             </div>
             <p className="text-xs text-slate-400 font-tech leading-relaxed">
-              Optimized Vite React bundle with zero-config static hosting ready for Vercel, Netlify, or Cloudflare Pages.
+              Automated build & deploy workflow via GitHub Actions. Push code to main and it builds and deploys automatically.
             </p>
 
             <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2 text-xs font-code">
               <div className="flex justify-between py-1 border-b border-slate-800">
+                <span className="text-slate-400">HOSTING</span>
+                <span className="text-cyan-300 font-bold">GitHub Pages</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-800">
+                <span className="text-slate-400">CI/CD ENGINE</span>
+                <span className="text-fuchsia-300 font-bold">GitHub Actions</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-800">
                 <span className="text-slate-400">FRAMEWORK</span>
-                <span className="text-cyan-300 font-bold">Vite 6 + React 19 + Tailwind v4</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-800">
-                <span className="text-slate-400">OUTPUT DIRECTORY</span>
-                <span className="text-fuchsia-300 font-bold">dist/</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-800">
-                <span className="text-slate-400">BUILD COMMAND</span>
-                <span className="text-lime-300 font-bold">npm run build</span>
+                <span className="text-lime-300 font-bold">Vite 6 + React 19</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">TARGET DOMAIN</span>
