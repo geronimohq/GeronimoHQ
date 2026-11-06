@@ -107,17 +107,17 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
   const mapDuration = Math.max(0, nowSec - mapStart);
   const mapThumbnail = getMapThumbnailUrl(currentMap);
 
-  // If collapsed: keep the exact same width w-[350px] so there is zero horizontal jumping/distortion
+  // If collapsed: keep the exact same width w-[380px] sm:w-[415px] so there is zero horizontal jumping/distortion
   if (isCollapsed) {
     return (
       <aside 
         aria-label="Geronimo Live Status"
-        className="fixed bottom-4 left-4 z-40 w-[350px] max-w-[calc(100vw-2rem)] bg-[#111214]/95 hover:bg-[#181a1f] border border-[#2b2d31] hover:border-cyan-500/50 rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-xl transition-all cursor-pointer group"
+        className="fixed bottom-4 left-4 z-40 w-[380px] sm:w-[415px] max-w-[calc(100vw-2rem)] bg-[#111214]/95 hover:bg-[#181a1f] border border-[#2b2d31] hover:border-cyan-500/50 rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-xl transition-all cursor-pointer group"
         onClick={() => setIsCollapsed(false)}
         title="Click to expand Geronimo's Live Presence"
       >
-        <div className="flex items-center justify-between px-3.5 py-2.5">
-          <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="relative flex-shrink-0">
               <div className="w-8 h-8 rounded-full overflow-hidden border border-[#23a55a] shadow-[0_0_10px_rgba(35,165,90,0.4)]">
                 <img
@@ -134,16 +134,16 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
               }`} />
             </div>
 
-            <div className="flex items-center gap-1.5 text-xs font-sans min-w-0 truncate">
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-sans min-w-0 truncate">
               <span className="font-bold text-white group-hover:text-cyan-300 transition-colors flex-shrink-0">
                 Geronimo
               </span>
               <span className="text-[#949ba4]">&bull;</span>
-              <span className="text-xs truncate font-medium">
+              <span className="truncate font-medium">
                 {state === 'in_server' ? (
-                  <span className="text-[#23a55a] flex items-center gap-1 truncate">
+                  <span className="text-[#23a55a] flex items-center gap-1.5 truncate">
                     <span>In ZE Server</span>
-                    <span className="text-cyan-400 font-code font-bold ml-1">⏱️ {formatMapElapsed(mapDuration)}</span>
+                    <span className="text-cyan-400 font-code font-bold">⏱️ {formatMapElapsed(mapDuration)}</span>
                   </span>
                 ) : state === 'main_menu' ? (
                   <span className="text-amber-400">CS2 Menu</span>
@@ -164,14 +164,14 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
     );
   }
 
-  // Expanded Floating Rich Presence Card - Sized based on Geronimo's marker with fixed width
+  // Expanded Floating Rich Presence Card - Sized to perfect fit matching Geronimo's marker
   return (
     <aside 
       aria-label="Geronimo Discord Live Presence"
-      className="fixed bottom-4 left-4 z-40 w-[350px] max-w-[calc(100vw-2rem)] p-3.5 sm:p-4 rounded-xl bg-[#111214]/95 border border-[#2b2d31] hover:border-slate-700/80 shadow-[0_14px_45px_rgba(0,0,0,0.88)] backdrop-blur-xl transition-all duration-300 font-sans"
+      className="fixed bottom-4 left-4 z-40 w-[380px] sm:w-[415px] max-w-[calc(100vw-2rem)] p-4 sm:p-4.5 rounded-xl bg-[#111214]/95 border border-[#2b2d31] hover:border-slate-700/80 shadow-[0_16px_50px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-all duration-300 font-sans"
     >
       {/* Top Header */}
-      <div className="flex items-center justify-between gap-2 border-b border-[#2b2d31]/80 pb-2 mb-2.5">
+      <div className="flex items-center justify-between gap-2 border-b border-[#2b2d31]/80 pb-2.5 mb-3">
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full inline-block ${
             state === 'in_server' ? 'bg-[#23a55a] animate-pulse' : 
@@ -179,7 +179,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             state === 'other_game' ? 'bg-purple-400' : 
             'bg-[#23a55a]'
           }`} />
-          <span className="text-[10px] font-sans font-extrabold tracking-wider text-[#dbdee1] uppercase flex items-center gap-1.5">
+          <span className="text-[11px] font-sans font-extrabold tracking-wider text-[#dbdee1] uppercase flex items-center gap-1.5">
             {state === 'in_server' ? 'PLAYING CS2 ZOMBIE ESCAPE' : 
              state === 'main_menu' ? 'COUNTER-STRIKE 2' : 
              state === 'other_game' ? `PLAYING ${presence?.game?.toUpperCase() || 'ON STEAM'}` : 
@@ -199,10 +199,10 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
       </div>
 
       {/* Main Profile & Rich Presence Card */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3.5">
         {/* Steam Avatar with Status Dot */}
         <div className="relative flex-shrink-0">
-          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#23a55a] shadow-[0_0_14px_rgba(35,165,90,0.35)]">
+          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-[#23a55a] shadow-[0_0_16px_rgba(35,165,90,0.4)]">
             <img
               src="/images/geronimo_steam_avatar.jpg"
               alt="Geronimo Steam Avatar"
@@ -213,13 +213,13 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             />
           </div>
           {/* Status Dot */}
-          <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-[#111214] flex items-center justify-center ${
+          <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border-2 border-[#111214] flex items-center justify-center ${
             state === 'in_server' ? 'bg-[#23a55a]' : 
             state === 'main_menu' ? 'bg-amber-400' : 
             state === 'other_game' ? 'bg-purple-400' : 
             'bg-[#23a55a]'
           }`}>
-            <span className="w-1 h-1 rounded-full bg-white" />
+            <span className="w-1.5 h-1.5 rounded-full bg-white" />
           </div>
         </div>
 
@@ -227,46 +227,46 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
         <div className="flex-1 min-w-0">
           {/* Username & Badges */}
           <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-            <h4 className="text-sm font-bold font-sans text-white truncate">
+            <h4 className="text-base font-bold font-sans text-white truncate">
               Geronimo
             </h4>
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-sans font-semibold bg-[#2b2d31] text-[#b5bac1]">
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-sans font-semibold bg-[#2b2d31] text-[#b5bac1]">
               HOST
             </span>
             {state === 'in_server' ? (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-sans font-bold bg-[#23a55a]/20 text-[#23a55a] border border-[#23a55a]/40 flex items-center gap-1">
+              <span className="px-2 py-0.5 rounded text-[10px] font-sans font-bold bg-[#23a55a]/20 text-[#23a55a] border border-[#23a55a]/40 flex items-center gap-1">
                 <Sparkles className="w-2.5 h-2.5" /> IN-SERVER
               </span>
             ) : state === 'main_menu' ? (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-sans font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+              <span className="px-2 py-0.5 rounded text-[10px] font-sans font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
                 <Gamepad2 className="w-2.5 h-2.5" /> MAIN MENU
               </span>
             ) : state === 'other_game' ? (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-sans font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1">
+              <span className="px-2 py-0.5 rounded text-[10px] font-sans font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1">
                 <Flame className="w-2.5 h-2.5" /> IN-GAME
               </span>
             ) : (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-sans font-bold bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1">
+              <span className="px-2 py-0.5 rounded text-[10px] font-sans font-bold bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1">
                 <Clock className="w-2.5 h-2.5 text-slate-400" /> IDLE
               </span>
             )}
           </div>
 
           {/* Activity / Game Title */}
-          <div className="text-xs font-bold font-sans text-[#f2f3f5] truncate flex items-center gap-1.5">
+          <div className="text-xs sm:text-sm font-bold font-sans text-[#f2f3f5] truncate flex items-center gap-1.5">
             {state === 'in_server' || state === 'main_menu' ? (
               <>
-                <Gamepad2 className="w-3.5 h-3.5 text-[#5865f2] flex-shrink-0" />
+                <Gamepad2 className="w-4 h-4 text-[#5865f2] flex-shrink-0" />
                 <span className="truncate">Counter-Strike 2</span>
               </>
             ) : state === 'other_game' ? (
               <>
-                <Gamepad2 className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+                <Gamepad2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
                 <span className="truncate">{presence?.game || 'Steam Game'}</span>
               </>
             ) : (
               <>
-                <Compass className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                <Compass className="w-4 h-4 text-cyan-400 flex-shrink-0" />
                 <span className="truncate text-slate-300">Steam Community</span>
               </>
             )}
@@ -277,7 +277,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             <span className="text-[#dbdee1] font-medium">{state === 'in_server' ? 'Map:' : 'Status:'}</span>
             {state === 'in_server' ? (
               <>
-                <div className="w-6 h-4 rounded overflow-hidden border border-slate-700 flex-shrink-0 bg-slate-900 shadow-sm">
+                <div className="w-7 h-4.5 rounded overflow-hidden border border-slate-700 flex-shrink-0 bg-slate-900 shadow-sm">
                   <img 
                     src={mapThumbnail} 
                     alt={currentMap} 
@@ -287,20 +287,20 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
                     }}
                   />
                 </div>
-                <code className="text-[11px] text-[#5865f2] font-code bg-[#1e1f22] px-1.5 py-0.5 rounded font-bold truncate">
+                <code className="text-xs text-[#5865f2] font-code bg-[#1e1f22] px-2 py-0.5 rounded font-bold truncate max-w-[210px]">
                   {currentMap}
                 </code>
               </>
             ) : state === 'main_menu' ? (
-              <span className="text-amber-300/90 font-semibold px-1.5 py-0.5 bg-[#1e1f22] rounded text-[11px] border border-amber-500/30">
+              <span className="text-amber-300/90 font-semibold px-2 py-0.5 bg-[#1e1f22] rounded text-xs border border-amber-500/30">
                 In Main Menu
               </span>
             ) : state === 'other_game' ? (
-              <span className="text-purple-300 font-semibold px-1.5 py-0.5 bg-[#1e1f22] rounded text-[11px] border border-purple-500/30">
+              <span className="text-purple-300 font-semibold px-2 py-0.5 bg-[#1e1f22] rounded text-xs border border-purple-500/30">
                 In-Game
               </span>
             ) : (
-              <span className="text-slate-300 font-semibold px-1.5 py-0.5 bg-[#1e1f22] rounded text-[11px] border border-slate-800">
+              <span className="text-slate-300 font-semibold px-2 py-0.5 bg-[#1e1f22] rounded text-xs border border-slate-800">
                 Idle
               </span>
             )}
@@ -308,14 +308,14 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
 
           {/* Players count & Map Timer - ONLY VISIBLE WHEN IN SERVER */}
           {state === 'in_server' && (
-            <div className="text-[11px] font-sans text-[#949ba4] flex items-center gap-1.5 mt-1">
-              <span className="flex items-center gap-1 text-[#b5bac1]">
-                <Users className="w-3 h-3 text-[#23a55a]" />
+            <div className="text-xs font-sans text-[#949ba4] flex items-center gap-2 mt-1.5">
+              <span className="flex items-center gap-1.5 text-[#b5bac1]">
+                <Users className="w-3.5 h-3.5 text-[#23a55a]" />
                 Players: <strong className="text-white font-semibold">{playerDisplay}</strong>
               </span>
               <span>&bull;</span>
-              <span className="text-cyan-400 font-code text-[11px] font-semibold bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-500/30 flex items-center gap-1">
-                <Clock className="w-2.5 h-2.5 text-cyan-400 animate-pulse" />
+              <span className="text-cyan-400 font-code text-xs font-semibold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30 flex items-center gap-1">
+                <Clock className="w-3 h-3 text-cyan-400 animate-pulse" />
                 {formatMapElapsed(mapDuration)}
               </span>
             </div>
@@ -323,48 +323,48 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
         </div>
       </div>
 
-      {/* Action Buttons - Comfortable Size Matching Marker */}
-      <div className="mt-3 pt-2 border-t border-[#2b2d31]/80">
+      {/* Action Buttons - Comfortable Size & Spacing */}
+      <div className="mt-3.5 pt-2.5 border-t border-[#2b2d31]/80">
         {state === 'in_server' ? (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2.5">
             <a
               href={connectUrl}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#5865f2] hover:bg-[#4752c4] text-white font-sans text-xs font-bold rounded-lg shadow-sm transition-all cursor-pointer transform hover:-translate-y-0.5"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-[#5865f2] hover:bg-[#4752c4] text-white font-sans text-xs font-bold rounded-lg shadow-sm transition-all cursor-pointer transform hover:-translate-y-0.5"
               title="Launch CS2 and join Geronimo on server"
             >
-              <Play className="w-3 h-3 fill-current" />
+              <Play className="w-3.5 h-3.5 fill-current" />
               <span>Join Game</span>
             </a>
             <a
               href="https://steamcommunity.com/profiles/76561198143793864/"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#2b2d31] hover:bg-[#35373c] text-[#dbdee1] hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-[#2b2d31] hover:bg-[#35373c] text-[#dbdee1] hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
               title="View Geronimo's Steam Community Profile"
             >
               <span>Steam Profile</span>
-              <ExternalLink className="w-3 h-3 text-slate-400" />
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
             </a>
           </div>
         ) : state === 'main_menu' ? (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2.5">
             <a
               href="steam://rungameid/730"
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#2b2d31] hover:bg-[#35373c] text-cyan-300 hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-[#2b2d31] hover:bg-[#35373c] text-cyan-300 hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
               title="Launch Counter-Strike 2"
             >
-              <Gamepad2 className="w-3 h-3 text-cyan-400" />
+              <Gamepad2 className="w-3.5 h-3.5 text-cyan-400" />
               <span>Launch CS2</span>
             </a>
             <a
               href="https://steamcommunity.com/profiles/76561198143793864/"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#2b2d31] hover:bg-[#35373c] text-[#dbdee1] hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-[#2b2d31] hover:bg-[#35373c] text-[#dbdee1] hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
               title="View Geronimo's Steam Community Profile"
             >
               <span>Steam Profile</span>
-              <ExternalLink className="w-3 h-3 text-slate-400" />
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
             </a>
           </div>
         ) : (
@@ -372,7 +372,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             href="https://steamcommunity.com/profiles/76561198143793864/"
             target="_blank"
             rel="noreferrer"
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-[#2b2d31] hover:bg-[#35373c] text-[#dbdee1] hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
+            className="w-full flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-[#2b2d31] hover:bg-[#35373c] text-[#dbdee1] hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
             title="View Geronimo's Steam Community Profile"
           >
             <span>View Steam Profile</span>
