@@ -261,34 +261,34 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             )}
           </div>
 
-          {/* Activity Title */}
-          <div className="text-xs font-bold font-sans text-[#f2f3f5] truncate flex items-center gap-1.5">
+          {/* Activity Subtitle */}
+          <div className="text-xs font-medium font-sans text-[#f2f3f5] truncate flex items-center gap-1.5">
             {state === 'in_server' || state === 'main_menu' ? (
               <>
                 <Gamepad2 className="w-3.5 h-3.5 text-[#5865f2] flex-shrink-0" />
-                <span className="truncate">Counter-Strike 2</span>
+                <span className="truncate font-bold">Counter-Strike 2</span>
               </>
             ) : state === 'other_game' ? (
               <>
                 <Gamepad2 className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
-                <span className="truncate">{presence?.game || 'Steam Game'}</span>
+                <span className="truncate font-bold">{presence?.game || 'Steam Game'}</span>
               </>
             ) : state === 'online' ? (
               <>
                 <Compass className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
-                <span className="truncate text-slate-300">Steam Community</span>
+                <span className="truncate text-slate-300">Online on Steam &bull; Standby</span>
               </>
             ) : (
               <>
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-500 flex-shrink-0" />
-                <span className="truncate text-slate-400">Offline</span>
+                <span className="w-2 h-2 rounded-full bg-slate-500 flex-shrink-0" />
+                <span className="truncate text-slate-400">Currently offline on Steam</span>
               </>
             )}
           </div>
         </div>
       </div>
 
-      {/* Enlarged Contents Block - Beautifully fills width with no awkward dead space */}
+      {/* Dynamic Content Block - Only shown when playing a game or active in CS2 to avoid redundant text */}
       {state === 'in_server' ? (
         <div className="mt-2.5 p-2 rounded-lg bg-[#18191c] border border-[#2b2d31]/80 flex items-center gap-2.5">
           {/* Prominent Map Thumbnail */}
@@ -336,10 +336,10 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[10px] text-slate-400 uppercase font-semibold block leading-none mb-0.5">
-              Current Status
+              CS2 Status
             </span>
             <span className="text-xs text-amber-300 font-semibold block truncate">
-              Idle in CS2 Main Menu
+              In Main Menu / Lobby
             </span>
           </div>
         </div>
@@ -357,35 +357,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             </span>
           </div>
         </div>
-      ) : state === 'online' ? (
-        <div className="mt-2.5 p-2 rounded-lg bg-[#18191c] border border-[#2b2d31]/80 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
-            <Compass className="w-4 h-4 text-cyan-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold block leading-none mb-0.5">
-              Current Status
-            </span>
-            <span className="text-xs text-slate-300 font-semibold block truncate">
-              Idle on Steam
-            </span>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-2.5 p-2 rounded-lg bg-[#18191c] border border-[#2b2d31]/80 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-slate-800/60 border border-slate-700/60 flex items-center justify-center flex-shrink-0">
-            <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold block leading-none mb-0.5">
-              Current Status
-            </span>
-            <span className="text-xs text-slate-400 font-semibold block truncate">
-              Offline
-            </span>
-          </div>
-        </div>
-      )}
+      ) : null}
 
       {/* Action Buttons - Snug, Comfortable Fit */}
       <div className="mt-2.5 pt-2 border-t border-[#2b2d31]/80">
