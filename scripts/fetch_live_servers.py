@@ -224,7 +224,17 @@ def main():
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception:
         pass
+
+    existing_servers = {}
+    if os.path.exists(output_file):
+        try:
+            with open(output_file, "r", encoding="utf-8") as f:
+                existing_servers = json.load(f).get("servers", {})
+        except Exception:
+            pass
+
     results = {}
+    now_ts = int(time.time())
     print(f"Querying {len(servers)} servers via A2S UDP...")
 
     for s in servers:
@@ -237,18 +247,29 @@ def main():
                 time.sleep(0.2)
                 player_list = query_a2s_players(s["host"], s["port"], timeout=2.8)
 
+        current_map = info.get("map", "-")
+        prev_info = existing_servers.get(sid, {})
+        prev_map = prev_info.get("map")
+        prev_start = prev_info.get("map_start_time")
+
+        if current_map and current_map != "-" and current_map == prev_map and prev_start:
+            map_start_time = prev_start
+        else:
+            map_start_time = now_ts
+
         results[sid] = {
             "online": info.get("online", False),
             "status": info.get("status", "Offline"),
             "server_name": info.get("name", ""),
-            "map": info.get("map", "-"),
+            "map": current_map,
             "players": info.get("players", "-/-"),
             "curr_players": info.get("curr_players", 0),
             "max_players": info.get("max_players", 0),
             "ping": info.get("ping", "N/A"),
             "rtt": info.get("rtt", 0),
             "players_list": player_list,
-            "has_player_roster": s["allow_players"] and bool(player_list)
+            "has_player_roster": s["allow_players"] and bool(player_list),
+            "map_start_time": map_start_time
         }
         status_sym = "✓" if info.get("online") else "✗"
         print(f" {status_sym} [{sid}] {s['host']}:{s['port']} -> Map: {info.get('map')} | Players: {info.get('players')}")

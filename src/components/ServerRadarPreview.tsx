@@ -2,10 +2,12 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ZE_SERVERS, type ZEServer } from '../data/zeServers';
 import { 
   fetchLiveTelemetry, 
+  getMapStartTime,
+  formatMapElapsed,
+  getEstimatedRegionalPing,
   type LiveTelemetryPayload, 
   type PlayerEntry 
 } from '../utils/serverQuery';
-import { GeronimoDiscordPresence } from './GeronimoDiscordPresence';
 import { 
   Play, 
   Copy, 
@@ -62,9 +64,22 @@ export const ServerRadarPreview: React.FC = () => {
     return () => clearInterval(pollTimer);
   }, [loadTelemetry]);
 
+  // 1-second ticker for live map elapsed counters
+  const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowSec(Math.floor(Date.now() / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Featured GFL server definition & live telemetry
   const gflServer = useMemo(() => ZE_SERVERS.find((s) => s.id === 'gfl') || ZE_SERVERS[0], []);
   const gflLive = telemetry?.servers?.['gfl'];
+  const gflMap = gflLive?.map && gflLive.map !== '-' ? gflLive.map : gflServer.defaultMap;
+  const gflMapStart = getMapStartTime('gfl', gflMap, gflLive?.map_start_time);
+  const gflMapElapsed = Math.max(0, nowSec - gflMapStart);
+  const gflRegionalPing = getEstimatedRegionalPing(gflServer.region);
 
   // Global servers (6 nodes - strictly non-China)
   const globalServers = useMemo(() => {
@@ -169,18 +184,13 @@ export const ServerRadarPreview: React.FC = () => {
       </div>
 
       {/* ==================================================================== */}
-      {/* GERONIMO LIVE DISCORD-STYLE PRESENCE HUD                             */}
-      {/* ==================================================================== */}
-      <GeronimoDiscordPresence gflTelemetry={gflLive} />
-
-      {/* ==================================================================== */}
       {/* PINNED PREMIER FEATURED GFL CARD                                     */}
       {/* ==================================================================== */}
       <div className="mb-8 p-6 rounded-2xl bg-gradient-to-br from-slate-950/95 via-slate-900/90 to-amber-950/40 border border-amber-500/50 shadow-[0_0_35px_rgba(251,191,36,0.18)] backdrop-blur-md">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           {/* Left Info */}
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="px-2 py-0.5 text-[10px] font-code rounded bg-amber-950/90 text-amber-300 border border-amber-500/60 font-bold flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-amber-400" />
                 PREMIER FEATURED SERVER
@@ -202,9 +212,13 @@ export const ServerRadarPreview: React.FC = () => {
               <div className="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800">
                 <MapPin className="w-3.5 h-3.5 text-fuchsia-400" />
                 <span className="text-slate-400">Current Map:</span>
-                <strong className="text-fuchsia-300 font-bold">
-                  {gflLive?.map && gflLive.map !== '-' ? gflLive.map : gflServer.defaultMap}
+                <strong className="text-fuchsia-300 font-bold truncate max-w-[200px]">
+                  {gflMap}
                 </strong>
+                <span className="text-cyan-300 font-code text-xs font-bold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/40 flex items-center gap-1 shadow-[0_0_10px_rgba(0,240,255,0.25)] ml-1">
+                  <Clock className="w-3 h-3 text-cyan-400 animate-pulse" />
+                  {formatMapElapsed(gflMapElapsed)} on map
+                </span>
               </div>
 
               <div className="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800">
@@ -215,12 +229,13 @@ export const ServerRadarPreview: React.FC = () => {
                 </strong>
               </div>
 
-              <div className="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800">
+              <div className="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800" title={`Estimated regional latency to ${gflServer.region}`}>
                 <Radio className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="text-slate-400">Ping:</span>
+                <span className="text-slate-400">Est. Ping:</span>
                 <strong className="text-cyan-300 font-bold">
-                  {gflLive?.ping && gflLive.ping !== 'N/A' ? gflLive.ping : '~34 ms'}
+                  {gflRegionalPing.display}
                 </strong>
+                <span className="text-[10px] text-slate-500 font-normal">({gflRegionalPing.label})</span>
               </div>
 
               <div className="text-[11px] font-code text-slate-400 flex items-center gap-1">
@@ -415,7 +430,9 @@ export const ServerRadarPreview: React.FC = () => {
           const isOnline = liveInfo?.online ?? true;
           const currentMap = liveInfo?.map && liveInfo.map !== '-' ? liveInfo.map : server.defaultMap;
           const currentPlayers = liveInfo?.players && liveInfo.players !== '-/-' ? liveInfo.players : null;
-          const pingStr = liveInfo?.ping && liveInfo.ping !== 'N/A' && liveInfo.ping !== 'Timeout' ? liveInfo.ping : null;
+          const mapStart = getMapStartTime(server.id, currentMap, liveInfo?.map_start_time);
+          const mapDuration = Math.max(0, nowSec - mapStart);
+          const regionalPing = getEstimatedRegionalPing(server.region);
 
           return (
             <div
@@ -489,12 +506,15 @@ export const ServerRadarPreview: React.FC = () => {
 
                 {/* Live Telemetry Pill Row */}
                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                  {/* Current Active Map */}
+                  {/* Current Active Map & Live Timer */}
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code text-slate-300">
-                    <MapPin className="w-3 h-3 text-fuchsia-400" />
+                    <MapPin className="w-3 h-3 text-fuchsia-400 flex-shrink-0" />
                     <span className="text-slate-400">Map:</span>
-                    <span className="text-fuchsia-300 font-bold truncate max-w-[180px]">
+                    <span className="text-fuchsia-300 font-bold truncate max-w-[140px]">
                       {currentMap || 'ze_escape'}
+                    </span>
+                    <span className="text-cyan-400 font-code text-[11px] font-semibold bg-cyan-950/60 px-1.5 py-0.2 rounded border border-cyan-500/30 flex items-center gap-1 flex-shrink-0">
+                      ⏱️ {formatMapElapsed(mapDuration)}
                     </span>
                   </div>
 
@@ -512,13 +532,11 @@ export const ServerRadarPreview: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Ping */}
-                  {pingStr && (
-                    <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] font-code text-cyan-300">
-                      <Radio className="w-3 h-3 text-cyan-400" />
-                      <span>{pingStr}</span>
-                    </div>
-                  )}
+                  {/* Realistic Estimated Regional Ping */}
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] font-code text-cyan-300" title={`Estimated regional latency to ${server.region}`}>
+                    <Radio className="w-3 h-3 text-cyan-400" />
+                    <span>{regionalPing.display}</span>
+                  </div>
                 </div>
               </div>
 

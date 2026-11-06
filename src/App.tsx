@@ -4,6 +4,7 @@ import { CyberNavbar } from './components/CyberNavbar';
 import { PepeHeroStage } from './components/PepeHeroStage';
 import { ServerRadarPreview } from './components/ServerRadarPreview';
 import { CS2CommandCenterPreview } from './components/CS2CommandCenterPreview';
+import { GeronimoDiscordPresence } from './components/GeronimoDiscordPresence';
 import { DeployHudFooter } from './components/DeployHudFooter';
 import { ChevronDown } from 'lucide-react';
 
@@ -73,6 +74,9 @@ export const App: React.FC = () => {
         <CS2CommandCenterPreview />
 
       </main>
+
+      {/* Floating Geronimo Discord-Style Live Presence (Fixed Lower-Left) */}
+      <GeronimoDiscordPresence />
 
       {/* Clean Transmission / Contact Terminal Footer */}
       <DeployHudFooter />
