@@ -254,7 +254,9 @@ export const ServerRadarPreview: React.FC = () => {
             </div>
 
             <h3 className="text-xl md:text-2xl font-cyber font-black text-white mb-2 flex items-center gap-2">
-              <span>{gflServer.name}</span>
+              <span>
+                GFL Clan Zombie Escape 24<span className="mx-1 font-mono text-amber-400 font-bold inline-block">/</span>7
+              </span>
             </h3>
 
             {/* Big Map Preview & Telemetry Display */}

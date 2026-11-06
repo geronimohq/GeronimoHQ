@@ -12,7 +12,8 @@ import {
   Copy, 
   Check, 
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Info
 } from 'lucide-react';
 
 interface AppFeatureModule {
@@ -400,12 +401,43 @@ export const CS2CommandCenterPreview: React.FC = () => {
 
       </div>
 
-      {/* Safety & VAC Compliance Guarantee Banner */}
-      <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center gap-3 text-xs font-tech text-slate-400">
-        <ShieldCheck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-        <span>
-          <strong className="text-white">100% VAC-Safe Guarantee:</strong> The desktop app modifies standard CS2 text config files (<code className="text-cyan-300">.cfg</code>) and uses Valve's official Steam protocols and Windows registry entries. It does not inject into game memory, read process handles, or modify game DLLs.
-        </span>
+      {/* Safety & First-Launch Guidance Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        {/* VAC Compliance Guarantee */}
+        <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 flex items-start gap-3 text-xs font-tech text-slate-300">
+          <ShieldCheck className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <div className="font-cyber font-bold text-white text-xs mb-1 flex items-center gap-1.5">
+              <span>100% VAC-SAFE GUARANTEE</span>
+              <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40">VERIFIED</span>
+            </div>
+            <p className="text-slate-400 leading-relaxed text-[11px]">
+              Modifies standard CS2 text config files (<code className="text-cyan-300">.cfg</code>) and uses Valve&apos;s official Steam game server protocols and Windows registry entries. It does <strong className="text-white">not</strong> inject into game memory, read process handles, or modify game binaries.
+            </p>
+          </div>
+        </div>
+
+        {/* Windows Defender SmartScreen Notice */}
+        <div className="p-4 rounded-xl bg-slate-950/80 border border-amber-500/30 flex items-start gap-3 text-xs font-tech text-slate-300">
+          <Info className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <div className="font-cyber font-bold text-amber-300 text-xs mb-1 flex items-center gap-1.5">
+              <span>FIRST-TIME LAUNCH // WINDOWS SMARTSCREEN</span>
+              <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/40">COMMUNITY EXE</span>
+            </div>
+            <p className="text-slate-400 leading-relaxed text-[11px] mb-2">
+              If Windows displays <span className="text-white font-medium">&ldquo;Windows protected your PC — Don&apos;t run&rdquo;</span>, this is normal Microsoft Defender SmartScreen reputation filtering for newly built community tools without an expensive $400/yr EV corporate certificate.
+            </p>
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-code text-slate-300 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+              <span className="text-amber-400 font-bold">To Run:</span>
+              <span>1. Click <strong className="text-cyan-300 underline underline-offset-2">&ldquo;More info&rdquo;</strong></span>
+              <span>&rarr;</span>
+              <span>2. Click <strong className="text-emerald-400 underline underline-offset-2">&ldquo;Run anyway&rdquo;</strong></span>
+              <span className="text-slate-500 hidden sm:inline">|</span>
+              <span className="text-[10px] text-slate-400 hidden sm:inline">(or right-click .exe &rarr; Properties &rarr; check &ldquo;Unblock&rdquo;)</span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

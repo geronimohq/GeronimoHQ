@@ -23,7 +23,7 @@ export const ZE_SERVERS: ZEServer[] = [
   // ==========================================
   {
     id: 'gfl',
-    name: 'GFL Clan Zombie Escape 24/7',
+    name: 'GFL Clan Zombie Escape 24 / 7',
     cluster: 'global',
     clusterName: 'GFL Clan',
     region: 'North America (Chicago, US)',
