@@ -27,3 +27,8 @@ dist-ssr
 *.exe
 public/downloads/*.exe
 
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
