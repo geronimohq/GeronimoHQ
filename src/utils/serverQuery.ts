@@ -120,14 +120,19 @@ async function executeFetchLiveTelemetry(): Promise<LiveTelemetryPayload | null>
   // 3. Direct Browser GFL Intel Enrichment (Human Score, Zombie Score, Extends Left)
   // Cloudflare blocks datacenter IPs (like Render/AWS) with 403 Forbidden,
   // but client browsers have direct CORS access (Access-Control-Allow-Origin: https://geronimohq.com).
-  // We rate-limit zegraph queries to at most once per 6s and NEVER overwrite with null on hiccups.
+  // Strictly bypass browser HTTP cache with ?_t cache-buster and 'no-store' to eliminate the 3-5m delay!
   const now = Date.now();
-  const shouldQueryZegraph = (now - lastMatchFetchTimestamp > 6000) || !cachedGflMatchNow;
+  const shouldQueryZegraph = (now - lastMatchFetchTimestamp > 3500) || !cachedGflMatchNow;
 
   if (shouldQueryZegraph) {
     try {
-      const matchRes = await fetch('https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now', {
-        signal: AbortSignal.timeout(5000),
+      const matchRes = await fetch(`https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now?_t=${now}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
+        signal: AbortSignal.timeout(4500),
       });
       if (matchRes.ok) {
         const matchJson = await matchRes.json();
