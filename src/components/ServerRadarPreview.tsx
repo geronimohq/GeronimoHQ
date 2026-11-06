@@ -2,9 +2,11 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ZE_SERVERS, type ZEServer } from '../data/zeServers';
 import { 
   fetchLiveTelemetry, 
-  getMapStartTime,
-  formatMapElapsed,
+  getMapStartTime, 
+  formatMapElapsed, 
   getEstimatedRegionalPing,
+  getMapThumbnailUrl,
+  getMap3DViewerUrl,
   type LiveTelemetryPayload, 
   type PlayerEntry 
 } from '../utils/serverQuery';
@@ -27,7 +29,9 @@ import {
   Rocket,
   ArrowUpDown,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Music,
+  Volume2
 } from 'lucide-react';
 
 type PrimaryTab = 'global' | 'china';
@@ -47,6 +51,7 @@ export const ServerRadarPreview: React.FC = () => {
   const [modalSearch, setModalSearch] = useState('');
   const [playerSortField, setPlayerSortField] = useState<PlayerSortField>('duration');
   const [playerSortOrder, setPlayerSortOrder] = useState<PlayerSortOrder>('desc');
+  const [showMusicModal, setShowMusicModal] = useState(false);
 
   const handlePlayerSort = (field: PlayerSortField) => {
     if (playerSortField === field) {
@@ -200,54 +205,52 @@ export const ServerRadarPreview: React.FC = () => {
       {/* ==================================================================== */}
       {/* PINNED PREMIER FEATURED GFL CARD                                     */}
       {/* ==================================================================== */}
-      <div className="mb-8 p-6 rounded-2xl bg-gradient-to-br from-slate-950/95 via-slate-900/90 to-amber-950/40 border border-amber-500/50 shadow-[0_0_35px_rgba(251,191,36,0.18)] backdrop-blur-md">
+      <div className="mb-8 p-6 rounded-2xl bg-gradient-to-br from-slate-950/95 via-slate-900/90 to-amber-950/40 border border-amber-500/50 shadow-[0_0_35px_rgba(251,191,36,0.18)] backdrop-blur-md relative overflow-hidden">
+        {/* Top-Right Corner: GFL Community Links (Website & Discord) */}
+        <div className="sm:absolute sm:top-5 sm:right-6 flex items-center gap-2.5 z-10 mb-3 sm:mb-0">
+          {gflServer.website && (
+            <a
+              href={gflServer.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-code text-slate-400 hover:text-cyan-300 flex items-center gap-1.5 transition-colors px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 shadow-sm"
+              title="Visit GFL Clan Portal"
+            >
+              <span>Portal</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+          {gflServer.discord && (
+            <a
+              href={gflServer.discord}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-code text-indigo-400 hover:text-indigo-300 flex items-center gap-1.5 transition-colors font-medium px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-indigo-500/50 shadow-sm"
+              title="Join GFL Clan Official Discord"
+            >
+              <span>Discord</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+        </div>
+
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           {/* Left Info */}
           <div className="flex-1">
-            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2 py-0.5 text-[10px] font-code rounded bg-amber-950/90 text-amber-300 border border-amber-500/60 font-bold flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-400" />
-                  PREMIER FEATURED SERVER
-                </span>
-                <span className="text-[10px] font-code px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300 font-bold">
-                  🇺🇸 US CHICAGO
-                </span>
-                <span className="text-[10px] font-code px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 font-bold">
-                  GLOBAL SERVER
-                </span>
-                <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold">
-                  128 TICK
-                </span>
-              </div>
-
-              {/* GFL Community Links (Website & Discord) */}
-              <div className="flex items-center gap-3">
-                {gflServer.website && (
-                  <a
-                    href={gflServer.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-code text-slate-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
-                    title="Visit GFL Clan Portal"
-                  >
-                    <span>Portal</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
-                {gflServer.discord && (
-                  <a
-                    href={gflServer.discord}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-code text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors font-medium"
-                    title="Join GFL Clan Official Discord"
-                  >
-                    <span>Discord</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
-              </div>
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="px-2 py-0.5 text-[10px] font-code rounded bg-amber-950/90 text-amber-300 border border-amber-500/60 font-bold flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-amber-400" />
+                PREMIER FEATURED SERVER
+              </span>
+              <span className="text-[10px] font-code px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300 font-bold">
+                🇺🇸 US CHICAGO
+              </span>
+              <span className="text-[10px] font-code px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 font-bold">
+                GLOBAL SERVER
+              </span>
+              <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold">
+                128 TICK
+              </span>
             </div>
 
             <h3 className="text-xl md:text-2xl font-cyber font-black text-white mb-2 flex items-center gap-2">
@@ -256,16 +259,36 @@ export const ServerRadarPreview: React.FC = () => {
 
             {/* Live Telemetry Bar */}
             <div className="flex flex-wrap items-center gap-3 text-xs font-code text-slate-300 mb-3">
-              <div className="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800">
-                <MapPin className="w-3.5 h-3.5 text-fuchsia-400" />
+              <div className="flex items-center gap-2 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800">
+                {/* Map Thumbnail */}
+                <div className="w-7 h-5 rounded overflow-hidden border border-slate-700 bg-slate-950 flex-shrink-0">
+                  <img 
+                    src={getMapThumbnailUrl(gflMap)} 
+                    alt={gflMap}
+                    className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                  />
+                </div>
+                <MapPin className="w-3.5 h-3.5 text-fuchsia-400 flex-shrink-0" />
                 <span className="text-slate-400">Current Map:</span>
-                <strong className="text-fuchsia-300 font-bold truncate max-w-[200px]">
+                <strong className="text-fuchsia-300 font-bold truncate max-w-[180px]">
                   {gflMap}
                 </strong>
                 <span className="text-cyan-300 font-code text-xs font-bold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/40 flex items-center gap-1 shadow-[0_0_10px_rgba(0,240,255,0.25)] ml-1">
                   <Clock className="w-3 h-3 text-cyan-400 animate-pulse" />
                   {formatMapElapsed(gflMapElapsed)} on map
                 </span>
+                {/* 3D Map Explorer Pill */}
+                <a
+                  href={getMap3DViewerUrl(gflMap)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-1 text-[11px] font-code px-2 py-0.5 rounded bg-blue-950/80 text-blue-300 hover:text-white border border-blue-500/40 hover:border-blue-400 flex items-center gap-1 transition-colors shadow-sm"
+                  title="Explore 3D Map layout on maps.cybo.dev (Powered by cybo)"
+                >
+                  <Globe className="w-3 h-3 text-blue-400" />
+                  <span>3D Map ↗</span>
+                </a>
               </div>
 
               <div className="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800">
@@ -289,6 +312,35 @@ export const ServerRadarPreview: React.FC = () => {
                 <code>IP: {gflServer.host}:{gflServer.port}</code>
               </div>
             </div>
+
+            {/* Live Match Intelligence (Round Scores, Extends & Soundtrack) */}
+            {telemetry?.gfl_match_now && (
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="px-2.5 py-1 rounded-lg text-xs font-code bg-slate-900/90 border border-slate-800 text-slate-300 flex items-center gap-2">
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    🛡️ Humans: {telemetry.gfl_match_now.human_score}
+                  </span>
+                  <span className="text-slate-500">vs</span>
+                  <span className="text-rose-400 font-bold flex items-center gap-1">
+                    🧟 Zombies: {telemetry.gfl_match_now.zombie_score}
+                  </span>
+                </span>
+                <span className="px-2.5 py-1 rounded-lg text-xs font-code bg-slate-900/90 border border-slate-800 text-amber-300 font-semibold flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-amber-400" />
+                  Extends: {telemetry.gfl_match_now.extend_count}/3
+                </span>
+                {telemetry.gfl_map_musics && telemetry.gfl_map_musics.length > 0 && (
+                  <button
+                    onClick={() => setShowMusicModal(true)}
+                    className="px-2.5 py-1 rounded-lg text-xs font-code bg-purple-950/80 hover:bg-purple-900/80 border border-purple-500/40 text-purple-200 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                    title="View map custom soundtrack with YouTube links"
+                  >
+                    <Music className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Soundtrack ({telemetry.gfl_map_musics.length} Tracks)</span>
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Desktop Slot Sniper Banner */}
             <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center gap-2.5 text-xs font-tech text-slate-300">
@@ -555,14 +607,34 @@ export const ServerRadarPreview: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   {/* Current Active Map & Live Timer */}
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code text-slate-300">
+                    {/* Map Thumbnail */}
+                    <div className="w-5 h-4 rounded overflow-hidden border border-slate-700 bg-slate-950 flex-shrink-0">
+                      <img 
+                        src={getMapThumbnailUrl(currentMap)} 
+                        alt={currentMap} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                      />
+                    </div>
                     <MapPin className="w-3 h-3 text-fuchsia-400 flex-shrink-0" />
                     <span className="text-slate-400">Map:</span>
-                    <span className="text-fuchsia-300 font-bold truncate max-w-[140px]">
+                    <span className="text-fuchsia-300 font-bold truncate max-w-[130px]">
                       {currentMap || 'ze_escape'}
                     </span>
                     <span className="text-cyan-400 font-code text-[11px] font-semibold bg-cyan-950/60 px-1.5 py-0.2 rounded border border-cyan-500/30 flex items-center gap-1 flex-shrink-0">
                       ⏱️ {formatMapElapsed(mapDuration)}
                     </span>
+                    {/* 3D Map Explorer Link */}
+                    <a
+                      href={getMap3DViewerUrl(currentMap)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-code px-1.5 py-0.2 rounded bg-blue-950/80 text-blue-300 hover:text-white border border-blue-500/30 hover:border-blue-400 flex items-center gap-0.5 transition-colors"
+                      title="Explore 3D Map model on maps.cybo.dev (Powered by cybo)"
+                    >
+                      <span>3D</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
                   </div>
 
                   {/* Player Count */}
@@ -807,6 +879,123 @@ export const ServerRadarPreview: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* GFL Map Soundtrack Modal */}
+      {showMusicModal && telemetry?.gfl_map_musics && telemetry.gfl_map_musics.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-950 border border-purple-500/50 rounded-2xl p-6 max-w-2xl w-full max-h-[85vh] flex flex-col shadow-[0_0_50px_rgba(168,85,247,0.25)] relative">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-800 mb-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-cyber bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold">
+                    OFFICIAL SOUNDTRACKS
+                  </span>
+                  <span className="text-xs font-code text-slate-400">
+                    {telemetry.gfl_map_musics.length} Tracks Available
+                  </span>
+                </div>
+                <h3 className="text-lg font-cyber font-bold text-white flex items-center gap-2">
+                  <Music className="w-5 h-5 text-purple-400" />
+                  <span>{gflMap}</span>
+                </h3>
+                <p className="text-xs font-tech text-slate-400 mt-1">
+                  Custom soundtracks mapped for this Zombie Escape level. Click to stream on YouTube!
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowMusicModal(false)}
+                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Tracklist List */}
+            <div className="flex-1 overflow-y-auto border border-slate-800/80 rounded-xl bg-slate-900/50 divide-y divide-slate-800/60 p-2 space-y-1">
+              {telemetry.gfl_map_musics.map((song, idx) => {
+                const ytId = song.youtube_music || song.youtube_video;
+                const ytUrl = ytId ? `https://www.youtube.com/watch?v=${ytId}` : null;
+                return (
+                  <div key={idx} className="p-3 rounded-lg hover:bg-purple-950/20 transition-colors flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="w-6 text-center text-xs font-code text-purple-400/80 font-bold">
+                        {idx + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-xs font-code font-bold text-slate-100 truncate">
+                          {song.name}
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] font-tech text-slate-400 mt-0.5">
+                          <Clock className="w-3 h-3 text-slate-500" />
+                          <span>{formatMapElapsed(Math.floor(song.duration || 0))}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {ytUrl ? (
+                      <a
+                        href={ytUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-300 hover:text-white text-xs font-code flex items-center gap-1.5 transition-colors"
+                      >
+                        <Play className="w-3 h-3 fill-current text-red-400" />
+                        <span>YouTube ↗</span>
+                      </a>
+                    ) : (
+                      <span className="text-[11px] font-tech text-slate-600">No stream link</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-4 border-t border-slate-800 mt-4 flex items-center justify-between text-[11px] font-tech text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <Volume2 className="w-3.5 h-3.5 text-purple-400" />
+                Audio tracks extracted from CS2 workshop map entities
+              </span>
+              <button
+                onClick={() => setShowMusicModal(false)}
+                className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-code text-xs rounded-lg transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Community Attribution & Credits */}
+      <div className="mt-8 p-4 rounded-xl bg-gradient-to-r from-purple-950/40 via-slate-950/80 to-cyan-950/40 border border-purple-500/30 backdrop-blur-md">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-4 h-4 text-purple-400 flex-shrink-0" />
+            <div className="text-xs font-tech text-slate-300">
+              <span className="font-bold text-white uppercase tracking-wider">Community Intelligence Credits: </span>
+              Special thanks to <strong className="text-purple-300">queeniemella (InterStella0)</strong> from{' '}
+              <a href="https://zegraph.xyz" target="_blank" rel="noopener noreferrer" className="text-purple-400 underline hover:text-purple-300 font-code">zegraph.xyz</a>{' '}
+              for the live ZE match score telemetry & map thumbnail CDN, and{' '}
+              <strong className="text-cyan-300">cybo</strong> from{' '}
+              <a href="https://maps.cybo.dev" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline hover:text-cyan-300 font-code">maps.cybo.dev</a>{' '}
+              for interactive 3D map spatial models.
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0 text-[11px] font-code">
+            <a href="https://zegraph.xyz" target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 rounded-lg bg-purple-900/30 hover:bg-purple-900/50 border border-purple-500/40 text-purple-200 transition-colors">
+              ZE Graph ↗
+            </a>
+            <a href="https://maps.cybo.dev" target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 rounded-lg bg-cyan-900/30 hover:bg-cyan-900/50 border border-cyan-500/40 text-cyan-200 transition-colors">
+              Cybo 3D ↗
+            </a>
+          </div>
+        </div>
+      </div>
 
       {/* Bottom Information Notice */}
       <div className="mt-8 p-4 rounded-xl bg-slate-950/70 border border-slate-800/80 flex items-center gap-3 text-xs font-tech text-slate-400">

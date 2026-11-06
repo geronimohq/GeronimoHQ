@@ -9,6 +9,7 @@ import time
 import socket
 import struct
 import urllib.request
+import json
 import re
 from typing import Dict, Any, List
 from concurrent.futures import ThreadPoolExecutor
@@ -213,25 +214,25 @@ def fetch_single_server(s: Dict[str, Any]) -> Dict[str, Any]:
     # Therefore, the maximum player duration is the exact time spent on the map!
     max_player_dur = 0
     if player_list:
-        valid_durs = [p.get("seconds", 0) for p in player_list if p.get("seconds", 0) > 0]
+        valid_durs = [int(p.get("seconds", 0)) for p in player_list if p.get("seconds", 0) > 0]
         if valid_durs:
             max_player_dur = max(valid_durs)
 
     prev_map_data = MAP_START_TIMES.get(sid, {})
     if current_map and current_map != "-" and current_map == prev_map_data.get("map"):
-        recorded_start = prev_map_data.get("start", now_ts)
+        recorded_start = int(prev_map_data.get("start", now_ts))
         # If player durations show map has been running longer/differently by > 30s, synchronize to real player duration
         if max_player_dur > 0 and abs((now_ts - recorded_start) - max_player_dur) > 30:
-            map_start = now_ts - max_player_dur
+            map_start = int(now_ts - max_player_dur)
             MAP_START_TIMES[sid]["start"] = map_start
         else:
             map_start = recorded_start
     else:
         # Map changed or initial discovery
         if max_player_dur > 0:
-            map_start = now_ts - max_player_dur
+            map_start = int(now_ts - max_player_dur)
         else:
-            map_start = now_ts
+            map_start = int(now_ts)
         MAP_START_TIMES[sid] = {"map": current_map, "start": map_start}
 
     return {
@@ -249,30 +250,16 @@ def fetch_single_server(s: Dict[str, Any]) -> Dict[str, Any]:
         "rtt": info["rtt"],
         "players_list": player_list,
         "has_player_roster": bool(player_list),
-        "map_start_time": map_start
+        "map_start_time": int(map_start)
     }
 
-def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
-    # 1. Check if Geronimo is directly in any monitored server's active player list
-    for sid, sdata in server_results.items():
-        plist = sdata.get("players_list", [])
-        for p in plist:
-            pname = p.get("name", "").strip().lower()
-            if "geronimo" in pname:
-                return {
-                    "online": True,
-                    "in_game": True,
-                    "state": "in_server", # "in_server" | "main_menu" | "online" | "offline"
-                    "game": "Counter-Strike 2",
-                    "server_id": sid,
-                    "server_name": sdata.get("server_name", "Zombie Escape Server"),
-                    "map": sdata.get("map", "-"),
-                    "players": sdata.get("players", "-/-"),
-                    "connect_url": f"steam://connect/{sdata.get('host', '')}:{sdata.get('port', '')}",
-                    "player_duration": p.get("seconds", 0)
-                }
+STEAM_PROFILE_CACHE = {"timestamp": 0, "data": None}
 
-    # 2. Query Geronimo's public Steam profile
+def query_steam_profile_cached():
+    now = time.time()
+    if STEAM_PROFILE_CACHE["data"] and (now - STEAM_PROFILE_CACHE["timestamp"] < 30):
+        return STEAM_PROFILE_CACHE["data"]
+
     try:
         url = "https://steamcommunity.com/profiles/76561198143793864/"
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
@@ -286,63 +273,123 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
 
         is_in_game = "In-Game" in header_text or bool(game_text)
         is_cs2 = "Counter-Strike 2" in game_text or ("Counter-Strike" in game_text)
+        is_online = "Online" in header_text or is_in_game
 
-        if is_in_game and is_cs2:
-            return {
-                "online": True,
-                "in_game": True,
-                "state": "main_menu",
-                "game": "Counter-Strike 2",
-                "server_id": None,
-                "server_name": None,
-                "map": "Main Menu / Lobby",
-                "players": "Solo / Lobby",
-                "connect_url": None,
-                "player_duration": 0
-            }
-        elif is_in_game:
-            return {
-                "online": True,
-                "in_game": True,
-                "state": "other_game",
-                "game": game_text or "Playing a Game",
-                "server_id": None,
-                "server_name": None,
-                "map": "-",
-                "players": "-",
-                "connect_url": None,
-                "player_duration": 0
-            }
-        else:
-            is_online = "Online" in header_text
-            return {
-                "online": is_online,
-                "in_game": False,
-                "state": "online" if is_online else "offline",
-                "game": None,
-                "server_id": None,
-                "server_name": None,
-                "map": "-",
-                "players": "-",
-                "connect_url": None,
-                "player_duration": 0
-            }
+        res = {
+            "is_in_game": is_in_game,
+            "is_cs2": is_cs2,
+            "game_text": game_text,
+            "is_online": is_online
+        }
+        STEAM_PROFILE_CACHE["data"] = res
+        STEAM_PROFILE_CACHE["timestamp"] = now
+        return res
+    except Exception:
+        return STEAM_PROFILE_CACHE.get("data") or {
+            "is_in_game": False,
+            "is_cs2": False,
+            "game_text": "",
+            "is_online": True
+        }
+
+def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
+    # 1. Check if Geronimo is directly in any monitored server's active player list
+    for sid, sdata in server_results.items():
+        plist = sdata.get("players_list", [])
+        for p in plist:
+            pname = p.get("name", "").strip().lower()
+            if "geronimo" in pname:
+                return {
+                    "online": True,
+                    "in_game": True,
+                    "state": "in_server", # "in_server" | "main_menu" | "other_game" | "online" | "offline"
+                    "game": "Counter-Strike 2",
+                    "server_id": sid,
+                    "server_name": sdata.get("server_name", "Zombie Escape Server"),
+                    "map": sdata.get("map", "-"),
+                    "players": sdata.get("players", "-/-"),
+                    "connect_url": f"steam://connect/{sdata.get('host', '')}:{sdata.get('port', '')}",
+                    "player_duration": int(p.get("seconds", 0))
+                }
+
+    # 2. Check Steam profile status
+    st = query_steam_profile_cached()
+
+    if st.get("is_in_game") and st.get("is_cs2"):
+        return {
+            "online": True,
+            "in_game": True,
+            "state": "main_menu",
+            "game": "Counter-Strike 2",
+            "server_id": None,
+            "server_name": "In Main Menu",
+            "map": "In Main Menu",
+            "players": "Solo / In Lobby",
+            "connect_url": None,
+            "player_duration": 0
+        }
+    elif st.get("is_in_game"):
+        game_title = st.get("game_text") or "Playing on Steam"
+        return {
+            "online": True,
+            "in_game": True,
+            "state": "other_game",
+            "game": game_title,
+            "server_id": None,
+            "server_name": None,
+            "map": "Playing on Steam",
+            "players": "In-Game",
+            "connect_url": None,
+            "player_duration": 0
+        }
+    else:
+        is_on = st.get("is_online", True)
+        return {
+            "online": is_on,
+            "in_game": False,
+            "state": "online" if is_on else "offline",
+            "game": "Steam Online",
+            "server_id": None,
+            "server_name": None,
+            "map": "Status: Online",
+            "players": "Chilling",
+            "connect_url": None,
+            "player_duration": 0
+        }
+
+GFL_INTEL_CACHE = {"timestamp": 0, "match": None, "musics": []}
+
+def fetch_gfl_intel(gfl_map: str):
+    now = time.time()
+    if GFL_INTEL_CACHE["match"] and (now - GFL_INTEL_CACHE["timestamp"] < 5):
+        return GFL_INTEL_CACHE["match"], GFL_INTEL_CACHE["musics"]
+
+    match_data = None
+    musics_data = []
+    try:
+        url = "https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        res = json.loads(urllib.request.urlopen(req, timeout=2.5).read().decode("utf-8"))
+        if res.get("code") == 0:
+            match_data = res.get("data")
     except Exception:
         pass
 
-    # Fallback to Online on Steam
-    return {
-        "online": True,
-        "in_game": False,
-        "state": "online",
-        "game": None,
-        "server_id": None,
-        "server_name": None,
-        "map": "-",
-        "players": "-",
-        "connect_url": None,
-        "player_duration": 0
-    }
+    clean_map = gfl_map.strip() if gfl_map else ""
+    if clean_map and clean_map != "-":
+        try:
+            murl = f"https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/{clean_map}/musics"
+            req2 = urllib.request.Request(murl, headers={"User-Agent": "Mozilla/5.0"})
+            mres = json.loads(urllib.request.urlopen(req2, timeout=2.5).read().decode("utf-8"))
+            if mres.get("code") == 0:
+                musics_data = mres.get("data", [])
+        except Exception:
+            pass
+
+    GFL_INTEL_CACHE["match"] = match_data
+    GFL_INTEL_CACHE["musics"] = musics_data
+    GFL_INTEL_CACHE["timestamp"] = now
+    return match_data, musics_data
 
 def fetch_all_telemetry() -> Dict[str, Any]:
     futures = [THREAD_POOL.submit(fetch_single_server, s) for s in SERVERS]
@@ -355,6 +402,8 @@ def fetch_all_telemetry() -> Dict[str, Any]:
             pass
 
     geronimo_status = get_geronimo_steam_status(server_results)
+    gfl_map = server_results.get("gfl", {}).get("map", "")
+    match_now, map_musics = fetch_gfl_intel(gfl_map)
 
     return {
         "timestamp": int(time.time()),
@@ -362,6 +411,8 @@ def fetch_all_telemetry() -> Dict[str, Any]:
         "total_servers": len(SERVERS),
         "online_servers": sum(1 for r in server_results.values() if r["online"]),
         "geronimo_presence": geronimo_status,
+        "gfl_match_now": match_now,
+        "gfl_map_musics": map_musics,
         "servers": server_results
     }
 

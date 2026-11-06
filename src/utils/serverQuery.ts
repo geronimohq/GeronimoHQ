@@ -33,12 +33,34 @@ export interface GeronimoPresence {
   player_duration?: number;
 }
 
+export interface GflMatchNow {
+  human_score: number;
+  zombie_score: number;
+  extend_count: number;
+  started_at: string;
+  estimated_time_end?: string;
+  server_time_end?: string;
+  map: string;
+  player_count: number;
+}
+
+export interface MapMusicEntry {
+  id: string;
+  name: string;
+  duration: number;
+  youtube_music?: string;
+  youtube_video?: string;
+  tags?: string[];
+}
+
 export interface LiveTelemetryPayload {
   timestamp: number;
   iso_time: string;
   total_servers: number;
   online_servers: number;
   geronimo_presence?: GeronimoPresence;
+  gfl_match_now?: GflMatchNow | null;
+  gfl_map_musics?: MapMusicEntry[];
   servers: Record<string, LiveServerInfo>;
 }
 
@@ -120,17 +142,41 @@ export function getMapStartTime(serverId: string, currentMap?: string, serverTim
 }
 
 /**
- * Formats elapsed seconds into MM:SS (or H:MM:SS if > 1 hour)
+ * Formats elapsed seconds into clean integer MM:SS (or H:MM:SS if >= 1 hour).
+ * Strictly floors the seconds to avoid any milliseconds or decimals.
  */
 export function formatMapElapsed(totalSeconds: number): string {
-  if (totalSeconds < 0) totalSeconds = 0;
-  const hrs = Math.floor(totalSeconds / 3600);
-  const mins = Math.floor((totalSeconds % 3600) / 60);
-  const secs = totalSeconds % 60;
+  if (totalSeconds < 0 || isNaN(totalSeconds)) totalSeconds = 0;
+  const floored = Math.floor(totalSeconds);
+  const hrs = Math.floor(floored / 3600);
+  const mins = Math.floor((floored % 3600) / 60);
+  const secs = floored % 60;
   if (hrs > 0) {
     return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Returns the CDN thumbnail image URL for a given CS2 Zombie Escape map from zegraph.xyz.
+ */
+export function getMapThumbnailUrl(mapName?: string): string {
+  if (!mapName || mapName === '-' || mapName === 'Unknown') {
+    return '/images/hero_ze_backdrop.jpg';
+  }
+  let clean = mapName.trim().toLowerCase();
+  if (clean.endsWith('_p')) clean = clean.slice(0, -2);
+  return `https://zegraph.xyz/thumbnails/medium/730_cs2--${clean}.jpg`;
+}
+
+/**
+ * Returns the 3D map viewer URL hosted by cybo at maps.cybo.dev.
+ */
+export function getMap3DViewerUrl(mapName?: string): string {
+  if (!mapName || mapName === '-' || mapName === 'Unknown') {
+    return 'https://maps.cybo.dev/';
+  }
+  return `https://maps.cybo.dev/?map=${encodeURIComponent(mapName.trim())}`;
 }
 
 export interface RegionalPingEstimate {

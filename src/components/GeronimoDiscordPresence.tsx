@@ -4,7 +4,8 @@ import {
   type GeronimoPresence,
   formatMapElapsed, 
   getMapStartTime, 
-  fetchLiveTelemetry 
+  fetchLiveTelemetry,
+  getMapThumbnailUrl 
 } from '../utils/serverQuery';
 import { 
   Gamepad2, 
@@ -15,7 +16,8 @@ import {
   ShieldCheck,
   ChevronDown,
   ChevronUp,
-  ExternalLink
+  ExternalLink,
+  Flame
 } from 'lucide-react';
 
 interface GeronimoDiscordPresenceProps {
@@ -83,11 +85,15 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
     gflTelemetry?.players_list?.some((p) => p.name.toLowerCase().includes('geronimo'))
   );
 
-  // Determine current active presence state
-  let state: 'in_server' | 'main_menu' | 'online' | 'offline' = 'online';
+  // Determine current active presence state: 'in_server' | 'main_menu' | 'other_game' | 'online' | 'offline'
+  let state: 'in_server' | 'main_menu' | 'other_game' | 'online' | 'offline' = 'online';
   if (presence?.state === 'in_server' || isPlayerOnGFL) {
     state = 'in_server';
-  } else if (presence?.state === 'main_menu' || presence?.in_game) {
+  } else if (presence?.state === 'main_menu') {
+    state = 'main_menu';
+  } else if (presence?.state === 'other_game') {
+    state = 'other_game';
+  } else if (presence?.in_game) {
     state = 'main_menu';
   } else if (presence?.online !== false) {
     state = 'online';
@@ -98,12 +104,12 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
   // Active Map and Server
   const currentMap = state === 'in_server'
     ? (presence?.map && presence.map !== '-' ? presence.map : (gflTelemetry?.map && gflTelemetry.map !== '-' ? gflTelemetry.map : 'ze_kitchen'))
-    : (state === 'main_menu' ? 'CS2 Main Menu' : 'Steam Community');
+    : (state === 'main_menu' ? 'In Main Menu' : state === 'other_game' ? (presence?.game || 'Steam Game') : 'Steam Online');
 
   // Accurate player display matching server telemetry exactly
   const playerDisplay = state === 'in_server'
     ? (presence?.players && presence.players !== '-/-' ? presence.players : (gflTelemetry?.players && gflTelemetry.players !== '-/-' ? gflTelemetry.players : '63/64'))
-    : (state === 'main_menu' ? 'Solo / In Lobby' : 'Chilling');
+    : (state === 'main_menu' ? 'Solo / In Lobby' : state === 'other_game' ? 'In-Game' : 'Chilling');
 
   // Direct game connection link
   const connectUrl = presence?.connect_url || 'steam://connect/74.91.124.21:27015';
@@ -111,6 +117,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
   // Live map start time & duration (only active when in server)
   const mapStart = getMapStartTime('gfl', currentMap, gflTelemetry?.map_start_time);
   const mapDuration = Math.max(0, nowSec - mapStart);
+  const mapThumbnail = getMapThumbnailUrl(currentMap);
 
   // If collapsed: show compact floating pill
   if (isCollapsed) {
@@ -133,7 +140,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             />
           </div>
           <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#111214] ${
-            state === 'in_server' ? 'bg-[#23a55a]' : state === 'main_menu' ? 'bg-amber-400' : 'bg-[#23a55a]'
+            state === 'in_server' ? 'bg-[#23a55a]' : state === 'main_menu' ? 'bg-amber-400' : state === 'other_game' ? 'bg-purple-400' : 'bg-[#23a55a]'
           }`} />
         </div>
 
@@ -143,7 +150,12 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
           </span>
           <span className="text-[#949ba4] hidden sm:inline">&bull;</span>
           <span className="text-[#23a55a] font-medium hidden sm:inline flex items-center gap-1">
-            <Gamepad2 className="w-3 h-3 inline" /> {state === 'in_server' ? 'In ZE Server' : state === 'main_menu' ? 'CS2 Main Menu' : 'Steam Online'}
+            <Gamepad2 className="w-3 h-3 inline" /> {
+              state === 'in_server' ? 'In ZE Server' : 
+              state === 'main_menu' ? 'CS2 Main Menu' : 
+              state === 'other_game' ? (presence?.game || 'In-Game') : 
+              'Steam Online'
+            }
           </span>
           {state === 'in_server' && (
             <span className="text-cyan-400 font-code text-[11px] hidden md:inline">
@@ -167,10 +179,16 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
       <div className="flex items-center justify-between gap-2 border-b border-[#2b2d31] pb-2.5 mb-3">
         <div className="flex items-center gap-2">
           <span className={`w-2.5 h-2.5 rounded-full inline-block animate-pulse ${
-            state === 'in_server' ? 'bg-[#23a55a]' : state === 'main_menu' ? 'bg-amber-400' : 'bg-[#23a55a]'
+            state === 'in_server' ? 'bg-[#23a55a]' : 
+            state === 'main_menu' ? 'bg-amber-400' : 
+            state === 'other_game' ? 'bg-purple-400' : 
+            'bg-[#23a55a]'
           }`} />
           <span className="text-[11px] font-sans font-bold tracking-wider text-[#dbdee1] uppercase">
-            {state === 'in_server' ? 'PLAYING A GAME' : state === 'main_menu' ? 'PLAYING COUNTER-STRIKE 2' : 'ONLINE ON STEAM'}
+            {state === 'in_server' ? 'PLAYING A GAME' : 
+             state === 'main_menu' ? 'PLAYING COUNTER-STRIKE 2' : 
+             state === 'other_game' ? `PLAYING ${presence?.game?.toUpperCase() || 'A GAME'}` : 
+             'ONLINE ON STEAM'}
           </span>
         </div>
 
@@ -201,8 +219,16 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
           </div>
           {/* Status Dot */}
           <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border-2 border-[#111214] flex items-center justify-center ${
-            state === 'in_server' ? 'bg-[#23a55a]' : state === 'main_menu' ? 'bg-amber-400' : 'bg-[#23a55a]'
-          }`} title={state === 'in_server' ? 'In Zombie Escape Server' : state === 'main_menu' ? 'In CS2 Main Menu' : 'Online on Steam'}>
+            state === 'in_server' ? 'bg-[#23a55a]' : 
+            state === 'main_menu' ? 'bg-amber-400' : 
+            state === 'other_game' ? 'bg-purple-400' : 
+            'bg-[#23a55a]'
+          }`} title={
+            state === 'in_server' ? 'In Zombie Escape Server' : 
+            state === 'main_menu' ? 'In CS2 Main Menu' : 
+            state === 'other_game' ? `Playing ${presence?.game}` : 
+            'Online on Steam'
+          }>
             <span className="w-1.5 h-1.5 rounded-full bg-white" />
           </div>
         </div>
@@ -223,7 +249,11 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
               </span>
             ) : state === 'main_menu' ? (
               <span className="px-1.5 py-0.2 rounded text-[10px] font-sans font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
-                <Gamepad2 className="w-2.5 h-2.5" /> MAIN MENU
+                <Gamepad2 className="w-2.5 h-2.5" /> IN MAIN MENU
+              </span>
+            ) : state === 'other_game' ? (
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-sans font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1">
+                <Flame className="w-2.5 h-2.5" /> IN-GAME
               </span>
             ) : (
               <span className="px-1.5 py-0.2 rounded text-[10px] font-sans font-bold bg-[#5865f2]/20 text-[#5865f2] border border-[#5865f2]/30 flex items-center gap-1">
@@ -235,12 +265,29 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
           {/* Game Title */}
           <div className="text-xs sm:text-sm font-bold font-sans text-[#f2f3f5] truncate flex items-center gap-1.5">
             <Gamepad2 className="w-3.5 h-3.5 text-[#5865f2]" />
-            <span>{state === 'online' ? 'Counter-Strike 2' : 'Counter-Strike 2'}</span>
+            <span>
+              {state === 'in_server' ? 'Counter-Strike 2' : 
+               state === 'main_menu' ? 'Counter-Strike 2' : 
+               state === 'other_game' ? (presence?.game || 'Steam Game') : 
+               'Steam Online'}
+            </span>
           </div>
 
           {/* Current Map & Live Map Timer */}
           <div className="text-xs font-sans text-[#949ba4] truncate flex items-center gap-1.5 mt-0.5">
             <span className="text-[#dbdee1] font-medium">{state === 'in_server' ? 'Map:' : 'Status:'}</span>
+            {state === 'in_server' && (
+              <div className="w-5 h-5 rounded overflow-hidden border border-slate-700 flex-shrink-0 bg-slate-900">
+                <img 
+                  src={mapThumbnail} 
+                  alt={currentMap} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
             <code className="text-[11px] text-[#5865f2] font-code bg-[#1e1f22] px-1.5 py-0.5 rounded font-bold truncate">
               {currentMap}
             </code>
@@ -266,37 +313,62 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
         </div>
       </div>
 
-      {/* Action Buttons: strictly ONE Profile link next to Join Game */}
-      <div className="grid grid-cols-2 gap-2 mt-3 pt-2.5 border-t border-[#2b2d31]/80">
+      {/* Action Buttons */}
+      <div className="mt-3 pt-2.5 border-t border-[#2b2d31]/80">
         {state === 'in_server' ? (
-          <a
-            href={connectUrl}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#5865f2] hover:bg-[#4752c4] text-white font-sans text-xs font-semibold rounded-lg shadow-md transition-all cursor-pointer transform hover:-translate-y-0.5"
-            title="Launch CS2 and join Geronimo on server"
-          >
-            <Play className="w-3 h-3 fill-current" />
-            <span>Join Game</span>
-          </a>
+          <div className="grid grid-cols-2 gap-2">
+            <a
+              href={connectUrl}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#5865f2] hover:bg-[#4752c4] text-white font-sans text-xs font-semibold rounded-lg shadow-md transition-all cursor-pointer transform hover:-translate-y-0.5"
+              title="Launch CS2 and join Geronimo on server"
+            >
+              <Play className="w-3 h-3 fill-current" />
+              <span>Join Game</span>
+            </a>
+            <a
+              href="https://steamcommunity.com/profiles/76561198143793864/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#2b2d31] hover:bg-[#35373c] text-[#dbdee1] hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
+              title="View Geronimo's Steam Community Profile"
+            >
+              <span>Steam Profile</span>
+              <ExternalLink className="w-3 h-3 text-slate-400" />
+            </a>
+          </div>
+        ) : state === 'main_menu' ? (
+          <div className="grid grid-cols-2 gap-2">
+            <a
+              href="steam://rungameid/730"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#2b2d31] hover:bg-[#35373c] text-slate-300 hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
+              title="Launch Counter-Strike 2"
+            >
+              <Gamepad2 className="w-3 h-3 text-cyan-400" />
+              <span>Launch CS2</span>
+            </a>
+            <a
+              href="https://steamcommunity.com/profiles/76561198143793864/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#2b2d31] hover:bg-[#35373c] text-[#dbdee1] hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
+              title="View Geronimo's Steam Community Profile"
+            >
+              <span>Steam Profile</span>
+              <ExternalLink className="w-3 h-3 text-slate-400" />
+            </a>
+          </div>
         ) : (
           <a
-            href="steam://rungameid/730"
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#2b2d31] hover:bg-[#35373c] text-slate-300 hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
-            title="Launch Counter-Strike 2"
+            href="https://steamcommunity.com/profiles/76561198143793864/"
+            target="_blank"
+            rel="noreferrer"
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-[#2b2d31] hover:bg-[#35373c] text-[#dbdee1] hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
+            title="View Geronimo's Steam Community Profile"
           >
-            <Gamepad2 className="w-3 h-3 text-cyan-400" />
-            <span>Launch CS2</span>
+            <span>View Steam Profile</span>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
           </a>
         )}
-        <a
-          href="https://steamcommunity.com/profiles/76561198143793864/"
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#2b2d31] hover:bg-[#35373c] text-[#dbdee1] hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
-          title="View Geronimo's Steam Community Profile"
-        >
-          <span>Steam Profile</span>
-          <ExternalLink className="w-3 h-3 text-slate-400" />
-        </a>
       </div>
     </aside>
   );
