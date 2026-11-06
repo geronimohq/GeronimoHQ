@@ -257,23 +257,37 @@ STEAM_PROFILE_CACHE = {"timestamp": 0, "data": None}
 
 def query_steam_profile_cached():
     now = time.time()
-    if STEAM_PROFILE_CACHE["data"] and (now - STEAM_PROFILE_CACHE["timestamp"] < 30):
+    # Cache for 12 seconds to ensure rapid updates when closing Steam
+    if STEAM_PROFILE_CACHE["data"] and (now - STEAM_PROFILE_CACHE["timestamp"] < 12):
         return STEAM_PROFILE_CACHE["data"]
 
     try:
         url = "https://steamcommunity.com/profiles/76561198143793864/"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
-        html = urllib.request.urlopen(req, timeout=2.5).read().decode("utf-8", errors="ignore")
+        html = ""
+        # 1. Use curl_cffi impersonating modern browser to bypass Cloudflare / Akamai rate-limits & TLS blocks
+        try:
+            r = cffi_requests.get(url, impersonate="chrome120", timeout=3.5)
+            if r.status_code == 200:
+                html = r.text
+        except Exception:
+            pass
 
-        in_game_header = re.search(r'profile_in_game_header.*?>(.*?)<', html, re.DOTALL)
+        if not html:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+            html = urllib.request.urlopen(req, timeout=2.5).read().decode("utf-8", errors="ignore")
+
+        # Check persona status directly in Steam Community HTML
+        # Steam marks offline profiles with class 'persona offline' and text 'Currently Offline'
+        is_offline = ("Currently Offline" in html) or ("persona offline" in html) or ('class="profile_in_game persona offline"' in html)
+        is_in_game = ("Currently In-Game" in html) or ("profile_in_game_name" in html)
+        is_online = (not is_offline) if ("profile_in_game" in html) else False
+
+        game_text = ""
         in_game_name = re.search(r'profile_in_game_name.*?>(.*?)<', html, re.DOTALL)
+        if in_game_name:
+            game_text = in_game_name.group(1).strip()
 
-        header_text = in_game_header.group(1).strip() if in_game_header else ""
-        game_text = in_game_name.group(1).strip() if in_game_name else ""
-
-        is_in_game = "In-Game" in header_text or bool(game_text)
         is_cs2 = "Counter-Strike 2" in game_text or ("Counter-Strike" in game_text)
-        is_online = "Online" in header_text or is_in_game
 
         res = {
             "is_in_game": is_in_game,
@@ -285,11 +299,13 @@ def query_steam_profile_cached():
         STEAM_PROFILE_CACHE["timestamp"] = now
         return res
     except Exception:
-        return STEAM_PROFILE_CACHE.get("data") or {
+        if STEAM_PROFILE_CACHE.get("data"):
+            return STEAM_PROFILE_CACHE["data"]
+        return {
             "is_in_game": False,
             "is_cs2": False,
             "game_text": "",
-            "is_online": True
+            "is_online": False
         }
 
 def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
@@ -314,6 +330,20 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
 
     # 2. Check Steam profile status
     st = query_steam_profile_cached()
+
+    if not st.get("is_online"):
+        return {
+            "online": False,
+            "in_game": False,
+            "state": "offline",
+            "game": "Offline",
+            "server_id": None,
+            "server_name": None,
+            "map": "Offline",
+            "players": "N/A",
+            "connect_url": None,
+            "player_duration": 0
+        }
 
     if st.get("is_in_game") and st.get("is_cs2"):
         return {
@@ -343,11 +373,10 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
             "player_duration": 0
         }
     else:
-        is_on = st.get("is_online", True)
         return {
-            "online": is_on,
+            "online": True,
             "in_game": False,
-            "state": "online" if is_on else "offline",
+            "state": "online",
             "game": "Steam Community",
             "server_id": None,
             "server_name": None,
