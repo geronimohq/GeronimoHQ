@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Download, 
   Sliders, 
@@ -6,11 +6,213 @@ import {
   ShieldCheck, 
   Target, 
   Zap, 
-  CheckCircle2 
+  HardDrive, 
+  Radio, 
+  Terminal, 
+  Copy, 
+  Check, 
+  Sparkles,
+  ChevronRight
 } from 'lucide-react';
+
+interface AppFeatureModule {
+  id: string;
+  name: string;
+  shortTag: string;
+  badge: string;
+  icon: React.ReactNode;
+  summary: string;
+  details: string[];
+  parameters: { name: string; value: string; desc: string }[];
+  proTip: string;
+  vacSafe: boolean;
+}
 
 export const CS2CommandCenterPreview: React.FC = () => {
   const downloadUrl = '/downloads/CS2_Command_Center.exe';
+  const [activeTab, setActiveTab] = useState<string>('autoexec');
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const modules: AppFeatureModule[] = [
+    {
+      id: 'autoexec',
+      name: 'Autoexec & Pro Binds',
+      shortTag: 'CONFIG ENGINE',
+      badge: '1-CLICK INSTALL',
+      icon: <Sliders className="w-5 h-5 text-fuchsia-400" />,
+      summary: 'Automatic CS2 config engine. Directly locates your Steam userdata CS2 config folder and injects an optimized autoexec.cfg with competitive binds.',
+      details: [
+        'Pro Jumpthrow alias bound to mouse or key with sub-tick consistency.',
+        'Null-Cancelling Movement Binds (A/D snap without opposing key cancellation).',
+        'Audio Clarity EQ tuning for pinpointing zombie footsteps and breakable barricades.',
+        'Quick C4/Decoy Drop, Fast Weapon Drop, and Toggle Zoom Radar binds.',
+        'FPS Cap stabilizer (+fps_max 0 or tuned to your monitor refresh rate).'
+      ],
+      parameters: [
+        { name: 'alias "+jumpaction"', value: '"+jump;"', desc: 'Sub-tick jumpthrow execution' },
+        { name: 'snd_headphone_eq', value: '1 (Crisp Footsteps)', desc: 'High-frequency audio clarity preset' },
+        { name: 'cl_radar_scale', value: '0.35 <-> 0.70 toggle', desc: 'Dynamic radar zoom keybind' }
+      ],
+      proTip: 'No manual file copying required. The app discovers your active Steam account ID and saves autoexec.cfg directly into the correct cfg directory.',
+      vacSafe: true
+    },
+    {
+      id: 'engine',
+      name: 'Engine & CPU Affinity Tuning',
+      shortTag: 'SOURCE 2 OPTIMIZER',
+      badge: 'FPS STABILIZER',
+      icon: <Cpu className="w-5 h-5 text-cyan-400" />,
+      summary: 'Elevates Counter-Strike 2 to High Priority scheduling and optimizes CPU core affinity to prevent frame-time micro-stutters during 64-player combat.',
+      details: [
+        'Elevates cs2.exe OS scheduling priority above background Discord/Chrome processes.',
+        'Binds game render threads to physical high-performance P-Cores on Intel Hybrid & AMD 3D-V-Cache CPUs.',
+        'Direct3D 11 vs Vulkan backend selector for optimal GPU pipeline performance.',
+        'Network interpolation buffer tuning (cl_interp 0 / sub-tick packet smoothing).'
+      ],
+      parameters: [
+        { name: 'Process Priority', value: 'HIGH_PRIORITY_CLASS', desc: 'Direct Windows thread scheduling elevation' },
+        { name: 'Core Affinity Mask', value: '0x0000FFFF (Physical Cores)', desc: 'Avoids scheduling latency on efficiency E-Cores' },
+        { name: 'Sub-Tick Interp', value: '0.015625s buffer', desc: 'Optimal packet tick alignment' }
+      ],
+      proTip: 'Particularly effective on 64-player Zombie Escape servers where heavy grenade smoke, particle effects, and laser barricades drop 1% low FPS.',
+      vacSafe: true
+    },
+    {
+      id: 'mpo',
+      name: 'GPU MPO & DWM Latency Fixer',
+      shortTag: 'DISPLAY ENGINE',
+      badge: 'ALT-TAB FIX',
+      icon: <Zap className="w-5 h-5 text-amber-400" />,
+      summary: 'Detects and resolves Windows Multi-Plane Overlay (MPO) driver conflicts that cause Alt-Tab black screens, display freezing, and desktop stutter.',
+      details: [
+        'Automatic scan of Windows Registry for active MPO overlays on NVIDIA & AMD drivers.',
+        '1-Click automated MPO disable/enable patch with instant backup and restore.',
+        'DWM (Desktop Window Manager) composition latency tuning for borderless & fullscreen modes.',
+        'Hardware Accelerated GPU Scheduling (HAGS) compatibility diagnostics.'
+      ],
+      parameters: [
+        { name: 'OverlayTestMode', value: '0x00000005 (Disabled)', desc: 'NVIDIA/AMD MPO registry bypass' },
+        { name: 'DWM Composition', value: 'Low Latency Mode', desc: 'Eliminates DWM frame queue buffer delay' },
+        { name: 'Alt-Tab Freeze', value: 'RESOLVED', desc: 'Seamless instant desktop switching' }
+      ],
+      proTip: 'Eliminates the infamous 3-second black screen freeze when Alt-Tabbing between CS2 and Discord or browser.',
+      vacSafe: true
+    },
+    {
+      id: 'sniper',
+      name: 'Silent 64/64 Server Slot Sniper',
+      shortTag: 'DIRECT NETWORK',
+      badge: 'HIGH SPEED AUTO-JOIN',
+      icon: <Target className="w-5 h-5 text-lime-400" />,
+      summary: 'Monitors full 64/64 Zombie Escape servers in the background with zero-overhead UDP A2S queries. The millisecond a slot opens, it alerts and connects.',
+      details: [
+        'Runs silently in the Windows system tray with virtually 0% CPU consumption.',
+        '1.0-second ultra-fast reaction polling cycle.',
+        'Audible Windows hardware alert chime the instant someone leaves or crashes.',
+        'Direct Win32 in-engine console injection: focuses CS2 and issues connect command instantly.',
+        'GFL Priority Slot Tier options (≤61 for Normal, ≤62 for Supporters, ≤63 for VIPs).'
+      ],
+      parameters: [
+        { name: 'Polling Frequency', value: '1.0 Second', desc: 'Ultra-low overhead UDP A2S_INFO' },
+        { name: 'Auto-Trigger', value: 'Win32 In-Engine Console', desc: 'Bypasses Steam protocol delay' },
+        { name: 'Audible Chime', value: 'Dual-Tone Beep', desc: 'Alerts you while tabbed out' }
+      ],
+      proTip: 'Never sit spamming connect in console manually again. Arm the sniper, watch YouTube, and CS2 will automatically jump into the server.',
+      vacSafe: true
+    },
+    {
+      id: 'cleaner',
+      name: 'ZE Map Cleaner & Disk Saver',
+      shortTag: 'STORAGE MANAGER',
+      badge: 'FREES 10-50 GB',
+      icon: <HardDrive className="w-5 h-5 text-emerald-400" />,
+      summary: 'Scans your CS2 workshop and community maps directory to identify bloated 2GB+ Zombie Escape maps and clean up duplicate obsolete versions.',
+      details: [
+        'Deep scan of steamapps/common/Counter-Strike Global Offensive/game/csgo/maps.',
+        'Identifies older versions of maps (e.g. v1, v2 superseded by v3_final).',
+        'Frees tens of gigabytes of SSD space taken by community server downloads.',
+        'Safe Map Whitelist to keep your favorite servers and maps intact.'
+      ],
+      parameters: [
+        { name: 'Target Directory', value: 'game/csgo/maps', desc: 'CS2 community downloads directory' },
+        { name: 'Duplicate Detection', value: 'Checksum + Version parse', desc: 'Preserves newest playable version' },
+        { name: 'Space Reclaimed', value: '10 GB - 50 GB avg', desc: 'Instant SSD space recovery' }
+      ],
+      proTip: 'Zombie Escape players download 50-100GB of custom maps over time. Running this cleaner restores massive SSD space effortlessly.',
+      vacSafe: true
+    },
+    {
+      id: 'ram',
+      name: 'Live Standby List RAM Booster',
+      shortTag: 'MEMORY OPTIMIZER',
+      badge: 'MICRO-STUTTER FIX',
+      icon: <Sparkles className="w-5 h-5 text-violet-400" />,
+      summary: 'Flushes Windows Standby Memory Cache using native Win32 APIs before launching or during intensive 64-player matches.',
+      details: [
+        'Solves the Windows 10/11 standby list memory caching bug where free RAM drops to zero.',
+        'Reclaims inactive memory cache without terminating active background processes.',
+        'Prevents frametime spikes when hundreds of zombie models and particle effects render simultaneously.',
+        'Automated background flush schedule or 1-click manual boost.'
+      ],
+      parameters: [
+        { name: 'API Hook', value: 'NtSetSystemInformation', desc: 'Official Windows MemoryListPurge' },
+        { name: 'Standby Cache', value: 'Purged to 0 MB', desc: 'Reallocates free memory pool for CS2' },
+        { name: 'Latency Spike', value: 'REDUCED', desc: 'Smoothens 1% low frame-times' }
+      ],
+      proTip: 'Unlike third-party snake oil memory tools, this uses the official Windows kernel memory list purge API.',
+      vacSafe: true
+    },
+    {
+      id: 'launch',
+      name: 'Steam Launch Options Preset Builder',
+      shortTag: 'ENGINE LAUNCHER',
+      badge: 'PRESET GENERATOR',
+      icon: <Terminal className="w-5 h-5 text-blue-400" />,
+      summary: 'Preconfigured launch command presets designed specifically for Counter-Strike 2 sub-tick performance and competitive latency.',
+      details: [
+        'Skips the Valve splash video intro (-novid) for faster game launches.',
+        'Disables controller joystick polling (-nojoy) to free input thread cycles.',
+        'Sets maximum tickrate and updates frequency automatically (+cl_updaterate 128).',
+        'High execution priority (-high) and physical thread affinity (-threads N).'
+      ],
+      parameters: [
+        { name: 'Competitive Baseline', value: '-novid -nojoy -high', desc: 'Universal stutter-free baseline' },
+        { name: 'CPU Thread Lock', value: '-threads 8 (Custom)', desc: 'Allocates exact physical core count' },
+        { name: 'Third-Party Interop', value: '-allow_third_party_software', desc: 'For Discord / OBS / NVIDIA overlay' }
+      ],
+      proTip: 'Click any preset in the app to immediately copy the exact command line ready to paste into Steam CS2 Properties.',
+      vacSafe: true
+    },
+    {
+      id: 'discord',
+      name: 'Discord Rich Presence Integration',
+      shortTag: 'SOCIAL RPC',
+      badge: 'LIVE PROFILE SYNC',
+      icon: <Radio className="w-5 h-5 text-indigo-400" />,
+      summary: 'Broadcasts your real-time Counter-Strike 2 gameplay status to your Discord profile with custom Zombie Escape map graphics and party counts.',
+      details: [
+        'Displays exact ZE map currently playing (e.g. "Playing ze_dark_souls on GFL Clan").',
+        'Shows real-time player counts ("Party of 64") and session elapsed time.',
+        'Provides friends a 1-click "Join Game" button on Discord to jump straight into your server.',
+        'Integrated with your local CS2 process with zero performance impact.'
+      ],
+      parameters: [
+        { name: 'Discord Client ID', value: 'CS2 Command Center RPC', desc: 'Official Rich Presence application' },
+        { name: 'Map Image Asset', value: 'Dynamic ZE Map Thumbnail', desc: 'Shows visual map artwork on Discord' },
+        { name: 'Join Party Hook', value: 'steam://connect/IP:PORT', desc: 'Allows friends to spectate or join' }
+      ],
+      proTip: 'Show off your Zombie Escape adventures directly on Discord with custom map artwork!',
+      vacSafe: true
+    }
+  ];
+
+  const currentModule = modules.find((m) => m.id === activeTab) || modules[0];
+
+  const handleCopy = (key: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
 
   return (
     <section id="cs2-command" className="relative w-full max-w-6xl mx-auto px-4 py-12">
@@ -19,7 +221,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="px-2.5 py-0.5 text-[10px] font-code rounded bg-fuchsia-950/80 text-fuchsia-300 border border-fuchsia-500/50">
-              MODULE 01 // DESKTOP APPLICATION
+              MODULE 01 // DESKTOP SUITE CONSOLE
             </span>
             <span className="text-xs font-code text-slate-400">
               WINDOWS 10 / 11 64-BIT // PORTABLE EXE
@@ -32,7 +234,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
             </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-2xl">
-            Want seamless PC integration without manual file editing? Download the official standalone desktop suite to configure Autoexec, pro binds, launch options, and slot sniping with zero hassle.
+            Want seamless PC integration without manual file editing? Explore the full capabilities of the standalone desktop companion below.
           </p>
         </div>
 
@@ -52,74 +254,156 @@ export const CS2CommandCenterPreview: React.FC = () => {
         </div>
       </div>
 
-      {/* 4 Core Desktop Capabilities Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {/* Interactive Feature Console Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
         
-        {/* Capability 1: Autoexec & Binds */}
-        <div className="p-5 rounded-xl border border-slate-800 bg-slate-950/60 backdrop-blur-md hover:border-fuchsia-500/60 transition-all group">
-          <div className="w-10 h-10 rounded-lg bg-fuchsia-950/80 border border-fuchsia-500/40 flex items-center justify-center text-fuchsia-400 mb-3 group-hover:shadow-[0_0_15px_rgba(255,0,127,0.5)]">
-            <Sliders className="w-5 h-5" />
+        {/* Left Module Navigation Tabs (4 Cols) */}
+        <div className="lg:col-span-4 flex flex-col gap-2 bg-slate-950/80 p-3 rounded-2xl border border-slate-800 backdrop-blur-md">
+          <div className="px-3 py-2 text-[11px] font-code text-slate-400 font-bold border-b border-slate-800/80 flex items-center justify-between">
+            <span>APP MODULES ({modules.length})</span>
+            <span className="text-fuchsia-400">CLICK TO EXPLORE</span>
           </div>
-          <h3 className="font-cyber font-bold text-white text-sm mb-1.5">
-            Autoexec & Binds
-          </h3>
-          <p className="text-xs text-slate-400 font-tech leading-relaxed mb-3">
-            One-click installer writes directly into your Steam CS2 config folder. Includes pro jumpthrows, null-binds, sub-tick rates, and audio clarity.
-          </p>
-          <div className="text-[10px] font-code text-fuchsia-400 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-            <span>Zero manual file copying</span>
+
+          <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[520px] pr-1">
+            {modules.map((mod) => {
+              const isActive = activeTab === mod.id;
+              return (
+                <button
+                  key={mod.id}
+                  onClick={() => setActiveTab(mod.id)}
+                  className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between cursor-pointer group ${
+                    isActive
+                      ? 'bg-gradient-to-r from-fuchsia-950/80 to-slate-900 border-fuchsia-500/60 shadow-[0_0_15px_rgba(255,0,127,0.25)] text-white'
+                      : 'bg-slate-900/40 border-slate-800/80 hover:bg-slate-900 hover:border-slate-700 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`p-2 rounded-lg border transition-colors ${
+                      isActive ? 'bg-fuchsia-950 border-fuchsia-500/50' : 'bg-slate-950 border-slate-800 group-hover:border-slate-700'
+                    }`}>
+                      {mod.icon}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-cyber font-bold truncate">
+                        {mod.name}
+                      </div>
+                      <div className="text-[10px] font-code text-slate-400 truncate">
+                        {mod.shortTag}
+                      </div>
+                    </div>
+                  </div>
+
+                  <ChevronRight className={`w-4 h-4 transition-transform flex-shrink-0 ${
+                    isActive ? 'text-fuchsia-400 translate-x-1' : 'text-slate-600'
+                  }`} />
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Capability 2: Steam Launch Options */}
-        <div className="p-5 rounded-xl border border-slate-800 bg-slate-950/60 backdrop-blur-md hover:border-cyan-500/60 transition-all group">
-          <div className="w-10 h-10 rounded-lg bg-cyan-950/80 border border-cyan-500/40 flex items-center justify-center text-cyan-400 mb-3 group-hover:shadow-[0_0_15px_rgba(0,240,255,0.5)]">
-            <Cpu className="w-5 h-5" />
-          </div>
-          <h3 className="font-cyber font-bold text-white text-sm mb-1.5">
-            Launch Options Helper
-          </h3>
-          <p className="text-xs text-slate-400 font-tech leading-relaxed mb-3">
-            Preconfigured presets for competitive baseline, high thread affinity, video splash skip (<code className="text-cyan-300">-novid</code>), and input latency tuning.
-          </p>
-          <div className="text-[10px] font-code text-cyan-400 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-            <span>One-click clipboard sync</span>
-          </div>
-        </div>
+        {/* Right Feature Detail Display (8 Cols) */}
+        <div className="lg:col-span-8 bg-slate-950/90 rounded-2xl border border-fuchsia-500/40 p-6 backdrop-blur-md shadow-[0_0_30px_rgba(255,0,127,0.1)] flex flex-col justify-between">
+          <div>
+            {/* Top Badge Row */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-lg bg-fuchsia-950/80 border border-fuchsia-500/40">
+                  {currentModule.icon}
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-code bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 font-bold">
+                      {currentModule.badge}
+                    </span>
+                    <span className="text-[10px] font-code text-emerald-400 flex items-center gap-1 font-bold">
+                      <ShieldCheck className="w-3 h-3" /> 100% VAC-SAFE
+                    </span>
+                  </div>
+                  <h3 className="text-lg md:text-xl font-cyber font-bold text-white mt-1">
+                    {currentModule.name}
+                  </h3>
+                </div>
+              </div>
 
-        {/* Capability 3: Silent 64/64 Slot Sniper */}
-        <div className="p-5 rounded-xl border border-slate-800 bg-slate-950/60 backdrop-blur-md hover:border-lime-500/60 transition-all group">
-          <div className="w-10 h-10 rounded-lg bg-lime-950/80 border border-lime-500/40 flex items-center justify-center text-lime-400 mb-3 group-hover:shadow-[0_0_15px_rgba(57,255,20,0.5)]">
-            <Target className="w-5 h-5" />
-          </div>
-          <h3 className="font-cyber font-bold text-white text-sm mb-1.5">
-            Silent Slot Sniper
-          </h3>
-          <p className="text-xs text-slate-400 font-tech leading-relaxed mb-3">
-            Monitors full 64/64 Zombie Escape servers in the background and automatically triggers a connection the instant a slot frees up.
-          </p>
-          <div className="text-[10px] font-code text-lime-400 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-            <span>Runs in system tray</span>
-          </div>
-        </div>
+              <a
+                href={downloadUrl}
+                download="CS2_Command_Center.exe"
+                className="px-4 py-2 bg-gradient-to-r from-fuchsia-600 to-cyan-600 hover:from-fuchsia-500 hover:to-cyan-500 text-white font-cyber text-xs font-bold rounded-lg transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>GET IN APP</span>
+              </a>
+            </div>
 
-        {/* Capability 4: GPU MPO & RAM Cleaner */}
-        <div className="p-5 rounded-xl border border-slate-800 bg-slate-950/60 backdrop-blur-md hover:border-amber-500/60 transition-all group">
-          <div className="w-10 h-10 rounded-lg bg-amber-950/80 border border-amber-500/40 flex items-center justify-center text-amber-400 mb-3 group-hover:shadow-[0_0_15px_rgba(251,191,36,0.5)]">
-            <Zap className="w-5 h-5" />
+            {/* Summary */}
+            <p className="text-sm font-tech text-slate-300 leading-relaxed mb-5">
+              {currentModule.summary}
+            </p>
+
+            {/* Feature Bullet Points */}
+            <div className="mb-6">
+              <h4 className="text-xs font-code font-bold text-fuchsia-300 uppercase tracking-wider mb-2.5">
+                Included Capabilities & Logic:
+              </h4>
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                {currentModule.details.map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-xs font-tech text-slate-300 bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/80">
+                    <span className="text-fuchsia-400 font-bold mt-0.5">&bull;</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Parameters & Variables Preview Table */}
+            <div className="mb-6">
+              <h4 className="text-xs font-code font-bold text-cyan-300 uppercase tracking-wider mb-2.5">
+                Engine Commands & Registry Configuration:
+              </h4>
+              <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-900/60">
+                <table className="w-full text-left text-xs font-code">
+                  <thead className="bg-slate-900 border-b border-slate-800 text-slate-400">
+                    <tr>
+                      <th className="py-2 px-3">Setting / Command</th>
+                      <th className="py-2 px-3">Configured Value</th>
+                      <th className="py-2 px-3">Impact</th>
+                      <th className="py-2 px-3 text-right">Copy</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                    {currentModule.parameters.map((param, idx) => (
+                      <tr key={idx} className="hover:bg-slate-900/80 transition-colors">
+                        <td className="py-2 px-3 font-semibold text-cyan-300">{param.name}</td>
+                        <td className="py-2 px-3 text-fuchsia-300">{param.value}</td>
+                        <td className="py-2 px-3 text-slate-400 text-[11px]">{param.desc}</td>
+                        <td className="py-2 px-3 text-right">
+                          <button
+                            onClick={() => handleCopy(`${currentModule.id}-${idx}`, `${param.name} ${param.value}`)}
+                            className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                            title="Copy command"
+                          >
+                            {copiedKey === `${currentModule.id}-${idx}` ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-          <h3 className="font-cyber font-bold text-white text-sm mb-1.5">
-            MPO & RAM Optimizer
-          </h3>
-          <p className="text-xs text-slate-400 font-tech leading-relaxed mb-3">
-            Fixes Windows Multi-Plane Overlay (MPO) Alt-Tab black screens on AMD & NVIDIA GPUs, plus flushes standby memory cache before matches.
-          </p>
-          <div className="text-[10px] font-code text-amber-400 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-            <span>Discord RPC support</span>
+
+          {/* Pro Tip Callout Footer */}
+          <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs font-tech text-slate-300 flex items-start gap-2.5">
+            <Sparkles className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <strong className="text-amber-300">Pro-Tip:</strong> {currentModule.proTip}
+            </div>
           </div>
         </div>
 
@@ -129,7 +413,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
       <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center gap-3 text-xs font-tech text-slate-400">
         <ShieldCheck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
         <span>
-          <strong className="text-white">100% VAC-Safe Guarantee:</strong> The desktop app modifies standard CS2 text config files (<code className="text-cyan-300">.cfg</code>) and uses Valve's official Steam protocols. It does not inject into game memory or modify DLLs.
+          <strong className="text-white">100% VAC-Safe Guarantee:</strong> The desktop app modifies standard CS2 text config files (<code className="text-cyan-300">.cfg</code>) and uses Valve's official Steam protocols and Windows registry entries. It does not inject into game memory, read process handles, or modify game DLLs.
         </span>
       </div>
     </section>

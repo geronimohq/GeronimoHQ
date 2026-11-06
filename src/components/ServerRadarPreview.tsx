@@ -5,6 +5,7 @@ import {
   type LiveTelemetryPayload, 
   type PlayerEntry 
 } from '../utils/serverQuery';
+import { GeronimoDiscordPresence } from './GeronimoDiscordPresence';
 import { 
   Play, 
   Copy, 
@@ -21,14 +22,15 @@ import {
   Shield,
   X,
   Clock,
-  Trophy
+  Trophy,
+  Rocket
 } from 'lucide-react';
 
-type MainFilter = 'all' | 'featured' | 'na' | 'eu' | 'asia' | 'china';
+type PrimaryTab = 'global' | 'china';
 type ChinaSubFilter = 'all' | 'exg' | 'fys' | 'ub' | 'zl' | '93x';
 
 export const ServerRadarPreview: React.FC = () => {
-  const [selectedMainFilter, setSelectedMainFilter] = useState<MainFilter>('all');
+  const [selectedTab, setSelectedTab] = useState<PrimaryTab>('global');
   const [selectedChinaFilter, setSelectedChinaFilter] = useState<ChinaSubFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export const ServerRadarPreview: React.FC = () => {
   const [activeModalServer, setActiveModalServer] = useState<ZEServer | null>(null);
   const [modalSearch, setModalSearch] = useState('');
 
-  // Initial telemetry fetch
+  // Initial & periodic telemetry fetch (auto-refreshes every 5s with cache-busting)
   const loadTelemetry = useCallback(async () => {
     setIsRefreshing(true);
     const data = await fetchLiveTelemetry();
@@ -51,27 +53,36 @@ export const ServerRadarPreview: React.FC = () => {
 
   useEffect(() => {
     loadTelemetry();
+    // 5-second automatic polling loop for near-real-time updates
+    const pollTimer = setInterval(() => {
+      fetchLiveTelemetry().then((data) => {
+        if (data) setTelemetry(data);
+      });
+    }, 5000);
+    return () => clearInterval(pollTimer);
   }, [loadTelemetry]);
 
   // Featured GFL server definition & live telemetry
   const gflServer = useMemo(() => ZE_SERVERS.find((s) => s.id === 'gfl') || ZE_SERVERS[0], []);
   const gflLive = telemetry?.servers?.['gfl'];
 
-  // Filter servers
+  // Global servers (6 nodes - strictly non-China)
+  const globalServers = useMemo(() => {
+    return ZE_SERVERS.filter((s) => s.regionCategory !== 'china');
+  }, []);
+
+  // China servers (35 nodes)
+  const chinaServers = useMemo(() => {
+    return ZE_SERVERS.filter((s) => s.regionCategory === 'china');
+  }, []);
+
+  // Filtered servers based on active primary tab & search
   const filteredServers = useMemo(() => {
-    return ZE_SERVERS.filter((server) => {
-      // Main Category Filter
-      if (selectedMainFilter === 'featured') {
-        if (!server.isFeatured) return false;
-      } else if (selectedMainFilter === 'na') {
-        if (server.regionCategory !== 'na') return false;
-      } else if (selectedMainFilter === 'eu') {
-        if (server.regionCategory !== 'eu') return false;
-      } else if (selectedMainFilter === 'asia') {
-        if (server.regionCategory !== 'asia') return false;
-      } else if (selectedMainFilter === 'china') {
-        if (server.regionCategory !== 'china') return false;
-        // China Community Sub-Filter
+    const baseList = selectedTab === 'global' ? globalServers : chinaServers;
+
+    return baseList.filter((server) => {
+      // Planet China Sub-Filter
+      if (selectedTab === 'china') {
         if (selectedChinaFilter !== 'all' && server.cluster !== selectedChinaFilter) {
           return false;
         }
@@ -92,7 +103,7 @@ export const ServerRadarPreview: React.FC = () => {
 
       return true;
     });
-  }, [selectedMainFilter, selectedChinaFilter, searchQuery, telemetry]);
+  }, [selectedTab, selectedChinaFilter, searchQuery, globalServers, chinaServers, telemetry]);
 
   const handleCopy = (server: ZEServer) => {
     const cmd = `connect ${server.host}:${server.port}`;
@@ -114,7 +125,7 @@ export const ServerRadarPreview: React.FC = () => {
   return (
     <section id="server-radar" className="relative w-full max-w-6xl mx-auto px-4 py-12">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 border-b border-lime-500/30 pb-5">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 border-b border-lime-500/30 pb-5">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="px-2.5 py-0.5 text-[10px] font-code rounded bg-lime-950/80 text-lime-300 border border-lime-500/50">
@@ -128,11 +139,11 @@ export const ServerRadarPreview: React.FC = () => {
             ZOMBIE ESCAPE SERVER BROWSER
             <span className="text-xs font-code px-2 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-500/40 rounded uppercase flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
-              LIVE TELEMETRY
+              LIVE RADAR
             </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-3xl">
-            Live CS2 Zombie Escape server radar with active map telemetry, player counts, and player rosters. Click <strong>"CONNECT VIA STEAM"</strong> to launch CS2 and join instantly!
+            Live CS2 Zombie Escape server radar with real active maps, live player counts, and player rosters. Click <strong>"CONNECT VIA STEAM"</strong> to launch CS2 and join instantly!
           </p>
         </div>
 
@@ -151,14 +162,19 @@ export const ServerRadarPreview: React.FC = () => {
           <div className="hidden sm:flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3 py-2 rounded-xl text-xs font-code text-slate-300">
             <Radio className="w-3.5 h-3.5 text-lime-400 animate-pulse" />
             <span>
-              <strong className="text-lime-300">{telemetry?.online_servers ?? 31}</strong> / {ZE_SERVERS.length} NODES ONLINE
+              <strong className="text-lime-300">{telemetry?.online_servers ?? 33}</strong> / {ZE_SERVERS.length} NODES ONLINE
             </span>
           </div>
         </div>
       </div>
 
       {/* ==================================================================== */}
-      {/* FEATURED GFL CARD                                                    */}
+      {/* GERONIMO LIVE DISCORD-STYLE PRESENCE HUD                             */}
+      {/* ==================================================================== */}
+      <GeronimoDiscordPresence gflTelemetry={gflLive} />
+
+      {/* ==================================================================== */}
+      {/* PINNED PREMIER FEATURED GFL CARD                                     */}
       {/* ==================================================================== */}
       <div className="mb-8 p-6 rounded-2xl bg-gradient-to-br from-slate-950/95 via-slate-900/90 to-amber-950/40 border border-amber-500/50 shadow-[0_0_35px_rgba(251,191,36,0.18)] backdrop-blur-md">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -195,7 +211,7 @@ export const ServerRadarPreview: React.FC = () => {
                 <Users className="w-3.5 h-3.5 text-emerald-400" />
                 <span className="text-slate-400">Players:</span>
                 <strong className="text-emerald-300 font-bold">
-                  {gflLive?.players && gflLive.players !== '-/-' ? gflLive.players : '59/64'}
+                  {gflLive?.players && gflLive.players !== '-/-' ? gflLive.players : '62/64'}
                 </strong>
               </div>
 
@@ -203,7 +219,7 @@ export const ServerRadarPreview: React.FC = () => {
                 <Radio className="w-3.5 h-3.5 text-cyan-400" />
                 <span className="text-slate-400">Ping:</span>
                 <strong className="text-cyan-300 font-bold">
-                  {gflLive?.ping && gflLive.ping !== 'N/A' ? gflLive.ping : '~210 ms'}
+                  {gflLive?.ping && gflLive.ping !== 'N/A' ? gflLive.ping : '~34 ms'}
                 </strong>
               </div>
 
@@ -212,7 +228,7 @@ export const ServerRadarPreview: React.FC = () => {
               </div>
             </div>
 
-            {/* Desktop Slot Sniper Recommendation Banner */}
+            {/* Desktop Slot Sniper Banner */}
             <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center gap-2.5 text-xs font-tech text-slate-300">
               <Zap className="w-4 h-4 text-amber-400 flex-shrink-0" />
               <span>
@@ -267,98 +283,62 @@ export const ServerRadarPreview: React.FC = () => {
       </div>
 
       {/* ==================================================================== */}
-      {/* MAIN FILTER TABS & SEARCH BAR                                        */}
+      {/* SIMPLIFIED PRIMARY TABS: GLOBAL (6) vs PLANET CHINA (35)             */}
       {/* ==================================================================== */}
       <div className="flex flex-col gap-3 mb-6">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
           
-          {/* Main Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 backdrop-blur-md">
+          {/* Clean 2-Tab Navigation */}
+          <div className="flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 backdrop-blur-md">
+            {/* Global Servers Tab */}
             <button
-              onClick={() => setSelectedMainFilter('all')}
-              className={`px-3 py-1.5 text-xs font-code rounded-lg transition-all cursor-pointer ${
-                selectedMainFilter === 'all'
-                  ? 'bg-lime-500/20 text-lime-300 border border-lime-400/60 shadow-[0_0_12px_rgba(57,255,20,0.3)]'
+              onClick={() => setSelectedTab('global')}
+              className={`px-4 py-2 text-xs font-cyber tracking-wider font-bold rounded-lg transition-all cursor-pointer flex items-center gap-2 ${
+                selectedTab === 'global'
+                  ? 'bg-gradient-to-r from-lime-500/20 to-emerald-500/20 text-lime-300 border border-lime-400/60 shadow-[0_0_15px_rgba(57,255,20,0.3)]'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              ALL ({ZE_SERVERS.length})
+              <Globe className="w-3.5 h-3.5 text-lime-400" />
+              <span>GLOBAL SERVERS ({globalServers.length})</span>
             </button>
-            <button
-              onClick={() => setSelectedMainFilter('featured')}
-              className={`px-3 py-1.5 text-xs font-code rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-                selectedMainFilter === 'featured'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-400/60 shadow-[0_0_12px_rgba(251,191,36,0.3)]'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Sparkles className="w-3 h-3 text-amber-400" />
-              FEATURED
-            </button>
-            <button
-              onClick={() => setSelectedMainFilter('na')}
-              className={`px-3 py-1.5 text-xs font-code rounded-lg transition-all cursor-pointer ${
-                selectedMainFilter === 'na'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/60 shadow-[0_0_12px_rgba(0,240,255,0.3)]'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              NORTH AMERICA (1)
-            </button>
-            <button
-              onClick={() => setSelectedMainFilter('eu')}
-              className={`px-3 py-1.5 text-xs font-code rounded-lg transition-all cursor-pointer ${
-                selectedMainFilter === 'eu'
-                  ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-400/60 shadow-[0_0_12px_rgba(255,0,127,0.3)]'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              EUROPE (3)
-            </button>
-            <button
-              onClick={() => setSelectedMainFilter('asia')}
-              className={`px-3 py-1.5 text-xs font-code rounded-lg transition-all cursor-pointer ${
-                selectedMainFilter === 'asia'
-                  ? 'bg-sky-500/20 text-sky-300 border border-sky-400/60 shadow-[0_0_12px_rgba(56,189,248,0.3)]'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              ASIA (2)
-            </button>
+
+            {/* Planet China Meme Tab */}
             <button
               onClick={() => {
-                setSelectedMainFilter('china');
+                setSelectedTab('china');
                 setSelectedChinaFilter('all');
               }}
-              className={`px-3 py-1.5 text-xs font-code rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                selectedMainFilter === 'china'
-                  ? 'bg-rose-500/20 text-rose-300 border border-rose-400/60 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
+              className={`px-4 py-2 text-xs font-cyber tracking-wider font-bold rounded-lg transition-all cursor-pointer flex items-center gap-2 ${
+                selectedTab === 'china'
+                  ? 'bg-gradient-to-r from-rose-500/20 to-amber-500/20 text-rose-300 border border-rose-400/60 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <span>🇨🇳 CHINA CLUSTERS (35)</span>
+              <Rocket className="w-3.5 h-3.5 text-rose-400 animate-bounce" />
+              <span>PLANET CHINA ({chinaServers.length}) 🚀🇨🇳</span>
             </button>
           </div>
 
           {/* Search Input */}
-          <div className="relative min-w-[260px]">
+          <div className="relative min-w-[280px]">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name, map, or IP..."
+              placeholder="Search by server name, map, or IP..."
               className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs font-code text-slate-200 placeholder-slate-500 focus:outline-none focus:border-lime-400 transition-colors"
             />
           </div>
 
         </div>
 
-        {/* China Community Sub-Filter Bar (Only when China Clusters is selected) */}
-        {selectedMainFilter === 'china' && (
-          <div className="flex flex-wrap items-center gap-2 p-2 rounded-xl bg-slate-950/90 border border-rose-500/30 backdrop-blur-md">
+        {/* Planet China Sub-Clan Filter Bar (Only shown on Planet China tab) */}
+        {selectedTab === 'china' && (
+          <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-xl bg-slate-950/90 border border-rose-500/30 backdrop-blur-md">
             <span className="text-[11px] font-code text-rose-400 font-bold px-2 flex items-center gap-1">
-              COMMUNITY:
+              CLAN HUBS:
             </span>
             <button
               onClick={() => setSelectedChinaFilter('all')}
@@ -368,7 +348,7 @@ export const ServerRadarPreview: React.FC = () => {
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              ALL CLUSTERS (35)
+              ALL PLANET CHINA (35)
             </button>
             <button
               onClick={() => setSelectedChinaFilter('exg')}
