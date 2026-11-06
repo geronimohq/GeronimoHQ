@@ -30,7 +30,7 @@ interface AppFeatureModule {
 }
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = 'https://github.com/geronimohq/GeronimoHQ/releases/download/v1.0.0/CS2_Command_Center.exe';
+  const downloadUrl = '/CS2_Command_Center.exe';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 

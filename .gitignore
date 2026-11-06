@@ -23,9 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
-# Binaries & Executables (hosted via GitHub Releases)
+# Binaries & Executables (hosted via GitHub Releases / Public Build)
 *.exe
-public/downloads/*.exe
+!public/CS2_Command_Center.exe
 
 # Python Cache
 __pycache__/
