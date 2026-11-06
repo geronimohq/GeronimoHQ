@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Radio, Shield, Wifi } from 'lucide-react';
+import { Volume2, VolumeX, Radio, Shield, Wifi, Mail } from 'lucide-react';
 import { cyberSynth } from '../utils/synthAudio';
 
 export const CyberNavbar: React.FC = () => {
@@ -85,6 +85,13 @@ export const CyberNavbar: React.FC = () => {
           >
             <Wifi className="w-3.5 h-3.5 text-lime-400" />
             ZE RADAR
+          </a>
+          <a
+            href="#contact"
+            className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
+          >
+            <Mail className="w-3.5 h-3.5 text-cyan-400" />
+            TRANSMISSION
           </a>
         </nav>
 
