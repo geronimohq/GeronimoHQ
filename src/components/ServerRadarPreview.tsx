@@ -37,6 +37,27 @@ import {
 type PrimaryTab = 'global' | 'china';
 type ChinaSubFilter = 'all' | 'exg' | 'fys' | 'ub' | 'zl' | '93x';
 
+// Helper to dispatch Steam custom protocols cleanly without page disruption
+const dispatchSteamProtocol = (url: string) => {
+  try {
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = url;
+    document.body.appendChild(iframe);
+    setTimeout(() => {
+      try {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      } catch {
+        // ignore
+      }
+    }, 2500);
+  } catch {
+    window.location.href = url;
+  }
+};
+
 export const ServerRadarPreview: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<PrimaryTab>('global');
   const [selectedChinaFilter, setSelectedChinaFilter] = useState<ChinaSubFilter>('all');
@@ -52,14 +73,26 @@ export const ServerRadarPreview: React.FC = () => {
   const [playerSortField, setPlayerSortField] = useState<PlayerSortField>('duration');
   const [playerSortOrder, setPlayerSortOrder] = useState<PlayerSortOrder>('desc');
 
-  // Connect Workflow Modal State (Scenario 1: CS2 closed -> 15s delay -> steam connect; Scenario 2: CS2 open -> 0s delay)
+  // Connect Workflow Modal State (Scenario 1: CS2 closed -> launch CS2 -> 15s delay -> steam connect; Scenario 2: CS2 open -> 0s delay)
   const [connectModalServer, setConnectModalServer] = useState<ZEServer | null>(null);
-  const [connectScenario, setConnectScenario] = useState<'prompt' | 'launching_cs2' | 'connected'>('prompt');
+  const [connectScenario, setConnectScenario] = useState<'launching_cs2' | 'connected'>('launching_cs2');
   const [launchCountdown, setLaunchCountdown] = useState<number>(15);
 
-  const handleOpenConnect = (server: ZEServer) => {
+  const handleOpenConnect = (server: ZEServer, instantIfOpen = false) => {
     setConnectModalServer(server);
-    setConnectScenario('prompt');
+    if (instantIfOpen) {
+      dispatchSteamProtocol(`steam://connect/${server.host}:${server.port}`);
+      setConnectScenario('connected');
+      setTimeout(() => {
+        setConnectModalServer(null);
+        setConnectScenario('launching_cs2');
+      }, 1800);
+      return;
+    }
+
+    // Default Scenario 1 (CS2 Closed): Clean launch CS2 cleanly via steam://run/730 first, start 15s countdown, then connect via Steam Game Server
+    dispatchSteamProtocol('steam://run/730');
+    setConnectScenario('launching_cs2');
     setLaunchCountdown(15);
   };
 
@@ -72,11 +105,11 @@ export const ServerRadarPreview: React.FC = () => {
           setLaunchCountdown((prev) => prev - 1);
         }, 1000);
       } else {
-        window.location.href = `steam://connect/${connectModalServer.host}:${connectModalServer.port}`;
+        dispatchSteamProtocol(`steam://connect/${connectModalServer.host}:${connectModalServer.port}`);
         setConnectScenario('connected');
         setTimeout(() => {
           setConnectModalServer(null);
-          setConnectScenario('prompt');
+          setConnectScenario('launching_cs2');
         }, 2200);
       }
     }
@@ -408,13 +441,25 @@ export const ServerRadarPreview: React.FC = () => {
           </div>
 
           {/* Right Action CTAs */}
-          <div className="flex flex-col sm:flex-row lg:flex-col items-stretch lg:items-end justify-center gap-2.5 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row lg:flex-col items-stretch lg:items-end justify-center gap-2 flex-shrink-0">
+            {/* Primary Connect CTA: Scenario 1 (CS2 Closed: Clean Launch + 15s Countdown) */}
             <button
-              onClick={() => handleOpenConnect(gflServer)}
+              onClick={() => handleOpenConnect(gflServer, false)}
               className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 via-orange-500 to-lime-500 hover:from-amber-400 hover:to-lime-400 text-slate-950 font-cyber text-xs tracking-wider font-black rounded-xl shadow-[0_0_25px_rgba(251,191,36,0.4)] transition-all cursor-pointer transform hover:-translate-y-0.5"
+              title="Scenario 1: Clean launch CS2 via steam://run/730 -> 15s countdown -> Connects via Steam Game Server"
             >
               <Play className="w-4 h-4 fill-current" />
               <span>CONNECT VIA STEAM</span>
+            </button>
+
+            {/* Quick Instant Connect CTA: Scenario 2 (CS2 Open: 0s Delay) */}
+            <button
+              onClick={() => handleOpenConnect(gflServer, true)}
+              className="px-3 py-1.5 bg-slate-900/90 hover:bg-emerald-950/60 border border-slate-700 hover:border-emerald-500/70 text-[11px] font-code text-slate-300 hover:text-emerald-300 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              title="Scenario 2: Connect immediately via Steam Game Server (if CS2 is already open)"
+            >
+              <Zap className="w-3 h-3 text-emerald-400 fill-current" />
+              <span>CS2 Open? Connect Instantly (0s)</span>
             </button>
 
             <div className="flex items-center gap-2">
@@ -725,14 +770,23 @@ export const ServerRadarPreview: React.FC = () => {
 
               {/* Action Buttons */}
               <div className="pt-3 border-t border-slate-800/80 flex items-center gap-2">
-                {/* 1-Click Steam Connect (Scenario 1 & Scenario 2) */}
+                {/* 1-Click Steam Connect: Scenario 1 (Clean Launch CS2 + 15s Delay) & Scenario 2 (Instant) */}
                 <button
-                  onClick={() => handleOpenConnect(server)}
+                  onClick={() => handleOpenConnect(server, false)}
                   className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-lime-600 hover:from-emerald-500 hover:to-lime-500 text-white font-cyber text-xs tracking-wider font-bold rounded-lg shadow-[0_0_15px_rgba(57,255,20,0.3)] transition-all cursor-pointer"
-                  title="Connect via Steam Game Server protocol"
+                  title="Scenario 1: Launches CS2 cleanly via steam://run/730, waits 15s, then connects"
                 >
                   <Play className="w-3.5 h-3.5 fill-current" />
                   <span>CONNECT VIA STEAM</span>
+                </button>
+
+                <button
+                  onClick={() => handleOpenConnect(server, true)}
+                  className="px-2.5 py-2 bg-slate-900 hover:bg-emerald-950/80 border border-slate-700 hover:border-emerald-500 text-slate-300 hover:text-emerald-300 rounded-lg text-xs font-code transition-colors cursor-pointer flex items-center gap-1 flex-shrink-0"
+                  title="Scenario 2: Connect immediately (if CS2 is already open)"
+                >
+                  <Zap className="w-3 h-3 text-emerald-400 fill-current" />
+                  <span className="hidden sm:inline">INSTANT</span>
                 </button>
 
                 {/* Non-China Server: Live Players Modal */}
@@ -1053,14 +1107,14 @@ export const ServerRadarPreview: React.FC = () => {
       {/* STEAM GAME SERVER DIRECT CONNECT MODAL (SCENARIO 1 & SCENARIO 2)     */}
       {/* ==================================================================== */}
       {connectModalServer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
           <div className="relative w-full max-w-lg bg-slate-950 border border-amber-500/50 rounded-2xl p-6 shadow-[0_0_60px_rgba(251,191,36,0.25)] flex flex-col">
             
             {/* Header */}
             <div className="flex items-start justify-between pb-4 border-b border-slate-800">
               <div>
                 <span className="text-[10px] font-cyber text-amber-400 font-bold uppercase tracking-widest block mb-1">
-                  STEAM GAME SERVER PROTOCOL
+                  STEAM GAME SERVER DIRECT CONNECT
                 </span>
                 <h3 className="text-lg md:text-xl font-cyber font-bold text-white flex items-center gap-2">
                   <span>Connect to {connectModalServer.name}</span>
@@ -1072,7 +1126,7 @@ export const ServerRadarPreview: React.FC = () => {
               <button
                 onClick={() => {
                   setConnectModalServer(null);
-                  setConnectScenario('prompt');
+                  setConnectScenario('launching_cs2');
                 }}
                 className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
@@ -1082,104 +1136,60 @@ export const ServerRadarPreview: React.FC = () => {
 
             {/* Modal Body */}
             <div className="py-5">
-              {connectScenario === 'prompt' && (
-                <div className="space-y-4">
-                  <p className="text-xs font-tech text-slate-300 leading-relaxed">
-                    To connect cleanly and bypass Steam&apos;s <span className="text-amber-300 font-semibold">&quot;server is full&quot;</span> startup lock, select whether Counter-Strike 2 is currently open:
-                  </p>
-
-                  <div className="grid grid-cols-1 gap-3 pt-1">
-                    {/* Scenario 2: CS2 is Open */}
-                    <button
-                      onClick={() => {
-                        window.location.href = `steam://connect/${connectModalServer.host}:${connectModalServer.port}`;
-                        setConnectScenario('connected');
-                        setTimeout(() => {
-                          setConnectModalServer(null);
-                          setConnectScenario('prompt');
-                        }, 1800);
-                      }}
-                      className="group p-4 rounded-xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-700 hover:border-emerald-500/70 text-left transition-all cursor-pointer shadow-sm hover:shadow-[0_0_20px_rgba(35,165,90,0.2)]"
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="font-cyber font-bold text-sm text-white group-hover:text-emerald-300 flex items-center gap-2">
-                          <Zap className="w-4 h-4 text-emerald-400 fill-current" />
-                          <span>CS2 is Already Open</span>
-                        </span>
-                        <span className="text-[10px] font-code px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40 font-bold">
-                          INSTANT (0s DELAY)
-                        </span>
-                      </div>
-                      <p className="text-[11px] font-tech text-slate-400 leading-normal">
-                        Directly dispatches Steam Game Server connect to your running game with zero delay.
-                      </p>
-                    </button>
-
-                    {/* Scenario 1: CS2 is Closed */}
-                    <button
-                      onClick={() => {
-                        window.location.href = 'steam://run/730';
-                        setConnectScenario('launching_cs2');
-                        setLaunchCountdown(15);
-                      }}
-                      className="group p-4 rounded-xl bg-slate-900/90 hover:bg-amber-950/40 border border-slate-700 hover:border-amber-500/70 text-left transition-all cursor-pointer shadow-sm hover:shadow-[0_0_20px_rgba(251,191,36,0.2)]"
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="font-cyber font-bold text-sm text-white group-hover:text-amber-300 flex items-center gap-2">
-                          <Rocket className="w-4 h-4 text-amber-400" />
-                          <span>CS2 is Closed</span>
-                        </span>
-                        <span className="text-[10px] font-code px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/40 font-bold">
-                          CLEAN LAUNCH + 15s DELAY
-                        </span>
-                      </div>
-                      <p className="text-[11px] font-tech text-slate-400 leading-normal">
-                        Launches CS2 cleanly into main menu first (bypassing full server lock), waits 15s for the game engine to load, then auto-connects.
-                      </p>
-                    </button>
-                  </div>
-                </div>
-              )}
-
               {connectScenario === 'launching_cs2' && (
-                <div className="text-center py-4 space-y-4">
-                  <div className="w-16 h-16 mx-auto rounded-full bg-amber-500/10 border-2 border-amber-400 flex items-center justify-center animate-pulse">
+                <div className="text-center py-2 space-y-4">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-amber-500/10 border-2 border-amber-400 flex items-center justify-center animate-pulse shadow-[0_0_20px_rgba(251,191,36,0.3)]">
                     <Rocket className="w-8 h-8 text-amber-400" />
                   </div>
 
                   <div>
-                    <h4 className="text-lg font-cyber font-bold text-white">
+                    <span className="text-[10px] font-code px-2.5 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/40 text-amber-300 font-bold uppercase">
+                      Scenario 1: Clean Launch Active
+                    </span>
+                    <h4 className="text-lg font-cyber font-black text-white mt-2">
                       Launching Counter-Strike 2 Cleanly...
                     </h4>
-                    <p className="text-xs font-tech text-slate-400 mt-1">
-                      Engine initializing in background. Connecting via Steam Game Server in:
+                    <p className="text-xs font-tech text-slate-300 mt-1 max-w-sm mx-auto leading-relaxed">
+                      Dispatched <code className="text-amber-300 font-code">steam://run/730</code>. CS2 is initializing into main menu to bypass the server-full lock. Auto-connecting via Steam Game Server in:
                     </p>
-                    <div className="text-3xl font-code font-black text-amber-400 my-2">
+                    <div className="text-4xl font-code font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-lime-300 my-2">
                       {launchCountdown}s
                     </div>
                   </div>
 
                   {/* Progress Bar */}
-                  <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-700">
+                  <div className="w-full bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-800 p-0.5">
                     <div 
-                      className="bg-gradient-to-r from-amber-500 to-lime-500 h-2.5 rounded-full transition-all duration-1000 ease-linear"
+                      className="bg-gradient-to-r from-amber-500 via-orange-500 to-lime-500 h-full rounded-full transition-all duration-1000 ease-linear shadow-[0_0_15px_rgba(251,191,36,0.5)]"
                       style={{ width: `${Math.round(((15 - launchCountdown) / 15) * 100)}%` }}
                     />
                   </div>
 
-                  <div className="pt-2">
+                  {/* Quick Action Button for Scenario 2 */}
+                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
                     <button
                       onClick={() => {
-                        window.location.href = `steam://connect/${connectModalServer.host}:${connectModalServer.port}`;
+                        dispatchSteamProtocol(`steam://connect/${connectModalServer.host}:${connectModalServer.port}`);
                         setConnectScenario('connected');
                         setTimeout(() => {
                           setConnectModalServer(null);
-                          setConnectScenario('prompt');
+                          setConnectScenario('launching_cs2');
                         }, 1800);
                       }}
-                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-code text-slate-200 rounded-lg transition-colors cursor-pointer"
+                      className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-lime-600 hover:from-emerald-500 hover:to-lime-500 text-slate-950 font-cyber text-xs tracking-wider font-black rounded-xl shadow-[0_0_20px_rgba(35,165,90,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2"
                     >
-                      Skip countdown &amp; connect now ➔
+                      <Zap className="w-3.5 h-3.5 fill-current" />
+                      <span>CS2 Already Open? Skip Delay &amp; Connect Now</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setConnectModalServer(null);
+                        setConnectScenario('launching_cs2');
+                      }}
+                      className="w-full sm:w-auto px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-code text-slate-400 hover:text-white rounded-xl transition-colors cursor-pointer"
+                    >
+                      Cancel
                     </button>
                   </div>
                 </div>
@@ -1187,14 +1197,14 @@ export const ServerRadarPreview: React.FC = () => {
 
               {connectScenario === 'connected' && (
                 <div className="text-center py-6 space-y-3">
-                  <div className="w-14 h-14 mx-auto rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center">
+                  <div className="w-14 h-14 mx-auto rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center shadow-[0_0_25px_rgba(52,211,153,0.4)]">
                     <Check className="w-8 h-8 text-emerald-400" />
                   </div>
                   <h4 className="text-lg font-cyber font-bold text-emerald-300">
                     Connected to Steam Game Server!
                   </h4>
-                  <p className="text-xs font-tech text-slate-400">
-                    Connection dispatched. Enjoy the match on {connectModalServer.name}!
+                  <p className="text-xs font-tech text-slate-300">
+                    Dispatched <code className="text-lime-300">steam://connect/{connectModalServer.host}:{connectModalServer.port}</code>. Enjoy your match on {connectModalServer.name}!
                   </p>
                 </div>
               )}

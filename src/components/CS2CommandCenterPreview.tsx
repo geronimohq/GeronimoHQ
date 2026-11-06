@@ -30,7 +30,7 @@ interface AppFeatureModule {
 }
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe';
+  const downloadUrl = '/CS2_Command_Center.exe?v=1.1.0';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -86,17 +86,19 @@ export const CS2CommandCenterPreview: React.FC = () => {
       icon: <Zap className="w-5 h-5 text-amber-400" />,
       summary: 'Detects and resolves Windows Multi-Plane Overlay (MPO) driver conflicts that cause Alt-Tab black screens, display freezing, and desktop stutter.',
       details: [
+        'Important: Before altering MPO, perform a clean DDU (Display Driver Uninstaller) wipe in Safe Mode + fresh GPU driver reinstall.',
         'Automatic scan of Windows Registry for active MPO overlays on NVIDIA & AMD drivers.',
         '1-Click automated MPO disable/enable patch with instant backup and restore.',
         'DWM (Desktop Window Manager) composition latency tuning for borderless & fullscreen modes.',
         'Hardware Accelerated GPU Scheduling (HAGS) compatibility diagnostics.'
       ],
       parameters: [
+        { name: 'DDU Recommendation', value: 'Clean Safe Mode Wipe', desc: 'Rule out driver/shader corruption first' },
         { name: 'OverlayTestMode', value: '0x00000005 (Disabled)', desc: 'NVIDIA/AMD MPO registry bypass' },
         { name: 'DWM Composition', value: 'Low Latency Mode', desc: 'Eliminates DWM frame queue buffer delay' },
         { name: 'Alt-Tab Freeze', value: 'RESOLVED', desc: 'Seamless instant desktop switching' }
       ],
-      proTip: 'Eliminates the infamous 3-second black screen freeze when Alt-Tabbing between CS2 and Discord or browser.',
+      proTip: 'Before toggling MPO, try running DDU + clean GPU driver reinstall first to verify if that solves your issue! If Alt-Tab freezing persists, disable MPO.',
       vacSafe: true
     },
     {
@@ -108,17 +110,17 @@ export const CS2CommandCenterPreview: React.FC = () => {
       summary: 'Monitors full 64/64 Zombie Escape servers in the background with zero-overhead UDP A2S queries. The millisecond a slot opens, it alerts and connects.',
       details: [
         'Runs silently in the Windows system tray with virtually 0% CPU consumption.',
-        '1.0-second ultra-fast reaction polling cycle.',
+        '0.35-second ultra-fast reaction polling cycle.',
         'Audible Windows hardware alert chime the instant someone leaves or crashes.',
         'Direct Win32 in-engine console injection: focuses CS2 and issues connect command instantly.',
-        'GFL Priority Slot Tier options (≤61 for Normal, ≤62 for Supporters, ≤63 for VIPs).'
+        'GFL Priority Slot Tier options (Normal ≤61/64, Mapper/Supporter ≤62/64, VIP/Admin ≤63/64).'
       ],
       parameters: [
-        { name: 'Polling Frequency', value: '1.0 Second', desc: 'Ultra-low overhead UDP A2S_INFO' },
+        { name: 'Polling Frequency', value: '0.35 Seconds', desc: 'Ultra-low overhead rapid UDP A2S_INFO' },
         { name: 'Auto-Trigger', value: 'Win32 In-Engine Console', desc: 'Bypasses Steam protocol delay' },
         { name: 'Audible Chime', value: 'Dual-Tone Beep', desc: 'Alerts you while tabbed out' }
       ],
-      proTip: 'Never sit spamming connect in console manually again. Arm the sniper, watch YouTube, and CS2 will automatically jump into the server.',
+      proTip: 'CS2 must be open. Set your slot priority (Normal ≤61, Supporter ≤62, VIP ≤63), arm the sniper, and it automatically connects via console the instant a slot opens.',
       vacSafe: true
     },
     {
@@ -231,7 +233,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v1.0.0
+              v1.1.0
             </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-2xl">
@@ -250,7 +252,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
             <span>DOWNLOAD APP (.EXE)</span>
           </a>
           <span className="text-[11px] font-code text-slate-400">
-            Portable &bull; ~31 MB &bull; No installation required
+            Portable &bull; ~33 MB &bull; No installation required
           </span>
         </div>
       </div>
