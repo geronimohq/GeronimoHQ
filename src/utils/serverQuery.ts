@@ -67,7 +67,25 @@ export interface LiveTelemetryPayload {
 // Optional Live Cloud Relay URL (Render / Railway)
 const CLOUD_RELAY_URL = 'https://geronimohq-telemetry.onrender.com/api/servers';
 
-export async function fetchLiveTelemetry(): Promise<LiveTelemetryPayload | null> {
+// Module-level caches to guarantee zero flicker / flapping across periodic polling intervals
+let cachedGflMatchNow: GflMatchNow | null = null;
+let cachedGflMusics: { map: string; musics: MapMusicEntry[] } | null = null;
+let lastMatchFetchTimestamp = 0;
+let inFlightTelemetryPromise: Promise<LiveTelemetryPayload | null> | null = null;
+
+// Initialize cache from sessionStorage if available
+try {
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    const saved = window.sessionStorage.getItem('ze_cached_gfl_match_now');
+    if (saved) {
+      cachedGflMatchNow = JSON.parse(saved);
+    }
+  }
+} catch {
+  // ignore
+}
+
+async function executeFetchLiveTelemetry(): Promise<LiveTelemetryPayload | null> {
   let payload: LiveTelemetryPayload | null = null;
 
   // 1. Try Live Cloud Relay (for instant sub-second A2S queries across all visitors)
@@ -100,62 +118,100 @@ export async function fetchLiveTelemetry(): Promise<LiveTelemetryPayload | null>
   if (!payload) return null;
 
   // 3. Direct Browser GFL Intel Enrichment (Human Score, Zombie Score, Extends Left)
-  // Cloudflare rejects datacenter IPs (like Render/AWS) with 403 Forbidden,
-  // but residential & visitor browsers have full direct access via CORS
-  // (Access-Control-Allow-Origin: https://geronimohq.com).
-  try {
-    const matchRes = await fetch('https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now', {
-      signal: AbortSignal.timeout(3500),
-    });
-    if (matchRes.ok) {
-      const matchJson = await matchRes.json();
-      if (matchJson?.data) {
-        payload.gfl_match_now = matchJson.data;
-        // Calibrate GFL map start time from match started_at if valid
-        if (matchJson.data.started_at && payload.servers?.gfl) {
-          const startedSec = Math.floor(new Date(matchJson.data.started_at).getTime() / 1000);
-          if (startedSec > 0) {
-            payload.servers.gfl.map_start_time = startedSec;
-          }
-        }
-      }
-    }
-  } catch {
-    // Keep cached/fallback data if client network is restricted
-  }
+  // Cloudflare blocks datacenter IPs (like Render/AWS) with 403 Forbidden,
+  // but client browsers have direct CORS access (Access-Control-Allow-Origin: https://geronimohq.com).
+  // We rate-limit zegraph queries to at most once per 6s and NEVER overwrite with null on hiccups.
+  const now = Date.now();
+  const shouldQueryZegraph = (now - lastMatchFetchTimestamp > 6000) || !cachedGflMatchNow;
 
-  // 4. Direct Browser GFL Soundtrack Intel Enrichment
-  const activeMap = payload.servers?.gfl?.map || payload.gfl_match_now?.map;
-  if (activeMap && activeMap !== '-' && (!payload.gfl_map_musics || payload.gfl_map_musics.length === 0)) {
+  if (shouldQueryZegraph) {
     try {
-      let mRes = await fetch(
-        `https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/${encodeURIComponent(activeMap)}/musics`,
-        { signal: AbortSignal.timeout(3000) }
-      );
-      if (mRes.ok) {
-        const mJson = await mRes.json();
-        if (Array.isArray(mJson?.data) && mJson.data.length > 0) {
-          payload.gfl_map_musics = mJson.data;
-        }
-      } else if (activeMap.endsWith('_p')) {
-        const stripped = activeMap.slice(0, -2);
-        mRes = await fetch(
-          `https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/${encodeURIComponent(stripped)}/musics`,
-          { signal: AbortSignal.timeout(3000) }
-        );
-        if (mRes.ok) {
-          const mJson = await mRes.json();
-          if (Array.isArray(mJson?.data) && mJson.data.length > 0) {
-            payload.gfl_map_musics = mJson.data;
+      const matchRes = await fetch('https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now', {
+        signal: AbortSignal.timeout(5000),
+      });
+      if (matchRes.ok) {
+        const matchJson = await matchRes.json();
+        if (matchJson?.code === 0 && matchJson?.data) {
+          cachedGflMatchNow = matchJson.data;
+          lastMatchFetchTimestamp = now;
+          try {
+            if (typeof window !== 'undefined' && window.sessionStorage) {
+              window.sessionStorage.setItem('ze_cached_gfl_match_now', JSON.stringify(cachedGflMatchNow));
+            }
+          } catch {
+            // ignore
           }
         }
       }
     } catch {
-      // Optional soundtrack enrichment
+      // Retain cachedGflMatchNow without zeroing out scores!
+    }
+  }
+
+  // Authoritatively attach the best valid match data to prevent flapping
+  if (cachedGflMatchNow) {
+    payload.gfl_match_now = cachedGflMatchNow;
+    if (cachedGflMatchNow.started_at && payload.servers?.gfl) {
+      const startedSec = Math.floor(new Date(cachedGflMatchNow.started_at).getTime() / 1000);
+      if (startedSec > 0) {
+        payload.servers.gfl.map_start_time = startedSec;
+      }
+    }
+  }
+
+  // 4. Direct Browser GFL Soundtrack Intel Enrichment (cached per map)
+  const activeMap = payload.servers?.gfl?.map || payload.gfl_match_now?.map;
+  if (activeMap && activeMap !== '-') {
+    if (cachedGflMusics && cachedGflMusics.map === activeMap) {
+      payload.gfl_map_musics = cachedGflMusics.musics;
+    } else {
+      try {
+        let mRes = await fetch(
+          `https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/${encodeURIComponent(activeMap)}/musics`,
+          { signal: AbortSignal.timeout(4000) }
+        );
+        let musicItems: MapMusicEntry[] = [];
+        if (mRes.ok) {
+          const mJson = await mRes.json();
+          if (Array.isArray(mJson?.data)) {
+            musicItems = mJson.data;
+          }
+        } else if (activeMap.endsWith('_p')) {
+          const stripped = activeMap.slice(0, -2);
+          mRes = await fetch(
+            `https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/${encodeURIComponent(stripped)}/musics`,
+            { signal: AbortSignal.timeout(4000) }
+          );
+          if (mRes.ok) {
+            const mJson = await mRes.json();
+            if (Array.isArray(mJson?.data)) {
+              musicItems = mJson.data;
+            }
+          }
+        }
+        cachedGflMusics = { map: activeMap, musics: musicItems };
+        payload.gfl_map_musics = musicItems;
+      } catch {
+        // Optional soundtrack enrichment
+      }
     }
   }
 
   return payload;
+}
+
+/**
+ * High-performance telemetry fetcher with in-flight Promise deduplication.
+ * Prevents multiple concurrent components from making redundant requests to Render / zegraph.
+ */
+export function fetchLiveTelemetry(): Promise<LiveTelemetryPayload | null> {
+  if (inFlightTelemetryPromise) {
+    return inFlightTelemetryPromise;
+  }
+  inFlightTelemetryPromise = executeFetchLiveTelemetry().finally(() => {
+    inFlightTelemetryPromise = null;
+  });
+  return inFlightTelemetryPromise;
 }
 
 /**

@@ -348,11 +348,11 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
             "online": is_on,
             "in_game": False,
             "state": "online" if is_on else "offline",
-            "game": "Steam Online",
+            "game": "Steam Community",
             "server_id": None,
             "server_name": None,
-            "map": "Status: Online",
-            "players": "Chilling",
+            "map": "Idle",
+            "players": "N/A",
             "connect_url": None,
             "player_duration": 0
         }
