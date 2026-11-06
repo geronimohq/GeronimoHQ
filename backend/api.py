@@ -460,10 +460,23 @@ def get_servers():
 
 @app.get("/api/debug/gfl-intel")
 def debug_gfl_intel():
-    match, musics = fetch_gfl_intel("ze_journey_p")
+    err = None
+    data = None
+    status_code = None
+    try:
+        url = "https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now"
+        req = urllib.request.Request(url, headers=ZEGRAPH_HEADERS)
+        with urllib.request.urlopen(req, timeout=5.0, context=SSL_CTX) as resp:
+            status_code = resp.status
+            body = resp.read().decode("utf-8")
+            data = json.loads(body)
+    except Exception as e:
+        err = f"{type(e).__name__}: {str(e)}"
+    
     return {
-        "match": match,
-        "sample_musics_count": len(musics),
+        "status_code": status_code,
+        "data": data,
+        "error": err,
         "cache": GFL_INTEL_CACHE
     }
 
