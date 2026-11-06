@@ -167,7 +167,7 @@ export const ServerRadarPreview: React.FC = () => {
   }, [activeModalServer, telemetry, modalSearch, playerSortField, playerSortOrder]);
 
   return (
-    <section id="server-radar" className="relative w-full max-w-6xl mx-auto px-4 py-12">
+    <section id="server-radar" className="relative w-full max-w-6xl mx-auto px-4 pt-12 pb-28 sm:pb-24">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 border-b border-lime-500/30 pb-5">
         <div>

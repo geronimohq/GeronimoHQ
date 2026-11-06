@@ -363,6 +363,11 @@ SSL_CTX = ssl.create_default_context()
 SSL_CTX.check_hostname = False
 SSL_CTX.verify_mode = ssl.CERT_NONE
 
+try:
+    from curl_cffi import requests as cffi_requests
+except ImportError:
+    cffi_requests = None
+
 ZEGRAPH_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",
@@ -383,29 +388,51 @@ def fetch_gfl_intel(gfl_map: str):
     match_data = GFL_INTEL_CACHE.get("match")
     musics_data = GFL_INTEL_CACHE.get("musics", [])
 
-    # 1. Match now
-    try:
-        url = "https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now"
-        req = urllib.request.Request(url, headers=ZEGRAPH_HEADERS)
-        with urllib.request.urlopen(req, timeout=4.0, context=SSL_CTX) as resp:
-            res = json.loads(resp.read().decode("utf-8"))
-            if res.get("code") == 0 and res.get("data"):
-                match_data = res.get("data")
-    except Exception as e:
-        print(f"[ZEGRAPH_MATCH_ERROR] {e}")
+    # 1. Match now (curl_cffi impersonating chrome to bypass Cloudflare TLS checks)
+    if cffi_requests:
+        try:
+            url = "https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now"
+            r = cffi_requests.get(url, impersonate="chrome120", timeout=4.5)
+            if r.status_code == 200:
+                res = r.json()
+                if res.get("code") == 0 and res.get("data"):
+                    match_data = res.get("data")
+        except Exception as e:
+            print(f"[CFFI_MATCH_ERROR] {e}")
+    else:
+        try:
+            url = "https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now"
+            req = urllib.request.Request(url, headers=ZEGRAPH_HEADERS)
+            with urllib.request.urlopen(req, timeout=4.0, context=SSL_CTX) as resp:
+                res = json.loads(resp.read().decode("utf-8"))
+                if res.get("code") == 0 and res.get("data"):
+                    match_data = res.get("data")
+        except Exception as e:
+            print(f"[ZEGRAPH_MATCH_ERROR] {e}")
 
     # 2. Musics for current active map
     clean_map = gfl_map.strip() if gfl_map else ""
     if clean_map and clean_map != "-":
-        try:
-            murl = f"https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/{clean_map}/musics"
-            req2 = urllib.request.Request(murl, headers=ZEGRAPH_HEADERS)
-            with urllib.request.urlopen(req2, timeout=4.0, context=SSL_CTX) as resp2:
-                mres = json.loads(resp2.read().decode("utf-8"))
-                if mres.get("code") == 0:
-                    musics_data = mres.get("data", [])
-        except Exception:
-            musics_data = []
+        if cffi_requests:
+            try:
+                murl = f"https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/{clean_map}/musics"
+                mr = cffi_requests.get(murl, impersonate="chrome120", timeout=4.5)
+                if mr.status_code == 200:
+                    mres = mr.json()
+                    if mres.get("code") == 0:
+                        musics_data = mres.get("data", [])
+            except Exception:
+                musics_data = []
+        else:
+            try:
+                murl = f"https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/{clean_map}/musics"
+                req2 = urllib.request.Request(murl, headers=ZEGRAPH_HEADERS)
+                with urllib.request.urlopen(req2, timeout=4.0, context=SSL_CTX) as resp2:
+                    mres = json.loads(resp2.read().decode("utf-8"))
+                    if mres.get("code") == 0:
+                        musics_data = mres.get("data", [])
+            except Exception:
+                musics_data = []
 
     GFL_INTEL_CACHE["match"] = match_data
     GFL_INTEL_CACHE["musics"] = musics_data
@@ -458,32 +485,14 @@ def get_servers():
     CACHE["timestamp"] = now
     return fresh_data
 
-import subprocess
-
 @app.get("/api/debug/gfl-intel")
 def debug_gfl_intel():
-    curl_out = None
-    curl_err = None
-    curl_code = None
-    try:
-        cmd = [
-            "curl", "-s", "--max-time", "4",
-            "-H", "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            "-H", "Accept: application/json, text/plain, */*",
-            "-H", "Referer: https://zegraph.xyz/",
-            "https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now"
-        ]
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
-        curl_code = proc.returncode
-        curl_out = proc.stdout
-        curl_err = proc.stderr
-    except Exception as e:
-        curl_err = str(e)
-
+    match, musics = fetch_gfl_intel("ze_journey_p")
     return {
-        "curl_code": curl_code,
-        "curl_out": curl_out[:300] if curl_out else None,
-        "curl_err": curl_err
+        "cffi_available": cffi_requests is not None,
+        "match": match,
+        "musics_count": len(musics),
+        "cache": GFL_INTEL_CACHE
     }
 
 @app.get("/api/servers/{server_id}")

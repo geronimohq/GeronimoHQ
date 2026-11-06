@@ -13,6 +13,11 @@ import urllib.request
 import ssl
 from typing import Dict, Any, List
 
+try:
+    from curl_cffi import requests as cffi_requests
+except ImportError:
+    cffi_requests = None
+
 SSL_CTX = ssl.create_default_context()
 SSL_CTX.check_hostname = False
 SSL_CTX.verify_mode = ssl.CERT_NONE
@@ -26,27 +31,53 @@ ZEGRAPH_HEADERS = {
 def fetch_gfl_intel(gfl_map: str):
     match_data = None
     musics_data = []
-    try:
-        url = "https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now"
-        req = urllib.request.Request(url, headers=ZEGRAPH_HEADERS)
-        with urllib.request.urlopen(req, timeout=4.0, context=SSL_CTX) as resp:
-            res = json.loads(resp.read().decode("utf-8"))
-            if res.get("code") == 0 and res.get("data"):
-                match_data = res.get("data")
-    except Exception:
-        pass
 
+    # 1. Match now
+    if cffi_requests:
+        try:
+            url = "https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now"
+            r = cffi_requests.get(url, impersonate="chrome120", timeout=4.5)
+            if r.status_code == 200:
+                res = r.json()
+                if res.get("code") == 0 and res.get("data"):
+                    match_data = res.get("data")
+        except Exception:
+            pass
+    else:
+        try:
+            url = "https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now"
+            req = urllib.request.Request(url, headers=ZEGRAPH_HEADERS)
+            with urllib.request.urlopen(req, timeout=4.0, context=SSL_CTX) as resp:
+                res = json.loads(resp.read().decode("utf-8"))
+                if res.get("code") == 0 and res.get("data"):
+                    match_data = res.get("data")
+        except Exception:
+            pass
+
+    # 2. Musics
     clean_map = gfl_map.strip() if gfl_map else ""
     if clean_map and clean_map != "-":
-        try:
-            murl = f"https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/{clean_map}/musics"
-            req2 = urllib.request.Request(murl, headers=ZEGRAPH_HEADERS)
-            with urllib.request.urlopen(req2, timeout=4.0, context=SSL_CTX) as resp2:
-                mres = json.loads(resp2.read().decode("utf-8"))
-                if mres.get("code") == 0:
-                    musics_data = mres.get("data", [])
-        except Exception:
-            musics_data = []
+        if cffi_requests:
+            try:
+                murl = f"https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/{clean_map}/musics"
+                mr = cffi_requests.get(murl, impersonate="chrome120", timeout=4.5)
+                if mr.status_code == 200:
+                    mres = mr.json()
+                    if mres.get("code") == 0:
+                        musics_data = mres.get("data", [])
+            except Exception:
+                musics_data = []
+        else:
+            try:
+                murl = f"https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/maps/{clean_map}/musics"
+                req2 = urllib.request.Request(murl, headers=ZEGRAPH_HEADERS)
+                with urllib.request.urlopen(req2, timeout=4.0, context=SSL_CTX) as resp2:
+                    mres = json.loads(resp2.read().decode("utf-8"))
+                    if mres.get("code") == 0:
+                        musics_data = mres.get("data", [])
+            except Exception:
+                musics_data = []
+
     return match_data, musics_data
 
 def query_a2s_info(host: str, port: int, timeout: float = 1.4) -> Dict[str, Any]:

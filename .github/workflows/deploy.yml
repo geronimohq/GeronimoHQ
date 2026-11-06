@@ -40,6 +40,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Python dependencies
+        run: pip install -r backend/requirements.txt
 
       - name: Fetch Live Server Telemetry
         run: python scripts/fetch_live_servers.py
