@@ -20,7 +20,6 @@ import {
   Sparkles,
   Zap,
   Users,
-  RefreshCw,
   Shield,
   X,
   Clock,
@@ -37,7 +36,6 @@ export const ServerRadarPreview: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<LiveTelemetryPayload | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Player Roster Modal State
   const [activeModalServer, setActiveModalServer] = useState<ZEServer | null>(null);
@@ -45,12 +43,10 @@ export const ServerRadarPreview: React.FC = () => {
 
   // Initial & periodic telemetry fetch (auto-refreshes every 5s with cache-busting)
   const loadTelemetry = useCallback(async () => {
-    setIsRefreshing(true);
     const data = await fetchLiveTelemetry();
     if (data) {
       setTelemetry(data);
     }
-    setTimeout(() => setIsRefreshing(false), 500);
   }, []);
 
   useEffect(() => {
@@ -81,9 +77,9 @@ export const ServerRadarPreview: React.FC = () => {
   const gflMapElapsed = Math.max(0, nowSec - gflMapStart);
   const gflRegionalPing = getEstimatedRegionalPing(gflServer.region);
 
-  // Global servers (6 nodes - strictly non-China)
+  // Global servers (5 nodes - strictly non-China, excluding premier featured GFL)
   const globalServers = useMemo(() => {
-    return ZE_SERVERS.filter((s) => s.regionCategory !== 'china');
+    return ZE_SERVERS.filter((s) => s.regionCategory !== 'china' && s.id !== 'gfl');
   }, []);
 
   // China servers (35 nodes)
@@ -142,39 +138,29 @@ export const ServerRadarPreview: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 border-b border-lime-500/30 pb-5">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="px-2.5 py-0.5 text-[10px] font-code rounded bg-lime-950/80 text-lime-300 border border-lime-500/50">
               MODULE 02 // DIRECT GAME CONNECTOR
+            </span>
+            <span className="text-[10px] font-code px-2 py-0.5 rounded bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 flex items-center gap-1.5 uppercase font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              LIVE RADAR
             </span>
             <span className="text-xs font-code text-slate-400">
               COMMUNITY SERVERS // 128 TICK
             </span>
           </div>
-          <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
+          <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider">
             ZOMBIE ESCAPE SERVER BROWSER
-            <span className="text-xs font-code px-2 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-500/40 rounded uppercase flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
-              LIVE RADAR
-            </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-3xl">
             Live CS2 Zombie Escape server radar with real active maps, live player counts, and player rosters. Click <strong>"CONNECT VIA STEAM"</strong> to launch CS2 and join instantly!
           </p>
         </div>
 
-        {/* Global Live Stats & Refresh */}
+        {/* Global Live Stats */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={loadTelemetry}
-            disabled={isRefreshing}
-            className="flex items-center gap-2 bg-slate-900/90 hover:bg-slate-800 border border-lime-500/40 hover:border-lime-400 px-3 py-2 rounded-xl text-xs font-code text-lime-300 transition-all cursor-pointer shadow-[0_0_15px_rgba(57,255,20,0.15)]"
-            title="Refresh live maps and player counts"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-lime-400' : ''}`} />
-            <span>{isRefreshing ? 'QUERYING...' : 'SYNC TELEMETRY'}</span>
-          </button>
-
-          <div className="hidden sm:flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3 py-2 rounded-xl text-xs font-code text-slate-300">
+          <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3.5 py-2 rounded-xl text-xs font-code text-slate-300 shadow-md">
             <Radio className="w-3.5 h-3.5 text-lime-400 animate-pulse" />
             <span>
               <strong className="text-lime-300">{telemetry?.online_servers ?? 33}</strong> / {ZE_SERVERS.length} NODES ONLINE
@@ -198,7 +184,10 @@ export const ServerRadarPreview: React.FC = () => {
               <span className="text-[10px] font-code px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300 font-bold">
                 🇺🇸 US CHICAGO
               </span>
-              <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">
+              <span className="text-[10px] font-code px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 font-bold">
+                GLOBAL SERVER
+              </span>
+              <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold">
                 128 TICK
               </span>
             </div>
@@ -229,13 +218,13 @@ export const ServerRadarPreview: React.FC = () => {
                 </strong>
               </div>
 
-              <div className="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800" title={`Estimated regional latency to ${gflServer.region}`}>
+              <div className="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800" title={`Estimated latency: ${gflRegionalPing.userLocation} ➔ ${gflRegionalPing.serverLocation}`}>
                 <Radio className="w-3.5 h-3.5 text-cyan-400" />
                 <span className="text-slate-400">Est. Ping:</span>
                 <strong className="text-cyan-300 font-bold">
                   {gflRegionalPing.display}
                 </strong>
-                <span className="text-[10px] text-slate-500 font-normal">({gflRegionalPing.label})</span>
+                <span className="text-[10px] text-slate-400 font-normal">({gflRegionalPing.route})</span>
               </div>
 
               <div className="text-[11px] font-code text-slate-400 flex items-center gap-1">
@@ -533,9 +522,10 @@ export const ServerRadarPreview: React.FC = () => {
                   )}
 
                   {/* Realistic Estimated Regional Ping */}
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] font-code text-cyan-300" title={`Estimated regional latency to ${server.region}`}>
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] font-code text-cyan-300" title={`Estimated route latency: ${regionalPing.userLocation} ➔ ${regionalPing.serverLocation}`}>
                     <Radio className="w-3 h-3 text-cyan-400" />
-                    <span>{regionalPing.display}</span>
+                    <span className="font-bold">{regionalPing.display}</span>
+                    <span className="text-[10px] text-slate-500 font-normal hidden sm:inline">({regionalPing.route})</span>
                   </div>
                 </div>
               </div>
