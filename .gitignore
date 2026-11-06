@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Binaries & Executables (hosted via GitHub Releases)
+*.exe
+public/downloads/*.exe
+

@@ -29,7 +29,7 @@ interface AppFeatureModule {
 }
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/downloads/CS2_Command_Center.exe';
+  const downloadUrl = 'https://github.com/geronimohq/GeronimoHQ/releases/download/v1.0.0/CS2_Command_Center.exe';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -325,15 +325,6 @@ export const CS2CommandCenterPreview: React.FC = () => {
                   </h3>
                 </div>
               </div>
-
-              <a
-                href={downloadUrl}
-                download="CS2_Command_Center.exe"
-                className="px-4 py-2 bg-gradient-to-r from-fuchsia-600 to-cyan-600 hover:from-fuchsia-500 hover:to-cyan-500 text-white font-cyber text-xs font-bold rounded-lg transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>GET IN APP</span>
-              </a>
             </div>
 
             {/* Summary */}
