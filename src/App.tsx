@@ -2,8 +2,8 @@ import React from 'react';
 import { RetroGridCanvas } from './components/RetroGridCanvas';
 import { CyberNavbar } from './components/CyberNavbar';
 import { PepeHeroStage } from './components/PepeHeroStage';
-import { CS2CommandCenterPreview } from './components/CS2CommandCenterPreview';
 import { ServerRadarPreview } from './components/ServerRadarPreview';
+import { CS2CommandCenterPreview } from './components/CS2CommandCenterPreview';
 import { DeployHudFooter } from './components/DeployHudFooter';
 import { ChevronDown } from 'lucide-react';
 
@@ -25,7 +25,7 @@ export const App: React.FC = () => {
           {/* Top Status Pill */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/70 border border-cyan-400/50 text-cyan-300 text-xs font-code mb-4 shadow-[0_0_15px_rgba(0,240,255,0.3)]">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span>INITIALIZING GERONIMO_HQ NEURAL LINK // v1.0.0</span>
+            <span>GERONIMO_HQ NEURAL LINK // ONLINE</span>
           </div>
 
           {/* Main Glitch / Cyber Title */}
@@ -35,7 +35,7 @@ export const App: React.FC = () => {
 
           <p className="max-w-2xl mx-auto text-sm sm:text-base md:text-lg font-tech text-slate-300 tracking-wide leading-relaxed">
             Personal Cyber-Hub & Experimental Holo-Chamber for <strong className="text-cyan-400">geronimohq.com</strong>.
-            Featuring legendary memes, tactical Counter-Strike telemetry, and live gaming servers.
+            Featuring legendary animated memes, live CS2 Zombie Escape server browser, and desktop gaming tools.
           </p>
 
           {/* Quick Info Tags */}
@@ -47,10 +47,10 @@ export const App: React.FC = () => {
               🐸 3x ANIMATED PEPES
             </span>
             <span className="px-2.5 py-1 rounded bg-slate-900/80 border border-slate-800 text-lime-300">
-              🎵 REAL-TIME SYNTH AUDIO
+              🎮 ZE STEAM CONNECT
             </span>
             <span className="px-2.5 py-1 rounded bg-slate-900/80 border border-slate-800 text-amber-300">
-              🛡️ CS2 COMMAND READY
+              💻 CS2 DESKTOP APP
             </span>
           </div>
         </div>
@@ -61,20 +61,20 @@ export const App: React.FC = () => {
         {/* Down Indicator */}
         <div className="flex flex-col items-center my-4 text-slate-500 hover:text-cyan-400 transition-colors">
           <span className="text-[10px] font-code tracking-widest uppercase mb-1">
-            SCROLL FOR EXPANSION MODULES
+            SCROLL FOR ZE SERVER RADAR & TOOLS
           </span>
           <ChevronDown className="w-4 h-4 animate-bounce text-cyan-400" />
         </div>
 
-        {/* FUTURE EXPANSION MODULE 1: CS2 COMMAND CENTER DESKTOP SUITE */}
-        <CS2CommandCenterPreview />
-
-        {/* FUTURE EXPANSION MODULE 2: ZOMBIE ESCAPE SERVER RADAR */}
+        {/* MODULE 1: ZOMBIE ESCAPE SERVER RADAR (Primary Web Utility with Steam Connect) */}
         <ServerRadarPreview />
+
+        {/* MODULE 2: CS2 COMMAND CENTER DESKTOP SUITE (1-Click App Download) */}
+        <CS2CommandCenterPreview />
 
       </main>
 
-      {/* Cyberpunk Deployment Footer with Porkbun DNS Guide */}
+      {/* Clean Transmission / Contact Terminal Footer */}
       <DeployHudFooter />
     </div>
   );

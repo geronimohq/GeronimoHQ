@@ -73,18 +73,18 @@ export const CyberNavbar: React.FC = () => {
             HOLO-DECK
           </a>
           <a
-            href="#cs2-command"
-            className="hover:text-fuchsia-400 transition-colors flex items-center gap-1.5"
-          >
-            <Shield className="w-3.5 h-3.5 text-fuchsia-400" />
-            CS2 COMMAND
-          </a>
-          <a
             href="#server-radar"
             className="hover:text-lime-400 transition-colors flex items-center gap-1.5"
           >
             <Wifi className="w-3.5 h-3.5 text-lime-400" />
-            ZE RADAR
+            ZE SERVERS
+          </a>
+          <a
+            href="#cs2-command"
+            className="hover:text-fuchsia-400 transition-colors flex items-center gap-1.5"
+          >
+            <Shield className="w-3.5 h-3.5 text-fuchsia-400" />
+            CS2 APP
           </a>
           <a
             href="#contact"
