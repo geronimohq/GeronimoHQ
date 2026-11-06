@@ -126,21 +126,11 @@ export const CS2CommandCenterPreview: React.FC = () => {
       </div>
 
       {/* Safety & VAC Compliance Guarantee Banner */}
-      <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-tech text-slate-400">
-        <div className="flex items-center gap-2.5">
-          <ShieldCheck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-          <span>
-            <strong className="text-white">100% VAC-Safe Guarantee:</strong> The desktop app modifies standard CS2 text config files (<code className="text-cyan-300">.cfg</code>) and uses Valve's official Steam protocols. It does not inject into game memory or modify DLLs.
-          </span>
-        </div>
-        <a
-          href={downloadUrl}
-          download="CS2_Command_Center.exe"
-          className="px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-fuchsia-300 font-code text-xs border border-fuchsia-500/40 flex items-center gap-1.5 transition-colors flex-shrink-0"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>Get Executable</span>
-        </a>
+      <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center gap-3 text-xs font-tech text-slate-400">
+        <ShieldCheck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+        <span>
+          <strong className="text-white">100% VAC-Safe Guarantee:</strong> The desktop app modifies standard CS2 text config files (<code className="text-cyan-300">.cfg</code>) and uses Valve's official Steam protocols. It does not inject into game memory or modify DLLs.
+        </span>
       </div>
     </section>
   );
