@@ -458,26 +458,32 @@ def get_servers():
     CACHE["timestamp"] = now
     return fresh_data
 
+import subprocess
+
 @app.get("/api/debug/gfl-intel")
 def debug_gfl_intel():
-    err = None
-    data = None
-    status_code = None
+    curl_out = None
+    curl_err = None
+    curl_code = None
     try:
-        url = "https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now"
-        req = urllib.request.Request(url, headers=ZEGRAPH_HEADERS)
-        with urllib.request.urlopen(req, timeout=5.0, context=SSL_CTX) as resp:
-            status_code = resp.status
-            body = resp.read().decode("utf-8")
-            data = json.loads(body)
+        cmd = [
+            "curl", "-s", "--max-time", "4",
+            "-H", "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "-H", "Accept: application/json, text/plain, */*",
+            "-H", "Referer: https://zegraph.xyz/",
+            "https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now"
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+        curl_code = proc.returncode
+        curl_out = proc.stdout
+        curl_err = proc.stderr
     except Exception as e:
-        err = f"{type(e).__name__}: {str(e)}"
-    
+        curl_err = str(e)
+
     return {
-        "status_code": status_code,
-        "data": data,
-        "error": err,
-        "cache": GFL_INTEL_CACHE
+        "curl_code": curl_code,
+        "curl_out": curl_out[:300] if curl_out else None,
+        "curl_err": curl_err
     }
 
 @app.get("/api/servers/{server_id}")
