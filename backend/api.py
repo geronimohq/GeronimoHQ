@@ -487,12 +487,22 @@ def get_servers():
 
 @app.get("/api/debug/gfl-intel")
 def debug_gfl_intel():
-    match, musics = fetch_gfl_intel("ze_journey_p")
+    cffi_status = None
+    cffi_body = None
+    cffi_err = None
+    if cffi_requests:
+        try:
+            url = "https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now"
+            r = cffi_requests.get(url, impersonate="chrome120", timeout=4.5)
+            cffi_status = r.status_code
+            cffi_body = r.text[:300]
+        except Exception as e:
+            cffi_err = str(e)
     return {
         "cffi_available": cffi_requests is not None,
-        "match": match,
-        "musics_count": len(musics),
-        "cache": GFL_INTEL_CACHE
+        "cffi_status": cffi_status,
+        "cffi_body": cffi_body,
+        "cffi_err": cffi_err
     }
 
 @app.get("/api/servers/{server_id}")
