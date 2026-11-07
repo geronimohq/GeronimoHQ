@@ -261,11 +261,19 @@ export const DancingBananaCharacter: React.FC<DancingBananaCharacterProps> = ({
 interface BananaHeroStageProps {
   targetLoops: number;
   onAllLoopsCompleted: () => void;
+  masterVolume?: number;
+  isMasterMuted?: boolean;
+  onToggleMasterMute?: () => void;
+  onMasterVolumeChange?: (vol: number) => void;
 }
 
 export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
   targetLoops,
   onAllLoopsCompleted,
+  masterVolume = 20,
+  isMasterMuted = false,
+  onToggleMasterMute,
+  onMasterVolumeChange,
 }) => {
   const [isMusicOn, setIsMusicOn] = useState<boolean>(true);
   const playerContainerRef = useRef<HTMLDivElement | null>(null);
@@ -275,6 +283,8 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
   const targetLoopsRef = useRef<number>(targetLoops);
   const onCompleteRef = useRef<() => void>(onAllLoopsCompleted);
 
+  const effectiveVol = isMasterMuted ? 0 : masterVolume;
+
   useEffect(() => {
     targetLoopsRef.current = targetLoops;
   }, [targetLoops]);
@@ -282,6 +292,23 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
   useEffect(() => {
     onCompleteRef.current = onAllLoopsCompleted;
   }, [onAllLoopsCompleted]);
+
+  // Reactive listener to masterVolume and isMasterMuted changes
+  useEffect(() => {
+    if (playerRef.current) {
+      try {
+        if (isMasterMuted || masterVolume === 0) {
+          playerRef.current.mute();
+          playerRef.current.setVolume(0);
+        } else {
+          playerRef.current.unMute();
+          playerRef.current.setVolume(masterVolume);
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }, [masterVolume, isMasterMuted]);
 
   // Mount & control the YouTube IFrame API player for seamless looping and exact end-of-loop theme transition
   useEffect(() => {
@@ -329,8 +356,13 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
       const unlockPlay = () => {
         if (isCancelled || !playerRef.current) return;
         try {
-          playerRef.current.unMute();
-          playerRef.current.setVolume(30);
+          if (isMasterMuted || effectiveVol === 0) {
+            playerRef.current.mute();
+            playerRef.current.setVolume(0);
+          } else {
+            playerRef.current.unMute();
+            playerRef.current.setVolume(effectiveVol);
+          }
           const st = playerRef.current.getPlayerState();
           if (st !== 1) {
             playerRef.current.playVideo();
@@ -355,8 +387,13 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
           onReady: (event) => {
             if (isCancelled) return;
             try {
-              event.target.unMute();
-              event.target.setVolume(30);
+              if (isMasterMuted || effectiveVol === 0) {
+                event.target.mute();
+                event.target.setVolume(0);
+              } else {
+                event.target.unMute();
+                event.target.setVolume(effectiveVol);
+              }
               event.target.playVideo();
             } catch {
               // ignore
@@ -479,30 +516,63 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
           </span>
         </div>
 
-        {/* Banana Phone Music Controls (Loops automatically; User can turn ON/OFF anytime) */}
+        {/* Banana Phone Master Music & Volume Controls */}
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setIsMusicOn((prev) => !prev)}
-            data-gremlin-ignore="true"
-            className={`px-3 py-1.5 text-xs font-code font-bold rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${
-              isMusicOn
-                ? 'bg-yellow-500/20 text-yellow-300 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]'
-                : 'bg-slate-900/90 text-slate-400 border-slate-700 hover:border-yellow-400 hover:text-yellow-300'
-            }`}
-            title="Toggle Banana Phone Looping Music Player ON or OFF"
-          >
-            {isMusicOn ? (
-              <>
-                <Volume2 className="w-4 h-4 text-yellow-400 animate-bounce" />
-                <span>BANANA PHONE MUSIC: ON (LOOPING)</span>
-              </>
-            ) : (
-              <>
-                <VolumeX className="w-4 h-4 text-slate-400" />
-                <span>BANANA PHONE MUSIC: OFF (CLICK TO PLAY)</span>
-              </>
-            )}
-          </button>
+          {onToggleMasterMute ? (
+            <button
+              onClick={onToggleMasterMute}
+              data-gremlin-ignore="true"
+              className={`px-3 py-1.5 text-xs font-code font-bold rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${
+                !isMasterMuted
+                  ? 'bg-yellow-500/20 text-yellow-300 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]'
+                  : 'bg-red-950/90 text-red-400 border-red-500/60'
+              }`}
+              title="Toggle Master Mute (works across both themes)"
+            >
+              {!isMasterMuted ? (
+                <>
+                  <Volume2 className="w-4 h-4 text-yellow-400 animate-bounce" />
+                  <span>BANANA MUSIC: ON ({masterVolume}%)</span>
+                </>
+              ) : (
+                <>
+                  <VolumeX className="w-4 h-4 text-red-400" />
+                  <span>BANANA MUSIC: MUTED (CLICK TO UNMUTE)</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsMusicOn((prev) => !prev)}
+              data-gremlin-ignore="true"
+              className={`px-3 py-1.5 text-xs font-code font-bold rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${
+                isMusicOn
+                  ? 'bg-yellow-500/20 text-yellow-300 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]'
+                  : 'bg-slate-900/90 text-slate-400 border-slate-700 hover:border-yellow-400 hover:text-yellow-300'
+              }`}
+            >
+              {isMusicOn ? <Volume2 className="w-4 h-4 text-yellow-400" /> : <VolumeX className="w-4 h-4" />}
+              <span>BANANA MUSIC: {isMusicOn ? 'ON' : 'OFF'}</span>
+            </button>
+          )}
+
+          {onMasterVolumeChange && (
+            <div className="flex items-center gap-1.5 bg-black/85 border border-yellow-500/40 px-2.5 py-1.5 rounded-lg text-yellow-300 text-xs font-code">
+              <span className="text-[10px] text-amber-400 font-bold">VOL:</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={isMasterMuted ? 0 : masterVolume}
+                onChange={(e) => onMasterVolumeChange(Number(e.target.value))}
+                className="w-16 h-1.5 accent-yellow-400 cursor-pointer"
+                title={`Master Volume: ${isMasterMuted ? 0 : masterVolume}%`}
+              />
+              <span className="w-7 text-[10px] tabular-nums font-bold">
+                {isMasterMuted ? '0%' : `${masterVolume}%`}
+              </span>
+            </div>
+          )}
 
           <a
             href={bananaYoutubeUrl}

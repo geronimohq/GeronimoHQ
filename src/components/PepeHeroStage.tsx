@@ -7,21 +7,34 @@ import { Activity, Volume2, VolumeX } from 'lucide-react';
 
 type PepeViewMode = 'all' | 'cry' | 'laugh' | 'dance';
 
-export const PepeHeroStage: React.FC = () => {
+interface PepeHeroStageProps {
+  masterVolume?: number;
+  isMasterMuted?: boolean;
+  onToggleMasterMute?: () => void;
+  onMasterVolumeChange?: (vol: number) => void;
+}
+
+export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({
+  masterVolume = 20,
+  isMasterMuted = false,
+  onToggleMasterMute,
+  onMasterVolumeChange,
+}) => {
   const [activeTab, setActiveTab] = useState<PepeViewMode>('all');
   const [isMusicOn, setIsMusicOn] = useState<boolean>(true);
 
-  // Automatically start Pepe Synth when PepeHeroStage mounts (and stop cleanly when unmounted or toggled off)
+  // Automatically start Pepe Synth when mounted, reactive to master volume & master mute
   useEffect(() => {
-    if (isMusicOn) {
-      cyberSynth.startSynth();
-    } else {
+    if (isMasterMuted || masterVolume === 0 || !isMusicOn) {
       cyberSynth.stopSynth();
+    } else {
+      cyberSynth.setVolume(masterVolume);
+      cyberSynth.startSynth();
     }
     return () => {
       cyberSynth.stopSynth();
     };
-  }, [isMusicOn]);
+  }, [isMusicOn, masterVolume, isMasterMuted]);
 
   return (
     <section className="relative w-full max-w-6xl mx-auto px-4 py-8 flex flex-col items-center">
@@ -37,30 +50,63 @@ export const PepeHeroStage: React.FC = () => {
           </span>
         </div>
 
-        {/* Pepe Music Toggle + Tab Filters (Matches Banana Phone Music Toggle UX) */}
+        {/* Pepe Music Toggle + Master Volume Controls + Tab Filters */}
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setIsMusicOn((prev) => !prev)}
-            data-gremlin-ignore="true"
-            className={`px-3 py-1.5 text-xs font-code font-bold rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${
-              isMusicOn
-                ? 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-400 shadow-[0_0_15px_rgba(255,0,127,0.45)]'
-                : 'bg-slate-900/90 text-slate-400 border-slate-700 hover:border-fuchsia-400 hover:text-fuchsia-300'
-            }`}
-            title="Toggle Pepe Retro-Futuristic Synth Music ON or OFF"
-          >
-            {isMusicOn ? (
-              <>
-                <Volume2 className="w-4 h-4 text-fuchsia-400 animate-bounce" />
-                <span>PEPE SYNTH MUSIC: ON (LOOPING)</span>
-              </>
-            ) : (
-              <>
-                <VolumeX className="w-4 h-4 text-slate-400" />
-                <span>PEPE SYNTH MUSIC: OFF (CLICK TO PLAY)</span>
-              </>
-            )}
-          </button>
+          {onToggleMasterMute ? (
+            <button
+              onClick={onToggleMasterMute}
+              data-gremlin-ignore="true"
+              className={`px-3 py-1.5 text-xs font-code font-bold rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${
+                !isMasterMuted
+                  ? 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-400 shadow-[0_0_15px_rgba(255,0,127,0.45)]'
+                  : 'bg-red-950/90 text-red-400 border-red-500/60'
+              }`}
+              title="Toggle Master Mute (works across both themes)"
+            >
+              {!isMasterMuted ? (
+                <>
+                  <Volume2 className="w-4 h-4 text-fuchsia-400 animate-bounce" />
+                  <span>PEPE SYNTH: ON ({masterVolume}%)</span>
+                </>
+              ) : (
+                <>
+                  <VolumeX className="w-4 h-4 text-red-400" />
+                  <span>PEPE SYNTH: MUTED (CLICK TO UNMUTE)</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsMusicOn((prev) => !prev)}
+              data-gremlin-ignore="true"
+              className={`px-3 py-1.5 text-xs font-code font-bold rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${
+                isMusicOn
+                  ? 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-400 shadow-[0_0_15px_rgba(255,0,127,0.45)]'
+                  : 'bg-slate-900/90 text-slate-400 border-slate-700 hover:border-fuchsia-400 hover:text-fuchsia-300'
+              }`}
+            >
+              {isMusicOn ? <Volume2 className="w-4 h-4 text-fuchsia-400" /> : <VolumeX className="w-4 h-4" />}
+              <span>PEPE SYNTH: {isMusicOn ? 'ON' : 'OFF'}</span>
+            </button>
+          )}
+
+          {onMasterVolumeChange && (
+            <div className="flex items-center gap-1.5 bg-black/85 border border-fuchsia-500/40 px-2.5 py-1.5 rounded-lg text-fuchsia-300 text-xs font-code">
+              <span className="text-[10px] text-fuchsia-400 font-bold">VOL:</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={isMasterMuted ? 0 : masterVolume}
+                onChange={(e) => onMasterVolumeChange(Number(e.target.value))}
+                className="w-16 h-1.5 accent-fuchsia-400 cursor-pointer"
+                title={`Master Volume: ${isMasterMuted ? 0 : masterVolume}%`}
+              />
+              <span className="w-7 text-[10px] tabular-nums font-bold">
+                {isMasterMuted ? '0%' : `${masterVolume}%`}
+              </span>
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-1 bg-slate-900/90 border border-slate-800 p-1 rounded-lg backdrop-blur-md">
             <button

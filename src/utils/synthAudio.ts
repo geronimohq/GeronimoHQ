@@ -9,6 +9,19 @@ class CyberSynthEngine {
   private step = 0;
   private masterGain: GainNode | null = null;
   private unlockBound = false;
+  private volumeMultiplier = 0.20; // default 20%
+
+  public setVolume(percent: number) {
+    this.volumeMultiplier = Math.max(0, Math.min(100, percent)) / 100;
+    if (this.ctx && this.masterGain) {
+      const baseGain = 0.18;
+      this.masterGain.gain.setValueAtTime(baseGain * this.volumeMultiplier, this.ctx.currentTime);
+    }
+  }
+
+  public getVolume(): number {
+    return Math.round(this.volumeMultiplier * 100);
+  }
 
   // D-Minor Bassline (D1, D1, D2, D1, F1, F1, C1, Bb1)
   private bassNotes = [
@@ -53,7 +66,7 @@ class CyberSynthEngine {
         try {
           this.ctx = new AudioContextClass();
           this.masterGain = this.ctx.createGain();
-          this.masterGain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+          this.masterGain.gain.setValueAtTime(0.18 * this.volumeMultiplier, this.ctx.currentTime);
           this.masterGain.connect(this.ctx.destination);
         } catch {
           // ignore

@@ -12,7 +12,7 @@ import { GeronimoDiscordPresence } from './components/GeronimoDiscordPresence';
 import { DeployHudFooter } from './components/DeployHudFooter';
 import { SecretGeronimoVault } from './components/SecretGeronimoVault';
 import { ChaosAnomalyEngine } from './components/ChaosAnomalyEngine';
-import { ChevronDown, Cpu, Lock } from 'lucide-react';
+import { ChevronDown, Volume2, VolumeX, Sliders } from 'lucide-react';
 
 const pickRandomBananaLoops = (): number => {
   const choices = [2, 3, 4];
@@ -29,6 +29,48 @@ export const App: React.FC = () => {
   const [gremlinEnabled, setGremlinEnabled] = useState<boolean>(true);
   const [transitionBanner, setTransitionBanner] = useState<string | null>(null);
   const [isVaultOpen, setIsVaultOpen] = useState<boolean>(false);
+
+  // Global Master Audio State (Persisted in localStorage; Defaults to 20% per Geronimo's request)
+  const [masterVolume, setMasterVolume] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('geronimo_master_vol');
+      return saved !== null ? Math.max(0, Math.min(100, Number(saved))) : 20;
+    } catch {
+      return 20;
+    }
+  });
+
+  const [isMasterMuted, setIsMasterMuted] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('geronimo_master_muted') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleMasterVolumeChange = useCallback((newVol: number) => {
+    const clamped = Math.max(0, Math.min(100, Math.round(newVol)));
+    setMasterVolume(clamped);
+    if (clamped > 0 && isMasterMuted) {
+      setIsMasterMuted(false);
+      try {
+        localStorage.setItem('geronimo_master_muted', 'false');
+      } catch {}
+    }
+    try {
+      localStorage.setItem('geronimo_master_vol', String(clamped));
+    } catch {}
+  }, [isMasterMuted]);
+
+  const handleToggleMasterMute = useCallback(() => {
+    setIsMasterMuted((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('geronimo_master_muted', String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
 
   // Automatic Pepe -> Banana Phone transition after a random 2 minutes (120s) or 3 minutes (180s)
   useEffect(() => {
@@ -87,10 +129,6 @@ export const App: React.FC = () => {
     });
   };
 
-  const handleQuickScroll = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
-    e.preventDefault();
-    scrollToSectionById(sectionId);
-  };
 
   return (
     <div
@@ -167,12 +205,12 @@ export const App: React.FC = () => {
             . Featuring legendary animated memes, free cloud RAM downloads, live CS2 Zombie Escape server browser, Web Config Studio, and desktop gaming tools.
           </p>
 
-          {/* Quick Info & Action Tags */}
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mt-4 text-[11px] font-code">
+          {/* Quick HUD Toolbar: Theme Toggle & Unified Master Audio Controls */}
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-4 text-[11px] font-code">
             <button
               onClick={handleToggleTheme}
               data-gremlin-ignore="true"
-              className={`px-3 py-1 rounded border cursor-pointer transition-all font-bold ${
+              className={`px-3 py-1.5 rounded-lg border cursor-pointer transition-all font-bold ${
                 theme === 'banana'
                   ? 'bg-amber-950/90 border-yellow-400 text-yellow-300 shadow-[0_0_12px_rgba(250,204,21,0.4)]'
                   : 'bg-slate-900/80 border-cyan-500/40 text-cyan-300 hover:border-yellow-400'
@@ -180,42 +218,46 @@ export const App: React.FC = () => {
             >
               {theme === 'banana' ? '🐸 SWITCH TO PEPE THEME' : '🍌 SWITCH TO BANANA PHONE THEME'}
             </button>
-            <a
-              href="#download-ram"
-              onClick={(e) => handleQuickScroll(e, 'download-ram')}
-              className="px-3 py-1 rounded bg-lime-950/80 border border-lime-400/60 text-lime-300 hover:bg-lime-900/80 flex items-center gap-1 font-bold"
-            >
-              <Cpu className="w-3 h-3" />
-              <span>💾 DOWNLOAD FREE RAM (16GB-128GB)</span>
-            </a>
-            <a
-              href="#server-radar"
-              onClick={(e) => handleQuickScroll(e, 'server-radar')}
-              className="px-2.5 py-1 rounded bg-slate-900/80 border border-slate-800 text-fuchsia-300 hover:border-fuchsia-400"
-            >
-              🎮 ZE STEAM CONNECT
-            </a>
-            <a
-              href="#cfg-studio"
-              onClick={(e) => handleQuickScroll(e, 'cfg-studio')}
-              className="px-2.5 py-1 rounded bg-slate-900/80 border border-slate-800 text-cyan-300 hover:border-cyan-400"
-            >
-              ⚙️ WEB CFG STUDIO
-            </a>
-            <button
-              onClick={() => setIsVaultOpen(true)}
-              className="px-3 py-1 rounded bg-red-950/90 border border-red-500/80 text-red-300 hover:bg-red-900 flex items-center gap-1.5 font-bold shadow-[0_0_15px_rgba(239,68,68,0.4)] animate-pulse cursor-pointer"
-            >
-              <Lock className="w-3 h-3 text-red-400" />
-              <span>🔒 CLASSIFIED VAULT [TOP SECRET]</span>
-            </button>
-            <a
-              href="#cs2-command"
-              onClick={(e) => handleQuickScroll(e, 'cs2-command')}
-              className="px-2.5 py-1 rounded bg-slate-900/80 border border-slate-800 text-amber-300 hover:border-amber-400"
-            >
-              💻 CS2 DESKTOP APP
-            </a>
+
+            {/* Master Audio Controller (Shared across Pepe & Banana Phone; Never resets on theme change) */}
+            <div className={`flex items-center gap-2.5 px-3 py-1 rounded-lg border backdrop-blur-md transition-all ${
+              theme === 'banana'
+                ? 'bg-black/85 border-yellow-500/40 text-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.2)]'
+                : 'bg-black/85 border-cyan-500/40 text-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.2)]'
+            }`}>
+              <button
+                onClick={handleToggleMasterMute}
+                data-gremlin-ignore="true"
+                className={`p-1 rounded cursor-pointer transition-all flex items-center gap-1 ${
+                  isMasterMuted
+                    ? 'bg-red-950/90 text-red-400 border border-red-500/60'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+                title={isMasterMuted ? 'Unmute Audio (All Themes)' : 'Mute Audio (All Themes)'}
+              >
+                {isMasterMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 animate-bounce" />}
+                <span className="text-[10px] font-bold uppercase">{isMasterMuted ? 'MUTED' : 'MUTE'}</span>
+              </button>
+
+              <div className="h-3.5 w-px bg-slate-700 mx-0.5" />
+
+              {/* Volume Slider Knob */}
+              <div className="flex items-center gap-2">
+                <Sliders className="w-3 h-3 opacity-70" />
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={isMasterMuted ? 0 : masterVolume}
+                  onChange={(e) => handleMasterVolumeChange(Number(e.target.value))}
+                  className="w-16 sm:w-24 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-yellow-400"
+                  title={`Master Volume: ${isMasterMuted ? 0 : masterVolume}%`}
+                />
+                <span className="w-8 text-[10px] font-bold tabular-nums">
+                  {isMasterMuted ? '0%' : `${masterVolume}%`}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -225,9 +267,18 @@ export const App: React.FC = () => {
             <BananaHeroStage
               targetLoops={bananaTargetLoops}
               onAllLoopsCompleted={handleBananaLoopsFinished}
+              masterVolume={masterVolume}
+              isMasterMuted={isMasterMuted}
+              onToggleMasterMute={handleToggleMasterMute}
+              onMasterVolumeChange={handleMasterVolumeChange}
             />
           ) : (
-            <PepeHeroStage />
+            <PepeHeroStage
+              masterVolume={masterVolume}
+              isMasterMuted={isMasterMuted}
+              onToggleMasterMute={handleToggleMasterMute}
+              onMasterVolumeChange={handleMasterVolumeChange}
+            />
           )}
         </div>
 
