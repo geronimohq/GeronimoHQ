@@ -31,6 +31,10 @@ interface YTPlayerInstance {
   pauseVideo: () => void;
   stopVideo: () => void;
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  mute: () => void;
+  unMute: () => void;
+  setVolume: (volume: number) => void;
+  getPlayerState: () => number;
   destroy: () => void;
 }
 
@@ -327,10 +331,45 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
           onReady: (event) => {
             if (isCancelled) return;
             try {
+              event.target.unMute();
+              event.target.setVolume(100);
               event.target.playVideo();
             } catch {
               // ignore
             }
+
+            // If browser blocked unmuted autoplay on cold tab open, start muted immediately
+            // and automatically unmute + play on the user's very first interaction anywhere on the page!
+            const unlockPlay = () => {
+              if (isCancelled || !playerRef.current) return;
+              try {
+                playerRef.current.unMute();
+                playerRef.current.setVolume(100);
+                playerRef.current.playVideo();
+              } catch {
+                // ignore
+              }
+              ['pointerdown', 'mousedown', 'keydown', 'touchstart', 'click'].forEach((evt) => {
+                window.removeEventListener(evt, unlockPlay, true);
+              });
+            };
+
+            ['pointerdown', 'mousedown', 'keydown', 'touchstart', 'click'].forEach((evt) => {
+              window.addEventListener(evt, unlockPlay, { capture: true, passive: true });
+            });
+
+            window.setTimeout(() => {
+              if (isCancelled || !playerRef.current) return;
+              try {
+                const st = playerRef.current.getPlayerState();
+                if (st !== 1) {
+                  playerRef.current.mute();
+                  playerRef.current.playVideo();
+                }
+              } catch {
+                // ignore
+              }
+            }, 350);
           },
           onStateChange: (event) => {
             if (isCancelled) return;

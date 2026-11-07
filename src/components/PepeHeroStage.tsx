@@ -1,28 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CryingPepe } from './pepes/CryingPepe';
 import { LaughingPepe } from './pepes/LaughingPepe';
 import { DancingPepe } from './pepes/DancingPepe';
-import { Activity, Play, ExternalLink, X } from 'lucide-react';
+import { cyberSynth } from '../utils/synthAudio';
+import { Activity, Play, ExternalLink, X, Volume2, VolumeX } from 'lucide-react';
 
 type PepeViewMode = 'all' | 'cry' | 'laugh' | 'dance';
 
-interface PepeHeroStageProps {
-  onYoutubeVideoToggle?: (isOpen: boolean) => void;
-}
-
-export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({ onYoutubeVideoToggle }) => {
+export const PepeHeroStage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<PepeViewMode>('all');
+  const [isMusicOn, setIsMusicOn] = useState<boolean>(true);
   const [showYoutubePlayer, setShowYoutubePlayer] = useState(false);
   const pepeYoutubeUrl = 'https://www.youtube.com/watch?v=nBza-xpJ0gI';
 
+  // Automatically start Pepe Synth when PepeHeroStage mounts (and stop cleanly when unmounted or toggled off)
+  useEffect(() => {
+    if (isMusicOn && !showYoutubePlayer) {
+      cyberSynth.startSynth();
+    } else {
+      cyberSynth.stopSynth();
+    }
+    return () => {
+      cyberSynth.stopSynth();
+    };
+  }, [isMusicOn, showYoutubePlayer]);
+
   const togglePepeVideo = (nextState?: boolean) => {
-    setShowYoutubePlayer((prev) => {
-      const next = typeof nextState === 'boolean' ? nextState : !prev;
-      if (onYoutubeVideoToggle) {
-        onYoutubeVideoToggle(next);
-      }
-      return next;
-    });
+    setShowYoutubePlayer((prev) => (typeof nextState === 'boolean' ? nextState : !prev));
   };
 
   return (
@@ -39,69 +43,94 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({ onYoutubeVideoTogg
           </span>
         </div>
 
-        {/* Tab Filters */}
-        <div className="flex items-center gap-1 bg-slate-900/90 border border-slate-800 p-1 rounded-lg backdrop-blur-md">
+        {/* Pepe Music Toggle + Tab Filters (Matches Banana Phone Music Toggle UX) */}
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setActiveTab('all')}
-            className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer ${
-              activeTab === 'all'
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/60 shadow-[0_0_10px_rgba(0,240,255,0.4)]'
-                : 'text-slate-400 hover:text-slate-200'
+            onClick={() => setIsMusicOn((prev) => !prev)}
+            data-gremlin-ignore="true"
+            className={`px-3 py-1.5 text-xs font-code font-bold rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${
+              isMusicOn
+                ? 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-400 shadow-[0_0_15px_rgba(255,0,127,0.45)]'
+                : 'bg-slate-900/90 text-slate-400 border-slate-700 hover:border-fuchsia-400 hover:text-fuchsia-300'
             }`}
+            title="Toggle Pepe Retro-Futuristic Synth Music ON or OFF"
           >
-            [00] TRIPTYCH VIEW
+            {isMusicOn ? (
+              <>
+                <Volume2 className="w-4 h-4 text-fuchsia-400 animate-bounce" />
+                <span>PEPE SYNTH MUSIC: ON (LOOPING)</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="w-4 h-4 text-slate-400" />
+                <span>PEPE SYNTH MUSIC: OFF (CLICK TO PLAY)</span>
+              </>
+            )}
           </button>
-          <button
-            onClick={() => setActiveTab('cry')}
-            className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer ${
-              activeTab === 'cry'
-                ? 'bg-sky-500/20 text-sky-300 border border-sky-400/60 shadow-[0_0_10px_rgba(56,189,248,0.4)]'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            [01] SAD FROG
-          </button>
-          <button
-            onClick={() => setActiveTab('laugh')}
-            className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer ${
-              activeTab === 'laugh'
-                ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-400/60 shadow-[0_0_10px_rgba(255,0,127,0.4)]'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            [02] MOCK LAUGH
-          </button>
-          <button
-            onClick={() => setActiveTab('dance')}
-            className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer ${
-              activeTab === 'dance'
-                ? 'bg-lime-500/20 text-lime-300 border border-lime-400/60 shadow-[0_0_10px_rgba(57,255,20,0.4)]'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            [03] PARTY RAVE
-          </button>
-          <button
-            onClick={() => togglePepeVideo()}
-            className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer flex items-center gap-1.5 ${
-              showYoutubePlayer
-                ? 'bg-red-500/25 text-red-300 border border-red-400/70 shadow-[0_0_12px_rgba(239,68,68,0.5)]'
-                : 'bg-red-950/60 text-red-300 border border-red-500/40 hover:bg-red-900/50'
-            }`}
-            title="Play Pepe Dance Anthem (YouTube)"
-          >
-            <Play className="w-3.5 h-3.5 text-red-400" />
-            <span>{showYoutubePlayer ? 'HIDE PEPE VIDEO' : 'PEPE DANCE YT'}</span>
-          </button>
-          <a
-            href={pepeYoutubeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-2.5 py-1 text-xs font-code rounded bg-slate-900 text-cyan-300 border border-cyan-500/30 hover:border-cyan-400 flex items-center gap-1"
-            title="Open Pepe Dance video on YouTube in a new tab"
-          >
-            <ExternalLink className="w-3 h-3" />
-          </a>
+
+          <div className="flex flex-wrap items-center gap-1 bg-slate-900/90 border border-slate-800 p-1 rounded-lg backdrop-blur-md">
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer ${
+                activeTab === 'all'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/60 shadow-[0_0_10px_rgba(0,240,255,0.4)]'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              [00] TRIPTYCH VIEW
+            </button>
+            <button
+              onClick={() => setActiveTab('cry')}
+              className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer ${
+                activeTab === 'cry'
+                  ? 'bg-sky-500/20 text-sky-300 border border-sky-400/60 shadow-[0_0_10px_rgba(56,189,248,0.4)]'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              [01] SAD FROG
+            </button>
+            <button
+              onClick={() => setActiveTab('laugh')}
+              className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer ${
+                activeTab === 'laugh'
+                  ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-400/60 shadow-[0_0_10px_rgba(255,0,127,0.4)]'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              [02] MOCK LAUGH
+            </button>
+            <button
+              onClick={() => setActiveTab('dance')}
+              className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer ${
+                activeTab === 'dance'
+                  ? 'bg-lime-500/20 text-lime-300 border border-lime-400/60 shadow-[0_0_10px_rgba(57,255,20,0.4)]'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              [03] PARTY RAVE
+            </button>
+            <button
+              onClick={() => togglePepeVideo()}
+              className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer flex items-center gap-1.5 ${
+                showYoutubePlayer
+                  ? 'bg-red-500/25 text-red-300 border border-red-400/70 shadow-[0_0_12px_rgba(239,68,68,0.5)]'
+                  : 'bg-red-950/60 text-red-300 border border-red-500/40 hover:bg-red-900/50'
+              }`}
+              title="Play Pepe Dance Anthem (YouTube)"
+            >
+              <Play className="w-3.5 h-3.5 text-red-400" />
+              <span>{showYoutubePlayer ? 'HIDE PEPE VIDEO' : 'PEPE DANCE YT'}</span>
+            </button>
+            <a
+              href={pepeYoutubeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1 text-xs font-code rounded bg-slate-900 text-cyan-300 border border-cyan-500/30 hover:border-cyan-400 flex items-center gap-1"
+              title="Open Pepe Dance video on YouTube in a new tab"
+            >
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
         </div>
       </div>
 
@@ -160,15 +189,9 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({ onYoutubeVideoTogg
 
         {/* 3D PERSPECTIVE NEON PEDESTAL (Bottom Floor) */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-80 md:w-[620px] h-40 pointer-events-none flex items-center justify-center [perspective:800px]">
-          {/* Rotated Floor Projection Plane */}
           <div className="relative w-full h-full [transform:rotateX(72deg)] flex items-center justify-center">
-            {/* Outer Hexagon / Ring */}
             <div className="absolute w-[360px] md:w-[580px] h-[360px] md:h-[580px] rounded-full border border-cyan-500/30 animate-spin-slow shadow-[0_0_30px_rgba(0,240,255,0.2)]" />
-            
-            {/* Middle Reverse Ring */}
             <div className="absolute w-[280px] md:w-[440px] h-[280px] md:h-[440px] rounded-full border border-dashed border-fuchsia-500/40 animate-spin-reverse-slow" />
-            
-            {/* Inner Core Emitter */}
             <div className="absolute w-[180px] md:w-[280px] h-[180px] md:h-[280px] rounded-full border-2 border-lime-400/50 bg-gradient-to-tr from-cyan-500/20 via-fuchsia-500/20 to-lime-500/20 shadow-[0_0_40px_rgba(57,255,20,0.4)]" />
           </div>
         </div>
@@ -178,11 +201,8 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({ onYoutubeVideoTogg
 
         {/* SPECIMEN DISPLAY LAYER */}
         <div className="relative z-10 w-full px-4 py-8 flex items-center justify-center">
-          {/* TRIPTYCH VIEW: All 3 Pepes together in dramatic interaction */}
           {activeTab === 'all' && (
             <div className="grid grid-cols-1 md:grid-cols-3 items-end justify-items-center gap-8 md:gap-4 w-full max-w-4xl">
-              
-              {/* SPECIMEN 01: CRYING PEPE */}
               <div className="flex flex-col items-center w-full max-w-[240px]">
                 <div className="text-[11px] font-code text-cyan-400 mb-2 flex items-center gap-1.5 opacity-80">
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
@@ -194,7 +214,6 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({ onYoutubeVideoTogg
                 </p>
               </div>
 
-              {/* SPECIMEN 02: LAUGHING PEPE (Center-Left / Mocking Crying Pepe) */}
               <div className="flex flex-col items-center w-full max-w-[260px] -mt-4 md:-mt-8">
                 <div className="text-[11px] font-code text-fuchsia-400 mb-2 flex items-center gap-1.5 opacity-90">
                   <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-ping" />
@@ -206,7 +225,6 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({ onYoutubeVideoTogg
                 </p>
               </div>
 
-              {/* SPECIMEN 03: DANCING PEPE (Right / Vibing Unfazed) */}
               <div className="flex flex-col items-center w-full max-w-[250px]">
                 <div className="text-[11px] font-code text-lime-400 mb-2 flex items-center gap-1.5 opacity-90">
                   <span className="w-1.5 h-1.5 rounded-full bg-lime-400 animate-bounce" />
@@ -217,11 +235,9 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({ onYoutubeVideoTogg
                   PepePls // Vibing with RGB Visor
                 </p>
               </div>
-
             </div>
           )}
 
-          {/* INDIVIDUAL SOLO INSPECTION VIEWS */}
           {activeTab === 'cry' && (
             <div className="flex flex-col md:flex-row items-center justify-center gap-8 max-w-2xl text-left">
               <div className="w-56 md:w-64">
@@ -306,7 +322,7 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({ onYoutubeVideoTogg
             </span>
           </div>
           <div className="flex items-center gap-2 text-slate-400">
-            <span>INTERACTIVE: HOVER & CLICK SPECIMENS</span>
+            <span>INTERACTIVE: HOVER &amp; CLICK SPECIMENS</span>
           </div>
         </div>
 

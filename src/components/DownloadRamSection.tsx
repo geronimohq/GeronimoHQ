@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { Cpu, Download, CheckCircle2, Sparkles, Terminal, RotateCcw, Copy, Check } from 'lucide-react';
+import { Cpu, Download, CheckCircle2, Sparkles, Terminal, RotateCcw, Copy, Check, Gamepad2, Trophy } from 'lucide-react';
 
 interface RamTier {
   gb: number;
@@ -46,7 +46,10 @@ const RAM_TIERS: RamTier[] = [
   },
 ];
 
+type MemePackageMode = 'ram' | 'gpu' | 'fps';
+
 export const DownloadRamSection: React.FC = () => {
+  const [memeMode, setMemeMode] = useState<MemePackageMode>('ram');
   const [selectedGb, setSelectedGb] = useState<number>(64);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
@@ -61,7 +64,27 @@ export const DownloadRamSection: React.FC = () => {
   const [copiedFlex, setCopiedFlex] = useState<boolean>(false);
   const timerRef = useRef<number | null>(null);
 
+  // Interactive "Dodge the ZE Ending Lasers" Mini-Game State
+  const [laserGameActive, setLaserGameActive] = useState(false);
+  const [laserGameOver, setLaserGameOver] = useState(false);
+  const [playerPose, setPlayerPose] = useState<'stand' | 'jump' | 'crouch'>('stand');
+  const [laserScore, setLaserScore] = useState(0);
+  const [laserHighScore, setLaserHighScore] = useState(12);
+  const [laserBeam, setLaserBeam] = useState<{ x: number; heightType: 'low' | 'high'; speed: number }>({
+    x: 100,
+    heightType: 'low',
+    speed: 3.6,
+  });
+  const poseRef = useRef<'stand' | 'jump' | 'crouch'>('stand');
+
   const selectedTier = RAM_TIERS.find((t) => t.gb === selectedGb) || RAM_TIERS[2];
+
+  const activePackageLabel =
+    memeMode === 'gpu'
+      ? 'NVIDIA RTX 6090 Ti (64GB GDDR7)'
+      : memeMode === 'fps'
+      ? '+1,000 FPS SOURCE 2 SUB-TICKBOOSTER'
+      : `${selectedTier.gb} GB RAM (${selectedTier.speed})`;
 
   useEffect(() => {
     return () => {
@@ -69,22 +92,85 @@ export const DownloadRamSection: React.FC = () => {
     };
   }, []);
 
+  // ZE Laser Mini-Game Loop
+  useEffect(() => {
+    if (!laserGameActive) return;
+
+    const tick = window.setInterval(() => {
+      setLaserBeam((prev) => {
+        const nextX = prev.x - prev.speed;
+
+        // Check collision window around player (x between 12% and 22%)
+        if (nextX <= 21 && nextX >= 12) {
+          const currentPose = poseRef.current;
+          const dodged =
+            (prev.heightType === 'low' && currentPose === 'jump') ||
+            (prev.heightType === 'high' && currentPose === 'crouch');
+
+          if (!dodged) {
+            setLaserGameActive(false);
+            setLaserGameOver(true);
+            return prev;
+          }
+        }
+
+        // Laser passed player cleanly! Spawn next laser faster!
+        if (nextX <= 0) {
+          setLaserScore((s) => {
+            const ns = s + 1;
+            setLaserHighScore((h) => Math.max(h, ns));
+            return ns;
+          });
+          return {
+            x: 100,
+            heightType: Math.random() < 0.55 ? 'low' : 'high',
+            speed: Math.min(7.2, prev.speed + 0.18),
+          };
+        }
+
+        return { ...prev, x: nextX };
+      });
+    }, 30);
+
+    return () => clearInterval(tick);
+  }, [laserGameActive]);
+
+  const triggerPose = (pose: 'jump' | 'crouch') => {
+    poseRef.current = pose;
+    setPlayerPose(pose);
+    window.setTimeout(() => {
+      if (poseRef.current === pose) {
+        poseRef.current = 'stand';
+        setPlayerPose('stand');
+      }
+    }, 520);
+  };
+
+  const startLaserMiniGame = () => {
+    poseRef.current = 'stand';
+    setPlayerPose('stand');
+    setLaserScore(0);
+    setLaserGameOver(false);
+    setLaserBeam({ x: 100, heightType: 'low', speed: 3.6 });
+    setLaserGameActive(true);
+  };
+
   const startRamDownload = () => {
     if (isDownloading) return;
     setIsDownloading(true);
     setIsCompleted(false);
     setProgress(0);
     setLogs([
-      `[START] Requesting ${selectedTier.gb} GB (${selectedTier.speed}) from GeronimoHQ Quantum Cloud...`,
+      `[START] Requesting ${activePackageLabel} from GeronimoHQ Quantum Cloud...`,
     ]);
 
     const stages: { pct: number; msg: string }[] = [
-      { pct: 12, msg: `[SLOTS] Bypassing physical motherboard limits... Allocating ${selectedTier.gb} GB Virtual DIMMs...` },
-      { pct: 28, msg: `[TIMINGS] Soldering cloud capacitors & tightening CAS Latency to ${selectedTier.speed}...` },
-      { pct: 46, msg: optRgb ? `[RGB] Injecting 16.8 Million ARGB Rainbow Wave photons into RAM heatsinks...` : `[COOLING] Flushing liquid nitrogen through virtual heatspreaders...` },
+      { pct: 12, msg: `[SLOTS] Bypassing physical motherboard limits... Allocating ${activePackageLabel}...` },
+      { pct: 28, msg: `[TIMINGS] Soldering cloud capacitors & tightening CAS Latency to 0.01ns...` },
+      { pct: 46, msg: optRgb ? `[RGB] Injecting 16.8 Million ARGB Rainbow Wave photons into heatsinks...` : `[COOLING] Flushing liquid nitrogen through virtual heatspreaders...` },
       { pct: 65, msg: optBhop ? `[CS2_ENGINE] Calibrating sub-tick bhop & Zombie Escape laser-dodge memory registers...` : `[XMP_EXPO] Enabling AMD EXPO / Intel XMP 4.0 Overdrive profile...` },
-      { pct: 84, msg: `[VERIFY] Running MemTest69-Pro (0 errors found across ${selectedTier.gb * 1024} MB)...` },
-      { pct: 96, msg: `[FINALIZE] Sealing DIMM latches *CLICK* *CLICK*...` },
+      { pct: 84, msg: `[VERIFY] Running MemTest69-Pro (0 errors found)...` },
+      { pct: 96, msg: `[FINALIZE] Sealing PCIe / DIMM latches *CLICK* *CLICK*...` },
     ];
 
     const triggeredStages = new Set<number>();
@@ -98,7 +184,7 @@ export const DownloadRamSection: React.FC = () => {
         setProgress(100);
         setIsDownloading(false);
         setIsCompleted(true);
-        const finalMsg = `[SUCCESS] ✅ ${selectedTier.gb} GB RAM DOWNLOADED & INSTALLED SUCCESSFULLY!`;
+        const finalMsg = `[SUCCESS] ✅ ${activePackageLabel} DOWNLOADED & INSTALLED SUCCESSFULLY!`;
         setStatusLine(finalMsg);
         setLogs((prev) => [...prev, finalMsg]);
 
@@ -132,7 +218,7 @@ export const DownloadRamSection: React.FC = () => {
   };
 
   const copyDiscordFlex = () => {
-    const text = `✅ I just downloaded ${selectedTier.gb} GB of ${selectedTier.speed} RAM for free at https://geronimohq.com/#download-ram 💾🚀`;
+    const text = `✅ I just downloaded ${activePackageLabel} for free at https://geronimohq.com/#download-ram 💾🚀`;
     navigator.clipboard.writeText(text);
     setCopiedFlex(true);
     setTimeout(() => setCopiedFlex(false), 2500);
@@ -150,9 +236,9 @@ export const DownloadRamSection: React.FC = () => {
         <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-lime-400/80" />
 
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 border-b border-lime-500/30 pb-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-5 border-b border-lime-500/30 pb-4">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
               <span className="px-2.5 py-0.5 text-[10px] font-code rounded bg-lime-950/90 text-lime-300 border border-lime-500/50">
                 OFFICIAL GERONIMOHQ.COM CLOUD MEMORY GENERATOR
               </span>
@@ -172,9 +258,38 @@ export const DownloadRamSection: React.FC = () => {
             </p>
           </div>
 
-          <div className="text-left md:text-right font-code text-xs text-slate-400 bg-slate-900/90 px-3.5 py-2 rounded-xl border border-slate-800">
-            <div>SELECTED CAPACITY: <span className="text-lime-400 font-bold">{selectedTier.gb} GB</span></div>
-            <div>SPEED PROFILE: <span className="text-cyan-300">{selectedTier.speed}</span></div>
+          {/* Bonus Cloud Hardware Mode Switcher */}
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800">
+            <button
+              onClick={() => { setMemeMode('ram'); resetDownload(); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-code font-bold cursor-pointer transition-all ${
+                memeMode === 'ram'
+                  ? 'bg-lime-500/20 text-lime-300 border border-lime-400/60'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              💾 FREE RAM (16-128GB)
+            </button>
+            <button
+              onClick={() => { setMemeMode('gpu'); resetDownload(); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-code font-bold cursor-pointer transition-all ${
+                memeMode === 'gpu'
+                  ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-400/60'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              🎮 RTX 6090 Ti
+            </button>
+            <button
+              onClick={() => { setMemeMode('fps'); resetDownload(); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-code font-bold cursor-pointer transition-all ${
+                memeMode === 'fps'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/60'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              ⚡ +1,000 FPS PACK
+            </button>
           </div>
         </div>
 
@@ -193,11 +308,12 @@ export const DownloadRamSection: React.FC = () => {
                   key={tier.gb}
                   disabled={isDownloading}
                   onClick={() => {
+                    setMemeMode('ram');
                     setSelectedGb(tier.gb);
                     if (isCompleted) setIsCompleted(false);
                   }}
                   className={`text-left p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
-                    isSelected
+                    isSelected && memeMode === 'ram'
                       ? 'bg-gradient-to-br from-lime-950/80 via-slate-900 to-cyan-950/60 border-lime-400 shadow-[0_0_25px_rgba(57,255,20,0.3)] scale-[1.02]'
                       : 'bg-slate-900/60 border-slate-800 hover:border-slate-600 text-slate-300'
                   } ${isDownloading ? 'opacity-60 cursor-not-allowed' : ''}`}
@@ -207,7 +323,7 @@ export const DownloadRamSection: React.FC = () => {
                       <span className="text-[10px] font-code px-2 py-0.5 rounded bg-slate-950 text-lime-300 border border-lime-500/40">
                         {tier.badge}
                       </span>
-                      {isSelected && (
+                      {isSelected && memeMode === 'ram' && (
                         <span className="w-2.5 h-2.5 rounded-full bg-lime-400 animate-ping" />
                       )}
                     </div>
@@ -272,7 +388,11 @@ export const DownloadRamSection: React.FC = () => {
                   <Download className={`w-4 h-4 ${isDownloading ? 'animate-bounce' : ''}`} />
                   <span>
                     {isDownloading
-                      ? `DOWNLOADING ${selectedTier.gb} GB RAM (${progress}%)...`
+                      ? `DOWNLOADING (${progress}%)...`
+                      : memeMode === 'gpu'
+                      ? 'DOWNLOAD RTX 6090 Ti NOW'
+                      : memeMode === 'fps'
+                      ? 'DOWNLOAD +1,000 FPS PACK'
                       : `DOWNLOAD ${selectedTier.gb} GB RAM NOW`}
                   </span>
                 </button>
@@ -288,7 +408,7 @@ export const DownloadRamSection: React.FC = () => {
                   <button
                     onClick={resetDownload}
                     className="px-3.5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-code text-xs flex items-center gap-1.5 cursor-pointer transition-all"
-                    title="Download even more RAM"
+                    title="Download even more hardware"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>MORE</span>
@@ -304,9 +424,9 @@ export const DownloadRamSection: React.FC = () => {
               <span className="text-cyan-300 flex items-center gap-1.5">
                 <Terminal className="w-3.5 h-3.5 text-lime-400" />
                 {isCompleted
-                  ? 'STATUS: RAM DOWNLOADED SUCCESSFULLY!'
+                  ? 'STATUS: CLOUD HARDWARE INSTALLED SUCCESSFULLY!'
                   : isDownloading
-                  ? 'STATUS: INJECTING CLOUD RAM INTO DIMM SLOTS...'
+                  ? 'STATUS: INJECTING VIRTUAL HARDWARE INTO MOTHERBOARD...'
                   : 'STATUS: AWAITING USER COMMAND'}
               </span>
               <span className="text-lime-400 font-bold">{progress}%</span>
@@ -330,10 +450,10 @@ export const DownloadRamSection: React.FC = () => {
                 <CheckCircle2 className="w-6 h-6 text-lime-400 flex-shrink-0" />
                 <div className="text-xs font-tech">
                   <div className="font-cyber font-bold text-lime-300 text-sm">
-                    🎉 RAM DOWNLOADED SUCCESSFULLY! (+{selectedTier.gb} GB INSTALLED)
+                    🎉 {activePackageLabel} DOWNLOADED SUCCESSFULLY!
                   </div>
                   <div>
-                    Your PC now has <strong className="text-white">+{selectedTier.gb} GB ({selectedTier.speed})</strong> of pure virtual meme power. Zero actual files were downloaded to your disk!
+                    Your PC now has <strong className="text-white">{activePackageLabel}</strong> of pure virtual meme power. Zero actual files were downloaded to your disk!
                   </div>
                 </div>
               </div>
@@ -361,6 +481,101 @@ export const DownloadRamSection: React.FC = () => {
             </div>
           </div>
 
+        </div>
+
+        {/* BONUS INTERACTIVE MINI-GAME: DODGE THE ZE ENDING LASERS! */}
+        <div className="mt-6 rounded-xl border border-fuchsia-500/40 bg-slate-950/90 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <Gamepad2 className="w-5 h-5 text-fuchsia-400" />
+              <span className="font-cyber text-xs md:text-sm font-black text-white tracking-wider">
+                MINI-GAME: DODGE THE MAKO REACTOR ENDING LASERS!
+              </span>
+              <span className="text-[10px] font-code px-2 py-0.5 rounded bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50">
+                PEPE &amp; BANANA ARCADE
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-xs font-code">
+              <span className="text-cyan-300">
+                LASERS DODGED: <strong className="text-white">{laserScore}</strong>
+              </span>
+              <span className="text-amber-300 flex items-center gap-1">
+                <Trophy className="w-3.5 h-3.5 text-amber-400" /> BEST: <strong>{laserHighScore}</strong>
+              </span>
+            </div>
+          </div>
+
+          {/* Laser Corridor Arena */}
+          <div className="relative w-full h-28 rounded-lg bg-[#040711] border border-slate-800 overflow-hidden flex items-center px-4">
+            {/* Bridge Floor Line */}
+            <div className="absolute bottom-3 inset-x-0 h-0.5 bg-cyan-500/40" />
+
+            {/* Player Character (Pepe/Banana) at X=16% */}
+            <div
+              className={`absolute left-[15%] transition-all duration-150 select-none text-2xl ${
+                playerPose === 'jump'
+                  ? 'bottom-12 scale-110'
+                  : playerPose === 'crouch'
+                  ? 'bottom-2 scale-y-50'
+                  : 'bottom-3'
+              }`}
+            >
+              🐸🍌
+            </div>
+
+            {/* Incoming Laser Beam */}
+            {laserGameActive && (
+              <div
+                style={{ left: `${laserBeam.x}%` }}
+                className={`absolute w-8 h-2.5 rounded-full shadow-[0_0_18px_rgba(0,240,255,0.95)] ${
+                  laserBeam.heightType === 'low'
+                    ? 'bottom-4 bg-cyan-400 border border-white'
+                    : 'bottom-10 bg-fuchsia-500 border border-white'
+                }`}
+              />
+            )}
+
+            {/* Overlay Controls / Start Prompt */}
+            {!laserGameActive && (
+              <div className="relative z-10 w-full flex flex-col sm:flex-row items-center justify-between gap-2 bg-slate-950/85 px-4 py-2.5 rounded-lg border border-slate-800">
+                <div className="text-xs font-tech text-slate-300">
+                  {laserGameOver ? (
+                    <span className="text-red-400 font-bold">
+                      💥 SLICED BY SEPHIROTH LASER! Score: {laserScore} lasers dodged.
+                    </span>
+                  ) : (
+                    <span>
+                      Jump over <strong className="text-cyan-300">LOW CYAN LASERS</strong> &amp; Crouch under{' '}
+                      <strong className="text-fuchsia-300">HIGH PINK LASERS</strong>!
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={startLaserMiniGame}
+                  className="px-4 py-1.5 rounded-lg bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-cyber text-xs font-bold cursor-pointer shadow-[0_0_15px_rgba(255,0,127,0.4)]"
+                >
+                  {laserGameOver ? '🔄 PLAY AGAIN' : '▶ START LASER TRAINING'}
+                </button>
+              </div>
+            )}
+
+            {laserGameActive && (
+              <div className="absolute right-3 top-2 flex items-center gap-2 z-10">
+                <button
+                  onClick={() => triggerPose('jump')}
+                  className="px-3 py-1.5 rounded bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-cyber text-xs font-black cursor-pointer"
+                >
+                  ⬆ JUMP (LOW LASER)
+                </button>
+                <button
+                  onClick={() => triggerPose('crouch')}
+                  className="px-3 py-1.5 rounded bg-fuchsia-500 hover:bg-fuchsia-400 text-white font-cyber text-xs font-black cursor-pointer"
+                >
+                  ⬇ CROUCH (HIGH LASER)
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Bottom Meme Disclaimer */}

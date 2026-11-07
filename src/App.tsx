@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { RetroGridCanvas } from './components/RetroGridCanvas';
-import { CyberNavbar } from './components/CyberNavbar';
+import { CyberNavbar, scrollToSectionById } from './components/CyberNavbar';
 import { PepeHeroStage } from './components/PepeHeroStage';
 import { BananaHeroStage } from './components/BananaHeroStage';
 import { DownloadRamSection } from './components/DownloadRamSection';
 import { RoamingMemeGremlin } from './components/RoamingMemeGremlin';
 import { ServerRadarPreview } from './components/ServerRadarPreview';
+import { CS2AutoexecGeneratorSection } from './components/CS2AutoexecGeneratorSection';
 import { CS2CommandCenterPreview } from './components/CS2CommandCenterPreview';
 import { GeronimoDiscordPresence } from './components/GeronimoDiscordPresence';
 import { DeployHudFooter } from './components/DeployHudFooter';
-import { cyberSynth } from './utils/synthAudio';
 import { ChevronDown, Cpu } from 'lucide-react';
 
 const pickRandomBananaLoops = (): number => {
@@ -24,25 +24,8 @@ export const App: React.FC = () => {
   );
   // Random loop count (2, 3, or 4 loops) before Banana Phone switches back to Pepe theme
   const [bananaTargetLoops, setBananaTargetLoops] = useState<number>(() => pickRandomBananaLoops());
-  // Synth ON by default when user visits the website (with option to switch it off)
-  const [synthEnabled, setSynthEnabled] = useState<boolean>(true);
-  const [pepeVideoOpen, setPepeVideoOpen] = useState<boolean>(false);
   const [gremlinEnabled, setGremlinEnabled] = useState<boolean>(true);
   const [transitionBanner, setTransitionBanner] = useState<string | null>(null);
-
-  // Strict audio mutual exclusion:
-  // - Pepe Synth ONLY plays when theme === 'pepe' AND synthEnabled === true AND Pepe YT modal is closed.
-  // - Whenever theme === 'banana', Pepe Synth stops immediately so Pepe music and Banana Phone music NEVER play simultaneously.
-  useEffect(() => {
-    if (theme === 'pepe' && synthEnabled && !pepeVideoOpen) {
-      cyberSynth.startSynth();
-    } else {
-      cyberSynth.stopSynth();
-    }
-    return () => {
-      cyberSynth.stopSynth();
-    };
-  }, [theme, synthEnabled, pepeVideoOpen]);
 
   // Automatic Pepe -> Banana Phone transition after a random 2 minutes (120s) or 3 minutes (180s)
   useEffect(() => {
@@ -52,7 +35,6 @@ export const App: React.FC = () => {
     const durationMs = randomMinutes * 60 * 1000;
 
     const timer = window.setTimeout(() => {
-      setPepeVideoOpen(false);
       setBananaTargetLoops(pickRandomBananaLoops());
       setTheme('banana');
       setTransitionBanner('🍌 SMOOTHLY TRANSITIONED TO BANANA PHONE THEME! RING RING RING!');
@@ -70,7 +52,6 @@ export const App: React.FC = () => {
   }, []);
 
   const handleToggleTheme = () => {
-    setPepeVideoOpen(false);
     setTheme((prev) => {
       const next = prev === 'pepe' ? 'banana' : 'pepe';
       if (next === 'banana') {
@@ -86,8 +67,9 @@ export const App: React.FC = () => {
     });
   };
 
-  const handleToggleSynth = () => {
-    setSynthEnabled((prev) => !prev);
+  const handleQuickScroll = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    e.preventDefault();
+    scrollToSectionById(sectionId);
   };
 
   return (
@@ -110,8 +92,6 @@ export const App: React.FC = () => {
         theme={theme}
         gremlinEnabled={gremlinEnabled}
         onToggleGremlin={() => setGremlinEnabled((prev) => !prev)}
-        synthEnabled={synthEnabled}
-        onToggleSynth={handleToggleSynth}
       />
 
       {/* Smooth Theme Transition Toast Notification */}
@@ -163,7 +143,7 @@ export const App: React.FC = () => {
             <strong className={theme === 'banana' ? 'text-yellow-400' : 'text-cyan-400'}>
               geronimohq.com
             </strong>
-            . Featuring legendary animated memes, free cloud RAM downloads, live CS2 Zombie Escape server browser, and desktop gaming tools.
+            . Featuring legendary animated memes, free cloud RAM downloads, live CS2 Zombie Escape server browser, Web Config Studio, and desktop gaming tools.
           </p>
 
           {/* Quick Info & Action Tags */}
@@ -181,6 +161,7 @@ export const App: React.FC = () => {
             </button>
             <a
               href="#download-ram"
+              onClick={(e) => handleQuickScroll(e, 'download-ram')}
               className="px-3 py-1 rounded bg-lime-950/80 border border-lime-400/60 text-lime-300 hover:bg-lime-900/80 flex items-center gap-1 font-bold"
             >
               <Cpu className="w-3 h-3" />
@@ -188,12 +169,21 @@ export const App: React.FC = () => {
             </a>
             <a
               href="#server-radar"
+              onClick={(e) => handleQuickScroll(e, 'server-radar')}
               className="px-2.5 py-1 rounded bg-slate-900/80 border border-slate-800 text-fuchsia-300 hover:border-fuchsia-400"
             >
               🎮 ZE STEAM CONNECT
             </a>
             <a
+              href="#cfg-studio"
+              onClick={(e) => handleQuickScroll(e, 'cfg-studio')}
+              className="px-2.5 py-1 rounded bg-slate-900/80 border border-slate-800 text-cyan-300 hover:border-cyan-400"
+            >
+              ⚙️ WEB CFG STUDIO
+            </a>
+            <a
               href="#cs2-command"
+              onClick={(e) => handleQuickScroll(e, 'cs2-command')}
               className="px-2.5 py-1 rounded bg-slate-900/80 border border-slate-800 text-amber-300 hover:border-amber-400"
             >
               💻 CS2 DESKTOP APP
@@ -209,25 +199,28 @@ export const App: React.FC = () => {
               onAllLoopsCompleted={handleBananaLoopsFinished}
             />
           ) : (
-            <PepeHeroStage onYoutubeVideoToggle={setPepeVideoOpen} />
+            <PepeHeroStage />
           )}
         </div>
 
         {/* Down Indicator */}
         <div className="flex flex-col items-center my-3 text-slate-500 hover:text-cyan-400 transition-colors">
           <span className="text-[10px] font-code tracking-widest uppercase mb-1">
-            SCROLL FOR DOWNLOAD MORE RAM, ZE SERVER RADAR &amp; CS2 APP
+            SCROLL FOR DOWNLOAD MORE RAM, ZE SERVER RADAR, CFG STUDIO &amp; CS2 APP
           </span>
           <ChevronDown className="w-4 h-4 animate-bounce text-cyan-400" />
         </div>
 
-        {/* MEME MODULE: DOWNLOAD MORE RAM (16GB - 128GB Interactive UI for Geronimo's Discord Bio) */}
+        {/* MEME MODULE: DOWNLOAD MORE RAM (16GB - 128GB Interactive UI + ZE Laser Mini-Game) */}
         <DownloadRamSection />
 
-        {/* MODULE 1: ZOMBIE ESCAPE SERVER RADAR (Primary Web Utility with Steam Connect) */}
+        {/* MODULE 1: ZOMBIE ESCAPE SERVER RADAR + 24H TIMELINE + MAP & LASER ENCYCLOPEDIA */}
         <ServerRadarPreview />
 
-        {/* MODULE 2: CS2 COMMAND CENTER DESKTOP SUITE (1-Click App Download) */}
+        {/* MODULE 2: INTERACTIVE WEB CS2 AUTOEXEC & ZE BINDS GENERATOR (#cfg-studio) */}
+        <CS2AutoexecGeneratorSection />
+
+        {/* MODULE 3: CS2 COMMAND CENTER DESKTOP SUITE (1-Click App Download v1.3.0) */}
         <CS2CommandCenterPreview />
 
       </main>

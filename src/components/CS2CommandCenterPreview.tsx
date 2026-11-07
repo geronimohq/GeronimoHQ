@@ -30,31 +30,31 @@ interface AppFeatureModule {
 }
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=1.2.1';
+  const downloadUrl = '/CS2_Command_Center.exe?v=1.3.0';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const modules: AppFeatureModule[] = [
     {
       id: 'autoexec',
-      name: 'Autoexec & Pro Binds',
-      shortTag: 'CONFIG ENGINE',
+      name: 'Autoexec & ZE Visual/Audio Customizer',
+      shortTag: 'CONFIG & HUD ENGINE',
       badge: '1-CLICK INSTALL',
       icon: <Sliders className="w-5 h-5 text-fuchsia-400" />,
-      summary: 'Automatic CS2 config engine. Directly locates your Steam userdata CS2 config folder and injects an optimized autoexec.cfg with competitive binds.',
+      summary: 'Automatic CS2 config engine with built-in ZE Laser-Jump Low Viewmodel, First-Person Tracer clutter toggle, HUD Color theme selector, and 1-Key Boss/Laser Audio Ducking bind.',
       details: [
-        'Pro Jumpthrow alias bound to mouse or key with sub-tick consistency.',
-        'Null-Cancelling Movement Binds (A/D snap without opposing key cancellation).',
-        'Audio Clarity EQ tuning for pinpointing zombie footsteps and breakable barricades.',
-        'Quick C4/Decoy Drop, Fast Weapon Drop, and Toggle Zoom Radar binds.',
-        'FPS Cap stabilizer (+fps_max 0 or tuned to your monitor refresh rate).'
+        'NEW: ZE Laser-Jump Low Viewmodel (FOV 68, X:+2, Y:+2, Z:-2) for maximum bottom-screen visibility.',
+        'NEW: 1-Key Boss/Laser Audio Ducking Toggle (F7 switches game volume between 22% and 85% instantly).',
+        'NEW: First-Person Bullet Tracer Clutter Reducer (r_drawtracers_firstperson 0) & Panic Voice Mute key (F8).',
+        'Pro Jumpthrow alias & Null-Cancelling Movement Binds (A/D snap without opposing key cancellation).',
+        'Audio Clarity EQ tuning for pinpointing zombie footsteps and breakable barricades.'
       ],
       parameters: [
-        { name: 'alias "+jumpaction"', value: '"+jump;"', desc: 'Sub-tick jumpthrow execution' },
-        { name: 'snd_headphone_eq', value: '1 (Crisp Footsteps)', desc: 'High-frequency audio clarity preset' },
-        { name: 'cl_radar_scale', value: '0.35 <-> 0.70 toggle', desc: 'Dynamic radar zoom keybind' }
+        { name: 'viewmodel_offset_z', value: '-2.0 (FOV 68)', desc: 'Clears center screen for crouch/ankle lasers' },
+        { name: 'bind "F7" "ze_duck_toggle"', value: 'volume 0.22 <-> 0.85', desc: 'Instant Boss/Laser audio ducking keybind' },
+        { name: 'r_drawtracers_firstperson', value: '0 (Disabled)', desc: 'Eliminates 64-player Negev tracer clutter' }
       ],
-      proTip: 'No manual file copying required. The app discovers your active Steam account ID and saves autoexec.cfg directly into the correct cfg directory.',
+      proTip: 'No manual file copying required. The app discovers your active Steam account ID and safely appends your ZE Visual & Audio presets into autoexec.cfg.',
       vacSafe: true
     },
     {
@@ -103,67 +103,66 @@ export const CS2CommandCenterPreview: React.FC = () => {
     },
     {
       id: 'sniper',
-      name: 'Silent 64/64 Server Slot Sniper',
+      name: 'Background 64/64 Server Slot Sniper',
       shortTag: 'DIRECT NETWORK',
-      badge: 'HIGH SPEED AUTO-JOIN',
+      badge: 'BACKGROUND AUTO-JOIN',
       icon: <Target className="w-5 h-5 text-lime-400" />,
-      summary: 'Monitors full 64/64 Zombie Escape servers in the background with zero-overhead UDP A2S queries. The millisecond a slot opens, it alerts and connects.',
+      summary: 'Monitors full 64/64 Zombie Escape servers silently via UDP A2S queries. The millisecond a slot opens, it initiates an ultra-fast console connect, restores your active window focus, and displays a sleek corner notification.',
       details: [
         'Runs silently in the Windows system tray with virtually 0% CPU consumption.',
-        '0.35-second ultra-fast reaction polling cycle.',
-        'Audible Windows hardware alert chime the instant someone leaves or crashes.',
-        'Direct Win32 in-engine console injection: focuses CS2 and issues connect command instantly.',
+        'NEW: Instant Previous-Window Focus Restore (~280ms console paste + returns focus to your browser/app so CS2 loads the map in the background!).',
+        'NEW: Non-Interrupting Bottom-Right Corner Notification Banner + Windows Tray Alert.',
+        'Audible Windows hardware alert chime the instant a slot opens.',
         'GFL Priority Slot Tier options (Normal ≤61/64, Mapper/Supporter ≤62/64, VIP/Admin ≤63/64).'
       ],
       parameters: [
-        { name: 'Polling Frequency', value: '0.35 Seconds', desc: 'Ultra-low overhead rapid UDP A2S_INFO' },
-        { name: 'Auto-Trigger', value: 'Win32 In-Engine Console', desc: 'Bypasses Steam protocol delay' },
-        { name: 'Audible Chime', value: 'Dual-Tone Beep', desc: 'Alerts you while tabbed out' }
+        { name: 'Background Connect', value: '280ms + Focus Restore', desc: 'Loads server in background while you browse' },
+        { name: 'Corner Notification', value: 'Non-Blocking Toast', desc: 'Never interrupts your typing or mouse' },
+        { name: 'Audible Chime', value: 'Dual-Tone Beep', desc: 'Alerts you the instant a slot opens' }
       ],
-      proTip: 'CS2 must be open. Set your slot priority (Normal ≤61, Supporter ≤62, VIP ≤63), arm the sniper, and it automatically connects via console the instant a slot opens.',
+      proTip: 'CS2 must be open. Set your slot priority (Normal ≤61, Supporter ≤62, VIP ≤63), arm the sniper, and keep browsing—it connects in the background and notifies you in the corner!',
       vacSafe: true
     },
     {
       id: 'cleaner',
-      name: 'ZE Map Cleaner & Disk Saver',
-      shortTag: 'STORAGE MANAGER',
-      badge: 'FREES 10-50 GB',
+      name: 'ZE Map Cleaner & VPK Health Verifier',
+      shortTag: 'STORAGE & VPK DOCTOR',
+      badge: 'VERIFIES VPK HEADERS',
       icon: <HardDrive className="w-5 h-5 text-emerald-400" />,
-      summary: 'Scans your CS2 workshop and community maps directory to identify bloated 2GB+ Zombie Escape maps and clean up duplicate obsolete versions.',
+      summary: 'Scans your CS2 Workshop and community maps directory to reclaim 10–50GB of SSD space AND verifies .vpk binary headers (0x55aa1234) to repair corrupted/incomplete Workshop downloads.',
       details: [
+        'NEW: Steam Workshop VPK Binary Header Verifier (checks 0x55aa1234 signature across steamapps/workshop/content/730/).',
+        'NEW: 1-Click Corrupted/Incomplete .tmp & .vpk Repair (fixes Host_Error / Pak01 VPK mismatch kicks).',
         'Deep scan of steamapps/common/Counter-Strike Global Offensive/game/csgo/maps.',
-        'Identifies older versions of maps (e.g. v1, v2 superseded by v3_final).',
-        'Frees tens of gigabytes of SSD space taken by community server downloads.',
-        'Safe Map Whitelist to keep your favorite servers and maps intact.'
+        'Identifies older versions of maps and frees tens of gigabytes of SSD space safely.'
       ],
       parameters: [
-        { name: 'Target Directory', value: 'game/csgo/maps', desc: 'CS2 community downloads directory' },
-        { name: 'Duplicate Detection', value: 'Checksum + Version parse', desc: 'Preserves newest playable version' },
+        { name: 'VPK Magic Signature', value: '0x55AA1234 (v1/v2)', desc: 'Detects truncated or corrupted Workshop packs' },
+        { name: 'Target Directory', value: 'workshop/content/730', desc: 'CS2 Steam Workshop & custom maps folders' },
         { name: 'Space Reclaimed', value: '10 GB - 50 GB avg', desc: 'Instant SSD space recovery' }
       ],
-      proTip: 'Zombie Escape players download 50-100GB of custom maps over time. Running this cleaner restores massive SSD space effortlessly.',
+      proTip: 'If you ever get kicked from a ZE server with a "Missing VPK" or "Pure Server File Mismatch" error, run the Workshop VPK Health Verifier in 1 click!',
       vacSafe: true
     },
     {
       id: 'dns',
-      name: 'Gaming DNS Optimizer & Benchmark',
-      shortTag: 'NETWORK RESOLVER',
-      badge: 'REAL-TIME PING TEST',
+      name: 'Gaming DNS & Session Log Analyzer',
+      shortTag: 'NETWORK & TELEMETRY',
+      badge: 'PING + LOG PARSER',
       icon: <Sparkles className="w-5 h-5 text-violet-400" />,
-      summary: 'Benchmarks 6 global Gaming DNS providers in parallel (Cloudflare, Google, Quad9, OpenDNS, Level3, AdGuard) for real UDP latency and jitter, with full Pros/Cons guidance, 1-Click Apply, and 100% safe ISP DHCP Restore.',
+      summary: 'Benchmarks 6 global Gaming DNS providers in parallel for real UDP latency/jitter AND passively analyzes CS2 console.log for post-session frame-time hitches, shader stalls, and network misdelivery.',
       details: [
+        'NEW: Post-Session CS2 Frame-Time & Network Jitter Log Analyzer (100% passive console.log parser, zero DLL hooks).',
         'Parallel real-time UDP port 53 latency & jitter benchmark against your physical location.',
-        'All DNS Purposes covered: fast Steam SDR/FastDL lookups, bypassing ISP DNS outages, malware/phishing filtering (Quad9), ad/telemetry blocking (AdGuard), and privacy protection.',
-        'Honest Pros & Cons built-in: improves domain lookups & CDN reliability while explaining that raw in-game UDP ping after connecting is governed by ISP physical routing.',
-        '1-Click Apply Fastest/Selected DNS + 1-Click Restore to ISP Default (Automatic DHCP) anytime with 100% safety.',
-        'Zero risky RAM cleaners: protects browser, Discord, and CS2 from page-fault stutters and crashes.'
+        'All DNS Purposes covered: fast Steam SDR/FastDL lookups, bypassing ISP DNS outages, malware/phishing filtering (Quad9), and ad/telemetry blocking (AdGuard).',
+        '1-Click Apply Fastest/Selected DNS + 1-Click Restore to ISP Default (Automatic DHCP) anytime with 100% safety.'
       ],
       parameters: [
+        { name: 'Passive Log Analyzer', value: 'game/csgo/console.log', desc: 'Counts frame hitches, shader stalls & net jitter' },
         { name: 'Cloudflare / Google', value: '1.1.1.1 / 8.8.8.8', desc: 'Ultra-low latency global edge resolvers' },
-        { name: 'Quad9 / AdGuard', value: '9.9.9.9 / 94.140.14.14', desc: 'Malware protection & ad-telemetry filtering' },
         { name: 'Safety Guarantee', value: '100% Reversible DHCP', desc: 'Official Windows netsh • 1-Click Restore' }
       ],
-      proTip: 'Always click "Benchmark All DNS Servers" first so you select the lowest-latency resolver for your physical region, ensuring optimal Steam & FastDL CDN mirror routing.',
+      proTip: 'Add -condebug in the Launch Options tab so CS2 writes console.log, then click "Analyze CS2 Session Telemetry Log" after any match to diagnose stutters or packet jitter.',
       vacSafe: true
     },
     {
@@ -234,7 +233,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v1.2.0
+              v1.3.0
             </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-2xl">

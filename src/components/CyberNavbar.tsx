@@ -1,20 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Radio, Shield, Wifi, Mail, Cpu, Sparkles } from 'lucide-react';
+import { Radio, Shield, Wifi, Mail, Cpu, Sparkles, Sliders } from 'lucide-react';
 
 interface CyberNavbarProps {
   theme: 'pepe' | 'banana';
   gremlinEnabled: boolean;
   onToggleGremlin: () => void;
-  synthEnabled: boolean;
-  onToggleSynth: () => void;
 }
+
+export const scrollToSectionById = (sectionId: string) => {
+  if (sectionId === 'hero-stage') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (window.history?.pushState) {
+      window.history.pushState(null, '', '#hero-stage');
+    }
+    return;
+  }
+
+  const section = document.getElementById(sectionId);
+  if (!section) return;
+
+  const headerEl = document.querySelector('header');
+  const navHeight = headerEl ? headerEl.getBoundingClientRect().height : 64;
+  // Scroll directly to the first inner content box/badge inside the section so its top sits 14px below the sticky navbar
+  const targetEl = (section.firstElementChild as HTMLElement) || section;
+  const targetTop = targetEl.getBoundingClientRect().top + window.scrollY - navHeight - 14;
+
+  window.scrollTo({
+    top: Math.max(0, targetTop),
+    behavior: 'smooth',
+  });
+
+  if (window.history?.pushState) {
+    window.history.pushState(null, '', `#${sectionId}`);
+  }
+};
 
 export const CyberNavbar: React.FC<CyberNavbarProps> = ({
   theme,
   gremlinEnabled,
   onToggleGremlin,
-  synthEnabled,
-  onToggleSynth,
 }) => {
   const [timeStr, setTimeStr] = useState('');
   const [ping, setPing] = useState(14);
@@ -44,12 +68,9 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
     };
   }, []);
 
-  const handleHoloDeckClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (window.history?.pushState) {
-      window.history.pushState(null, '', '#hero-stage');
-    }
+    scrollToSectionById(sectionId);
   };
 
   return (
@@ -65,7 +86,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
         {/* Brand & Terminal Identifier */}
         <a
           href="#hero-stage"
-          onClick={handleHoloDeckClick}
+          onClick={(e) => handleNavClick(e, 'hero-stage')}
           className="flex items-center gap-2.5 group"
         >
           <div
@@ -107,10 +128,10 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
         </a>
 
         {/* Center Nav Anchors */}
-        <nav className="hidden lg:flex items-center gap-4 text-xs font-cyber tracking-wider text-slate-300">
+        <nav className="hidden lg:flex items-center gap-3.5 text-xs font-cyber tracking-wider text-slate-300">
           <a
             href="#hero-stage"
-            onClick={handleHoloDeckClick}
+            onClick={(e) => handleNavClick(e, 'hero-stage')}
             className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
           >
             <Radio className="w-3.5 h-3.5 text-cyan-400" />
@@ -118,6 +139,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           </a>
           <a
             href="#download-ram"
+            onClick={(e) => handleNavClick(e, 'download-ram')}
             className="px-2.5 py-1 rounded-lg bg-lime-950/80 border border-lime-400/60 text-lime-300 hover:bg-lime-900/80 shadow-[0_0_12px_rgba(57,255,20,0.3)] transition-all flex items-center gap-1.5 font-bold"
           >
             <Cpu className="w-3.5 h-3.5 text-lime-400 animate-pulse" />
@@ -125,13 +147,23 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           </a>
           <a
             href="#server-radar"
+            onClick={(e) => handleNavClick(e, 'server-radar')}
             className="hover:text-lime-400 transition-colors flex items-center gap-1.5"
           >
             <Wifi className="w-3.5 h-3.5 text-lime-400" />
             ZE SERVERS
           </a>
           <a
+            href="#cfg-studio"
+            onClick={(e) => handleNavClick(e, 'cfg-studio')}
+            className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
+          >
+            <Sliders className="w-3.5 h-3.5 text-cyan-400" />
+            CFG STUDIO
+          </a>
+          <a
             href="#cs2-command"
+            onClick={(e) => handleNavClick(e, 'cs2-command')}
             className="hover:text-fuchsia-400 transition-colors flex items-center gap-1.5"
           >
             <Shield className="w-3.5 h-3.5 text-fuchsia-400" />
@@ -139,6 +171,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           </a>
           <a
             href="#contact"
+            onClick={(e) => handleNavClick(e, 'contact')}
             className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
           >
             <Mail className="w-3.5 h-3.5 text-cyan-400" />
@@ -146,11 +179,12 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           </a>
         </nav>
 
-        {/* Right HUD Controls: Read-Only Theme Status Badge + Gremlin Toggle + Synth Toggle + Clock */}
+        {/* Right HUD Controls: Read-Only Theme Status Badge + Gremlin Toggle + Clock */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Mobile/Tablet Download RAM Button */}
           <a
             href="#download-ram"
+            onClick={(e) => handleNavClick(e, 'download-ram')}
             className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-lime-950/80 border border-lime-400/60 text-lime-300 text-xs font-code font-bold"
           >
             <Cpu className="w-3.5 h-3.5 text-lime-400" />
@@ -183,30 +217,6 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span className="hidden md:inline">{gremlinEnabled ? 'ROAMER: ON' : 'ROAMER: OFF'}</span>
-          </button>
-
-          {/* Synth Soundtrack Toggle (ON by default on website open; muted automatically during Banana Phone theme so tracks never overlap) */}
-          <button
-            onClick={onToggleSynth}
-            data-gremlin-ignore="true"
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-code transition-all cursor-pointer ${
-              synthEnabled
-                ? 'bg-fuchsia-950/80 border-fuchsia-400 text-fuchsia-300 shadow-[0_0_15px_rgba(255,0,127,0.5)]'
-                : 'bg-slate-900/80 border-slate-700 text-slate-300 hover:border-cyan-500 hover:text-cyan-300'
-            }`}
-            title="Toggle Pepe Retro-Futuristic Synth (Automatically pauses during Banana Phone theme)"
-          >
-            {synthEnabled ? (
-              <>
-                <Volume2 className="w-3.5 h-3.5 text-fuchsia-400 animate-spin-slow" />
-                <span className="hidden sm:inline">SYNTH: ON</span>
-              </>
-            ) : (
-              <>
-                <VolumeX className="w-3.5 h-3.5 text-slate-400" />
-                <span className="hidden sm:inline">SYNTH: OFF</span>
-              </>
-            )}
           </button>
 
           {/* Real-time Clock & Ping */}

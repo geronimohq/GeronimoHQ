@@ -31,15 +31,17 @@ class CyberSynthEngine {
       if (!this.ctx) {
         this.initContext();
       }
-      if (this.ctx && this.ctx.state === 'suspended') {
+      if (this.ctx && this.ctx.state !== 'running') {
         this.ctx.resume().catch(() => {});
       }
     };
 
-    window.addEventListener('pointerdown', tryResume, { passive: true });
-    window.addEventListener('keydown', tryResume, { passive: true });
-    window.addEventListener('touchstart', tryResume, { passive: true });
-    window.addEventListener('click', tryResume, { passive: true });
+    // Capture-phase listeners ensure the very first user gesture anywhere in the tab
+    // immediately unlocks and starts the synth without needing to toggle the button twice.
+    const events = ['pointerdown', 'mousedown', 'keydown', 'touchstart', 'wheel', 'click'];
+    events.forEach((evt) => {
+      window.addEventListener(evt, tryResume, { capture: true, passive: true });
+    });
   }
 
   private initContext() {
@@ -48,10 +50,14 @@ class CyberSynthEngine {
         window.AudioContext ||
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioContextClass) {
-        this.ctx = new AudioContextClass();
-        this.masterGain = this.ctx.createGain();
-        this.masterGain.gain.setValueAtTime(0.18, this.ctx.currentTime);
-        this.masterGain.connect(this.ctx.destination);
+        try {
+          this.ctx = new AudioContextClass();
+          this.masterGain = this.ctx.createGain();
+          this.masterGain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+          this.masterGain.connect(this.ctx.destination);
+        } catch {
+          // ignore
+        }
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
@@ -62,13 +68,14 @@ class CyberSynthEngine {
   public startSynth() {
     this.ensureUnlockListeners();
     this.initContext();
-    if (this.isPlaying && this.timer !== null) {
-      return;
-    }
     this.isPlaying = true;
+
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
+
     if (this.timer !== null) {
-      clearInterval(this.timer);
-      this.timer = null;
+      return;
     }
 
     const stepIntervalMs = 125; // 120 BPM 16th-note clock
