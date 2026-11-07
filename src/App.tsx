@@ -22,6 +22,20 @@ const pickRandomBananaLoops = (): number => {
 
 export const App: React.FC = () => {
   // Randomize initial theme on open: either 'pepe' or 'banana'
+  // Handle direct CS2 Steam Connect Trampoline (e.g., /connect?ip=74.91.124.21:27015)
+  useEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const ipParam = urlParams.get('connect') || urlParams.get('ip') || (window.location.pathname.startsWith('/connect') ? (urlParams.get('server') || '74.91.124.21:27015') : null);
+      if (ipParam) {
+        const cleanIp = ipParam.replace(/[^0-9a-zA-Z.:-]/g, '').trim();
+        if (cleanIp) {
+          window.location.href = `steam://connect/${cleanIp}`;
+        }
+      }
+    } catch {}
+  }, []);
+
   const [theme, setTheme] = useState<'pepe' | 'banana'>(() =>
     Math.random() < 0.5 ? 'pepe' : 'banana'
   );

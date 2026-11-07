@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GeronimoHQ // CS2 Steam Connect</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #060913;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+    .container {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(0, 255, 204, 0.3);
+      border-radius: 16px;
+      padding: 36px 28px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 0 40px rgba(0, 255, 204, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      position: relative;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 255, 204, 0.1);
+      border: 1px solid rgba(0, 255, 204, 0.4);
+      color: #00ffcc;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      margin-bottom: 20px;
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      background: #00ffcc;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #00ffcc;
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+    p.sub {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .ip-box {
+      background: #0a0e1a;
+      border: 1px dashed rgba(245, 158, 11, 0.4);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .ip-box span.label {
+      color: #94a3b8;
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .ip-box span.ip {
+      color: #fbbf24;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #00ffcc 0%, #00b4d8 100%);
+      color: #060913;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 15px;
+      padding: 14px 20px;
+      border-radius: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 18px rgba(0, 255, 204, 0.35);
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(0, 255, 204, 0.5);
+    }
+    .btn-secondary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #1e293b;
+      color: #cbd5e1;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 13px;
+      padding: 11px 18px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .btn-secondary:hover {
+      background: #334155;
+      color: #ffffff;
+    }
+    .footer-note {
+      margin-top: 28px;
+      font-size: 11px;
+      color: #64748b;
+    }
+    .footer-note a {
+      color: #00ffcc;
+      text-decoration: none;
+    }
+    .footer-note a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="badge">
+      <span class="pulse-dot"></span>
+      Steam Connect Protocol
+    </div>
+    <h1>Connecting to CS2 Server</h1>
+    <p class="sub">Launching Counter-Strike 2 via Steam protocol...</p>
+    
+    <div class="ip-box">
+      <span class="label">Target:</span>
+      <span id="ip-text" class="ip">74.91.124.21:27015</span>
+    </div>
+
+    <div class="actions">
+      <a id="connect-link" href="#" class="btn-primary">
+        🎮 Launch CS2 & Connect Now
+      </a>
+      <button id="copy-btn" class="btn-secondary" onclick="copyConsoleCommand()">
+        📋 Copy Console Command (`connect IP`)
+      </button>
+      <a href="/" class="btn-secondary">
+        🌐 Back to GeronimoHQ.com
+      </a>
+    </div>
+
+    <div class="footer-note">
+      Powered by <a href="/">GeronimoHQ</a> • CS2 Command Center
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var rawIp = params.get('ip') || params.get('server') || params.get('host') || window.location.hash.replace('#', '') || '74.91.124.21:27015';
+      // Sanitize IP address/port
+      var targetIp = rawIp.replace(/[^0-9a-zA-Z\.\:\-]/g, '').trim();
+      if (!targetIp) targetIp = '74.91.124.21:27015';
+
+      document.getElementById('ip-text').textContent = targetIp;
+      var steamUri = 'steam://connect/' + targetIp;
+      var linkEl = document.getElementById('connect-link');
+      linkEl.href = steamUri;
+
+      // Automatically launch Steam protocol
+      try {
+        window.location.href = steamUri;
+      } catch (e) {}
+
+      window.copyConsoleCommand = function() {
+        var cmd = 'connect ' + targetIp;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(cmd);
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = cmd;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        var btn = document.getElementById('copy-btn');
+        btn.textContent = '✓ Copied to Clipboard (`connect ' + targetIp + '`)';
+        setTimeout(function() {
+          btn.textContent = '📋 Copy Console Command (`connect IP`)';
+        }, 2200);
+      };
+    })();
+  </script>
+</body>
+</html>
