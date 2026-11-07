@@ -379,15 +379,15 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
                 "connect_url": "steam://rungameid/730",
                 "player_duration": 0
             }
-        else:
+        elif LOCAL_HEARTBEAT.get("is_online"):
             return {
-                "online": False,
+                "online": True,
                 "in_game": False,
-                "state": "offline",
-                "game": "Offline",
+                "state": "online",
+                "game": "Steam Community",
                 "server_id": None,
                 "server_name": None,
-                "map": "Offline",
+                "map": "Idle",
                 "players": "N/A",
                 "connect_url": None,
                 "player_duration": 0
@@ -439,13 +439,13 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
         }
     else:
         return {
-            "online": False,
+            "online": True,
             "in_game": False,
-            "state": "offline",
-            "game": "Offline",
+            "state": "online",
+            "game": "Steam Community",
             "server_id": None,
             "server_name": None,
-            "map": "Offline",
+            "map": "Idle",
             "players": "N/A",
             "connect_url": None,
             "player_duration": 0

@@ -30,22 +30,23 @@ interface AppFeatureModule {
 }
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=1.3.4';
+  const downloadUrl = '/CS2_Command_Center.exe?v=1.4.0';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const modules: AppFeatureModule[] = [
     {
       id: 'autoexec',
-      name: 'Autoexec & ZE Visual/Audio Customizer',
+      name: 'Autoexec & In-App Manual CFG Editor',
       shortTag: 'CONFIG & HUD ENGINE',
-      badge: 'REAL-TIME PREVIEW',
+      badge: 'MANUAL EDIT + REAL-TIME PREVIEW',
       icon: <Sliders className="w-5 h-5 text-fuchsia-400" />,
-      summary: 'Two independent, non-destructive config engines in one tab: (1) Core Engine & Sub-Tick Autoexec Tweaks for frame-pacing and network rates, and (2) ZE Visual & Audio Binds for low laser viewmodel, tracer clutter removal, and 1-key boss audio ducking—with real-time auto-scrolling preview.',
+      summary: 'Comprehensive autoexec studio: (1) Core Engine & Sub-Tick Tweaks, (2) ZE Visual & Audio Binds, and (3) Manual In-App CFG Editor with direct save capabilities.',
       details: [
-        'Block 1 — Engine & Sub-Tick Tweaks: Appends [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS] (fps_max 0, rate 1000000, low-latency sleep, audio buffer eq) without touching your personal binds.',
-        'Block 2 — ZE Visual & Audio Binds: Appends [CS2 COMMAND CENTER - ZE VISUAL & AUDIO CUSTOMIZER] independently so you can use either or both.',
-        'Real-Time Live Preview: Automatically refreshes and scrolls to the bottom of autoexec.cfg with a timestamp banner + confirmation dialog when injected.',
+        'NEW: In-App Manual CFG Editor — Safe read-only mode by default; toggling manual edit unlocks full in-app editing with a direct "Save CFG" button.',
+        'Block 1 — Engine & Sub-Tick Tweaks: Appends [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS] (fps_max 0, rate 1000000, low-latency sleep) without touching personal binds.',
+        'Block 2 — ZE Visual & Audio Binds: Appends [CS2 COMMAND CENTER - ZE VISUAL & AUDIO CUSTOMIZER] independently.',
+        'Real-Time Live Preview: Automatically refreshes and scrolls to the bottom of autoexec.cfg with timestamp banner & confirmation.',
         'ZE Laser-Jump Low Viewmodel (FOV 68, X:+2, Y:+2, Z:-2) & First-Person Bullet Tracer Clutter Reducer (r_drawtracers_firstperson 0).',
         '1-Key Boss/Laser Audio Ducking Toggle (F7 switches game volume between 22% and 100%) & Panic Voice Mute key (F8).'
       ],
@@ -233,7 +234,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v1.3.4
+              v1.4.0
             </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-2xl">

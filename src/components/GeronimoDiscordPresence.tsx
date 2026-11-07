@@ -17,7 +17,8 @@ import {
   ChevronUp,
   ExternalLink,
   Flame,
-  Server
+  Server,
+  Compass
 } from 'lucide-react';
 
 interface GeronimoDiscordPresenceProps {
@@ -73,9 +74,12 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
     gflTelemetry?.players_list?.some((p) => p.name.toLowerCase().includes('geronimo'))
   );
 
-  // Determine current active presence state: 'in_server' | 'main_menu' | 'other_game' | 'offline'
-  // When CS2 (or Steam game) is closed, state cleanly transitions to 'offline'.
-  let state: 'in_server' | 'main_menu' | 'other_game' | 'offline' = 'offline';
+  // Determine current active presence state: 'in_server' | 'main_menu' | 'other_game' | 'online' | 'offline'
+  // - Steam closed / not running = offline
+  // - Steam is online (client open/logged in) = online
+  // - CS2 opened to main menu = main_menu
+  // - Connected to ZE server = in_server
+  let state: 'in_server' | 'main_menu' | 'other_game' | 'online' | 'offline' = 'offline';
   if (presence?.state === 'in_server' || isPlayerOnGFL) {
     state = 'in_server';
   } else if (presence?.state === 'main_menu') {
@@ -84,6 +88,8 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
     state = 'other_game';
   } else if (presence?.in_game) {
     state = 'main_menu';
+  } else if (presence?.online !== false && (presence?.state === 'online' || presence?.online === true)) {
+    state = 'online';
   } else {
     state = 'offline';
   }
@@ -91,7 +97,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
   // Active Map, Server & Status
   const currentMap = state === 'in_server'
     ? (presence?.map && presence.map !== '-' && presence.map !== 'Idle' ? presence.map : (gflTelemetry?.map && gflTelemetry.map !== '-' ? gflTelemetry.map : 'ze_eizures_b1_1'))
-    : (state === 'main_menu' ? 'Main Menu' : state === 'other_game' ? (presence?.game || 'Steam Game') : 'Offline');
+    : (state === 'main_menu' ? 'Main Menu' : state === 'other_game' ? (presence?.game || 'Steam Game') : state === 'online' ? 'Idle' : 'Offline');
 
   // Player display matching server telemetry exactly
   const playerDisplay = state === 'in_server'
@@ -128,6 +134,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
               <div className={`w-8 h-8 rounded-full overflow-hidden border shadow-sm ${
                 state === 'in_server' ? 'border-[#23a55a] shadow-[0_0_10px_rgba(35,165,90,0.4)]' :
                 state === 'main_menu' ? 'border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.4)]' :
+                state === 'online' ? 'border-[#23a55a] shadow-[0_0_10px_rgba(35,165,90,0.4)]' :
                 'border-slate-600'
               }`}>
                 <img
@@ -143,6 +150,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
                 state === 'in_server' ? 'bg-[#23a55a]' : 
                 state === 'main_menu' ? 'bg-amber-400' : 
                 state === 'other_game' ? 'bg-purple-400' : 
+                state === 'online' ? 'bg-[#23a55a]' :
                 'bg-slate-500'
               }`} />
             </div>
@@ -162,6 +170,8 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
                   <span className="text-amber-400">CS2 Main Menu</span>
                 ) : state === 'other_game' ? (
                   <span className="text-purple-300 truncate">{presence?.game || 'In-Game'}</span>
+                ) : state === 'online' ? (
+                  <span className="text-slate-300">Online on Steam</span>
                 ) : (
                   <span className="text-slate-400">Offline</span>
                 )}
@@ -190,13 +200,15 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             state === 'in_server' ? 'bg-[#23a55a] animate-pulse' : 
             state === 'main_menu' ? 'bg-amber-400' : 
             state === 'other_game' ? 'bg-purple-400' : 
+            state === 'online' ? 'bg-[#23a55a]' :
             'bg-slate-500'
           }`} />
           <span className="text-[10px] font-sans font-extrabold tracking-wider text-[#dbdee1] uppercase flex items-center gap-1.5">
             {state === 'in_server' ? 'PLAYING CS2 ZOMBIE ESCAPE' : 
              state === 'main_menu' ? 'COUNTER-STRIKE 2' : 
              state === 'other_game' ? `PLAYING ${presence?.game?.toUpperCase() || 'ON STEAM'}` : 
-             'OFFLINE // CS2 STANDBY'}
+             state === 'online' ? 'STEAM LIVE PRESENCE' :
+             'STEAM LIVE PRESENCE // OFFLINE'}
           </span>
         </div>
 
@@ -218,6 +230,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
           <div className={`w-11 h-11 rounded-full overflow-hidden border-2 shadow-sm ${
             state === 'in_server' ? 'border-[#23a55a] shadow-[0_0_12px_rgba(35,165,90,0.35)]' :
             state === 'main_menu' ? 'border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.35)]' :
+            state === 'online' ? 'border-[#23a55a] shadow-[0_0_12px_rgba(35,165,90,0.35)]' :
             'border-slate-600'
           }`}>
             <img
@@ -234,6 +247,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             state === 'in_server' ? 'bg-[#23a55a]' : 
             state === 'main_menu' ? 'bg-amber-400' : 
             state === 'other_game' ? 'bg-purple-400' : 
+            state === 'online' ? 'bg-[#23a55a]' :
             'bg-slate-500'
           }`}>
             <span className="w-1 h-1 rounded-full bg-white" />
@@ -277,6 +291,11 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
               <>
                 <Gamepad2 className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
                 <span className="truncate font-bold">{presence?.game || 'Steam Game'}</span>
+              </>
+            ) : state === 'online' ? (
+              <>
+                <Compass className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                <span className="truncate text-slate-300 font-semibold">Online on Steam &bull; Idle</span>
               </>
             ) : (
               <>
@@ -358,9 +377,23 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             </span>
           </div>
         </div>
+      ) : state === 'online' ? (
+        <div className="mt-2.5 p-2 rounded-lg bg-[#18191c] border border-[#2b2d31]/80 flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
+            <Compass className="w-4 h-4 text-emerald-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="text-[10px] text-slate-400 uppercase font-semibold block leading-none mb-0.5">
+              Steam Status
+            </span>
+            <span className="text-xs text-emerald-300 font-semibold block truncate">
+              Online &bull; Standby for CS2
+            </span>
+          </div>
+        </div>
       ) : null}
 
-      {/* Action Buttons - Snug, Comfortable Fit */}
+      {/* Action Buttons */}
       <div className="mt-2.5 pt-2 border-t border-[#2b2d31]/80">
         {state === 'in_server' ? (
           <div className="grid grid-cols-2 gap-2">
