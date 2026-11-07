@@ -12,7 +12,7 @@ import { GeronimoDiscordPresence } from './components/GeronimoDiscordPresence';
 import { DeployHudFooter } from './components/DeployHudFooter';
 import { SecretGeronimoVault } from './components/SecretGeronimoVault';
 import { ChaosAnomalyEngine } from './components/ChaosAnomalyEngine';
-import { ChevronDown, Volume2, VolumeX, Sliders } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 const pickRandomBananaLoops = (): number => {
   const choices = [2, 3, 4];
@@ -205,7 +205,7 @@ export const App: React.FC = () => {
             . Featuring legendary animated memes, free cloud RAM downloads, live CS2 Zombie Escape server browser, Web Config Studio, and desktop gaming tools.
           </p>
 
-          {/* Quick HUD Toolbar: Theme Toggle & Unified Master Audio Controls */}
+          {/* Quick HUD Toolbar: Theme Toggle */}
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-4 text-[11px] font-code">
             <button
               onClick={handleToggleTheme}
@@ -218,46 +218,6 @@ export const App: React.FC = () => {
             >
               {theme === 'banana' ? '🐸 SWITCH TO PEPE THEME' : '🍌 SWITCH TO BANANA PHONE THEME'}
             </button>
-
-            {/* Master Audio Controller (Shared across Pepe & Banana Phone; Never resets on theme change) */}
-            <div className={`flex items-center gap-2.5 px-3 py-1 rounded-lg border backdrop-blur-md transition-all ${
-              theme === 'banana'
-                ? 'bg-black/85 border-yellow-500/40 text-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.2)]'
-                : 'bg-black/85 border-cyan-500/40 text-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.2)]'
-            }`}>
-              <button
-                onClick={handleToggleMasterMute}
-                data-gremlin-ignore="true"
-                className={`p-1 rounded cursor-pointer transition-all flex items-center gap-1 ${
-                  isMasterMuted
-                    ? 'bg-red-950/90 text-red-400 border border-red-500/60'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-                title={isMasterMuted ? 'Unmute Audio (All Themes)' : 'Mute Audio (All Themes)'}
-              >
-                {isMasterMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 animate-bounce" />}
-                <span className="text-[10px] font-bold uppercase">{isMasterMuted ? 'MUTED' : 'MUTE'}</span>
-              </button>
-
-              <div className="h-3.5 w-px bg-slate-700 mx-0.5" />
-
-              {/* Volume Slider Knob */}
-              <div className="flex items-center gap-2">
-                <Sliders className="w-3 h-3 opacity-70" />
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={isMasterMuted ? 0 : masterVolume}
-                  onChange={(e) => handleMasterVolumeChange(Number(e.target.value))}
-                  className="w-16 sm:w-24 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-yellow-400"
-                  title={`Master Volume: ${isMasterMuted ? 0 : masterVolume}%`}
-                />
-                <span className="w-8 text-[10px] font-bold tabular-nums">
-                  {isMasterMuted ? '0%' : `${masterVolume}%`}
-                </span>
-              </div>
-            </div>
           </div>
         </div>
 

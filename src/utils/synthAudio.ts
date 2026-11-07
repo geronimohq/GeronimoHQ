@@ -14,7 +14,7 @@ class CyberSynthEngine {
   public setVolume(percent: number) {
     this.volumeMultiplier = Math.max(0, Math.min(100, percent)) / 100;
     if (this.ctx && this.masterGain) {
-      const baseGain = 0.18;
+      const baseGain = 0.45;
       this.masterGain.gain.setValueAtTime(baseGain * this.volumeMultiplier, this.ctx.currentTime);
     }
   }
@@ -66,7 +66,7 @@ class CyberSynthEngine {
         try {
           this.ctx = new AudioContextClass();
           this.masterGain = this.ctx.createGain();
-          this.masterGain.gain.setValueAtTime(0.18 * this.volumeMultiplier, this.ctx.currentTime);
+          this.masterGain.gain.setValueAtTime(0.45 * this.volumeMultiplier, this.ctx.currentTime);
           this.masterGain.connect(this.ctx.destination);
         } catch {
           // ignore

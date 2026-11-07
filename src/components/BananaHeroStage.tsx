@@ -522,22 +522,22 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
             <button
               onClick={onToggleMasterMute}
               data-gremlin-ignore="true"
-              className={`px-3 py-1.5 text-xs font-code font-bold rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${
+              className={`px-3 py-1.5 text-xs font-code font-bold rounded-lg border flex items-center justify-center gap-1.5 min-w-[185px] cursor-pointer transition-all ${
                 !isMasterMuted
                   ? 'bg-yellow-500/20 text-yellow-300 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]'
                   : 'bg-red-950/90 text-red-400 border-red-500/60'
               }`}
-              title="Toggle Master Mute (works across both themes)"
+              title="Toggle Master Mute"
             >
               {!isMasterMuted ? (
                 <>
                   <Volume2 className="w-4 h-4 text-yellow-400 animate-bounce" />
-                  <span>BANANA MUSIC: ON ({masterVolume}%)</span>
+                  <span>BANANA MUSIC: ON</span>
                 </>
               ) : (
                 <>
                   <VolumeX className="w-4 h-4 text-red-400" />
-                  <span>BANANA MUSIC: MUTED (CLICK TO UNMUTE)</span>
+                  <span>BANANA MUSIC: MUTED</span>
                 </>
               )}
             </button>

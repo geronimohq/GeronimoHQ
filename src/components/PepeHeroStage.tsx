@@ -56,22 +56,22 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({
             <button
               onClick={onToggleMasterMute}
               data-gremlin-ignore="true"
-              className={`px-3 py-1.5 text-xs font-code font-bold rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${
+              className={`px-3 py-1.5 text-xs font-code font-bold rounded-lg border flex items-center justify-center gap-1.5 min-w-[170px] cursor-pointer transition-all ${
                 !isMasterMuted
                   ? 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-400 shadow-[0_0_15px_rgba(255,0,127,0.45)]'
                   : 'bg-red-950/90 text-red-400 border-red-500/60'
               }`}
-              title="Toggle Master Mute (works across both themes)"
+              title="Toggle Master Mute"
             >
               {!isMasterMuted ? (
                 <>
                   <Volume2 className="w-4 h-4 text-fuchsia-400 animate-bounce" />
-                  <span>PEPE SYNTH: ON ({masterVolume}%)</span>
+                  <span>PEPE SYNTH: ON</span>
                 </>
               ) : (
                 <>
                   <VolumeX className="w-4 h-4 text-red-400" />
-                  <span>PEPE SYNTH: MUTED (CLICK TO UNMUTE)</span>
+                  <span>PEPE SYNTH: MUTED</span>
                 </>
               )}
             </button>
