@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Radio, Shield, Wifi, Mail, Cpu, Sparkles, Sliders } from 'lucide-react';
+import { Radio, Shield, Wifi, Mail, Cpu, Sparkles, Sliders, Wrench } from 'lucide-react';
 
 interface CyberNavbarProps {
   theme: 'pepe' | 'banana';
@@ -152,6 +152,14 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           >
             <Wifi className="w-3.5 h-3.5 text-lime-400" />
             ZE SERVERS
+          </a>
+          <a
+            href="#ze-toolkit"
+            onClick={(e) => handleNavClick(e, 'ze-toolkit')}
+            className="hover:text-emerald-400 transition-colors flex items-center gap-1.5"
+          >
+            <Wrench className="w-3.5 h-3.5 text-emerald-400" />
+            ZE TOOLKIT
           </a>
           <a
             href="#cfg-studio"

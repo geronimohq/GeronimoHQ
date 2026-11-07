@@ -112,8 +112,8 @@ export const DeployHudFooter: React.FC = () => {
 
             <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2 text-xs font-code">
               <div className="flex justify-between py-0.5 border-b border-slate-800/80">
-                <span className="text-slate-400">CS2 SUITE</span>
-                <span className="text-emerald-400 font-bold">v1.3.3 // LIVE READY</span>
+                <span className="text-slate-400">CS2 APP</span>
+                <span className="text-emerald-400 font-bold">v1.3.4 // LIVE READY</span>
               </div>
               <div className="flex justify-between py-0.5 border-b border-slate-800/80">
                 <span className="text-slate-400">ZE CLUSTER</span>

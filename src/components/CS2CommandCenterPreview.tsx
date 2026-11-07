@@ -30,7 +30,7 @@ interface AppFeatureModule {
 }
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=1.3.3';
+  const downloadUrl = '/CS2_Command_Center.exe?v=1.3.4';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -233,7 +233,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v1.3.3
+              v1.3.4
             </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-2xl">
@@ -278,7 +278,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
             <span className="text-fuchsia-400">CLICK TO EXPLORE</span>
           </div>
 
-          <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[520px] pr-1">
+          <div className="flex flex-col gap-2">
             {modules.map((mod) => {
               const isActive = activeTab === mod.id;
               return (
