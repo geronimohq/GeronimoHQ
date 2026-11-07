@@ -1,10 +1,238 @@
 import React, { useState } from 'react';
-import { Lock, Unlock, ShieldAlert, Sparkles, X, Terminal, Copy, Check, Volume2, Award, Zap, Skull, Cpu } from 'lucide-react';
+import { 
+  Lock, 
+  Unlock, 
+  ShieldAlert, 
+  X, 
+  Terminal, 
+  Copy, 
+  Check, 
+  Volume2, 
+  Award, 
+  Zap, 
+  Skull, 
+  Dices, 
+  Gift
+} from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 interface SecretGeronimoVaultProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+interface VaultLootDrop {
+  name: string;
+  tier: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY' | 'MYTHIC';
+  desc: string;
+  icon: string;
+  odds: string;
+  borderColor: string;
+  textColor: string;
+  badgeBg: string;
+}
+
+const VAULT_LOOT_TABLE: VaultLootDrop[] = [
+  // COMMON (40%)
+  {
+    name: '1x Pixel Banana Peel',
+    tier: 'COMMON',
+    desc: 'Mildly slippery. Gives +1 velocity when stepped on in Zombie Escape.',
+    icon: '🍌',
+    odds: '40%',
+    borderColor: 'border-slate-600',
+    textColor: 'text-slate-300',
+    badgeBg: 'bg-slate-700 text-slate-200'
+  },
+  {
+    name: 'Default Source 2 Smoke Grenade',
+    tier: 'COMMON',
+    desc: 'Volumetric, dynamic, and completely blocks the view of 60 zombies.',
+    icon: '💨',
+    odds: '40%',
+    borderColor: 'border-slate-600',
+    textColor: 'text-slate-300',
+    badgeBg: 'bg-slate-700 text-slate-200'
+  },
+  {
+    name: 'Empty Decoy Grenade Canister',
+    tier: 'COMMON',
+    desc: 'Makes loud fake gunfire sounds for 15 seconds to scare teammates.',
+    icon: '🥫',
+    odds: '40%',
+    borderColor: 'border-slate-600',
+    textColor: 'text-slate-300',
+    badgeBg: 'bg-slate-700 text-slate-200'
+  },
+  {
+    name: 'Used Windows Pagefile.sys Fragment',
+    tier: 'COMMON',
+    desc: 'Zero-overhead swap buffer evicted cleanly without hard page faults.',
+    icon: '📄',
+    odds: '40%',
+    borderColor: 'border-slate-600',
+    textColor: 'text-slate-300',
+    badgeBg: 'bg-slate-700 text-slate-200'
+  },
+  {
+    name: '120ms Routing Hop to Stockholm',
+    tier: 'COMMON',
+    desc: 'Adds a tiny regional scenic detour to your CS2 packet routing.',
+    icon: '🌐',
+    odds: '40%',
+    borderColor: 'border-slate-600',
+    textColor: 'text-slate-300',
+    badgeBg: 'bg-slate-700 text-slate-200'
+  },
+
+  // RARE (30%)
+  {
+    name: 'Sub-Tick Packet Harmonizer',
+    tier: 'RARE',
+    desc: 'Aligns in-game user commands with server ticks for laser-precise hit registration.',
+    icon: '🎯',
+    odds: '30%',
+    borderColor: 'border-blue-500',
+    textColor: 'text-blue-300',
+    badgeBg: 'bg-blue-600 text-white'
+  },
+  {
+    name: '32GB Cloud RAM Direct Injector',
+    tier: 'RARE',
+    desc: 'Instantly inflates virtual memory without touching physical DDR5 chips.',
+    icon: '💾',
+    odds: '30%',
+    borderColor: 'border-blue-500',
+    textColor: 'text-blue-300',
+    badgeBg: 'bg-blue-600 text-white'
+  },
+  {
+    name: "Cybo's 3D Dimension Compass",
+    tier: 'RARE',
+    desc: 'Rotates camera angles 360 degrees around any ZE map thumbnail.',
+    icon: '🧭',
+    odds: '30%',
+    borderColor: 'border-blue-500',
+    textColor: 'text-blue-300',
+    badgeBg: 'bg-blue-600 text-white'
+  },
+  {
+    name: 'GFL FastDL Turbo Accelerator',
+    tier: 'RARE',
+    desc: 'Downloads 400MB custom ZE map assets in under 3.5 seconds.',
+    icon: '⚡',
+    odds: '30%',
+    borderColor: 'border-blue-500',
+    textColor: 'text-blue-300',
+    badgeBg: 'bg-blue-600 text-white'
+  },
+
+  // EPIC (18%)
+  {
+    name: 'Stattrak Negev Loudness Multiplier',
+    tier: 'EPIC',
+    desc: 'Makes the 150-round continuous spray echo across the entire server.',
+    icon: '🔫',
+    odds: '18%',
+    borderColor: 'border-purple-500',
+    textColor: 'text-purple-300',
+    badgeBg: 'bg-purple-600 text-white'
+  },
+  {
+    name: 'Mako Reactor Meltdown Coolant Rod',
+    tier: 'EPIC',
+    desc: 'Stops Bahamut from casting Megaflare for 8 crucial escape seconds.',
+    icon: '☢️',
+    odds: '18%',
+    borderColor: 'border-purple-500',
+    textColor: 'text-purple-300',
+    badgeBg: 'bg-purple-600 text-white'
+  },
+  {
+    name: 'Infinite BHop Velocity Token',
+    tier: 'EPIC',
+    desc: 'Permits continuous scroll-wheel hops with zero stamina friction penalty.',
+    icon: '🦘',
+    odds: '18%',
+    borderColor: 'border-purple-500',
+    textColor: 'text-purple-300',
+    badgeBg: 'bg-purple-600 text-white'
+  },
+  {
+    name: 'Anti-Alt-Tab Display Presentation Relic',
+    tier: 'EPIC',
+    desc: 'Bypasses Windows Desktop Window Manager composition overhead permanently.',
+    icon: '🚀',
+    odds: '18%',
+    borderColor: 'border-purple-500',
+    textColor: 'text-purple-300',
+    badgeBg: 'bg-purple-600 text-white'
+  },
+
+  // LEGENDARY (9%)
+  {
+    name: '24K Solid Gold Banana Phone Hotline',
+    tier: 'LEGENDARY',
+    desc: 'Forged from pure cyber-gold. Ring ring ring ring ring ring ring, BANANA PHONE!',
+    icon: '🍌✨',
+    odds: '9%',
+    borderColor: 'border-amber-400',
+    textColor: 'text-amber-300',
+    badgeBg: 'bg-amber-500 text-black font-black'
+  },
+  {
+    name: "Gaben's Blessed Souvenir Package #730",
+    tier: 'LEGENDARY',
+    desc: 'Guarantees Factory New exterior and zero scratches on your next case unbox.',
+    icon: '👑',
+    odds: '9%',
+    borderColor: 'border-amber-400',
+    textColor: 'text-amber-300',
+    badgeBg: 'bg-amber-500 text-black font-black'
+  },
+  {
+    name: "Queeniemella's Master Audio Tape (1.16x Loudness)",
+    tier: 'LEGENDARY',
+    desc: 'The complete uncut 3m16s lossless darksynth master recording.',
+    icon: '📼',
+    odds: '9%',
+    borderColor: 'border-amber-400',
+    textColor: 'text-amber-300',
+    badgeBg: 'bg-amber-500 text-black font-black'
+  },
+  {
+    name: "Pantcake's VPK Editor Master Key",
+    tier: 'LEGENDARY',
+    desc: 'Grants access to clean, non-corruptible custom CS2 client asset archives.',
+    icon: '🗝️',
+    odds: '9%',
+    borderColor: 'border-amber-400',
+    textColor: 'text-amber-300',
+    badgeBg: 'bg-amber-500 text-black font-black'
+  },
+
+  // MYTHIC GOD TIER (3%)
+  {
+    name: '★ GERONIMO COMMAND CENTER ARCHITECT CROWN ★',
+    tier: 'MYTHIC',
+    desc: 'The ultimate badge of honor. Grants permanent VIP immortality across GeronimoHQ.',
+    icon: '👑💎🔥',
+    odds: '3%',
+    borderColor: 'border-rose-500 animate-pulse',
+    textColor: 'text-rose-300 font-black',
+    badgeBg: 'bg-gradient-to-r from-red-600 to-fuchsia-600 text-white font-black'
+  },
+  {
+    name: '★ 1000 FPS PERMANENT HARDWARE OVERCLOCK ★',
+    tier: 'MYTHIC',
+    desc: 'Freezes GPU junction temperature at 42°C forever with zero thermal throttling.',
+    icon: '⚡🏎️💥',
+    odds: '3%',
+    borderColor: 'border-rose-500 animate-pulse',
+    textColor: 'text-rose-300 font-black',
+    badgeBg: 'bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 text-white font-black'
+  }
+];
 
 export const SecretGeronimoVault: React.FC<SecretGeronimoVaultProps> = ({ isOpen, onClose }) => {
   const [unlocked, setUnlocked] = useState(false);
@@ -13,11 +241,16 @@ export const SecretGeronimoVault: React.FC<SecretGeronimoVaultProps> = ({ isOpen
   const [passcode, setPasscode] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedBind, setCopiedBind] = useState<string | null>(null);
-  const [ramDownloaded, setRamDownloaded] = useState(false);
-  const [activeTab, setActiveTab] = useState<'binds' | 'artifacts' | 'shame' | 'soundboard'>('artifacts');
+  const [activeTab, setActiveTab] = useState<'loot_rng' | 'artifacts' | 'binds' | 'shame' | 'soundboard'>('loot_rng');
+
+  // RNG Loot Box State
+  const [isRollingLoot, setIsRollingLoot] = useState(false);
+  const [currentLootDrop, setCurrentLootDrop] = useState<VaultLootDrop | null>(null);
+  const [rollCount, setRollCount] = useState(0);
+  const [lootHistory, setLootHistory] = useState<VaultLootDrop[]>([]);
 
   // Play synthetic Web Audio tones
-  const playVaultSynth = (type: 'beep' | 'grant' | 'alarm' | 'bong' | 'banana') => {
+  const playVaultSynth = (type: 'beep' | 'grant' | 'alarm' | 'bong' | 'banana' | 'loot_roll' | 'loot_win') => {
     try {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
       if (!AudioCtx) return;
@@ -61,30 +294,31 @@ export const SecretGeronimoVault: React.FC<SecretGeronimoVaultProps> = ({ isOpen
         gain.connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.4);
-      } else if (type === 'bong') {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(140, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.8);
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 1.2);
-      } else if (type === 'banana') {
-        [587.33, 659.25, 587.33, 440, 587.33].forEach((f, idx) => {
+      } else if (type === 'loot_roll') {
+        for (let i = 0; i < 6; i++) {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = 'triangle';
-          osc.frequency.setValueAtTime(f, ctx.currentTime + idx * 0.12);
-          gain.gain.setValueAtTime(0.12, ctx.currentTime + idx * 0.12);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.12 + 0.2);
+          osc.frequency.setValueAtTime(400 + i * 80, ctx.currentTime + i * 0.06);
+          gain.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.06);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.06 + 0.05);
           osc.connect(gain);
           gain.connect(ctx.destination);
-          osc.start(ctx.currentTime + idx * 0.12);
-          osc.stop(ctx.currentTime + idx * 0.12 + 0.22);
+          osc.start(ctx.currentTime + i * 0.06);
+          osc.stop(ctx.currentTime + i * 0.06 + 0.06);
+        }
+      } else if (type === 'loot_win') {
+        [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, ctx.currentTime + idx * 0.08);
+          gain.gain.setValueAtTime(0.18, ctx.currentTime + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.08 + 0.4);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.08);
+          osc.stop(ctx.currentTime + idx * 0.08 + 0.45);
         });
       }
     } catch {
@@ -110,7 +344,7 @@ export const SecretGeronimoVault: React.FC<SecretGeronimoVaultProps> = ({ isOpen
         playVaultSynth('beep');
         return prev + 15;
       });
-    }, 140);
+    }, 120);
   };
 
   const handlePasscodeSubmit = (e?: React.FormEvent) => {
@@ -133,6 +367,33 @@ export const SecretGeronimoVault: React.FC<SecretGeronimoVaultProps> = ({ isOpen
     setCopiedBind(id);
     playVaultSynth('beep');
     setTimeout(() => setCopiedBind(null), 2500);
+  };
+
+  const handleRollLoot = () => {
+    if (isRollingLoot) return;
+    setIsRollingLoot(true);
+    playVaultSynth('loot_roll');
+
+    // Roll random index
+    const randIdx = Math.floor(Math.random() * VAULT_LOOT_TABLE.length);
+    const wonItem = VAULT_LOOT_TABLE[randIdx];
+
+    setTimeout(() => {
+      setIsRollingLoot(false);
+      setCurrentLootDrop(wonItem);
+      setRollCount((c) => c + 1);
+      setLootHistory((prev) => [wonItem, ...prev.slice(0, 9)]);
+      playVaultSynth('loot_win');
+
+      if (wonItem.tier === 'LEGENDARY' || wonItem.tier === 'MYTHIC') {
+        confetti({
+          particleCount: 100,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#ffe600', '#f59e0b', '#ec4899', '#3b82f6']
+        });
+      }
+    }, 1200);
   };
 
   if (!isOpen) return null;
@@ -180,7 +441,7 @@ export const SecretGeronimoVault: React.FC<SecretGeronimoVaultProps> = ({ isOpen
               </div>
               <p className="text-[10px] font-code text-slate-400">
                 {unlocked
-                  ? 'Welcome operative. All forbidden binds, memes, and golden artifacts decrypted.'
+                  ? 'Welcome operative. All forbidden binds, RNG drops, and golden artifacts decrypted.'
                   : 'Encrypted under 4096-bit Pepe quantum cypher. Authorized entities only.'}
               </p>
             </div>
@@ -198,63 +459,49 @@ export const SecretGeronimoVault: React.FC<SecretGeronimoVaultProps> = ({ isOpen
         {!unlocked ? (
           <div className="p-6 flex flex-col items-center text-center space-y-6">
             <div className="w-24 h-24 rounded-full border-2 border-red-500/60 bg-red-950/30 flex items-center justify-center relative shadow-[0_0_30px_rgba(239,68,68,0.3)]">
-              <ShieldAlert className="w-12 h-12 text-red-400 animate-pulse" />
-              <div className="absolute inset-0 rounded-full border-2 border-red-400 border-t-transparent animate-spin" />
+              <ShieldAlert className="w-12 h-12 text-red-500 animate-pulse" />
+              <div className="absolute inset-0 rounded-full border border-red-400 animate-ping opacity-25" />
             </div>
 
             <div className="max-w-md space-y-2">
-              <h4 className="text-xl font-cyber font-bold text-red-300 tracking-wide">
-                BIOMETRIC LASER SCANNER ACTIVE
+              <h4 className="text-xl font-cyber font-bold text-red-400">
+                ENTER CLEARANCE FREQUENCY
               </h4>
-              <p className="text-xs font-tech text-slate-300 leading-relaxed">
-                You have stumbled into Geronimo's private sub-level quarantine chamber. Inside lies the forbidden
-                Golden Banana, high-voltage CS2 bind aliases, and 512GB of illegal quantum RAM.
+              <p className="text-xs text-slate-300 font-tech leading-relaxed">
+                Vault contains classified CS2 binds, unreleased Banana Phone audio tapes, and high-frequency RNG relics. Enter your secret passcode or execute a brute-force bypass.
               </p>
             </div>
 
-            {/* Error Message */}
             {errorMsg && (
-              <div className="px-4 py-2 rounded-lg bg-red-950/80 border border-red-500/60 text-red-300 text-xs font-code font-bold animate-bounce">
+              <div className="p-3 rounded-lg bg-red-950/80 border border-red-500/80 text-red-300 text-xs font-code max-w-md animate-shake">
                 {errorMsg}
               </div>
             )}
 
-            {/* Hacking Progress Bar */}
-            {isHacking && (
-              <div className="w-full max-w-sm space-y-1.5">
-                <div className="flex justify-between text-[10px] font-code text-amber-300">
-                  <span>OVERRIDING GFL MAIN-FIREWALL...</span>
-                  <span>{hackProgress}%</span>
-                </div>
-                <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-amber-500/40">
-                  <div
-                    className="h-full bg-gradient-to-r from-red-500 to-amber-400 transition-all duration-150"
-                    style={{ width: `${hackProgress}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Unlock Input / Buttons */}
-            <div className="w-full max-w-md space-y-3 pt-2">
-              <form onSubmit={handlePasscodeSubmit} className="flex gap-2">
+            {/* Passcode Form */}
+            <form onSubmit={handlePasscodeSubmit} className="w-full max-w-sm space-y-3">
+              <div className="relative">
                 <input
                   type="text"
                   value={passcode}
                   onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="Enter Clearance Code (e.g. BANANA or 42069)..."
+                  placeholder="Enter passcode (e.g. BANANA or GERONIMO)"
                   disabled={isHacking}
-                  className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-code text-white focus:outline-none focus:border-amber-400"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-white font-code text-sm placeholder:text-slate-500 focus:outline-none focus:border-amber-400 text-center tracking-wider"
                 />
-                <button
-                  type="submit"
-                  disabled={isHacking}
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-cyber font-bold text-xs rounded-xl shadow-[0_0_15px_rgba(251,191,36,0.4)] transition-all cursor-pointer disabled:opacity-50"
-                >
-                  AUTHENTICATE
-                </button>
-              </form>
+              </div>
 
+              <button
+                type="submit"
+                disabled={isHacking}
+                className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-slate-950 font-cyber font-bold text-xs rounded-xl shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all cursor-pointer"
+              >
+                AUTHORIZE ACCESS FREQUENCY
+              </button>
+            </form>
+
+            {/* Hack & Bypass Buttons */}
+            <div className="w-full max-w-sm space-y-2">
               <div className="flex items-center gap-2">
                 <div className="flex-1 h-px bg-slate-800" />
                 <span className="text-[10px] font-code text-slate-500 uppercase">OR BYPASS</span>
@@ -268,14 +515,14 @@ export const SecretGeronimoVault: React.FC<SecretGeronimoVaultProps> = ({ isOpen
                   className="px-3 py-2 bg-red-950/70 hover:bg-red-900/80 border border-red-500/50 hover:border-red-400 text-red-200 font-cyber text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Terminal className="w-3.5 h-3.5 text-red-400" />
-                  <span>BRUTE-FORCE HACK</span>
+                  <span>{isHacking ? `HACKING [${hackProgress}%]...` : "BRUTE-FORCE HACK"}</span>
                 </button>
 
                 <button
                   onClick={() => {
                     setPasscode('BANANA');
                     setUnlocked(true);
-                    playVaultSynth('banana');
+                    playVaultSynth('grant');
                   }}
                   disabled={isHacking}
                   className="px-3 py-2 bg-yellow-950/70 hover:bg-yellow-900/80 border border-yellow-400/50 hover:border-yellow-300 text-yellow-200 font-cyber text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
@@ -290,6 +537,18 @@ export const SecretGeronimoVault: React.FC<SecretGeronimoVaultProps> = ({ isOpen
           <div className="p-5 space-y-4">
             {/* Vault Tabs */}
             <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
+              <button
+                onClick={() => setActiveTab('loot_rng')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-cyber font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'loot_rng'
+                    ? 'bg-amber-400 text-slate-950 shadow-[0_0_10px_rgba(251,191,36,0.4)]'
+                    : 'bg-slate-900 text-slate-400 hover:text-white'
+                }`}
+              >
+                <Dices className="w-3.5 h-3.5" />
+                <span>🎲 ROLL VAULT LOOT (RNG)</span>
+              </button>
+
               <button
                 onClick={() => setActiveTab('artifacts')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-cyber font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -339,10 +598,84 @@ export const SecretGeronimoVault: React.FC<SecretGeronimoVaultProps> = ({ isOpen
               </button>
             </div>
 
-            {/* TAB 1: MYTHIC ARTIFACTS */}
+            {/* TAB: RNG LOOT BOX */}
+            {activeTab === 'loot_rng' && (
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-gradient-to-r from-purple-950/60 to-slate-900 border border-purple-500/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-base font-cyber font-bold text-yellow-300 flex items-center gap-2">
+                      <Gift className="w-4 h-4 text-purple-400" />
+                      MYTHIC QUANTUM LOOT ROLLER // 25+ ITEMS
+                    </h4>
+                    <p className="text-xs text-slate-300 font-tech mt-0.5">
+                      Roll for mythic CS2 artifacts, golden banana phones, and quantum cloud RAM relics!
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleRollLoot}
+                    disabled={isRollingLoot}
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-slate-950 font-cyber font-bold text-xs shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all cursor-pointer transform hover:scale-105 active:scale-95 flex items-center gap-2"
+                  >
+                    <Dices className={`w-4 h-4 ${isRollingLoot ? 'animate-spin' : ''}`} />
+                    <span>{isRollingLoot ? 'ROLLING RNG CASING...' : '🎲 ROLL VAULT LOOT!'}</span>
+                  </button>
+                </div>
+
+                {/* CURRENT DROP RESULT */}
+                {currentLootDrop && (
+                  <div className={`p-4 rounded-xl bg-slate-900/90 border-2 ${currentLootDrop.borderColor} shadow-lg space-y-2 animate-fadeIn`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-3xl">{currentLootDrop.icon}</span>
+                        <div>
+                          <div className={`font-cyber font-black text-sm sm:text-base ${currentLootDrop.textColor}`}>
+                            {currentLootDrop.name}
+                          </div>
+                          <span className={`text-[9px] font-code px-2 py-0.5 rounded font-bold uppercase ${currentLootDrop.badgeBg}`}>
+                            TIER: {currentLootDrop.tier} (ODDS: {currentLootDrop.odds})
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono text-slate-400">
+                        Roll #{rollCount}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 font-tech">
+                      {currentLootDrop.desc}
+                    </p>
+                  </div>
+                )}
+
+                {/* RECENT LOOT HISTORY */}
+                {lootHistory.length > 0 && (
+                  <div className="space-y-2">
+                    <h5 className="text-[11px] font-cyber text-slate-400 uppercase tracking-wider">
+                      RECENT LOOT INVENTORY (LAST 10 ROLLS)
+                    </h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {lootHistory.map((item, idx) => (
+                        <div key={idx} className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 flex items-center gap-2.5">
+                          <span className="text-xl">{item.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-cyber font-bold text-white truncate">
+                              {item.name}
+                            </div>
+                            <span className="text-[9px] font-code text-slate-400">
+                              {item.tier}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB: MYTHIC ARTIFACTS */}
             {activeTab === 'artifacts' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Artifact 1: Golden Banana */}
                 <div className="p-4 rounded-xl bg-gradient-to-br from-amber-950/70 to-slate-950 border border-yellow-400/60 shadow-[0_0_20px_rgba(250,204,21,0.2)] space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-2xl animate-bounce">🍌</span>
@@ -350,94 +683,65 @@ export const SecretGeronimoVault: React.FC<SecretGeronimoVaultProps> = ({ isOpen
                       TIER 100 // LEGENDARY
                     </span>
                   </div>
-                  <h5 className="font-cyber font-black text-amber-300 text-sm">
-                    THE GOLDEN BANANA OF CYBO LASER MASTERY
-                  </h5>
-                  <p className="text-xs font-tech text-slate-300 leading-relaxed">
-                    Forged in the heart of Mako Reactor Core #7. Legend says holding this gives +3000 Bhop velocity
-                    and guarantees you will never trip on laser floor hazards.
+                  <h4 className="font-cyber font-bold text-sm text-yellow-300">
+                    GOLDEN BANANA PHONE RELIC
+                  </h4>
+                  <p className="text-xs text-slate-300 font-tech">
+                    Direct hotline to the Geronimo mothership. Rumored to decrease weapon spread by 0.0001% when equipped in primary weapon slot.
                   </p>
-                  <button
-                    onClick={() => playVaultSynth('banana')}
-                    className="w-full py-1.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-code font-bold text-xs rounded-lg transition-colors cursor-pointer"
-                  >
-                    PLAY BANANA PHONIC CHIME 🍌
-                  </button>
                 </div>
 
-                {/* Artifact 2: 512GB Quantum RAM Download */}
-                <div className="p-4 rounded-xl bg-gradient-to-br from-fuchsia-950/70 to-slate-950 border border-fuchsia-500/60 shadow-[0_0_20px_rgba(255,0,127,0.2)] space-y-2.5">
+                <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-950/70 to-slate-950 border border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.2)] space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <Cpu className="w-6 h-6 text-fuchsia-400 animate-spin" />
-                    <span className="text-[9px] font-code px-2 py-0.5 rounded bg-fuchsia-400/20 text-fuchsia-300 font-bold border border-fuchsia-400/40">
-                      FORBIDDEN MEMORY
+                    <span className="text-2xl">🐸</span>
+                    <span className="text-[9px] font-code px-2 py-0.5 rounded bg-emerald-400/20 text-emerald-300 font-bold border border-emerald-400/40">
+                      HOLOGRAM 07 // MYTHIC
                     </span>
                   </div>
-                  <h5 className="font-cyber font-black text-fuchsia-300 text-sm">
-                    512GB QUANTUM CLOUD RAM (9000MHz OC)
-                  </h5>
-                  <p className="text-xs font-tech text-slate-300 leading-relaxed">
-                    Overclocked by Geronimo's personal cooling reactor. Download directly into your browser's neural
-                    buffer to experience zero micro-stutters forever.
+                  <h4 className="font-cyber font-bold text-sm text-emerald-300">
+                    SAD PEPE QUANTUM CORE
+                  </h4>
+                  <p className="text-xs text-slate-300 font-tech">
+                    The emotional frequency resonator behind our retro synth engine. Sustains harmonic minor arpeggios at 128 BPM indefinitely.
                   </p>
-                  <button
-                    onClick={() => {
-                      setRamDownloaded(true);
-                      playVaultSynth('grant');
-                      setTimeout(() => setRamDownloaded(false), 4000);
-                    }}
-                    className="w-full py-1.5 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-code font-bold text-xs rounded-lg transition-colors cursor-pointer"
-                  >
-                    {ramDownloaded ? '⚡ 512GB INJECTED TO CHROME BUFFER!' : '💾 DOWNLOAD 512GB QUANTUM RAM'}
-                  </button>
                 </div>
               </div>
             )}
 
-            {/* TAB 2: SECRET PRO BINDS */}
+            {/* TAB: SECRET PRO BINDS */}
             {activeTab === 'binds' && (
               <div className="space-y-3">
-                <p className="text-xs text-slate-400 font-code">
-                  Exclusive config binds used by veteran Zombie Escape runners. Click any command to copy instantly:
-                </p>
-
                 {[
                   {
-                    id: 'b1',
-                    title: 'Boss Laser Audio Duck + Panic Voice Mute (F7 & F8)',
-                    desc: 'Instantly drops master sound to 20% so you can hear boss telegraph sounds over 64 shouting players.',
-                    cmd: 'alias "duck_boss" "volume 0.20; voice_modenable 0; echo [BOSS] Audio Ducked!"; alias "unduck_boss" "volume 1.0; voice_modenable 1; echo [NORMAL] Audio Restored!"; bind "f7" "duck_boss"; bind "f8" "unduck_boss"'
+                    id: 'bhop-jump',
+                    title: 'CLEAN DESUBTICK JUMP BIND',
+                    cmd: 'alias "+myjump" "+jump"; alias "-myjump" "-jump"; bind "mwheeldown" "+myjump"',
+                    desc: 'Crisp, responsive mousewheel jump for smooth bunnyhopping.'
                   },
                   {
-                    id: 'b2',
-                    title: 'Low-Viewmodel Laser Jump Crouch (FOV 68, Z -2)',
-                    desc: 'Minimizes your first-person gun model down into the bottom corner so the entire floor laser field is visible.',
-                    cmd: 'viewmodel_fov 68; viewmodel_offset_x 2.5; viewmodel_offset_y 2; viewmodel_offset_z -2; r_drawtracers_firstperson 0'
+                    id: 'clear-decals',
+                    title: 'COMPACT RADAR ZOOM TOGGLE',
+                    cmd: 'bind "v" "toggle cl_radar_scale 0.35 0.7"',
+                    desc: 'Instantly toggles full-map radar view to track distant teammate pings.'
                   },
                   {
-                    id: 'b3',
-                    title: 'Banana Phone Hotline Broadcast Bind',
-                    desc: 'Plays a radio UI chirp and broadcasts moral support to your entire team.',
-                    cmd: 'bind "mouse4" "say 🍌 RING RING RING RING RING RING RING BANANA PHONE! (geronimohq.com); play sounds/ui/beep22"'
-                  },
-                  {
-                    id: 'b4',
-                    title: 'Emergency 180° Zombie Turn & Knife Dash',
-                    desc: 'Instant 180 turn macro for dodging Mother Zombie knife attacks.',
-                    cmd: 'alias "+quick180" "yaw 36000 1 0"; alias "-quick180" "yaw 0 1 0"; bind "mouse5" "+quick180"'
+                    id: 'quick-drop',
+                    title: 'FAST BOMB DROP BIND',
+                    cmd: 'bind "c" "slot5; drop"',
+                    desc: 'Instantly throws C4 to teammates without fumbling weapon slots.'
                   }
                 ].map((b) => (
-                  <div key={b.id} className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl space-y-1.5">
+                  <div key={b.id} className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-cyber font-bold text-xs text-cyan-300">{b.title}</span>
+                      <h5 className="font-cyber text-xs font-bold text-amber-300">{b.title}</h5>
                       <button
                         onClick={() => handleCopyBind(b.cmd, b.id)}
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded text-[10px] font-code flex items-center gap-1 transition-colors cursor-pointer"
+                        className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-code text-[10px] flex items-center gap-1 cursor-pointer transition-colors"
                       >
                         {copiedBind === b.id ? (
                           <>
                             <Check className="w-3 h-3 text-emerald-400" />
-                            <span className="text-emerald-400">COPIED!</span>
+                            <span className="text-emerald-400">COPIED</span>
                           </>
                         ) : (
                           <>
@@ -447,106 +751,61 @@ export const SecretGeronimoVault: React.FC<SecretGeronimoVaultProps> = ({ isOpen
                         )}
                       </button>
                     </div>
-                    <p className="text-[11px] font-tech text-slate-400">{b.desc}</p>
-                    <code className="block p-2 bg-slate-950 text-slate-300 text-[10px] font-code rounded border border-slate-800/80 break-all select-all">
+                    <code className="block p-2 rounded bg-black/80 text-[11px] font-code text-cyan-300 overflow-x-auto">
                       {b.cmd}
                     </code>
+                    <p className="text-[11px] text-slate-400 font-tech">{b.desc}</p>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* TAB 3: ZE HALL OF SHAME */}
+            {/* TAB: HALL OF SHAME */}
             {activeTab === 'shame' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {[
-                  {
-                    name: 'The Door Hugger',
-                    crime: 'Stood in the blast door and blocked 45 teammates from evacuating.',
-                    rank: 'Rank: 💀 Certified Grief',
-                    badge: 'DOOR BLOCKED'
-                  },
-                  {
-                    name: 'The Floor Inspector',
-                    crime: 'Jumped early on the low laser and ducked under the high laser.',
-                    rank: 'Rank: 🩸 First Blood',
-                    badge: 'LASER DIVE'
-                  },
-                  {
-                    name: 'The AFK Mother Zombie',
-                    crime: 'Spawned as first infected zombie, immediately alt-tabbed to order Uber Eats.',
-                    rank: 'Rank: 🍔 0 Infections',
-                    badge: 'FREE ESCAPE'
-                  }
-                ].map((s, i) => (
-                  <div key={i} className="p-3 bg-slate-900/80 border border-red-500/30 rounded-xl space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-cyber font-bold text-red-300">{s.name}</span>
-                      <span className="text-[8px] font-code px-1.5 py-0.5 rounded bg-red-950 text-red-400 border border-red-500/40 font-bold">
-                        {s.badge}
-                      </span>
-                    </div>
-                    <p className="text-[11px] font-tech text-slate-400 leading-snug">{s.crime}</p>
-                    <div className="text-[10px] font-code text-amber-400 font-bold">{s.rank}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* TAB 4: MEME SOUNDBOARD */}
-            {activeTab === 'soundboard' && (
               <div className="space-y-3">
-                <p className="text-xs text-slate-400 font-code">
-                  Zero external files — generated live via Web Audio oscillator chips:
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <button
-                    onClick={() => playVaultSynth('banana')}
-                    className="p-3 rounded-xl bg-amber-950/60 hover:bg-amber-900/80 border border-yellow-400/40 text-yellow-300 font-cyber text-xs font-bold transition-all cursor-pointer flex flex-col items-center gap-1.5"
-                  >
-                    <span className="text-xl">🍌</span>
-                    <span>BANANA TONES</span>
-                  </button>
+                <div className="p-3.5 rounded-xl bg-red-950/40 border border-red-500/40 space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-cyber font-bold text-red-300">
+                    <Skull className="w-4 h-4 text-red-400" />
+                    <span>THE ZE_ATOS ELEVATOR INCIDENT (2025)</span>
+                  </div>
+                  <p className="text-xs text-slate-300 font-tech">
+                    An unnamed VIP player pressed the elevator button with 59 teammates still running across the bridge. Immediate infected victory.
+                  </p>
+                </div>
 
-                  <button
-                    onClick={() => playVaultSynth('grant')}
-                    className="p-3 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-400/40 text-emerald-300 font-cyber text-xs font-bold transition-all cursor-pointer flex flex-col items-center gap-1.5"
-                  >
-                    <Sparkles className="w-5 h-5 text-emerald-400" />
-                    <span>SYNTH TRIUMPH</span>
-                  </button>
-
-                  <button
-                    onClick={() => playVaultSynth('bong')}
-                    className="p-3 rounded-xl bg-purple-950/60 hover:bg-purple-900/80 border border-purple-400/40 text-purple-300 font-cyber text-xs font-bold transition-all cursor-pointer flex flex-col items-center gap-1.5"
-                  >
-                    <span className="text-xl">🔔</span>
-                    <span>TACO BELL BONG</span>
-                  </button>
-
-                  <button
-                    onClick={() => playVaultSynth('alarm')}
-                    className="p-3 rounded-xl bg-red-950/60 hover:bg-red-900/80 border border-red-400/40 text-red-300 font-cyber text-xs font-bold transition-all cursor-pointer flex flex-col items-center gap-1.5"
-                  >
-                    <ShieldAlert className="w-5 h-5 text-red-400 animate-spin" />
-                    <span>BOSS LASER SIREN</span>
-                  </button>
+                <div className="p-3.5 rounded-xl bg-red-950/40 border border-red-500/40 space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-cyber font-bold text-red-300">
+                    <Skull className="w-4 h-4 text-red-400" />
+                    <span>THE MAKO REACTOR LASER OVER-JUMP</span>
+                  </div>
+                  <p className="text-xs text-slate-300 font-tech">
+                    Jumped 3 centimeters too high over Sephiroth's middle laser, grazed forehead on the ceiling geometry, and turned into mother zombie.
+                  </p>
                 </div>
               </div>
             )}
 
-            {/* Relock Button */}
-            <div className="pt-3 border-t border-slate-800 flex justify-end">
-              <button
-                onClick={() => {
-                  setUnlocked(false);
-                  playVaultSynth('alarm');
-                }}
-                className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-red-950 text-slate-400 hover:text-red-300 text-xs font-code border border-slate-800 hover:border-red-500/50 transition-colors cursor-pointer"
-              >
-                🔒 RELOCK SECURITY VAULT
-              </button>
-            </div>
+            {/* TAB: MEME SOUNDBOARD */}
+            {activeTab === 'soundboard' && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[
+                  { name: '🍌 BANANA RING', fn: () => playVaultSynth('banana') },
+                  { name: '🚨 RED ALERT', fn: () => playVaultSynth('alarm') },
+                  { name: '🔔 QUANTUM CHIME', fn: () => playVaultSynth('grant') },
+                  { name: '💨 SUB-BASS BONG', fn: () => playVaultSynth('bong') },
+                  { name: '🤖 ACCESS KEY', fn: () => playVaultSynth('beep') }
+                ].map((s, idx) => (
+                  <button
+                    key={idx}
+                    onClick={s.fn}
+                    className="p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-amber-400 text-white font-cyber text-xs flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95"
+                  >
+                    <Volume2 className="w-5 h-5 text-amber-400" />
+                    <span>{s.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

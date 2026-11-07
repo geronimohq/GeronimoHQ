@@ -14,8 +14,8 @@ class CyberSynthEngine {
   public setVolume(percent: number) {
     this.volumeMultiplier = Math.max(0, Math.min(100, percent)) / 100;
     if (this.ctx && this.masterGain) {
-      // Increased default gain by 50% (0.45 * 1.5 = 0.675) per Geronimo's request
-      const baseGain = 0.68;
+      // Increased gain by an additional +30% (0.89 * 1.30 = 1.16) per Geronimo's request
+      const baseGain = 1.16;
       this.masterGain.gain.setValueAtTime(baseGain * this.volumeMultiplier, this.ctx.currentTime);
     }
   }
@@ -67,7 +67,7 @@ class CyberSynthEngine {
         try {
           this.ctx = new AudioContextClass();
           this.masterGain = this.ctx.createGain();
-          this.masterGain.gain.setValueAtTime(0.68 * this.volumeMultiplier, this.ctx.currentTime);
+          this.masterGain.gain.setValueAtTime(1.16 * this.volumeMultiplier, this.ctx.currentTime);
           this.masterGain.connect(this.ctx.destination);
         } catch {
           // ignore

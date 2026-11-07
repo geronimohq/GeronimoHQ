@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Gift, 
-  AlertTriangle 
-} from 'lucide-react';
+import { Gift } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface ScamAdConfig {
@@ -24,14 +21,14 @@ interface ScamAdConfig {
   prizeName: string;
 }
 
-const SCAM_ADS_CATALOG: ScamAdConfig[] = [
+export const SCAM_ADS_CATALOG: ScamAdConfig[] = [
   {
     id: 'millionth-visitor',
     badge: '⭐ 1,000,000th VISITOR! ⭐',
     badgeBg: 'bg-red-600',
     badgeFg: 'text-white',
     emojis: '🎁📱💰',
-    headline: 'YOU WON (1) FREE BITCOIN & IPHONE 18!',
+    headline: 'YOU WON (1) FREE BITCOIN & IPHONE 18 PRO MAX!',
     headlineColor: 'text-black',
     subBadge: 'EXPIRES IN: 00:45',
     subBg: 'bg-black',
@@ -41,7 +38,7 @@ const SCAM_ADS_CATALOG: ScamAdConfig[] = [
     gradient: 'from-yellow-300 via-amber-400 to-red-500',
     borderColor: 'border-red-600',
     shadow: 'shadow-[0_0_25px_rgba(250,204,21,0.85)]',
-    prizeName: 'iPhone 18 & 1 Bitcoin',
+    prizeName: 'iPhone 18 Pro Max & 1 Bitcoin',
   },
   {
     id: 'cs2-dragon-lore',
@@ -49,7 +46,7 @@ const SCAM_ADS_CATALOG: ScamAdConfig[] = [
     badgeBg: 'bg-fuchsia-700',
     badgeFg: 'text-white',
     emojis: '🔫💎🔥',
-    headline: 'AWP DRAGON LORE (FACTORY NEW) UNLOCKED!',
+    headline: 'AWP DRAGON LORE (FACTORY NEW) SOUVENIR UNLOCKED!',
     headlineColor: 'text-white',
     subBadge: 'GABEN SELECTED YOUR IP',
     subBg: 'bg-black',
@@ -59,7 +56,7 @@ const SCAM_ADS_CATALOG: ScamAdConfig[] = [
     gradient: 'from-cyan-400 via-fuchsia-500 to-indigo-700',
     borderColor: 'border-fuchsia-500',
     shadow: 'shadow-[0_0_25px_rgba(236,72,153,0.85)]',
-    prizeName: 'AWP Dragon Lore FN',
+    prizeName: 'AWP Dragon Lore FN Souvenir',
   },
   {
     id: 'pc-viruses',
@@ -85,7 +82,7 @@ const SCAM_ADS_CATALOG: ScamAdConfig[] = [
     badgeBg: 'bg-emerald-600',
     badgeFg: 'text-white',
     emojis: '⚡🖥️🚀',
-    headline: 'FREE NVIDIA RTX 5090 Ti TITAN OC READY!',
+    headline: 'FREE NVIDIA RTX 5090 Ti TITAN 64GB READY!',
     headlineColor: 'text-emerald-950',
     subBadge: 'ZERO TARIFFS APPLIED',
     subBg: 'bg-black',
@@ -103,7 +100,7 @@ const SCAM_ADS_CATALOG: ScamAdConfig[] = [
     badgeBg: 'bg-pink-600',
     badgeFg: 'text-white',
     emojis: '👩‍🦰🎯💘',
-    headline: 'HOT SINGLES IN YOUR DUST2 SERVER WANT TO 1v1!',
+    headline: 'HOT ZE PLAYERS IN YOUR AREA WANT TO 1v1!',
     headlineColor: 'text-pink-950',
     subBadge: 'DISTANCE: 0.4 METERS AWAY',
     subBg: 'bg-pink-950',
@@ -121,7 +118,7 @@ const SCAM_ADS_CATALOG: ScamAdConfig[] = [
     badgeBg: 'bg-zinc-800',
     badgeFg: 'text-white',
     emojis: '🏎️🔋🤖',
-    headline: 'ELON MUSK GIFTED YOU A CYBERTRUCK!',
+    headline: 'ELON MUSK GIFTED YOU A CYBERTRUCK CYBERBEAST!',
     headlineColor: 'text-black',
     subBadge: 'STAINLESS STEEL GUARANTEED',
     subBg: 'bg-black',
@@ -131,7 +128,7 @@ const SCAM_ADS_CATALOG: ScamAdConfig[] = [
     gradient: 'from-slate-200 via-zinc-400 to-slate-300',
     borderColor: 'border-zinc-700',
     shadow: 'shadow-[0_0_25px_rgba(203,213,225,0.7)]',
-    prizeName: 'CyberTruck Foundation Edition',
+    prizeName: 'CyberTruck Cyberbeast Edition',
   },
   {
     id: 'vbucks-billion',
@@ -139,7 +136,7 @@ const SCAM_ADS_CATALOG: ScamAdConfig[] = [
     badgeBg: 'bg-blue-600',
     badgeFg: 'text-white',
     emojis: '💎⛏️🍕',
-    headline: 'DOWNLOAD 1,000,000 V-BUCKS & 100,000 ROBUX!',
+    headline: 'DOWNLOAD 10,000,000 V-BUCKS & 1,000,000 ROBUX!',
     headlineColor: 'text-blue-950',
     subBadge: 'NO PARENTAL PERMISSION NEEDED',
     subBg: 'bg-black',
@@ -149,7 +146,7 @@ const SCAM_ADS_CATALOG: ScamAdConfig[] = [
     gradient: 'from-sky-300 via-cyan-400 to-blue-500',
     borderColor: 'border-blue-600',
     shadow: 'shadow-[0_0_25px_rgba(56,189,248,0.85)]',
-    prizeName: '1,000,000 V-Bucks Direct Inject',
+    prizeName: '10,000,000 V-Bucks Direct Inject',
   },
   {
     id: 'secret-fbi',
@@ -157,7 +154,7 @@ const SCAM_ADS_CATALOG: ScamAdConfig[] = [
     badgeBg: 'bg-neutral-900',
     badgeFg: 'text-amber-400',
     emojis: '🕵️‍♂️📂🔒',
-    headline: 'TOP SECRET DOSSIER ON GERONIMO FOUND!',
+    headline: 'TOP SECRET DOSSIER ON GERONIMO REVEALED!',
     headlineColor: 'text-green-400',
     subBadge: 'LEVEL 5 CLEARANCE REQUIRED',
     subBg: 'bg-black',
@@ -175,9 +172,9 @@ const SCAM_ADS_CATALOG: ScamAdConfig[] = [
     badgeBg: 'bg-amber-600',
     badgeFg: 'text-white',
     emojis: '🍕🧀🥤',
-    headline: 'UNLIMITED EXTRA CHEESE PIZZA FOR LIFE!',
+    headline: 'UNLIMITED EXTRA CHEESE PIZZA DELIVERED DAILY!',
     headlineColor: 'text-amber-950',
-    subBadge: 'HOT BOX DELIVERY: 12 MIN',
+    subBadge: 'HOT BOX DELIVERY: 10 MIN',
     subBg: 'bg-black',
     subFg: 'text-amber-300 border-amber-400',
     btnText: 'EAT PIZZA NOW >>',
@@ -193,7 +190,7 @@ const SCAM_ADS_CATALOG: ScamAdConfig[] = [
     badgeBg: 'bg-red-700',
     badgeFg: 'text-white',
     emojis: '🌡️🔥🚒',
-    headline: 'YOUR MOTHERBOARD IS AT 1,420°C!',
+    headline: 'YOUR MOTHERBOARD IS AT 1,420°C RIGHT NOW!',
     headlineColor: 'text-white',
     subBadge: 'DOWNLOAD WATER COOLING NOW',
     subBg: 'bg-black',
@@ -229,7 +226,7 @@ const SCAM_ADS_CATALOG: ScamAdConfig[] = [
     badgeBg: 'bg-purple-800',
     badgeFg: 'text-white',
     emojis: '⚡📈👑',
-    headline: 'SECRET CS2 CONSOLE COMMAND GIVES 800 FPS!',
+    headline: 'SECRET CS2 CONSOLE COMMAND GIVES 999 FPS!',
     headlineColor: 'text-purple-950',
     subBadge: '100% NO BAN GUARANTEE*',
     subBg: 'bg-black',
@@ -240,6 +237,222 @@ const SCAM_ADS_CATALOG: ScamAdConfig[] = [
     borderColor: 'border-purple-600',
     shadow: 'shadow-[0_0_25px_rgba(168,85,247,0.85)]',
     prizeName: 'Zero-Latency Engine Config',
+  },
+  {
+    id: 'nigerian-prince',
+    badge: '👑 ROYAL WIRE TRANSFER 👑',
+    badgeBg: 'bg-amber-700',
+    badgeFg: 'text-yellow-200',
+    emojis: '🏰💎✉️',
+    headline: 'PRINCE ABIDEMI WANTS TO SEND YOU $42,000,000!',
+    headlineColor: 'text-yellow-950',
+    subBadge: 'REQUIRES $5 STEAM GIFT CARD',
+    subBg: 'bg-black',
+    subFg: 'text-yellow-400 border-yellow-500',
+    btnText: 'ACCEPT INHERITANCE >>',
+    btnBg: 'bg-emerald-600 hover:bg-emerald-700',
+    gradient: 'from-amber-200 via-yellow-300 to-amber-500',
+    borderColor: 'border-amber-600',
+    shadow: 'shadow-[0_0_25px_rgba(217,119,6,0.85)]',
+    prizeName: '$42,000,000 Royal Gold Wire',
+  },
+  {
+    id: 'cs2-knife-gold',
+    badge: '🔪 CS2 CASE SIMULATOR 🔪',
+    badgeBg: 'bg-yellow-600',
+    badgeFg: 'text-black',
+    emojis: '📦✨🗡️',
+    headline: '★ BUTTERFLY KNIFE DOPPLER SAPPHIRE WON!',
+    headlineColor: 'text-white',
+    subBadge: 'CHANCE: 0.0000001%',
+    subBg: 'bg-indigo-950',
+    subFg: 'text-blue-300 border-blue-400',
+    btnText: 'SEND TRADE OFFER >>',
+    btnBg: 'bg-blue-600 hover:bg-blue-700',
+    gradient: 'from-indigo-900 via-blue-900 to-purple-900',
+    borderColor: 'border-cyan-400',
+    shadow: 'shadow-[0_0_25px_rgba(96,165,250,0.9)]',
+    prizeName: '★ Butterfly Knife Doppler Sapphire',
+  },
+  {
+    id: 'free-ram-stick',
+    badge: '💾 PHYSICAL RAM DELIVERY 💾',
+    badgeBg: 'bg-cyan-700',
+    badgeFg: 'text-white',
+    emojis: '🚚📦🧠',
+    headline: '512GB DDR6 9600MHz RGB TRIDENT Z ON TRUCK!',
+    headlineColor: 'text-cyan-950',
+    subBadge: 'TRACKING NUMBER: #RAM-420',
+    subBg: 'bg-black',
+    subFg: 'text-cyan-400 border-cyan-400',
+    btnText: 'SIGN FOR PARCEL >>',
+    btnBg: 'bg-cyan-600 hover:bg-cyan-700',
+    gradient: 'from-cyan-200 via-sky-300 to-blue-400',
+    borderColor: 'border-cyan-500',
+    shadow: 'shadow-[0_0_25px_rgba(6,182,212,0.85)]',
+    prizeName: '512GB DDR6 9600MHz Kit',
+  },
+  {
+    id: 'gaben-interview',
+    badge: '🎙️ VALVE HEADQUARTERS 🎙️',
+    badgeBg: 'bg-neutral-800',
+    badgeFg: 'text-white',
+    emojis: '🏢☕🍕',
+    headline: 'GABE NEWELL HIRED YOU AS CS2 LEAD DESIGNER!',
+    headlineColor: 'text-white',
+    subBadge: 'SALARY: 10,000 CS2 CASES/YR',
+    subBg: 'bg-black',
+    subFg: 'text-orange-400 border-orange-400',
+    btnText: 'START MONDAY >>',
+    btnBg: 'bg-orange-600 hover:bg-orange-700',
+    gradient: 'from-neutral-800 via-stone-800 to-zinc-900',
+    borderColor: 'border-orange-500',
+    shadow: 'shadow-[0_0_25px_rgba(249,115,22,0.8)]',
+    prizeName: 'Valve CS2 Senior Architect Badge',
+  },
+  {
+    id: 'mako-reactor-core',
+    badge: '☢️ ZE SPECIAL LOOT ☢️',
+    badgeBg: 'bg-green-700',
+    badgeFg: 'text-white',
+    emojis: '🧪🔋💥',
+    headline: 'MAKO REACTOR ULTIMA MATERIA INVENTORY DROP!',
+    headlineColor: 'text-green-950',
+    subBadge: 'CAST TIME: 0.1 SECONDS',
+    subBg: 'bg-black',
+    subFg: 'text-emerald-400 border-emerald-400',
+    btnText: 'EQUIP MATERIA >>',
+    btnBg: 'bg-emerald-600 hover:bg-emerald-700',
+    gradient: 'from-emerald-300 via-green-400 to-teal-500',
+    borderColor: 'border-emerald-500',
+    shadow: 'shadow-[0_0_25px_rgba(16,185,129,0.9)]',
+    prizeName: 'FFVII Ultima Materia Core',
+  },
+  {
+    id: 'subtick-god',
+    badge: '⚡ SUB-TICK PURITY ⚡',
+    badgeBg: 'bg-yellow-400',
+    badgeFg: 'text-black',
+    emojis: '🎯🕒⚡',
+    headline: 'YOUR CS2 PING HAS BEEN REDUCED TO -5 MS!',
+    headlineColor: 'text-yellow-950',
+    subBadge: 'YOU SHOOT BEFORE THEY SPAWN',
+    subBg: 'bg-black',
+    subFg: 'text-yellow-300 border-yellow-400',
+    btnText: 'TIME TRAVEL >>',
+    btnBg: 'bg-yellow-500 hover:bg-yellow-600 text-black',
+    gradient: 'from-yellow-200 via-amber-300 to-yellow-400',
+    borderColor: 'border-yellow-500',
+    shadow: 'shadow-[0_0_25px_rgba(234,179,8,0.9)]',
+    prizeName: 'Quantum Negative Ping Router',
+  },
+  {
+    id: 'pepe-synth-vinyl',
+    badge: '🎵 SYNTHWAVE MASTER TAPE 🎵',
+    badgeBg: 'bg-fuchsia-800',
+    badgeFg: 'text-white',
+    emojis: '📼🎧🪩',
+    headline: 'SIGNED GERONIMO PEPE SYNTH 24-HOUR CASSETTE!',
+    headlineColor: 'text-fuchsia-950',
+    subBadge: 'PURE BASSLINE OVERLOAD',
+    subBg: 'bg-black',
+    subFg: 'text-fuchsia-400 border-fuchsia-400',
+    btnText: 'INSERT TAPE >>',
+    btnBg: 'bg-fuchsia-600 hover:bg-fuchsia-700',
+    gradient: 'from-fuchsia-200 via-pink-300 to-rose-400',
+    borderColor: 'border-fuchsia-500',
+    shadow: 'shadow-[0_0_25px_rgba(217,70,239,0.85)]',
+    prizeName: 'Pure Gold Pepe Synth Tape',
+  },
+  {
+    id: 'steam-deck-oled',
+    badge: '🕹️ VALVE HANDHELD 🕹️',
+    badgeBg: 'bg-indigo-700',
+    badgeFg: 'text-white',
+    emojis: '🎮🖥️✨',
+    headline: 'FREE STEAM DECK 2TB OLED SPECIAL EDITION!',
+    headlineColor: 'text-indigo-950',
+    subBadge: 'INCLUDES PRE-INSTALLED CS2',
+    subBg: 'bg-black',
+    subFg: 'text-indigo-300 border-indigo-400',
+    btnText: 'SHIP HANDHELD >>',
+    btnBg: 'bg-indigo-600 hover:bg-indigo-700',
+    gradient: 'from-indigo-200 via-sky-300 to-indigo-400',
+    borderColor: 'border-indigo-500',
+    shadow: 'shadow-[0_0_25px_rgba(99,102,241,0.85)]',
+    prizeName: 'Steam Deck OLED 2TB Edition',
+  },
+  {
+    id: 'bhop-macro-mouse',
+    badge: '🐇 CS2 MOVEMENT HAX 🐇',
+    badgeBg: 'bg-teal-700',
+    badgeFg: 'text-white',
+    emojis: '🖱️🦘🌪️',
+    headline: 'INFINITE BHOP SCROLL WHEEL MOUSE (0 FRICTION)!',
+    headlineColor: 'text-teal-950',
+    subBadge: 'GAINS 400 VELOCITY INSTANTLY',
+    subBg: 'bg-black',
+    subFg: 'text-teal-300 border-teal-400',
+    btnText: 'SPIN WHEEL >>',
+    btnBg: 'bg-teal-600 hover:bg-teal-700',
+    gradient: 'from-teal-200 via-emerald-300 to-teal-400',
+    borderColor: 'border-teal-500',
+    shadow: 'shadow-[0_0_25px_rgba(20,184,166,0.85)]',
+    prizeName: 'Ball-Bearing Scroll Wheel Mouse',
+  },
+  {
+    id: 'airhorn-dj-deck',
+    badge: '📢 MLG NOSTALGIA 📢',
+    badgeBg: 'bg-red-600',
+    badgeFg: 'text-white',
+    emojis: '🎺🕶️ Doritos',
+    headline: 'MLG ILLUMINATI SOUNDBOARD & DORITOS CANNON!',
+    headlineColor: 'text-red-950',
+    subBadge: '360 NO SCOPE HITMARKER READY',
+    subBg: 'bg-black',
+    subFg: 'text-red-400 border-red-500',
+    btnText: 'BLOW AIRHORN >>',
+    btnBg: 'bg-red-600 hover:bg-red-700',
+    gradient: 'from-red-300 via-orange-400 to-yellow-500',
+    borderColor: 'border-red-600',
+    shadow: 'shadow-[0_0_25px_rgba(239,68,68,0.9)]',
+    prizeName: 'MLG Triple Airhorn Controller',
+  },
+  {
+    id: 'free-boba-tea',
+    badge: '🧋 LIFETIME BOBA PASS 🧋',
+    badgeBg: 'bg-amber-800',
+    badgeFg: 'text-white',
+    emojis: '🧋🍡🥤',
+    headline: 'UNLIMITED BROWN SUGAR BOBA MILK TEA FOR LIFE!',
+    headlineColor: 'text-amber-950',
+    subBadge: 'WARM TAPIOCA GUARANTEED',
+    subBg: 'bg-black',
+    subFg: 'text-amber-300 border-amber-400',
+    btnText: 'DRINK BOBA >>',
+    btnBg: 'bg-amber-600 hover:bg-amber-700',
+    gradient: 'from-amber-100 via-yellow-200 to-amber-300',
+    borderColor: 'border-amber-500',
+    shadow: 'shadow-[0_0_25px_rgba(217,119,6,0.85)]',
+    prizeName: 'Brown Sugar Boba VIP Card',
+  },
+  {
+    id: 'anti-alt-tab-shield',
+    badge: '🛡️ ZERO CRASH CERTIFICATE 🛡️',
+    badgeBg: 'bg-emerald-800',
+    badgeFg: 'text-white',
+    emojis: '💻⚡🛡️',
+    headline: 'NEVER CRASH ON ALT-TAB IN CS2 EVER AGAIN!',
+    headlineColor: 'text-emerald-950',
+    subBadge: 'MPO REPAIR PROTOCOL LOADED',
+    subBg: 'bg-black',
+    subFg: 'text-emerald-300 border-emerald-400',
+    btnText: 'INSTALL SHIELD >>',
+    btnBg: 'bg-emerald-600 hover:bg-emerald-700',
+    gradient: 'from-emerald-200 via-teal-300 to-cyan-400',
+    borderColor: 'border-emerald-600',
+    shadow: 'shadow-[0_0_25px_rgba(16,185,129,0.85)]',
+    prizeName: 'Direct-Flip Anti-Crash Module',
   }
 ];
 
@@ -250,10 +463,11 @@ export const FakeRetroScamAds: React.FC = () => {
   const [wheelAngle, setWheelAngle] = useState(0);
   const [countdown, setCountdown] = useState(45);
   const [selectedCaptcha, setSelectedCaptcha] = useState<number[]>([]);
+  const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
   const [calibratingProgress, setCalibratingProgress] = useState(98.1);
   const [closeAttempts, setCloseAttempts] = useState(0);
 
-  // RNG Banner Indices
+  // High-Variance Non-Repeating Shuffled Indices
   const [leftAdIndex, setLeftAdIndex] = useState<number>(() => Math.floor(Math.random() * SCAM_ADS_CATALOG.length));
   const [rightAdIndex, setRightAdIndex] = useState<number>(() => {
     let r = Math.floor(Math.random() * SCAM_ADS_CATALOG.length);
@@ -265,23 +479,23 @@ export const FakeRetroScamAds: React.FC = () => {
   const [activeAd, setActiveAd] = useState<ScamAdConfig>(SCAM_ADS_CATALOG[0]);
 
   // Dynamic High-Variance RNG Rotation Timer:
-  // Randomly cycles both banners independently every 7 to 10 seconds!
+  // Randomly cycles both banners independently every 5.5 to 7.5 seconds!
   useEffect(() => {
     const leftTimer = setInterval(() => {
       setLeftAdIndex((prev) => {
         let next = Math.floor(Math.random() * SCAM_ADS_CATALOG.length);
-        if (next === prev) next = (next + 1) % SCAM_ADS_CATALOG.length;
+        if (next === prev) next = (next + 3) % SCAM_ADS_CATALOG.length;
         return next;
       });
-    }, 7500);
+    }, 5800);
 
     const rightTimer = setInterval(() => {
       setRightAdIndex((prev) => {
         let next = Math.floor(Math.random() * SCAM_ADS_CATALOG.length);
-        if (next === prev) next = (next + 2) % SCAM_ADS_CATALOG.length;
+        if (next === prev) next = (next + 7) % SCAM_ADS_CATALOG.length;
         return next;
       });
-    }, 9200);
+    }, 7200);
 
     return () => {
       clearInterval(leftTimer);
@@ -303,30 +517,39 @@ export const FakeRetroScamAds: React.FC = () => {
     setStep(1);
     setWheelAngle(0);
     setSelectedCaptcha([]);
+    setQuizAnswer(null);
     setCalibratingProgress(98.1);
   };
 
   const rerollLeft = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setLeftAdIndex((prev) => (prev + 1) % SCAM_ADS_CATALOG.length);
+    setLeftAdIndex((prev) => {
+      let next = Math.floor(Math.random() * SCAM_ADS_CATALOG.length);
+      if (next === prev) next = (next + 1) % SCAM_ADS_CATALOG.length;
+      return next;
+    });
   };
 
   const rerollRight = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setRightAdIndex((prev) => (prev + 1) % SCAM_ADS_CATALOG.length);
+    setRightAdIndex((prev) => {
+      let next = Math.floor(Math.random() * SCAM_ADS_CATALOG.length);
+      if (next === prev) next = (next + 1) % SCAM_ADS_CATALOG.length;
+      return next;
+    });
   };
 
   const handleSpin = () => {
     if (isSpinning) return;
     setIsSpinning(true);
-    // Rigged spin: always lands just past the jackpot into "SPIN AGAIN / SURVEY REQUIRED"
-    const targetAngle = wheelAngle + 1800 + 45;
+    // Rigged spin: always lands just past the jackpot into "EXTRA VERIFICATION REQUIRED"
+    const targetAngle = wheelAngle + 1800 + Math.floor(Math.random() * 4) * 45 + 25;
     setWheelAngle(targetAngle);
 
     setTimeout(() => {
       setIsSpinning(false);
       setStep(2);
-    }, 3200);
+    }, 3000);
   };
 
   const handleCaptchaSubmit = () => {
@@ -335,26 +558,32 @@ export const FakeRetroScamAds: React.FC = () => {
       return;
     }
     setStep(3);
+  };
 
-    // Slowly calibrate progress
-    let cur = 98.1;
-    const progTimer = setInterval(() => {
-      cur += 0.2;
-      if (cur >= 99.8) {
-        clearInterval(progTimer);
-        setTimeout(() => setStep(4), 1000);
-      } else {
-        setCalibratingProgress(Number(cur.toFixed(1)));
-      }
-    }, 350);
+  const handleQuizSubmit = (optIndex: number) => {
+    setQuizAnswer(optIndex);
+    setTimeout(() => {
+      setStep(4);
+      // Slowly calibrate progress to 99.8%
+      let cur = 98.1;
+      const progTimer = setInterval(() => {
+        cur += 0.3;
+        if (cur >= 99.8) {
+          clearInterval(progTimer);
+          setTimeout(() => setStep(5), 1000);
+        } else {
+          setCalibratingProgress(Number(cur.toFixed(1)));
+        }
+      }, 300);
+    }, 600);
   };
 
   const handleClaimFinalPrize = () => {
     confetti({
-      particleCount: 80,
-      spread: 90,
+      particleCount: 120,
+      spread: 100,
       origin: { y: 0.6 },
-      colors: ['#ffe600', '#f59e0b', '#00ffcc', '#ff007f']
+      colors: ['#ffe600', '#f59e0b', '#00ffcc', '#ff007f', '#10b981']
     });
     setIsOpen(false);
     // Scroll down to the RAM download holo-chamber
@@ -367,7 +596,7 @@ export const FakeRetroScamAds: React.FC = () => {
   const handleTrollClose = () => {
     if (closeAttempts < 2) {
       setCloseAttempts((c) => c + 1);
-      alert(`🚨 WAIT! Are you sure? If you leave now, your ${activeAd.prizeName} will be transferred to another visitor in 5 seconds!`);
+      alert(`🚨 WAIT! Are you sure? If you leave now, your guaranteed ${activeAd.prizeName} will be forfeited to player #420 in 5 seconds!`);
     } else {
       setIsOpen(false);
       setCloseAttempts(0);
@@ -390,7 +619,7 @@ export const FakeRetroScamAds: React.FC = () => {
           <button
             onClick={rerollLeft}
             className="absolute -top-2 -right-2 bg-black/80 hover:bg-black text-[9px] text-yellow-300 font-mono px-1.5 py-0.5 rounded border border-yellow-400 shadow z-10 cursor-pointer"
-            title="Roll next scam ad (RNG)"
+            title="Roll next scam ad (High RNG)"
           >
             🎲 RNG
           </button>
@@ -424,7 +653,7 @@ export const FakeRetroScamAds: React.FC = () => {
           <button
             onClick={rerollRight}
             className="absolute -top-2 -left-2 bg-black/80 hover:bg-black text-[9px] text-cyan-300 font-mono px-1.5 py-0.5 rounded border border-cyan-400 shadow z-10 cursor-pointer"
-            title="Roll next scam ad (RNG)"
+            title="Roll next scam ad (High RNG)"
           >
             🎲 RNG
           </button>
@@ -432,10 +661,10 @@ export const FakeRetroScamAds: React.FC = () => {
           <div className={`${rightAd.badgeBg} ${rightAd.badgeFg} font-black text-[9px] tracking-wider px-1 py-0.5 rounded uppercase mb-1 truncate`}>
             {rightAd.badge}
           </div>
-          <div className="flex justify-center my-1 text-2xl animate-spin" style={{ animationDuration: '4.5s' }}>
-            {rightAd.emojis.slice(0, 2) || '🎡'}
+          <div className="flex justify-center my-1 text-2xl animate-bounce">
+            {rightAd.emojis}
           </div>
-          <div className={`font-extrabold ${rightAd.headlineColor} text-[11px] leading-tight drop-shadow-md font-sans uppercase min-h-[32px] flex items-center justify-center`}>
+          <div className={`font-extrabold ${rightAd.headlineColor} text-[11px] leading-tight drop-shadow-sm font-sans uppercase min-h-[32px] flex items-center justify-center`}>
             {rightAd.headline}
           </div>
           <div className={`mt-1.5 py-0.5 px-1 ${rightAd.subBg} ${rightAd.subFg} font-mono text-[8px] font-bold rounded border truncate`}>
@@ -447,202 +676,220 @@ export const FakeRetroScamAds: React.FC = () => {
         </div>
       </div>
 
-      {/* THE ENDLESS SCAM SURVEY HOLO-TERMINAL MODAL */}
+      {/* INTERACTIVE RETRO SCAM ENDLESS TASK MODAL */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="relative w-full max-w-lg bg-[#000080] border-4 border-[#c0c0c0] shadow-[0_0_50px_rgba(0,0,0,0.9)] font-sans text-black overflow-hidden rounded-none">
-            
-            {/* Windows 98 / Early 2000s Classic Blue Window Title Bar */}
-            <div className="bg-gradient-to-r from-[#000080] via-[#1084d0] to-[#000080] text-white font-bold text-xs px-2 py-1.5 flex items-center justify-between select-none">
-              <div className="flex items-center gap-1.5">
-                <Gift className="w-4 h-4 text-yellow-300" />
-                <span className="tracking-wide uppercase">
-                  OFFICIAL {activeAd.prizeName.toUpperCase()} CLAIM TERMINAL // STEP {step} OF 99
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-lg bg-slate-900 border-4 border-yellow-400 rounded-xl shadow-[0_0_50px_rgba(250,204,21,0.5)] overflow-hidden font-sans">
+            {/* Retro Windows 98 Style Title Bar */}
+            <div className="bg-gradient-to-r from-blue-800 to-blue-600 px-3 py-1.5 flex items-center justify-between text-white border-b-2 border-yellow-400 select-none">
+              <div className="flex items-center gap-2">
+                <Gift className="w-4 h-4 text-yellow-300 animate-spin" />
+                <span className="font-bold text-xs tracking-wider">
+                  OFFICIAL CLAIM WIZARD // PRIZE DISPATCHER v4.20
                 </span>
               </div>
               <button 
                 onClick={handleTrollClose}
-                className="w-5 h-5 bg-[#c0c0c0] text-black font-bold text-xs flex items-center justify-center border-t border-l border-white border-b-2 border-r-2 border-black active:border-t-2 active:border-l-2 active:border-b active:border-r cursor-pointer"
+                className="w-5 h-5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center justify-center border border-white cursor-pointer"
+                title="Attempt to Close (Risky!)"
               >
                 ✕
               </button>
             </div>
 
-            {/* Window Content Body */}
-            <div className="p-4 bg-[#c0c0c0]">
-              
-              {/* STEP 1: RIGGED WHEEL */}
+            {/* Modal Body */}
+            <div className="p-5 text-center text-slate-100">
+              {/* STAGE 1: THE RIGGED ROULETTE */}
               {step === 1 && (
-                <div className="flex flex-col items-center text-center">
-                  <h3 className="text-base font-black text-red-700 uppercase tracking-tight mb-1">
-                    🎉 YOU HAVE (1) COMPLIMENTARY PRIZE SPIN! 🎉
+                <div className="space-y-4">
+                  <div className="inline-block bg-yellow-400 text-black font-black text-xs px-3 py-1 rounded-full uppercase tracking-widest animate-pulse">
+                    STEP 1 OF 5: LUCKY WHEEL OF DESTINY
+                  </div>
+                  <h3 className="text-xl font-black text-yellow-300 drop-shadow">
+                    SPIN TO UNLOCK: {activeAd.prizeName.toUpperCase()}!
                   </h3>
-                  <p className="text-xs text-gray-800 mb-3">
-                    Click <strong>SPIN</strong> below to secure your <strong>{activeAd.prizeName}</strong>!
+                  <p className="text-xs text-slate-300">
+                    Every visitor gets 100% chance of winning today. Spin the wheel to allocate your prize!
                   </p>
 
-                  {/* Wheel Graphic */}
-                  <div className="relative w-44 h-44 my-2 flex items-center justify-center">
-                    {/* Fixed Pointer Needle */}
-                    <div className="absolute -top-3 z-20 text-red-600 text-xl font-black">
-                      ▼
-                    </div>
-                    {/* Rotating Wheel */}
+                  {/* Roulette Graphic */}
+                  <div className="relative w-48 h-48 mx-auto my-3 flex items-center justify-center">
                     <div 
-                      className="w-40 h-40 rounded-full border-4 border-black relative overflow-hidden transition-transform ease-out shadow-lg"
+                      className="w-full h-full rounded-full border-4 border-yellow-400 shadow-lg transition-transform ease-out flex items-center justify-center"
                       style={{ 
                         transform: `rotate(${wheelAngle}deg)`,
-                        transitionDuration: isSpinning ? '3.2s' : '0s',
-                        background: 'conic-gradient(#facc15 0deg 90deg, #3b82f6 90deg 180deg, #ef4444 180deg 270deg, #10b981 270deg 360deg)'
+                        transitionDuration: isSpinning ? '3.0s' : '0s',
+                        background: 'conic-gradient(#ef4444 0% 12.5%, #f59e0b 12.5% 25%, #10b981 25% 37.5%, #3b82f6 37.5% 50%, #8b5cf6 50% 62.5%, #ec4899 62.5% 75%, #06b6d4 75% 87.5%, #eab308 87.5% 100%)'
                       }}
                     >
-                      <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white">
-                        <span className="absolute top-2 text-black">1 BTC 💰</span>
-                        <span className="absolute bottom-2 text-white">PRIZE 📱</span>
-                        <span className="absolute left-2 text-white">128GB RAM</span>
-                        <span className="absolute right-1 text-black">SPIN AGAIN 🔄</span>
+                      <div className="w-16 h-16 rounded-full bg-slate-900 border-2 border-white flex items-center justify-center text-xl">
+                        🎰
                       </div>
                     </div>
-                    {/* Center Peg */}
-                    <div className="absolute w-8 h-8 rounded-full bg-white border-2 border-black flex items-center justify-center z-10 font-bold text-[10px]">
-                      ⭐
+                    {/* Fixed Pointer */}
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl filter drop-shadow">
+                      🔻
                     </div>
                   </div>
 
                   <button
                     onClick={handleSpin}
                     disabled={isSpinning}
-                    className={`mt-4 px-6 py-2.5 text-sm font-black uppercase text-white rounded border-2 border-black tracking-wider transition-all ${
-                      isSpinning 
-                        ? 'bg-gray-500 cursor-not-allowed' 
-                        : 'bg-red-600 hover:bg-red-700 active:scale-95 cursor-pointer shadow-[0_4px_0_#000]'
-                    }`}
+                    className="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-black font-black text-sm rounded-lg shadow-lg cursor-pointer transform hover:scale-102 transition-all uppercase tracking-wider"
                   >
-                    {isSpinning ? 'SPINNING RIGGED WHEEL...' : '👉 CLICK TO SPIN NOW! 👈'}
+                    {isSpinning ? 'SPINNING WHEEL... PRAY TO GABEN!' : '🎲 SPIN THE WHEEL FOR FREE!'}
                   </button>
                 </div>
               )}
 
-              {/* STEP 2: PARODY CAPTCHA */}
+              {/* STAGE 2: IMPOSSIBLE HUMAN CAPTCHA */}
               {step === 2 && (
-                <div className="flex flex-col text-left">
-                  <div className="p-2 bg-yellow-100 border border-yellow-500 rounded text-xs text-yellow-900 mb-3 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                    <span><strong>ALMOST WON!</strong> Arrow landed on &quot;Spin Again / Survey Verification Required&quot;!</span>
+                <div className="space-y-4">
+                  <div className="inline-block bg-yellow-400 text-black font-black text-xs px-3 py-1 rounded-full uppercase tracking-widest">
+                    STEP 2 OF 5: ROBOT BOT FILTER (CAPTCHA)
                   </div>
-
-                  <h4 className="font-bold text-xs text-gray-900 uppercase mb-1">
-                    Human Security Check (Question 1 of 47):
-                  </h4>
-                  <p className="text-[11px] text-gray-700 mb-2">
-                    Select all images that contain a <strong>Dancing Banana vibrating at exactly 440 Hz</strong>:
+                  <h3 className="text-lg font-black text-yellow-300">
+                    SELECT ALL BANANA HOLOGRAMS THAT ARE TELEPHONES:
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    To prevent Russian botnets from taking your {activeAd.prizeName}, please click the correct tiles:
                   </p>
 
-                  <div className="grid grid-cols-3 gap-2 my-2">
-                    {[
-                      { id: 1, label: 'Banana 1', emoji: '🍌' },
-                      { id: 2, label: 'Banana 2', emoji: '🍌' },
-                      { id: 3, label: 'Pepe', emoji: '🐸' },
-                      { id: 4, label: 'Telephone', emoji: '📞' },
-                      { id: 5, label: 'Banana 3', emoji: '🍌' },
-                      { id: 6, label: 'Computer RAM', emoji: '💾' },
-                    ].map((item) => {
-                      const isSel = selectedCaptcha.includes(item.id);
+                  {/* 3x3 Grid Captcha */}
+                  <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto my-3">
+                    {['🍌', '📞', '🍌', '🐸', '🍌', '💾', '🍌', '🍔', '🍌'].map((emoji, idx) => {
+                      const isSelected = selectedCaptcha.includes(idx);
                       return (
-                        <div
-                          key={item.id}
+                        <button
+                          key={idx}
+                          type="button"
                           onClick={() => {
-                            setSelectedCaptcha((prev) => 
-                              isSel ? prev.filter((x) => x !== item.id) : [...prev, item.id]
-                            );
+                            if (isSelected) {
+                              setSelectedCaptcha((prev) => prev.filter((i) => i !== idx));
+                            } else {
+                              setSelectedCaptcha((prev) => [...prev, idx]);
+                            }
                           }}
-                          className={`p-3 text-center border-2 rounded cursor-pointer transition-all select-none ${
-                            isSel 
-                              ? 'bg-blue-200 border-blue-600 font-bold' 
-                              : 'bg-white border-gray-400 hover:bg-gray-50'
+                          className={`h-20 rounded-lg text-3xl flex items-center justify-center border-2 transition-all cursor-pointer ${
+                            isSelected 
+                              ? 'bg-yellow-400/30 border-yellow-400 scale-95 shadow-[0_0_15px_rgba(250,204,21,0.6)]' 
+                              : 'bg-slate-800 border-slate-700 hover:border-slate-500'
                           }`}
                         >
-                          <div className="text-2xl mb-1">{item.emoji}</div>
-                          <div className="text-[10px] text-gray-800">{item.label}</div>
-                          <input 
-                            type="checkbox" 
-                            checked={isSel} 
-                            readOnly 
-                            className="mt-1 pointer-events-none"
-                          />
-                        </div>
+                          {emoji}
+                        </button>
                       );
                     })}
                   </div>
 
                   <button
                     onClick={handleCaptchaSubmit}
-                    className="mt-3 w-full py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs uppercase rounded border-2 border-black shadow-[0_3px_0_#000] active:translate-y-0.5 cursor-pointer"
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg uppercase tracking-wider cursor-pointer shadow"
                   >
-                    Verify &amp; Continue &gt;&gt;
+                    VERIFY HUMAN TELEPHONE STATUS &gt;&gt;
                   </button>
                 </div>
               )}
 
-              {/* STEP 3: FAKE SATELLITE CALIBRATION PROGRESS BAR */}
+              {/* STAGE 3: QUICK CYBER QUIZ */}
               {step === 3 && (
-                <div className="flex flex-col text-center py-4">
-                  <div className="text-3xl mb-2 animate-bounce">
-                    🛰️📡
+                <div className="space-y-4">
+                  <div className="inline-block bg-yellow-400 text-black font-black text-xs px-3 py-1 rounded-full uppercase tracking-widest">
+                    STEP 3 OF 5: SYSTEM ELIGIBILITY SURVEY
                   </div>
-                  <h4 className="font-bold text-sm text-gray-900 uppercase mb-1">
-                    Calibrating Quantum Delivery Satellite...
-                  </h4>
-                  <p className="text-xs text-gray-700 mb-3">
-                    Locking GPS coordinates to beam your <strong>{activeAd.prizeName}</strong> to your chair:
+                  <h3 className="text-base font-black text-yellow-300">
+                    WHICH STATEMENT BEST DESCRIBES YOUR CURRENT GAMING RIG?
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    Survey helps configure delivery bandwidth for {activeAd.prizeName}:
                   </p>
 
-                  <div className="w-full bg-gray-300 border-2 border-gray-600 h-6 p-0.5 rounded overflow-hidden">
-                    <div 
-                      className="bg-blue-600 h-full text-white text-[10px] font-bold flex items-center justify-center transition-all duration-300"
-                      style={{ width: `${calibratingProgress}%` }}
-                    >
-                      {calibratingProgress}%
-                    </div>
+                  <div className="space-y-2 max-w-sm mx-auto text-left">
+                    {[
+                      'A) I have 128GB of cloud RAM downloaded from GeronimoHQ.',
+                      'B) My CS2 runs at 800 FPS using direct Direct-Flip optimizations.',
+                      'C) I unboxed an AWP Dragon Lore during my lunch break.',
+                      'D) All of the above, plus I listen to Banana Phone on 24/7 loop.'
+                    ].map((opt, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleQuizSubmit(i)}
+                        className={`w-full p-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer text-left ${
+                          quizAnswer === i 
+                            ? 'bg-emerald-600 border-emerald-400 text-white' 
+                            : 'bg-slate-800 border-slate-700 hover:border-yellow-400 text-slate-200'
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
                   </div>
-
-                  <p className="mt-3 text-[10px] text-gray-600 italic">
-                    Please do not close this window or turn off your computer...
-                  </p>
                 </div>
               )}
 
-              {/* STEP 4: HILARIOUS FINAL REVEAL & CONVERSION */}
+              {/* STAGE 4: FAKE LOADING & INJECTION */}
               {step === 4 && (
-                <div className="flex flex-col items-center text-center py-2">
-                  <div className="text-4xl mb-2">
-                    🏆🎉
+                <div className="space-y-4 py-4">
+                  <div className="inline-block bg-yellow-400 text-black font-black text-xs px-3 py-1 rounded-full uppercase tracking-widest">
+                    STEP 4 OF 5: ENCRYPTING PRIZE DISPATCH
                   </div>
-                  <h3 className="text-base font-black text-emerald-800 uppercase tracking-tight mb-1">
-                    CONGRATULATIONS, CHAMPION!
+                  <h3 className="text-lg font-black text-yellow-300">
+                    CALIBRATING QUANTUM CLOUD PIPELINE...
                   </h3>
-                  <p className="text-xs text-gray-800 mb-3">
-                    You have successfully passed the grueling 2000s verification gauntlet!
+                  <p className="text-xs text-slate-300">
+                    Binding {activeAd.prizeName} directly to your Windows hardware ID...
                   </p>
 
-                  <div className="p-3 bg-white border-2 border-gray-500 rounded text-left text-xs mb-4 w-full">
-                    <div className="font-bold text-red-600 mb-1">
-                      ⚠️ PRIZE CONVERSION NOTICE:
+                  <div className="max-w-md mx-auto my-3 p-3 bg-black rounded-lg border border-slate-700 text-left font-mono text-[10px] text-green-400 space-y-1">
+                    <div>&gt; CONNECTING: srv-74.91.124.21.gflclan.com... OK</div>
+                    <div>&gt; INJECTING: zero_latency_driver_x64.sys... OK</div>
+                    <div>&gt; BYPASSING: Steam Trade Hold Cooldown... BYPASSED!</div>
+                    <div>&gt; COMPRESSING: 1,000,000 banana megabytes... [{calibratingProgress}%]</div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="w-full bg-slate-800 rounded-full h-4 overflow-hidden border border-slate-700 p-0.5">
+                    <div 
+                      className="bg-gradient-to-r from-yellow-400 to-emerald-400 h-full rounded-full transition-all duration-300"
+                      style={{ width: `${calibratingProgress}%` }}
+                    />
+                  </div>
+                  <div className="text-xs font-mono text-yellow-300">
+                    STATUS: {calibratingProgress}% COMPLETE (DO NOT CLOSE THIS TAB)
+                  </div>
+                </div>
+              )}
+
+              {/* STAGE 5: FINAL TROLL CLAIM */}
+              {step === 5 && (
+                <div className="space-y-4 py-2 animate-bounce-subtle">
+                  <div className="inline-block bg-emerald-500 text-black font-black text-xs px-3 py-1 rounded-full uppercase tracking-widest">
+                    🎉 PRIZE CLAIM READY // 100% CERTIFIED
+                  </div>
+                  <h3 className="text-2xl font-black text-yellow-300">
+                    CONGRATULATIONS!
+                  </h3>
+                  <p className="text-xs text-slate-200">
+                    You survived all scam hurdles! Your <strong className="text-emerald-400">{activeAd.prizeName}</strong> has been saved under your session clearance frequency.
+                  </p>
+
+                  <div className="p-3.5 bg-yellow-400/10 border-2 border-yellow-400 rounded-xl space-y-1">
+                    <div className="text-xs font-mono text-yellow-300 font-bold">
+                      REDEEM CODE: <span className="text-white bg-black px-2 py-0.5 rounded border border-yellow-400">GERONIMO-BANANA-420-CS2</span>
                     </div>
-                    <p className="text-gray-700 text-[11px] leading-relaxed">
-                      Due to international holo-shipping restrictions, your <strong>{activeAd.prizeName}</strong> has been automatically converted into <strong>128 Gigabytes of 100% Free Pure Holographic RAM</strong> in the GeronimoHQ Holo-Chamber!
-                    </p>
+                    <div className="text-[10px] text-slate-400">
+                      Take this code to the RAM Holo-Chamber or the Secret Vault to finalize dispatch!
+                    </div>
                   </div>
 
                   <button
                     onClick={handleClaimFinalPrize}
-                    className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-black text-sm uppercase rounded border-2 border-black shadow-[0_4px_0_#000] active:translate-y-0.5 cursor-pointer tracking-wider"
+                    className="w-full py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black text-sm rounded-lg shadow-lg cursor-pointer transform hover:scale-102 transition-all uppercase tracking-wider"
                   >
-                    🚀 DOWNLOAD MY 128GB RAM NOW!
+                    🚀 DOWNLOAD FREE RAM & SEAL PRIZE NOW!
                   </button>
                 </div>
               )}
-
             </div>
           </div>
         </div>
