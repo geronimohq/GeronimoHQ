@@ -23,201 +23,187 @@ export const CryingPepe: React.FC<CryingPepeProps> = ({ className = '', isInspec
     >
       {/* Floating Mood Bubble on Interaction */}
       {showMessage && (
-        <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-30 whitespace-nowrap px-3 py-1 bg-cyan-950/90 border border-cyan-400 rounded text-cyan-300 text-xs font-code shadow-[0_0_15px_rgba(0,240,255,0.6)] animate-bounce">
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-30 whitespace-nowrap px-3 py-1 bg-cyan-950/95 border border-cyan-400 rounded text-cyan-300 text-xs font-code shadow-[0_0_15px_rgba(0,240,255,0.6)] animate-bounce">
           💔 FEELS BAD MAN... ({comfortCount} hugs sent)
         </div>
       )}
 
-      {/* Pepe SVG Vector */}
+      {/* Authentic Full-Body Crying Pepe SVG */}
       <div className="relative animate-pepe-cry">
         <svg
-          viewBox="0 0 240 240"
-          className="w-full h-auto drop-shadow-[0_0_20px_rgba(0,240,255,0.3)] transition-all group-hover:drop-shadow-[0_0_30px_rgba(0,240,255,0.6)]"
+          viewBox="0 0 240 270"
+          className="w-full h-auto drop-shadow-[0_0_20px_rgba(0,240,255,0.35)] transition-all group-hover:drop-shadow-[0_0_32px_rgba(0,240,255,0.7)]"
         >
           <defs>
-            <linearGradient id="pepeSadSkin" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#6ea837" />
-              <stop offset="60%" stop-color="#558f27" />
-              <stop offset="100%" stop-color="#3c6b19" />
+            <linearGradient id="authPepeSadSkin" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#619e34" />
+              <stop offset="55%" stopColor="#4f8828" />
+              <stop offset="100%" stopColor="#3c6b1c" />
             </linearGradient>
 
-            <linearGradient id="pepeSadLip" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#3a5e1a" />
-              <stop offset="100%" stop-color="#264110" />
+            <linearGradient id="authPepeSadLips" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#c44d2d" />
+              <stop offset="100%" stopColor="#96351b" />
             </linearGradient>
 
-            <linearGradient id="tearGlow" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.9" />
-              <stop offset="50%" stop-color="#38bdf8" stop-opacity="1" />
-              <stop offset="100%" stop-color="#80e5ff" stop-opacity="0.4" />
+            <linearGradient id="tearGlowStream" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.95" />
+              <stop offset="60%" stopColor="#00f0ff" stopOpacity="1" />
+              <stop offset="100%" stopColor="#bae6fd" stopOpacity="0.7" />
             </linearGradient>
-
-            <filter id="neonTearGlow">
-              <feGaussianBlur stdDeviation="2.5" result="glow" />
-              <feMerge>
-                <feMergeNode in="glow" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
           </defs>
 
-          {/* Blue Cyber Hood / Shirt */}
+          {/* Tear Puddle at Pepe's Feet */}
+          <ellipse cx="120" cy="256" rx="58" ry="8" fill="#00f0ff" opacity="0.28" className="animate-pulse" />
+          <ellipse cx="120" cy="256" rx="36" ry="4.5" fill="#38bdf8" opacity="0.45" />
+
+          {/* Full Standing Frog Legs (Matching Authentic Pepe Reference) */}
           <path
-            d="M30 195 C45 175 75 165 120 165 C165 165 195 175 210 195 L225 240 L15 240 Z"
-            fill="#1e293b"
-            stroke="#00f0ff"
-            stroke-width="2"
-            stroke-opacity="0.4"
+            d="M92 222 L90 252 C90 258 104 258 105 252 L107 224 Z"
+            fill="url(#authPepeSadSkin)"
+            stroke="#142409"
+            strokeWidth="3.5"
+            strokeLinejoin="round"
           />
-          <path d="M90 170 L120 205 L150 170" fill="none" stroke="#00f0ff" stroke-width="1.5" stroke-opacity="0.5" />
-
-          {/* Pepe Head Outline */}
           <path
-            d="M48 135 C38 120 36 90 44 70 C54 48 85 40 120 40 C160 40 190 50 198 75 C206 100 200 125 186 142 C178 152 165 162 142 166 C105 172 65 160 48 135 Z"
-            fill="url(#pepeSadSkin)"
-            stroke="#1b3809"
-            stroke-width="4.5"
-            stroke-linejoin="round"
+            d="M134 222 L136 254 C136 260 150 260 151 254 L149 222 Z"
+            fill="url(#authPepeSadSkin)"
+            stroke="#142409"
+            strokeWidth="3.5"
+            strokeLinejoin="round"
           />
 
-          {/* Forehead wrinkles of deep sadness */}
-          <path d="M78 58 Q120 50 162 58" fill="none" stroke="#2c5013" stroke-width="3" stroke-linecap="round" />
-          <path d="M85 68 Q120 62 155 68" fill="none" stroke="#2c5013" stroke-width="2.5" stroke-linecap="round" />
+          {/* Full Standing Frog Torso / Belly */}
+          <path
+            d="M84 140 C76 168 76 205 85 224 C96 232 145 232 156 224 C165 202 164 162 152 136 Z"
+            fill="url(#authPepeSadSkin)"
+            stroke="#142409"
+            strokeWidth="3.8"
+            strokeLinejoin="round"
+          />
 
-          {/* Left Eye (Sad, droopy, watery) */}
-          <g transform="translate(0, 0)">
-            {/* Eye Sockets */}
-            <ellipse cx="82" cy="92" rx="28" ry="24" fill="#2d5214" />
-            {/* Sclera */}
-            <path
-              d="M58 96 C62 80 82 76 104 84 C108 98 98 108 80 108 C66 108 58 102 58 96 Z"
-              fill="#f1f5f9"
-              stroke="#1b3809"
-              stroke-width="3"
-            />
-            {/* Pupil Looking Down and Wet */}
-            <ellipse cx="84" cy="98" rx="10" ry="11" fill="#0f172a" />
-            <circle cx="81" cy="94" r="3.5" fill="#ffffff" />
-            <circle cx="87" cy="101" r="1.5" fill="#00f0ff" />
-            {/* Heavy Sad Upper Eyelid droop */}
-            <path
-              d="M54 84 C70 94 94 92 108 86 C106 74 88 74 68 76 Z"
-              fill="#4d8222"
-              stroke="#1b3809"
-              stroke-width="2.5"
-            />
-          </g>
+          {/* Authentic Two-Dome Pepe Head & Cheeks */}
+          <path
+            d="M54 112 C42 98 48 76 64 70 C66 48 84 36 106 42 C116 30 144 30 156 48 C174 56 184 78 180 104 C178 126 162 142 138 144 C102 148 64 138 54 112 Z"
+            fill="url(#authPepeSadSkin)"
+            stroke="#142409"
+            strokeWidth="3.8"
+            strokeLinejoin="round"
+          />
 
-          {/* Right Eye (Sad, droopy, watery) */}
-          <g transform="translate(0, 0)">
-            {/* Eye Sockets */}
-            <ellipse cx="152" cy="94" rx="28" ry="24" fill="#2d5214" />
-            {/* Sclera */}
-            <path
-              d="M130 98 C134 82 154 78 174 86 C178 100 168 110 150 110 C136 110 130 104 130 98 Z"
-              fill="#f1f5f9"
-              stroke="#1b3809"
-              stroke-width="3"
-            />
-            {/* Pupil */}
-            <ellipse cx="148" cy="100" rx="10" ry="11" fill="#0f172a" />
-            <circle cx="145" cy="96" r="3.5" fill="#ffffff" />
-            <circle cx="151" cy="103" r="1.5" fill="#00f0ff" />
-            {/* Upper eyelid */}
-            <path
-              d="M126 86 C142 96 166 94 178 88 C176 76 158 76 138 78 Z"
-              fill="#4d8222"
-              stroke="#1b3809"
-              stroke-width="2.5"
-            />
-          </g>
+          {/* Brow & Eyelid Crease Lines (Authentic Pepe Wrinkles) */}
+          <path d="M62 68 Q84 56 106 66" fill="none" stroke="#182b0b" strokeWidth="2.5" strokeLinecap="round" />
+          <path d="M106 66 Q134 54 160 68" fill="none" stroke="#182b0b" strokeWidth="2.5" strokeLinecap="round" />
+          <path d="M60 74 Q84 64 106 72" fill="none" stroke="#182b0b" strokeWidth="2" strokeLinecap="round" />
+          <path d="M108 72 Q134 62 162 74" fill="none" stroke="#182b0b" strokeWidth="2" strokeLinecap="round" />
 
-          {/* Sad Nostrils */}
-          <ellipse cx="106" cy="116" rx="3.5" ry="4.5" fill="#1b3809" />
-          <ellipse cx="124" cy="116" rx="3.5" ry="4.5" fill="#1b3809" />
-
-          {/* Iconic Sad Pepe Downturned Mouth */}
+          {/* Left Bulging Pepe Eye */}
           <g>
-            {/* Quivering downturned mouth line */}
             <path
-              d="M60 148 C80 136 100 134 118 136 C138 134 160 137 175 152"
-              fill="none"
-              stroke="#1a340a"
-              stroke-width="5"
-              stroke-linecap="round"
+              d="M54 84 C58 72 94 70 104 82 C104 94 88 100 72 99 C58 98 52 91 54 84 Z"
+              fill="#ffffff"
+              stroke="#142409"
+              strokeWidth="3"
             />
-            {/* Big pouty sorrowful bottom lip */}
+            {/* Watery Pupil */}
+            <ellipse cx="78" cy="88" rx="9.5" ry="9" fill="#090d16" />
+            <circle cx="75" cy="85" r="3" fill="#ffffff" />
+            <circle cx="81" cy="91" r="1.8" fill="#ffffff" />
+            {/* Heavy Droopy Sad Upper Eyelid */}
             <path
-              d="M68 147 C92 165 140 166 166 150 C154 163 118 170 82 162 Z"
-              fill="url(#pepeSadLip)"
-              stroke="#1a340a"
-              stroke-width="3"
+              d="M53 82 C68 74 90 74 104 82 C92 78 68 78 53 82 Z"
+              fill="#4f8828"
+              stroke="#142409"
+              strokeWidth="2.5"
             />
+            {/* Lower Eye Bag Wrinkle */}
+            <path d="M58 101 Q80 106 98 98" fill="none" stroke="#182b0b" strokeWidth="2" strokeLinecap="round" />
           </g>
 
-          {/* ANIMATED NEON CYAN TEARS (Cascading Down Cheeks) */}
-          <g filter="url(#neonTearGlow)">
-            {/* Left Eye Tears */}
+          {/* Right Bulging Pepe Eye */}
+          <g>
             <path
-              d="M78 106 Q72 135 68 180"
-              fill="none"
-              stroke="url(#tearGlow)"
-              stroke-width="5"
-              stroke-linecap="round"
-              className="animate-tear-left"
+              d="M106 83 C112 71 148 71 158 84 C156 96 140 101 124 100 C110 99 104 91 106 83 Z"
+              fill="#ffffff"
+              stroke="#142409"
+              strokeWidth="3"
             />
-            <circle cx="68" cy="180" r="4" fill="#00f0ff" className="animate-pulse" />
-
-            {/* Right Eye Tears */}
+            {/* Watery Pupil */}
+            <ellipse cx="128" cy="88" rx="9.5" ry="9" fill="#090d16" />
+            <circle cx="125" cy="85" r="3" fill="#ffffff" />
+            <circle cx="131" cy="91" r="1.8" fill="#ffffff" />
+            {/* Heavy Upper Eyelid */}
             <path
-              d="M152 108 Q158 138 162 185"
-              fill="none"
-              stroke="url(#tearGlow)"
-              stroke-width="5"
-              stroke-linecap="round"
-              className="animate-tear-right"
+              d="M106 82 C120 74 144 74 158 84 C144 79 120 79 106 82 Z"
+              fill="#4f8828"
+              stroke="#142409"
+              strokeWidth="2.5"
             />
-            <circle cx="162" cy="185" r="4" fill="#00f0ff" className="animate-pulse" />
-
-            {/* Droplets pooling near chin */}
-            <circle cx="70" cy="155" r="3" fill="#80e5ff" opacity="0.8" />
-            <circle cx="160" cy="158" r="3" fill="#80e5ff" opacity="0.8" />
+            {/* Lower Eye Bag Wrinkle */}
+            <path d="M110 102 Q132 107 152 99" fill="none" stroke="#182b0b" strokeWidth="2" strokeLinecap="round" />
           </g>
 
-          {/* PepeHands Hands Clutched In Sorrow */}
-          <g transform="translate(0, 10)">
-            {/* Left Hand reaching up */}
-            <path
-              d="M45 200 C40 185 55 170 65 182 C72 172 82 176 82 186 C88 180 96 186 92 196 C90 205 75 220 55 215 Z"
-              fill="#558f27"
-              stroke="#1b3809"
-              stroke-width="3"
-            />
-            {/* Right Hand reaching up */}
-            <path
-              d="M195 200 C200 185 185 170 175 182 C168 172 158 176 158 186 C152 180 144 186 148 196 C150 205 165 220 185 215 Z"
-              fill="#558f27"
-              stroke="#1b3809"
-              stroke-width="3"
-            />
-          </g>
-
-          {/* Cyber HUD Targeting Reticle overlay on hover */}
-          <circle
-            cx="120"
-            cy="110"
-            r="85"
+          {/* Cascading Waterfall Tears (Animated) */}
+          <path
+            d="M72 98 Q66 145 74 248"
             fill="none"
-            stroke="#00f0ff"
-            stroke-width="1"
-            stroke-dasharray="8 6"
-            className="opacity-0 group-hover:opacity-40 transition-opacity"
+            stroke="url(#tearGlowStream)"
+            strokeWidth="6"
+            strokeLinecap="round"
+            className="animate-tear-left"
+          />
+          <path
+            d="M132 99 Q138 145 130 248"
+            fill="none"
+            stroke="url(#tearGlowStream)"
+            strokeWidth="6"
+            strokeLinecap="round"
+            className="animate-tear-right"
+          />
+
+          {/* Authentic Thick Reddish-Brown Pepe Lips (Downturned Sad Frown) */}
+          <g>
+            <path
+              d="M52 122 C74 114 118 114 146 124 C150 132 144 138 134 136 C112 130 76 130 56 135 C48 136 48 126 52 122 Z"
+              fill="url(#authPepeSadLips)"
+              stroke="#142409"
+              strokeWidth="3"
+              strokeLinejoin="round"
+            />
+            {/* Center Lip Line */}
+            <path
+              d="M54 128 Q98 120 144 130"
+              fill="none"
+              stroke="#142409"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+          </g>
+
+          {/* Left Arm Hanging Down Sad / Wiping Tear */}
+          <path
+            d="M84 152 C72 164 68 184 72 196 C75 202 84 200 84 192 C83 182 86 170 90 162"
+            fill="url(#authPepeSadSkin)"
+            stroke="#142409"
+            strokeWidth="3.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {/* Right Arm Raised Gently Wiping Eye (PepeHands / Reference Pose) */}
+          <path
+            d="M148 156 C162 148 168 122 158 106 C153 98 144 102 146 112 C148 124 144 138 138 146"
+            fill="url(#authPepeSadSkin)"
+            stroke="#142409"
+            strokeWidth="3.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
         </svg>
       </div>
 
       {/* Cyber Tag */}
-      <div className="mt-2 text-center">
+      <div className="mt-1 text-center">
         <span className="inline-block px-2 py-0.5 text-[10px] font-code tracking-wider uppercase bg-cyan-950/70 text-cyan-400 border border-cyan-500/40 rounded">
           SUB-01 // CRYING_PEPE
         </span>

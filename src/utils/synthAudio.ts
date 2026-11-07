@@ -8,6 +8,7 @@ class CyberSynthEngine {
   private timer: number | null = null;
   private step = 0;
   private masterGain: GainNode | null = null;
+  private mode: 'pepe' | 'banana' = 'pepe';
 
   // D-Minor Bassline (D1, D1, D2, D1, F1, F1, C1, Bb1)
   private bassNotes = [
@@ -20,6 +21,26 @@ class CyberSynthEngine {
     587.33, 698.46, 880.00, 1046.50, 698.46, 880.00, 1046.50, 1174.66,
     523.25, 659.25, 783.99, 1046.50, 466.16, 587.33, 698.46, 880.00
   ];
+
+  // Banana Phone Bouncy Bassline (C major / G major upbeat walking bass)
+  private bananaBassNotes = [
+    130.81, 164.81, 196.00, 261.63, 196.00, 164.81, 130.81, 196.00,
+    146.83, 174.61, 196.00, 293.66, 196.00, 174.61, 130.81, 196.00
+  ];
+
+  // "Ring ring ring ring ring ring ring, Banana Phone! Boop-boo-ba-doo-ba-doop!"
+  private bananaLeadNotes = [
+    523.25, 523.25, 523.25, 523.25, 523.25, 523.25, 523.25, 659.25,
+    587.33, 523.25, 392.00, 523.25, 659.25, 783.99, 659.25, 523.25
+  ];
+
+  public setMode(newMode: 'pepe' | 'banana') {
+    this.mode = newMode;
+  }
+
+  public getMode(): 'pepe' | 'banana' {
+    return this.mode;
+  }
 
   public init() {
     if (!this.ctx) {
@@ -151,13 +172,14 @@ class CyberSynthEngine {
         this.triggerHiHat(now);
       }
 
-      // 4. Rolling 16th-note Analog Sawtooth Bassline
-      const bassFreq = this.bassNotes[this.step % this.bassNotes.length];
+      // 4. Rolling 16th-note Analog Bassline
+      const activeBass = this.mode === 'banana' ? this.bananaBassNotes : this.bassNotes;
+      const bassFreq = activeBass[this.step % activeBass.length];
       const bassOsc = this.ctx.createOscillator();
       const bassGain = this.ctx.createGain();
       const bassFilter = this.ctx.createBiquadFilter();
 
-      bassOsc.type = 'sawtooth';
+      bassOsc.type = this.mode === 'banana' ? 'triangle' : 'sawtooth';
       bassOsc.frequency.setValueAtTime(bassFreq, now);
 
       bassFilter.type = 'lowpass';
@@ -176,29 +198,31 @@ class CyberSynthEngine {
       bassOsc.start(now);
       bassOsc.stop(now + 0.12);
 
-      // 5. Shimmering Neon Arpeggio Lead (Alternating 8th notes)
-      if (stepInMeasure % 2 === 0) {
-        const leadFreq = this.leadNotes[(this.step / 2) % this.leadNotes.length];
+      // 5. Shimmering Neon Arpeggio Lead / Banana Phone Marimba Lead
+      if (this.mode === 'banana' || stepInMeasure % 2 === 0) {
+        const activeLead = this.mode === 'banana' ? this.bananaLeadNotes : this.leadNotes;
+        const idx = this.mode === 'banana' ? (this.step % activeLead.length) : ((this.step / 2) % activeLead.length);
+        const leadFreq = activeLead[idx];
         const leadOsc = this.ctx.createOscillator();
         const leadGain = this.ctx.createGain();
         const leadFilter = this.ctx.createBiquadFilter();
 
-        leadOsc.type = 'square';
+        leadOsc.type = this.mode === 'banana' ? 'sine' : 'square';
         leadOsc.frequency.setValueAtTime(leadFreq, now);
 
         leadFilter.type = 'bandpass';
         leadFilter.frequency.setValueAtTime(leadFreq, now);
         leadFilter.Q.setValueAtTime(2, now);
 
-        leadGain.gain.setValueAtTime(0.12, now);
-        leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        leadGain.gain.setValueAtTime(this.mode === 'banana' ? 0.16 : 0.12, now);
+        leadGain.gain.exponentialRampToValueAtTime(0.001, now + (this.mode === 'banana' ? 0.11 : 0.22));
 
         leadOsc.connect(leadFilter);
         leadFilter.connect(leadGain);
         leadGain.connect(this.masterGain);
 
         leadOsc.start(now);
-        leadOsc.stop(now + 0.23);
+        leadOsc.stop(now + (this.mode === 'banana' ? 0.12 : 0.23));
       }
 
       this.step++;

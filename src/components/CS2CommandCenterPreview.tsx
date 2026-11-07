@@ -30,7 +30,7 @@ interface AppFeatureModule {
 }
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=1.1.0';
+  const downloadUrl = '/CS2_Command_Center.exe?v=1.2.0';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -145,24 +145,25 @@ export const CS2CommandCenterPreview: React.FC = () => {
       vacSafe: true
     },
     {
-      id: 'ram',
-      name: 'Live Standby List RAM Booster',
-      shortTag: 'MEMORY OPTIMIZER',
-      badge: 'MICRO-STUTTER FIX',
+      id: 'dns',
+      name: 'Gaming DNS Optimizer & Benchmark',
+      shortTag: 'NETWORK RESOLVER',
+      badge: 'REAL-TIME PING TEST',
       icon: <Sparkles className="w-5 h-5 text-violet-400" />,
-      summary: 'Flushes Windows Standby Memory Cache using native Win32 APIs before launching or during intensive 64-player matches.',
+      summary: 'Benchmarks 6 global Gaming DNS providers in parallel (Cloudflare, Google, Quad9, OpenDNS, Level3, AdGuard) for real UDP latency and jitter, with 1-Click Apply & ISP DHCP Restore.',
       details: [
-        'Solves the Windows 10/11 standby list memory caching bug where free RAM drops to zero.',
-        'Reclaims inactive memory cache without terminating active background processes.',
-        'Prevents frametime spikes when hundreds of zombie models and particle effects render simultaneously.',
-        'Automated background flush schedule or 1-click manual boost.'
+        'Parallel real-time UDP port 53 latency & jitter benchmark against your physical location.',
+        'Automatically ranks and highlights the #1 fastest DNS server for Valve Steam SDR & FastDL.',
+        '1-Click Apply Fastest/Selected DNS directly to your active Windows network adapter + flushes DNS cache.',
+        '1-Click Restore to ISP Default (Automatic DHCP) anytime with 100% safety.',
+        'Zero risky RAM cleaners: protects browser, Discord, and CS2 from page-fault stutters and crashes.'
       ],
       parameters: [
-        { name: 'API Hook', value: 'NtSetSystemInformation', desc: 'Official Windows MemoryListPurge' },
-        { name: 'Standby Cache', value: 'Purged to 0 MB', desc: 'Reallocates free memory pool for CS2' },
-        { name: 'Latency Spike', value: 'REDUCED', desc: 'Smoothens 1% low frame-times' }
+        { name: 'Cloudflare / Google', value: '1.1.1.1 / 8.8.8.8', desc: 'Ultra-low latency global edge resolvers' },
+        { name: 'Quad9 / OpenDNS', value: '9.9.9.9 / 208.67.222.222', desc: 'Backbone peering & security filtering' },
+        { name: 'Safety Guarantee', value: '100% Reversible DHCP', desc: 'Restores default ISP DNS in 1 click' }
       ],
-      proTip: 'Unlike third-party snake oil memory tools, this uses the official Windows kernel memory list purge API.',
+      proTip: 'Unlike third-party "RAM Cleaners" that force active app memory into pagefile.sys and cause browser/game crashes, CS2 Command Center strictly uses safe CPU scheduling and real network DNS optimization.',
       vacSafe: true
     },
     {
@@ -233,7 +234,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v1.1.0
+              v1.2.0
             </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-2xl">
@@ -254,6 +255,17 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <span className="text-[11px] font-code text-slate-400">
             Portable &bull; ~33 MB &bull; No installation required
           </span>
+        </div>
+      </div>
+
+      {/* Transparency Note: Stability & Consistency vs. Raw FPS */}
+      <div className="mb-6 p-4 rounded-xl bg-cyan-950/30 border border-cyan-500/40 flex items-start gap-3">
+        <Info className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+        <div className="text-xs font-tech text-slate-200 leading-relaxed">
+          <strong className="font-cyber text-cyan-300 tracking-wide uppercase block mb-0.5">
+            WHAT THIS OPTIMIZER & PC MAINTENANCE ACTUALLY DO (STABILITY vs. RAW FPS):
+          </strong>
+          These tools are <strong className="text-white">not</strong> meant to magically inflate maximum FPS beyond your physical CPU/GPU hardware limits. Instead, they are engineered to improve <strong className="text-cyan-300">Frame-Time Consistency (1% Lows)</strong>, eliminate micro-stutters during 64-player Zombie Escape &amp; heavy smoke utility, resolve <strong className="text-cyan-300">Display / Alt-Tab freezes (MPO)</strong>, optimize <strong className="text-cyan-300">Sub-Tick &amp; Gaming DNS network responsiveness</strong>, and maintain peak SSD/OS storage health with <strong className="text-lime-300">100% system safety</strong> (zero risky RAM cleaners).
         </div>
       </div>
 

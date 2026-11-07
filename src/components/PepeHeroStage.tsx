@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { CryingPepe } from './pepes/CryingPepe';
 import { LaughingPepe } from './pepes/LaughingPepe';
 import { DancingPepe } from './pepes/DancingPepe';
-import { Activity } from 'lucide-react';
+import { Activity, Play, ExternalLink, X } from 'lucide-react';
 
 type PepeViewMode = 'all' | 'cry' | 'laugh' | 'dance';
 
 export const PepeHeroStage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<PepeViewMode>('all');
+  const [showYoutubePlayer, setShowYoutubePlayer] = useState(false);
+  const pepeYoutubeUrl = 'https://www.youtube.com/watch?v=nBza-xpJ0gI';
 
   return (
     <section className="relative w-full max-w-6xl mx-auto px-4 py-8 flex flex-col items-center">
@@ -65,8 +67,67 @@ export const PepeHeroStage: React.FC = () => {
           >
             [03] PARTY RAVE
           </button>
+          <button
+            onClick={() => setShowYoutubePlayer((prev) => !prev)}
+            className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer flex items-center gap-1.5 ${
+              showYoutubePlayer
+                ? 'bg-red-500/25 text-red-300 border border-red-400/70 shadow-[0_0_12px_rgba(239,68,68,0.5)]'
+                : 'bg-red-950/60 text-red-300 border border-red-500/40 hover:bg-red-900/50'
+            }`}
+            title="Play Pepe Dance Anthem (YouTube)"
+          >
+            <Play className="w-3.5 h-3.5 text-red-400" />
+            <span>{showYoutubePlayer ? 'HIDE PEPE VIDEO' : 'PEPE DANCE YT'}</span>
+          </button>
+          <a
+            href={pepeYoutubeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-2.5 py-1 text-xs font-code rounded bg-slate-900 text-cyan-300 border border-cyan-500/30 hover:border-cyan-400 flex items-center gap-1"
+            title="Open Pepe Dance video on YouTube in a new tab"
+          >
+            <ExternalLink className="w-3 h-3" />
+          </a>
         </div>
       </div>
+
+      {/* Collapsible Embedded Pepe Dance YouTube Player */}
+      {showYoutubePlayer && (
+        <div className="w-full max-w-2xl mb-6 rounded-2xl border border-lime-400/50 bg-slate-950/95 p-3 shadow-[0_0_30px_rgba(57,255,20,0.3)]">
+          <div className="flex items-center justify-between mb-2 px-1">
+            <div className="flex items-center gap-2 text-xs font-cyber text-lime-300 font-bold">
+              <Play className="w-4 h-4 text-red-400" />
+              <span>OFFICIAL PEPE DANCE ANTHEM // YOUTUBE STREAM</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <a
+                href={pepeYoutubeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-code text-cyan-300 hover:underline flex items-center gap-1"
+              >
+                <span>Open on YouTube</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <button
+                onClick={() => setShowYoutubePlayer(false)}
+                className="p-1 rounded bg-slate-900 text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+          <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-slate-800 bg-black">
+            <iframe
+              src="https://www.youtube.com/embed/nBza-xpJ0gI?autoplay=1&rel=0"
+              title="Pepe Dance YouTube Video"
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
 
       {/* Main Holographic Projection Stage */}
       <div className="relative w-full min-h-[480px] md:min-h-[540px] flex items-center justify-center rounded-2xl border border-cyan-500/20 bg-gradient-to-b from-cyan-950/20 via-slate-950/60 to-[#04060b]/90 backdrop-blur-xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)]">
