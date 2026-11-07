@@ -30,7 +30,7 @@ interface AppFeatureModule {
 }
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=1.3.1';
+  const downloadUrl = '/CS2_Command_Center.exe?v=1.3.2';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -103,24 +103,24 @@ export const CS2CommandCenterPreview: React.FC = () => {
     },
     {
       id: 'sniper',
-      name: 'Background 64/64 Server Slot Sniper',
+      name: 'Rapid 1s Console Slot Sniper (10s Cooldown)',
       shortTag: 'DIRECT NETWORK',
-      badge: 'BACKGROUND AUTO-JOIN',
+      badge: '1S CONSOLE + 0.25S UDP',
       icon: <Target className="w-5 h-5 text-lime-400" />,
-      summary: 'Monitors full 64/64 Zombie Escape servers silently via UDP A2S queries. The millisecond a slot opens, it initiates an ultra-fast console connect, restores your active window focus, and displays a sleek corner notification.',
+      summary: 'When clicked, the button switches to "Active", detects player count at the lowest and safest interval (0.25s UDP query), and sends console connect to your chosen server every 1.0 second. The instant a player leaves based on your set priority, it stops immediately and enters a 10-second cooldown.',
       details: [
-        'Runs silently in the Windows system tray with virtually 0% CPU consumption.',
-        'NEW: Instant Previous-Window Focus Restore (~280ms console paste + returns focus to your browser/app so CS2 loads the map in the background!).',
-        'NEW: Non-Interrupting Bottom-Right Corner Notification Banner + Windows Tray Alert.',
-        'Audible Windows hardware alert chime the instant a slot opens.',
-        'GFL Priority Slot Tier options (Normal ≤61/64, Mapper/Supporter ≤62/64, VIP/Admin ≤63/64).'
+        'Shows "🎯 Active" on the button while sniping (zero intrusive Windows or popup notifications).',
+        'Ultra-fast, safe UDP A2S player count detection every 0.25s (4x per second).',
+        'Dispatches in-game console connect (connect IP:PORT) every 1.0 second while waiting.',
+        'Immediately stops the 1s console connect loop the millisecond a player leaves based on your set priority (≤61, ≤62, or ≤63) and replaces "Active" with a 10-second cooldown countdown.',
+        'If someone else got into the slot first, simply click Slot Sniper again manually once the 10s cooldown finishes to repeat!'
       ],
       parameters: [
-        { name: 'Background Connect', value: '280ms + Focus Restore', desc: 'Loads server in background while you browse' },
-        { name: 'Corner Notification', value: 'Non-Blocking Toast', desc: 'Never interrupts your typing or mouse' },
-        { name: 'Audible Chime', value: 'Dual-Tone Beep', desc: 'Alerts you the instant a slot opens' }
+        { name: 'Player Detection', value: '0.25s Safe UDP A2S', desc: 'Lowest & safest real-time slot detection' },
+        { name: 'Console Connect', value: 'Every 1.0 Second', desc: 'Continuous in-engine console connect loop' },
+        { name: 'Auto-Stop Cooldown', value: '10s Timer on Slot Drop', desc: 'Stops immediately when a player leaves' }
       ],
-      proTip: 'CS2 must be open. Set your slot priority (Normal ≤61, Supporter ≤62, VIP ≤63), arm the sniper, and keep browsing—it connects in the background and notifies you in the corner!',
+      proTip: 'CS2 must be open. Set your slot priority (Normal ≤61, Supporter ≤62, VIP ≤63) and click Slot Sniper—it shows "Active", connects every 1s via console, and automatically stops with a 10s cooldown when a player leaves!',
       vacSafe: true
     },
     {
@@ -233,7 +233,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v1.3.1
+              v1.3.2
             </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-2xl">

@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ZE_SERVERS, type ZEServer } from '../data/zeServers';
-import {
-  ZE_MAP_ENCYCLOPEDIA,
-  getMapIntelForMapName,
-  HOURLY_POPULATION_24H,
-  type ZEMapIntelEntry,
-} from '../data/zeMapIntel';
 import { 
   fetchLiveTelemetry, 
   getMapStartTime, 
@@ -122,8 +116,16 @@ export const ServerRadarPreview: React.FC = () => {
     return () => clearTimeout(timer);
   }, [connectScenario, launchCountdown, connectModalServer]);
   const [showMusicModal, setShowMusicModal] = useState(false);
-  const [activeMapIntel, setActiveMapIntel] = useState<ZEMapIntelEntry | null>(null);
-  const [showTimelinePanel, setShowTimelinePanel] = useState<boolean>(true);
+
+  // Total live players across all queried servers
+  const totalOnlinePlayers = useMemo(() => {
+    if (!telemetry?.servers) return 0;
+    return Object.values(telemetry.servers).reduce((acc, s) => {
+      if (!s?.online || !s?.players) return acc;
+      const curr = parseInt(s.players.split('/')[0], 10);
+      return acc + (isNaN(curr) ? 0 : curr);
+    }, 0);
+  }, [telemetry]);
 
   const handlePlayerSort = (field: PlayerSortField) => {
     if (playerSortField === field) {
@@ -263,23 +265,16 @@ export const ServerRadarPreview: React.FC = () => {
           </p>
         </div>
 
-        {/* Global Live Stats & Map Encyclopedia Trigger */}
+        {/* Global Live Stats */}
         <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            onClick={() => setActiveMapIntel(getMapIntelForMapName(gflMap))}
-            className="flex items-center gap-1.5 bg-fuchsia-950/85 hover:bg-fuchsia-900 border border-fuchsia-500/60 px-3.5 py-2 rounded-xl text-xs font-code font-bold text-fuchsia-200 shadow-[0_0_15px_rgba(255,0,127,0.3)] cursor-pointer transition-all"
-          >
-            <Trophy className="w-3.5 h-3.5 text-fuchsia-400" />
-            <span>🗺️ ZE MAP &amp; LASER ENCYCLOPEDIA</span>
-          </button>
-
-          <button
-            onClick={() => setShowTimelinePanel((p) => !p)}
-            className="flex items-center gap-1.5 bg-cyan-950/80 hover:bg-cyan-900/80 border border-cyan-500/50 px-3 py-2 rounded-xl text-xs font-code font-bold text-cyan-200 cursor-pointer transition-all"
-          >
-            <Clock className="w-3.5 h-3.5 text-cyan-400" />
-            <span>{showTimelinePanel ? 'HIDE 24H TIMELINE' : 'SHOW 24H TIMELINE'}</span>
-          </button>
+          {totalOnlinePlayers > 0 && (
+            <div className="flex items-center gap-2 bg-slate-950/80 border border-emerald-500/40 px-3.5 py-2 rounded-xl text-xs font-code text-slate-300 shadow-md">
+              <Users className="w-3.5 h-3.5 text-emerald-400" />
+              <span>
+                <strong className="text-emerald-300">{totalOnlinePlayers}</strong> PLAYERS IN-GAME
+              </span>
+            </div>
+          )}
 
           <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3.5 py-2 rounded-xl text-xs font-code text-slate-300 shadow-md">
             <Radio className="w-3.5 h-3.5 text-lime-400 animate-pulse" />
@@ -289,63 +284,6 @@ export const ServerRadarPreview: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* LIVE 24-HOUR PLAYER POPULATION & RECENT MAP HISTORY TIMELINE */}
-      {showTimelinePanel && (
-        <div className="mb-6 p-4 rounded-2xl bg-slate-950/90 border border-cyan-500/35 shadow-[0_0_25px_rgba(0,240,255,0.1)] grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
-          {/* Left: 24-Hour Player Capacity Bar Sparkline (7 Cols) */}
-          <div className="lg:col-span-7">
-            <div className="flex items-center justify-between text-xs font-code mb-2">
-              <span className="text-cyan-300 font-bold flex items-center gap-1.5">
-                <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-                24-HOUR GLOBAL ZE PLAYER POPULATION &amp; GFL PEAK TRACKER
-              </span>
-              <span className="text-emerald-300">PEAK: 1,290 PLAYERS (64/64 GFL)</span>
-            </div>
-            <div className="grid grid-cols-12 gap-1.5 items-end h-20 pt-2 px-2 bg-slate-900/80 rounded-xl border border-slate-800">
-              {HOURLY_POPULATION_24H.map((pt) => {
-                const heightPct = Math.max(18, Math.round((pt.globalPlayers / 1350) * 100));
-                return (
-                  <div key={pt.hourLabel} className="flex flex-col items-center gap-1 h-full justify-end group">
-                    <div
-                      style={{ height: `${heightPct}%` }}
-                      className="w-full rounded-t bg-gradient-to-t from-cyan-600 via-emerald-400 to-lime-300 opacity-85 group-hover:opacity-100 transition-all"
-                      title={`${pt.hourLabel} UTC — Global: ${pt.globalPlayers} players | GFL: ${pt.gflPlayers}/64`}
-                    />
-                    <span className="text-[9px] font-code text-slate-400">{pt.hourLabel.slice(0, 2)}h</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Right: Recent Map Rotation & Cooldown History (5 Cols) */}
-          <div className="lg:col-span-5 flex flex-col justify-between bg-slate-900/75 border border-slate-800 rounded-xl p-3">
-            <div className="text-xs font-code text-fuchsia-300 font-bold mb-2 flex items-center justify-between">
-              <span>⏱️ RECENT GFL MAP ROTATION &amp; COOLDOWN INTEL</span>
-              <span className="text-[10px] text-slate-400">CLICK FOR INTEL</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { m: gflMap, tag: 'LIVE NOW', col: 'border-lime-400 text-lime-300 bg-lime-950/80' },
-                { m: 'ze_ffvii_mako_reactor_v5_3', tag: '1h ago', col: 'border-slate-700 text-slate-300 bg-slate-950' },
-                { m: 'ze_ffxii_westersand_v8zeta1', tag: '2h ago', col: 'border-slate-700 text-slate-300 bg-slate-950' },
-                { m: 'ze_deadcore_s7', tag: '4h ago', col: 'border-slate-700 text-slate-300 bg-slate-950' },
-                { m: 'ze_dark_souls_ptd_v0_4', tag: '5h ago', col: 'border-slate-700 text-slate-300 bg-slate-950' },
-              ].map((item, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveMapIntel(getMapIntelForMapName(item.m))}
-                  className={`px-2 py-1 rounded text-[11px] font-code border cursor-pointer hover:border-fuchsia-400 transition-all flex items-center gap-1.5 ${item.col}`}
-                >
-                  <span className="truncate max-w-[155px]">{item.m}</span>
-                  <span className="text-[9px] opacity-75">({item.tag})</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ==================================================================== */}
       {/* PINNED PREMIER FEATURED GFL CARD                                     */}
@@ -510,23 +448,13 @@ export const ServerRadarPreview: React.FC = () => {
                     : '(Intel)'}
                 </span>
               </button>
-
-              {/* Boss, Materia & Laser Survival Guide Button */}
-              <button
-                onClick={() => setActiveMapIntel(getMapIntelForMapName(gflMap))}
-                className="px-2.5 py-1 rounded-lg text-xs font-code bg-fuchsia-950/90 hover:bg-fuchsia-900 border border-fuchsia-500/50 text-fuchsia-200 hover:text-white flex items-center gap-1.5 cursor-pointer transition-all shadow-[0_0_12px_rgba(255,0,127,0.25)]"
-                title="Inspect Boss Fights, EntWatch Materia Items, and Ending Laser Jump/Crouch Tips"
-              >
-                <Shield className="w-3.5 h-3.5 text-fuchsia-400" />
-                <span>⚔️ Boss &amp; Laser Guide</span>
-              </button>
             </div>
 
             {/* Desktop Slot Sniper Banner */}
             <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center gap-2.5 text-xs font-tech text-slate-300">
               <Zap className="w-4 h-4 text-amber-400 flex-shrink-0" />
               <span>
-                <strong>Server Full at 64/64?</strong> The <a href="#cs2-command" className="text-fuchsia-400 underline hover:text-fuchsia-300 font-code">CS2 Command Center desktop app</a> includes an automated <strong>Silent Slot Sniper</strong> that runs in your Windows tray and auto-joins the millisecond a player disconnects!
+                <strong>Server Full at 64/64?</strong> The <a href="#cs2-command" className="text-fuchsia-400 underline hover:text-fuchsia-300 font-code">CS2 Command Center desktop app</a> includes a <strong>Slot Sniper</strong> that detects player count at 0.25s, fires console connect every 1s, and stops with a 10s cooldown the instant a player leaves!
               </span>
             </div>
           </div>
@@ -1301,125 +1229,6 @@ export const ServerRadarPreview: React.FC = () => {
               )}
             </div>
 
-          </div>
-        </div>
-      )}
-
-      {/* ==================================================================== */}
-      {/* ZE MAP ENCYCLOPEDIA, BOSS & LASER INTEL MODAL                        */}
-      {/* ==================================================================== */}
-      {activeMapIntel && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn"
-          onClick={() => setActiveMapIntel(null)}
-        >
-          <div
-            className="relative w-full max-w-3xl rounded-2xl bg-slate-950 border border-fuchsia-500/50 shadow-[0_0_50px_rgba(255,0,127,0.3)] overflow-hidden p-6 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
-              <div>
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <span className="px-2.5 py-0.5 rounded text-[10px] font-code font-bold bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50">
-                    ZE MAP ENCYCLOPEDIA &amp; LASER SURVIVAL INTEL
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded text-[10px] font-code font-bold bg-amber-950 text-amber-300 border border-amber-500/50">
-                    DIFFICULTY: {activeMapIntel.difficulty}
-                  </span>
-                </div>
-                <h3 className="text-xl md:text-2xl font-cyber font-black text-white">
-                  {activeMapIntel.displayName}
-                </h3>
-                <p className="text-xs font-code text-cyan-300 mt-0.5">
-                  Stages: {activeMapIntel.stages}
-                </p>
-              </div>
-              <button
-                onClick={() => setActiveMapIntel(null)}
-                className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-white cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Quick Map Selector Bar */}
-            <div className="mb-4">
-              <div className="text-[10px] font-code text-slate-400 uppercase mb-1.5">
-                BROWSE LEGENDARY ZOMBIE ESCAPE MAPS:
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {ZE_MAP_ENCYCLOPEDIA.map((entry) => (
-                  <button
-                    key={entry.mapKey}
-                    onClick={() => setActiveMapIntel(entry)}
-                    className={`px-2.5 py-1 rounded text-[11px] font-code border cursor-pointer transition-all ${
-                      activeMapIntel.mapKey === entry.mapKey
-                        ? 'bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-400 font-bold'
-                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                    }`}
-                  >
-                    {entry.displayName}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <p className="text-xs md:text-sm font-tech text-slate-200 leading-relaxed bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl mb-4">
-              {activeMapIntel.overview}
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div className="bg-slate-900/90 border border-rose-500/30 rounded-xl p-3.5">
-                <div className="text-xs font-cyber font-bold text-rose-300 mb-2">
-                  👹 STAGE BOSSES &amp; ENCOUNTERS
-                </div>
-                <ul className="space-y-1 text-xs font-tech text-slate-300">
-                  {activeMapIntel.bosses.map((b, i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                      <span>{b}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3.5">
-                <div className="text-xs font-cyber font-bold text-emerald-300 mb-2">
-                  🔮 ENTWATCH / MATERIA ITEMS
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {activeMapIntel.materiaItems.map((it, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-0.5 rounded text-[11px] font-code bg-emerald-950/80 text-emerald-200 border border-emerald-500/40"
-                    >
-                      {it}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-cyan-950/35 border border-cyan-500/40 rounded-xl p-4 mb-3">
-              <div className="text-xs font-cyber font-bold text-cyan-300 mb-1">
-                ⚡ ENDING LASER &amp; SURVIVAL PRO TIP
-              </div>
-              <p className="text-xs font-tech text-slate-200 leading-relaxed">
-                {activeMapIntel.laserTips}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-code text-purple-300 bg-purple-950/30 border border-purple-500/30 rounded-xl p-3">
-              <span>🎵 Stage Soundtrack Cue: {activeMapIntel.soundtrackCue}</span>
-              <a
-                href={getMap3DViewerUrl(activeMapIntel.mapKey)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-cyan-300 hover:underline flex items-center gap-1"
-              >
-                <span>Open 3D Map on Cybo ↗</span>
-              </a>
-            </div>
           </div>
         </div>
       )}
