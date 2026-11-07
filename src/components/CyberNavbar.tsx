@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Radio, Shield, Wifi, Mail, Cpu, Sparkles, Sliders, Wrench, Lock } from 'lucide-react';
+import { Radio, Shield, Wifi, Mail, Cpu, Sparkles, Sliders, Wrench } from 'lucide-react';
 
 interface CyberNavbarProps {
   theme: 'pepe' | 'banana';
   gremlinEnabled: boolean;
   onToggleGremlin: () => void;
-  onOpenVault?: () => void;
 }
 
 export const scrollToSectionById = (sectionId: string) => {
@@ -40,7 +39,6 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
   theme,
   gremlinEnabled,
   onToggleGremlin,
-  onOpenVault,
 }) => {
   const [timeStr, setTimeStr] = useState('');
   const [ping, setPing] = useState(14);
@@ -179,14 +177,6 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             <Shield className="w-3.5 h-3.5 text-fuchsia-400" />
             CS2 APP
           </a>
-          <button
-            onClick={onOpenVault}
-            className="hover:text-red-400 text-red-300 transition-colors flex items-center gap-1.5 cursor-pointer font-bold relative"
-          >
-            <Lock className="w-3.5 h-3.5 text-red-400 animate-pulse" />
-            <span>VAULT</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping absolute -top-1 -right-1" />
-          </button>
           <a
             href="#contact"
             onClick={(e) => handleNavClick(e, 'contact')}

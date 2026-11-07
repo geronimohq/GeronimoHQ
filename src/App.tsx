@@ -9,9 +9,7 @@ import { ServerRadarPreview } from './components/ServerRadarPreview';
 import { CS2AutoexecGeneratorSection } from './components/CS2AutoexecGeneratorSection';
 import { CS2CommandCenterPreview } from './components/CS2CommandCenterPreview';
 import { GeronimoDiscordPresence } from './components/GeronimoDiscordPresence';
-import { FakeRetroScamAds } from './components/FakeRetroScamAds';
 import { DeployHudFooter } from './components/DeployHudFooter';
-import { SecretGeronimoVault } from './components/SecretGeronimoVault';
 import { ChaosAnomalyEngine } from './components/ChaosAnomalyEngine';
 import { ChevronDown } from 'lucide-react';
 
@@ -43,7 +41,6 @@ export const App: React.FC = () => {
   const [bananaTargetLoops, setBananaTargetLoops] = useState<number>(() => pickRandomBananaLoops());
   const [gremlinEnabled, setGremlinEnabled] = useState<boolean>(true);
   const [transitionBanner, setTransitionBanner] = useState<string | null>(null);
-  const [isVaultOpen, setIsVaultOpen] = useState<boolean>(false);
 
   // Global Master Audio State (Persisted in localStorage; Defaults to 15% per Geronimo's request)
   const [masterVolume, setMasterVolume] = useState<number>(() => {
@@ -173,7 +170,6 @@ export const App: React.FC = () => {
         theme={theme}
         gremlinEnabled={gremlinEnabled}
         onToggleGremlin={() => setGremlinEnabled((prev) => !prev)}
-        onOpenVault={() => setIsVaultOpen(true)}
       />
 
       {/* Smooth Theme Transition Toast Notification */}
@@ -289,19 +285,8 @@ export const App: React.FC = () => {
 
       {/* Floating Geronimo Discord-Style Live Presence (Fixed Lower-Left) */}
       <GeronimoDiscordPresence />
-
-      {/* Floating Retro Scam Parody Banners & Endless Verification Hologram */}
-      <FakeRetroScamAds />
-
       {/* Interactive Random Chaos Anomaly Protocol Button */}
       <ChaosAnomalyEngine />
-
-      {/* Classified Geronimo Secret Vault Chamber Modal */}
-      <SecretGeronimoVault
-        isOpen={isVaultOpen}
-        onClose={() => setIsVaultOpen(false)}
-      />
-
       {/* Clean Transmission / Contact Terminal Footer */}
       <DeployHudFooter />
     </div>
