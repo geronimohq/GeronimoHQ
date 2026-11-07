@@ -72,19 +72,23 @@ export const App: React.FC = () => {
     });
   }, []);
 
-  // Automatic Pepe -> Banana Phone transition after a random 2 minutes (120s) or 3 minutes (180s)
+  // Exact 3 minutes and 16 seconds (196 seconds) continuous theme cycle:
+  // Pepe (3m 16s) -> Banana Phone (3m 16s) -> Vice Versa
   useEffect(() => {
-    if (theme !== 'pepe') return;
-
-    const randomMinutes = Math.random() < 0.5 ? 2 : 3;
-    const durationMs = randomMinutes * 60 * 1000;
+    const SONG_DURATION_MS = (3 * 60 + 16) * 1000; // 196,000 ms
 
     const timer = window.setTimeout(() => {
-      setBananaTargetLoops(pickRandomBananaLoops());
-      setTheme('banana');
-      setTransitionBanner('🍌 SMOOTHLY TRANSITIONED TO BANANA PHONE THEME! RING RING RING!');
-      window.setTimeout(() => setTransitionBanner(null), 5000);
-    }, durationMs);
+      setTheme((prev) => {
+        const next = prev === 'pepe' ? 'banana' : 'pepe';
+        setTransitionBanner(
+          next === 'banana'
+            ? '🍌 3:16 COMPLETE — SMOOTHLY SWITCHED TO BANANA PHONE THEME!'
+            : '🐸 3:16 COMPLETE — SMOOTHLY SWITCHED TO PEPE RETRO-FUTURISTIC THEME!'
+        );
+        window.setTimeout(() => setTransitionBanner(null), 5000);
+        return next;
+      });
+    }, SONG_DURATION_MS);
 
     return () => clearTimeout(timer);
   }, [theme]);

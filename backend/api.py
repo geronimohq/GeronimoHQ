@@ -253,12 +253,34 @@ def fetch_single_server(s: Dict[str, Any]) -> Dict[str, Any]:
         "map_start_time": int(map_start)
     }
 
+# In-memory Steam profile and local desktop heartbeat cache
 STEAM_PROFILE_CACHE = {"timestamp": 0, "data": None}
+LOCAL_HEARTBEAT = {
+    "timestamp": 0,
+    "is_online": False,
+    "is_cs2": False,
+    "in_menu": False,
+    "game": None
+}
+
+@app.get("/api/presence/heartbeat")
+@app.post("/api/presence/heartbeat")
+def presence_heartbeat(is_cs2_running: bool = False, in_menu: bool = True, game: str = "Counter-Strike 2"):
+    """Accepts real-time presence heartbeat from local CS2 Command Center desktop app."""
+    global LOCAL_HEARTBEAT
+    LOCAL_HEARTBEAT = {
+        "timestamp": time.time(),
+        "is_online": True,
+        "is_cs2": bool(is_cs2_running),
+        "in_menu": bool(in_menu),
+        "game": game if is_cs2_running else None
+    }
+    return {"status": "ok", "received": True, "valid_seconds": 25}
 
 def query_steam_profile_cached():
     now = time.time()
-    # Cache for 12 seconds to ensure rapid updates when closing Steam
-    if STEAM_PROFILE_CACHE["data"] and (now - STEAM_PROFILE_CACHE["timestamp"] < 12):
+    # Cache for 10 seconds to ensure rapid updates
+    if STEAM_PROFILE_CACHE["data"] and (now - STEAM_PROFILE_CACHE["timestamp"] < 10):
         return STEAM_PROFILE_CACHE["data"]
 
     try:
@@ -273,19 +295,32 @@ def query_steam_profile_cached():
             pass
 
         if not html:
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
             html = urllib.request.urlopen(req, timeout=2.5).read().decode("utf-8", errors="ignore")
 
         # Check persona status directly in Steam Community HTML
-        # Steam marks offline profiles with class 'persona offline' and text 'Currently Offline'
-        is_offline = ("Currently Offline" in html) or ("persona offline" in html) or ('class="profile_in_game persona offline"' in html)
-        is_in_game = ("Currently In-Game" in html) or ("profile_in_game_name" in html)
-        is_online = (not is_offline) if ("profile_in_game" in html) else False
+        is_in_game = ("Currently In-Game" in html) or ('class="profile_in_game persona in-game"' in html) or ('profile_in_game persona in-game' in html)
+        is_online_now = ("Currently Online" in html) or ('class="profile_in_game persona online"' in html) or ('profile_in_game persona online' in html)
+        is_offline_now = ("Currently Offline" in html) or ('class="profile_in_game persona offline"' in html) or ('profile_in_game persona offline' in html)
+
+        if is_in_game:
+            is_online = True
+        elif is_online_now:
+            is_online = True
+            is_in_game = False
+        elif is_offline_now:
+            is_online = False
+            is_in_game = False
+        else:
+            is_online = ("profile_in_game" in html)
 
         game_text = ""
         in_game_name = re.search(r'profile_in_game_name.*?>(.*?)<', html, re.DOTALL)
         if in_game_name:
             game_text = in_game_name.group(1).strip()
+        elif is_in_game:
+            if "Counter-Strike 2" in html or "Counter-Strike" in html:
+                game_text = "Counter-Strike 2"
 
         is_cs2 = "Counter-Strike 2" in game_text or ("Counter-Strike" in game_text)
 
@@ -309,7 +344,7 @@ def query_steam_profile_cached():
         }
 
 def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
-    # 1. Check if Geronimo is directly in any monitored server's active player list
+    # 1. Check if Geronimo is directly in any monitored server's active player list (Top priority)
     for sid, sdata in server_results.items():
         plist = sdata.get("players_list", [])
         for p in plist:
@@ -328,7 +363,37 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
                     "player_duration": int(p.get("seconds", 0))
                 }
 
-    # 2. Check Steam profile status
+    # 2. Check local CS2 Command Center desktop app heartbeat (Sub-second real-time GSI detection)
+    now = time.time()
+    if LOCAL_HEARTBEAT.get("timestamp", 0) > 0 and (now - LOCAL_HEARTBEAT["timestamp"] < 25):
+        if LOCAL_HEARTBEAT.get("is_cs2"):
+            return {
+                "online": True,
+                "in_game": True,
+                "state": "main_menu",
+                "game": "Counter-Strike 2",
+                "server_id": None,
+                "server_name": "In Main Menu",
+                "map": "Main Menu / Lobby",
+                "players": "Solo / In Lobby",
+                "connect_url": "steam://rungameid/730",
+                "player_duration": 0
+            }
+        elif LOCAL_HEARTBEAT.get("is_online"):
+            return {
+                "online": True,
+                "in_game": False,
+                "state": "online",
+                "game": "Steam Community",
+                "server_id": None,
+                "server_name": None,
+                "map": "Idle",
+                "players": "N/A",
+                "connect_url": None,
+                "player_duration": 0
+            }
+
+    # 3. Check public Steam profile status as fallback
     st = query_steam_profile_cached()
 
     if not st.get("is_online"):
@@ -353,9 +418,9 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
             "game": "Counter-Strike 2",
             "server_id": None,
             "server_name": "In Main Menu",
-            "map": "In Main Menu",
+            "map": "Main Menu / Lobby",
             "players": "Solo / In Lobby",
-            "connect_url": None,
+            "connect_url": "steam://rungameid/730",
             "player_duration": 0
         }
     elif st.get("is_in_game"):

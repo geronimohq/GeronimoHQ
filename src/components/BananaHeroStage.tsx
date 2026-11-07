@@ -283,7 +283,13 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
   const targetLoopsRef = useRef<number>(targetLoops);
   const onCompleteRef = useRef<() => void>(onAllLoopsCompleted);
 
-  const effectiveVol = isMasterMuted ? 0 : masterVolume;
+  const isMasterMutedRef = useRef<boolean>(isMasterMuted);
+  const masterVolumeRef = useRef<number>(masterVolume);
+
+  useEffect(() => {
+    isMasterMutedRef.current = isMasterMuted;
+    masterVolumeRef.current = masterVolume;
+  }, [isMasterMuted, masterVolume]);
 
   useEffect(() => {
     targetLoopsRef.current = targetLoops;
@@ -343,7 +349,8 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
 
       const iframe = document.createElement('iframe');
       const originParam = encodeURIComponent(window.location.origin);
-      iframe.src = `https://www.youtube.com/embed/j5C6X9vOEkU?autoplay=1&mute=0&rel=0&playsinline=1&enablejsapi=1&origin=${originParam}`;
+      const isMutedParam = isMasterMutedRef.current || masterVolumeRef.current === 0 ? '1' : '0';
+      iframe.src = `https://www.youtube.com/embed/j5C6X9vOEkU?autoplay=1&mute=${isMutedParam}&rel=0&playsinline=1&enablejsapi=1&origin=${originParam}`;
       iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
       iframe.setAttribute('allowfullscreen', 'true');
       iframe.className = 'w-full h-full border-0';
@@ -356,12 +363,12 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
       const unlockPlay = () => {
         if (isCancelled || !playerRef.current) return;
         try {
-          if (isMasterMuted || effectiveVol === 0) {
+          if (isMasterMutedRef.current || masterVolumeRef.current === 0) {
             playerRef.current.mute();
             playerRef.current.setVolume(0);
           } else {
             playerRef.current.unMute();
-            playerRef.current.setVolume(effectiveVol);
+            playerRef.current.setVolume(masterVolumeRef.current);
           }
           const st = playerRef.current.getPlayerState();
           if (st !== 1) {
@@ -371,15 +378,17 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
           // ignore
         }
         // Run once on initial user gesture to unlock browser audio, then remove immediately
-        // so user's volume preference is never reset or blasted back to 100%!
         unlockEvents.forEach((evt) => {
           window.removeEventListener(evt, unlockPlay, { capture: true });
         });
       };
 
-      unlockEvents.forEach((evt) => {
-        window.addEventListener(evt, unlockPlay, { capture: true, passive: true });
-      });
+      // Only listen for audio unlock if user has NOT muted
+      if (!isMasterMutedRef.current) {
+        unlockEvents.forEach((evt) => {
+          window.addEventListener(evt, unlockPlay, { capture: true, passive: true });
+        });
+      }
 
       playerRef.current = new window.YT.Player(iframe, {
         videoId: 'j5C6X9vOEkU',
@@ -387,12 +396,12 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
           onReady: (event) => {
             if (isCancelled) return;
             try {
-              if (isMasterMuted || effectiveVol === 0) {
+              if (isMasterMutedRef.current || masterVolumeRef.current === 0) {
                 event.target.mute();
                 event.target.setVolume(0);
               } else {
                 event.target.unMute();
-                event.target.setVolume(effectiveVol);
+                event.target.setVolume(masterVolumeRef.current);
               }
               event.target.playVideo();
             } catch {
@@ -405,31 +414,27 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
             if (event.data === 1) {
               ytActivelyPlayingRef.current = true;
               try {
-                event.target.unMute();
+                if (isMasterMutedRef.current || masterVolumeRef.current === 0) {
+                  event.target.mute();
+                  event.target.setVolume(0);
+                } else {
+                  event.target.unMute();
+                  event.target.setVolume(masterVolumeRef.current);
+                }
               } catch {
                 // ignore
               }
             }
-            // 0 = ENDED (Song finished 1 complete loop!)
+            // 0 = ENDED (Banana Phone song finished 1 complete play of 3m 16s!)
             if (event.data === 0) {
               completedLoopsRef.current += 1;
-              if (completedLoopsRef.current >= targetLoopsRef.current) {
-                // Finished the final loop! Switch back to Pepe theme now!
-                try {
-                  event.target.stopVideo();
-                } catch {
-                  // ignore
-                }
-                onCompleteRef.current();
-              } else {
-                // Loop again seamlessly!
-                try {
-                  event.target.seekTo(0, true);
-                  event.target.playVideo();
-                } catch {
-                  // ignore
-                }
+              // 1 complete song finished -> switch to Pepe theme!
+              try {
+                event.target.stopVideo();
+              } catch {
+                // ignore
               }
+              onCompleteRef.current();
             }
           },
         },
