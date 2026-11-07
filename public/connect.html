@@ -193,6 +193,14 @@
       var targetIp = rawIp.replace(/[^0-9a-zA-Z\.\:\-]/g, '').trim();
       if (!targetIp) targetIp = '74.91.124.21:27015';
 
+      var domainMap = {
+        'rsscs2.kr': '14.5.33.30:27015',
+        'rsscs2.kr:27015': '14.5.33.30:27015'
+      };
+      if (domainMap[targetIp]) {
+        targetIp = domainMap[targetIp];
+      }
+
       document.getElementById('ip-text').textContent = targetIp;
       var steamUri = 'steam://connect/' + targetIp;
       var linkEl = document.getElementById('connect-link');

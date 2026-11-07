@@ -34,8 +34,8 @@ SERVERS = [
     {"id": "possession", "name": "Possession Zombie Escape (PSE)", "host": "103.62.49.55", "port": 27015, "allow_players": True},
     {"id": "mapeadores", "name": "Mapeadores Zombie Escape", "host": "87.98.228.196", "port": 27040, "allow_players": True},
     {"id": "cola", "name": "cOLa-TeaM Zombie Escape", "host": "178.33.160.187", "port": 27015, "allow_players": True},
-    {"id": "rss", "name": "RSS Zombie Escape", "host": "rsscs2.kr", "port": 27015, "allow_players": True},
-    {"id": "net4all", "name": "Net4All.ru Zombie Escape", "host": "46.174.53.69", "port": 27019, "allow_players": True},
+    {"id": "rss", "name": "RSS Zombie Escape", "host": "14.5.33.30", "port": 27015, "allow_players": True},
+    {"id": "net4all", "name": "Net4All.ru Zombie Escape", "host": "46.174.54.231", "port": 27015, "allow_players": True},
 
     # CHINA: EXG
     {"id": "exg_8", "name": "EXG ZE 装备 #8", "host": "202.189.10.89", "port": 27002, "allow_players": False},
