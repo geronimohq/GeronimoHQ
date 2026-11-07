@@ -30,7 +30,7 @@ interface AppFeatureModule {
 }
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=1.3.0';
+  const downloadUrl = '/CS2_Command_Center.exe?v=1.3.1';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -39,22 +39,22 @@ export const CS2CommandCenterPreview: React.FC = () => {
       id: 'autoexec',
       name: 'Autoexec & ZE Visual/Audio Customizer',
       shortTag: 'CONFIG & HUD ENGINE',
-      badge: '1-CLICK INSTALL',
+      badge: 'REAL-TIME PREVIEW',
       icon: <Sliders className="w-5 h-5 text-fuchsia-400" />,
-      summary: 'Automatic CS2 config engine with built-in ZE Laser-Jump Low Viewmodel, First-Person Tracer clutter toggle, HUD Color theme selector, and 1-Key Boss/Laser Audio Ducking bind.',
+      summary: 'Two independent, non-destructive config engines in one tab: (1) Core Engine & Sub-Tick Autoexec Tweaks for frame-pacing and network rates, and (2) ZE Visual & Audio Binds for low laser viewmodel, tracer clutter removal, and 1-key boss audio ducking—with real-time auto-scrolling preview.',
       details: [
-        'NEW: ZE Laser-Jump Low Viewmodel (FOV 68, X:+2, Y:+2, Z:-2) for maximum bottom-screen visibility.',
-        'NEW: 1-Key Boss/Laser Audio Ducking Toggle (F7 switches game volume between 22% and 85% instantly).',
-        'NEW: First-Person Bullet Tracer Clutter Reducer (r_drawtracers_firstperson 0) & Panic Voice Mute key (F8).',
-        'Pro Jumpthrow alias & Null-Cancelling Movement Binds (A/D snap without opposing key cancellation).',
-        'Audio Clarity EQ tuning for pinpointing zombie footsteps and breakable barricades.'
+        'Block 1 — Engine & Sub-Tick Tweaks: Appends [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS] (fps_max 0, rate 1000000, low-latency sleep, audio buffer eq) without touching your personal binds.',
+        'Block 2 — ZE Visual & Audio Binds: Appends [CS2 COMMAND CENTER - ZE VISUAL & AUDIO CUSTOMIZER] independently so you can use either or both.',
+        'Real-Time Live Preview: Automatically refreshes and scrolls to the bottom of autoexec.cfg with a timestamp banner + confirmation dialog when injected.',
+        'ZE Laser-Jump Low Viewmodel (FOV 68, X:+2, Y:+2, Z:-2) & First-Person Bullet Tracer Clutter Reducer (r_drawtracers_firstperson 0).',
+        '1-Key Boss/Laser Audio Ducking Toggle (F7 switches game volume between 22% and 100%) & Panic Voice Mute key (F8).'
       ],
       parameters: [
         { name: 'viewmodel_offset_z', value: '-2.0 (FOV 68)', desc: 'Clears center screen for crouch/ankle lasers' },
-        { name: 'bind "F7" "ze_duck_toggle"', value: 'volume 0.22 <-> 0.85', desc: 'Instant Boss/Laser audio ducking keybind' },
+        { name: 'bind "F7" "ze_duck_toggle"', value: 'volume 0.22 <-> 1.00', desc: 'Instant Boss/Laser audio ducking keybind' },
         { name: 'r_drawtracers_firstperson', value: '0 (Disabled)', desc: 'Eliminates 64-player Negev tracer clutter' }
       ],
-      proTip: 'No manual file copying required. The app discovers your active Steam account ID and safely appends your ZE Visual & Audio presets into autoexec.cfg.',
+      proTip: 'Engine Tweaks and ZE Visual/Audio Binds are stored as two separate tagged sections inside autoexec.cfg—updating one never overwrites the other, and the live preview scrolls directly to your newly injected block!',
       vacSafe: true
     },
     {
@@ -146,23 +146,23 @@ export const CS2CommandCenterPreview: React.FC = () => {
     },
     {
       id: 'dns',
-      name: 'Gaming DNS & Session Log Analyzer',
+      name: 'Gaming DNS (Any / Custom) & Log Analyzer',
       shortTag: 'NETWORK & TELEMETRY',
-      badge: 'PING + LOG PARSER',
+      badge: 'ANY DNS + LOG PARSER',
       icon: <Sparkles className="w-5 h-5 text-violet-400" />,
-      summary: 'Benchmarks 6 global Gaming DNS providers in parallel for real UDP latency/jitter AND passively analyzes CS2 console.log for post-session frame-time hitches, shader stalls, and network misdelivery.',
+      summary: 'Choose ANY DNS provider you want (not just the fastest!) with 1-click "Use This DNS" buttons on every row, Custom DNS IPv4 support, parallel UDP latency benchmarking, AND passive CS2 console.log session analysis.',
       details: [
-        'NEW: Post-Session CS2 Frame-Time & Network Jitter Log Analyzer (100% passive console.log parser, zero DLL hooks).',
-        'Parallel real-time UDP port 53 latency & jitter benchmark against your physical location.',
-        'All DNS Purposes covered: fast Steam SDR/FastDL lookups, bypassing ISP DNS outages, malware/phishing filtering (Quad9), and ad/telemetry blocking (AdGuard).',
-        '1-Click Apply Fastest/Selected DNS + 1-Click Restore to ISP Default (Automatic DHCP) anytime with 100% safety.'
+        'NEW: Full DNS Freedom — Click any row or click "Use This DNS" on Cloudflare, Google, Quad9, OpenDNS, Level3, or AdGuard to apply your preferred resolver regardless of benchmark rank.',
+        'NEW: Custom DNS IPv4 Input — Enter any custom Primary & Secondary IPv4 DNS servers and apply in 1 click.',
+        'Post-Session CS2 Frame-Time & Network Jitter Log Analyzer (100% passive console.log parser, zero DLL hooks).',
+        'Parallel real-time UDP port 53 latency & jitter benchmark + 1-Click Restore to ISP Default (Automatic DHCP).'
       ],
       parameters: [
+        { name: 'Any / Custom DNS', value: 'Preset or Custom IPv4', desc: 'Pick any provider or enter custom Primary/Secondary IPs' },
         { name: 'Passive Log Analyzer', value: 'game/csgo/console.log', desc: 'Counts frame hitches, shader stalls & net jitter' },
-        { name: 'Cloudflare / Google', value: '1.1.1.1 / 8.8.8.8', desc: 'Ultra-low latency global edge resolvers' },
         { name: 'Safety Guarantee', value: '100% Reversible DHCP', desc: 'Official Windows netsh • 1-Click Restore' }
       ],
-      proTip: 'Add -condebug in the Launch Options tab so CS2 writes console.log, then click "Analyze CS2 Session Telemetry Log" after any match to diagnose stutters or packet jitter.',
+      proTip: 'You do not have to use the #1 fastest DNS—click any provider row (e.g. Quad9 for security or AdGuard for ad-blocking) or enter custom IPv4 addresses and apply immediately!',
       vacSafe: true
     },
     {
@@ -233,7 +233,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v1.3.0
+              v1.3.1
             </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-2xl">

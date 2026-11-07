@@ -314,19 +314,37 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
         playerRef.current = null;
       }
 
-      const mountDiv = document.createElement('div');
-      playerContainerRef.current.innerHTML = '';
-      playerContainerRef.current.appendChild(mountDiv);
+      const iframe = document.createElement('iframe');
+      const originParam = encodeURIComponent(window.location.origin);
+      iframe.src = `https://www.youtube.com/embed/j5C6X9vOEkU?autoplay=1&mute=0&rel=0&playsinline=1&enablejsapi=1&origin=${originParam}`;
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      iframe.setAttribute('allowfullscreen', 'true');
+      iframe.className = 'w-full h-full border-0';
 
-      playerRef.current = new window.YT.Player(mountDiv, {
+      playerContainerRef.current.innerHTML = '';
+      playerContainerRef.current.appendChild(iframe);
+
+      const unlockPlay = () => {
+        if (isCancelled || !playerRef.current) return;
+        try {
+          playerRef.current.unMute();
+          playerRef.current.setVolume(100);
+          const st = playerRef.current.getPlayerState();
+          if (st !== 1) {
+            playerRef.current.playVideo();
+          }
+        } catch {
+          // ignore
+        }
+      };
+
+      const unlockEvents = ['pointerdown', 'mousedown', 'keydown', 'touchstart', 'click'];
+      unlockEvents.forEach((evt) => {
+        window.addEventListener(evt, unlockPlay, { capture: true, passive: true });
+      });
+
+      playerRef.current = new window.YT.Player(iframe, {
         videoId: 'j5C6X9vOEkU',
-        playerVars: {
-          autoplay: 1,
-          rel: 0,
-          playsinline: 1,
-          enablejsapi: 1,
-          origin: window.location.origin,
-        },
         events: {
           onReady: (event) => {
             if (isCancelled) return;
@@ -337,45 +355,18 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
             } catch {
               // ignore
             }
-
-            // If browser blocked unmuted autoplay on cold tab open, start muted immediately
-            // and automatically unmute + play on the user's very first interaction anywhere on the page!
-            const unlockPlay = () => {
-              if (isCancelled || !playerRef.current) return;
-              try {
-                playerRef.current.unMute();
-                playerRef.current.setVolume(100);
-                playerRef.current.playVideo();
-              } catch {
-                // ignore
-              }
-              ['pointerdown', 'mousedown', 'keydown', 'touchstart', 'click'].forEach((evt) => {
-                window.removeEventListener(evt, unlockPlay, true);
-              });
-            };
-
-            ['pointerdown', 'mousedown', 'keydown', 'touchstart', 'click'].forEach((evt) => {
-              window.addEventListener(evt, unlockPlay, { capture: true, passive: true });
-            });
-
-            window.setTimeout(() => {
-              if (isCancelled || !playerRef.current) return;
-              try {
-                const st = playerRef.current.getPlayerState();
-                if (st !== 1) {
-                  playerRef.current.mute();
-                  playerRef.current.playVideo();
-                }
-              } catch {
-                // ignore
-              }
-            }, 350);
           },
           onStateChange: (event) => {
             if (isCancelled) return;
             // 1 = PLAYING
             if (event.data === 1) {
               ytActivelyPlayingRef.current = true;
+              try {
+                event.target.unMute();
+                event.target.setVolume(100);
+              } catch {
+                // ignore
+              }
             }
             // 0 = ENDED (Song finished 1 complete loop!)
             if (event.data === 0) {
@@ -565,13 +556,9 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
                 <PhoneCall className="w-3.5 h-3.5 text-yellow-400" />
                 NOW PLAYING (AUTO-LOOP): RAFFI — BANANA PHONE
               </span>
-              <button
-                onClick={() => setIsMusicOn(false)}
-                data-gremlin-ignore="true"
-                className="text-red-300 hover:text-red-200 bg-red-950/70 border border-red-500/40 px-2 py-0.5 rounded text-[10px] cursor-pointer"
-              >
-                🔇 Turn Off Music
-              </button>
+              <span className="text-[10px] text-amber-300/80">
+                AUTO-LOOPING ACTIVE
+              </span>
             </div>
             <div
               ref={playerContainerRef}

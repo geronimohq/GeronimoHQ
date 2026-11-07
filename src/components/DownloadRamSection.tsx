@@ -2,63 +2,216 @@ import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { Cpu, Download, CheckCircle2, Sparkles, Terminal, RotateCcw, Copy, Check, Gamepad2, Trophy } from 'lucide-react';
 
-interface RamTier {
-  gb: number;
+interface HardwareTier {
+  id: string;
+  shortActionLabel: string;
+  certLabel: string;
   title: string;
   speed: string;
   badge: string;
   desc: string;
-  color: string;
 }
-
-const RAM_TIERS: RamTier[] = [
-  {
-    gb: 16,
-    title: '16 GB DDR5',
-    speed: '6000 MT/s CL30',
-    badge: 'STARTER PACK',
-    desc: 'Enough to open 3 Chrome tabs and Counter-Strike 2 simultaneously.',
-    color: 'cyan',
-  },
-  {
-    gb: 32,
-    title: '32 GB DDR5',
-    speed: '7200 MT/s CL28',
-    badge: 'GAMER SWEETSPOT',
-    desc: 'Zero stutter when 60 players throw HE grenades on GFL Zombie Escape.',
-    color: 'lime',
-  },
-  {
-    gb: 64,
-    title: '64 GB DDR5',
-    speed: '8000 MT/s CL26',
-    badge: 'WORKSTATION CHAD',
-    desc: 'Download enough dedotated WAM to host your own Minecraft + CS2 cluster.',
-    color: 'fuchsia',
-  },
-  {
-    gb: 128,
-    title: '128 GB DDR6-X',
-    speed: '12,800 MT/s CL14',
-    badge: 'NASA QUANTUM OVERKILL',
-    desc: 'Directly links your motherboard to the Pentagon satellite array.',
-    color: 'amber',
-  },
-];
 
 type MemePackageMode = 'ram' | 'gpu' | 'fps';
 
+const TIERS_BY_MODE: Record<MemePackageMode, HardwareTier[]> = {
+  ram: [
+    {
+      id: 'ram-16',
+      shortActionLabel: '16 GB RAM',
+      certLabel: '16 GB DDR5 RAM (6000 MT/s CL30)',
+      title: '16 GB DDR5',
+      speed: '6000 MT/s CL30',
+      badge: 'STARTER PACK',
+      desc: 'Enough to open 3 Chrome tabs and Counter-Strike 2 simultaneously.',
+    },
+    {
+      id: 'ram-32',
+      shortActionLabel: '32 GB RAM',
+      certLabel: '32 GB DDR5 RAM (7200 MT/s CL28)',
+      title: '32 GB DDR5',
+      speed: '7200 MT/s CL28',
+      badge: 'GAMER SWEETSPOT',
+      desc: 'Zero stutter when 60 players throw HE grenades on GFL Zombie Escape.',
+    },
+    {
+      id: 'ram-64',
+      shortActionLabel: '64 GB RAM',
+      certLabel: '64 GB DDR5 RAM (8000 MT/s CL26)',
+      title: '64 GB DDR5',
+      speed: '8000 MT/s CL26',
+      badge: 'WORKSTATION CHAD',
+      desc: 'Download enough dedotated WAM to host your own Minecraft + CS2 cluster.',
+    },
+    {
+      id: 'ram-128',
+      shortActionLabel: '128 GB RAM',
+      certLabel: '128 GB DDR6-X RAM (12,800 MT/s CL14)',
+      title: '128 GB DDR6-X',
+      speed: '12,800 MT/s CL14',
+      badge: 'NASA QUANTUM OVERKILL',
+      desc: 'Directly links your motherboard to the Pentagon satellite array.',
+    },
+  ],
+  gpu: [
+    {
+      id: 'gpu-6090-fe',
+      shortActionLabel: 'RTX 6090 FE (32GB)',
+      certLabel: 'NVIDIA RTX 6090 Founders Edition (32GB GDDR7)',
+      title: 'RTX 6090 FE',
+      speed: '32 GB GDDR7 • 3,450 MHz',
+      badge: 'FOUNDERS EDITION',
+      desc: 'Renders 64-player Molotov + HE grenade smoke at 8K without warming up your room.',
+    },
+    {
+      id: 'gpu-6090-ti',
+      shortActionLabel: 'RTX 6090 Ti (64GB)',
+      certLabel: 'NVIDIA RTX 6090 Ti OC (64GB GDDR7X • 32,768 CUDA Cores)',
+      title: 'RTX 6090 Ti',
+      speed: '64 GB GDDR7X • 4,200 MHz',
+      badge: 'GERONIMO FLAGSHIP',
+      desc: '32,768 CUDA Cores + DLSS 5.0 Future-Frame Prediction (shoots zombies 2 ticks before they spawn).',
+    },
+    {
+      id: 'gpu-6090-matrix',
+      shortActionLabel: 'RTX 6090 Ti MATRIX (96GB)',
+      certLabel: 'ROG MATRIX RTX 6090 Ti LN2 (96GB HBM3e • -196°C)',
+      title: '6090 Ti MATRIX',
+      speed: '96 GB HBM3e • LN2 COOLED',
+      badge: 'LIQUID NITROGEN EDITION',
+      desc: 'Built-in virtual liquid nitrogen loop (-196°C) + Quad-Slot ARGB Halo Matrix telemetry display.',
+    },
+    {
+      id: 'gpu-quad-sli',
+      shortActionLabel: 'QUAD-SLI RTX 6090 Ti (256GB)',
+      certLabel: 'QUAD-SLI NVIDIA RTX 6090 Ti TITAN-Z (256GB GDDR8)',
+      title: 'QUAD-SLI 6090 Ti',
+      speed: '256 GB GDDR8 • 4.8 TB/s',
+      badge: 'PENTAGON SUPERCOMPUTER',
+      desc: 'Requires a virtual nuclear reactor. Ray-traces every individual Mako Reactor laser beam in 16K.',
+    },
+  ],
+  fps: [
+    {
+      id: 'fps-250',
+      shortActionLabel: '+250 FPS BOOST PACK',
+      certLabel: '+250 FPS Competitive Sub-Tick Stabilizer Pack',
+      title: '+250 FPS BOOST',
+      speed: '360 Hz LOCKED • 1.2ms',
+      badge: 'COMPETITIVE PACK',
+      desc: 'Stabilizes 1% lows during heavy smoke utility and 64-player spawn rushes.',
+    },
+    {
+      id: 'fps-500',
+      shortActionLabel: '+500 FPS ZE PRO PACK',
+      certLabel: '+500 FPS Zombie Escape Boss & Laser Pack',
+      title: '+500 FPS ZE PRO',
+      speed: '540 Hz LOCKED • 0.4ms',
+      badge: 'ZOMBIE ESCAPE PRO',
+      desc: 'Deletes particle lag on ze_ffvii_mako_reactor & ze_dark_souls boss fights.',
+    },
+    {
+      id: 'fps-1000',
+      shortActionLabel: '+1,000 FPS OVERDRIVE PACK',
+      certLabel: '+1,000 FPS Source 3 Quantum Engine Overdrive Pack',
+      title: '+1,000 FPS PACK',
+      speed: '1,000 Hz SUB-TICK • 0.05ms',
+      badge: 'SOURCE 3 ENGINE LEAK',
+      desc: "Unlocks Gaben's private Source 3 multi-threaded quantum renderer for 1,000+ FPS.",
+    },
+    {
+      id: 'fps-9999',
+      shortActionLabel: '+9,999 FPS QUANTUM PACK',
+      certLabel: '+9,999 FPS NASA Time-Travel Tickrate Pack',
+      title: '+9,999 FPS NASA',
+      speed: '∞ Hz • NEGATIVE LATENCY',
+      badge: 'TIME-TRAVEL TICKRATE',
+      desc: 'Frames arrive on your monitor 15ms before the CS2 server even calculates them.',
+    },
+  ],
+};
+
+const MODE_META: Record<
+  MemePackageMode,
+  {
+    topPill: string;
+    rangeBadge: string;
+    heading: string;
+    subtitle: string;
+    step1Title: string;
+    step1Right: string;
+    step2Title: string;
+    opt1Label: string;
+    opt2Label: string;
+    idleStatus: string;
+    initialLogs: string[];
+  }
+> = {
+  ram: {
+    topPill: 'OFFICIAL GERONIMOHQ.COM CLOUD MEMORY GENERATOR',
+    rangeBadge: '16GB — 128GB DDR5 / DDR6-X',
+    heading: 'DOWNLOAD MORE RAM',
+    subtitle:
+      "Came here from Geronimo's Discord bio? Why pay $300 for physical RAM sticks when you can download high-frequency DDR5/DDR6 memory directly into your browser!",
+    step1Title: 'STEP 1 // SELECT HOW MUCH RAM YOU WANT TO DOWNLOAD (16 GB – 128 GB):',
+    step1Right: 'INSTANT CLOUD DIMM TRANSFER',
+    step2Title: 'STEP 2 // CONFIGURE MEMORY ENHANCEMENTS:',
+    opt1Label: '🌈 Enable ARGB Rainbow Heatsink Overclock (+420% Aura)',
+    opt2Label: '🧟 Pre-Load CS2 Zombie Escape Laser-Dodge Memory Timings',
+    idleStatus: 'Ready to inject virtual DIMM modules into motherboard...',
+    initialLogs: [
+      '[SYS.BIOS] GeronimoHQ Cloud-to-DIMM Neural Interface v4.20 initialized.',
+      '[MOTHERBOARD] 4x Virtual PCIe 6.0 / DDR6 Memory Slots detected and unlocked.',
+    ],
+  },
+  gpu: {
+    topPill: 'OFFICIAL GERONIMOHQ.COM CLOUD GPU ARCHITECT',
+    rangeBadge: '32GB — 256GB GDDR7X / HBM3e VRAM',
+    heading: 'DOWNLOAD RTX 6090 Ti GPU',
+    subtitle:
+      'Out of VRAM during 64-player Zombie Escape particle spam? Download an unreleased flagship NVIDIA RTX 6090 Ti architecture straight into your PCIe 6.0 slot!',
+    step1Title: 'STEP 1 // SELECT YOUR VIRTUAL RTX 6090 Ti GRAPHICS CARD TIER:',
+    step1Right: 'PCIe 6.0 x16 CLOUD BUS READY',
+    step2Title: 'STEP 2 // CONFIGURE GPU OVERCLOCK & COOLING:',
+    opt1Label: '🔮 Enable DLSS 5.0 "Future-Frame" Time-Travel Prediction (+690% Clarity)',
+    opt2Label: '❄️ Inject Virtual Liquid Nitrogen Loop (-196°C Core Temp & Zero Coil Whine)',
+    idleStatus: 'Ready to materialize virtual RTX 6090 Ti silicon into PCIe x16 slot...',
+    initialLogs: [
+      '[NV.CLOUD] GeronimoHQ Blackwell-Ultra Silicon Synthesizer v6.90 initialized.',
+      '[PCIE_BUS] Virtual 16-Pin 1,600W Melt-Proof Power Connector locked and ready.',
+    ],
+  },
+  fps: {
+    topPill: 'OFFICIAL GERONIMOHQ.COM SOURCE 2 FRAME INJECTOR',
+    rangeBadge: '+250 TO +9,999 FPS SUB-TICK BOOST',
+    heading: 'DOWNLOAD +1,000 FPS PACK',
+    subtitle:
+      'Tired of frame drops when 40 humans spam Negevs at the boss? Inject pure cloud-rendered frames and 0.05ms sub-tick registration directly into your monitor!',
+    step1Title: 'STEP 1 // SELECT YOUR CLOUD FPS & SUB-TICK BOOSTER TIER:',
+    step1Right: '100% PURE CLOUD FRAMES',
+    step2Title: 'STEP 2 // CONFIGURE ENGINE & SUB-TICK OVERDRIVE:',
+    opt1Label: '⚡ Bypass 64-Tick Limits with 1,024-Tick Quantum Sub-Tick Desubticker',
+    opt2Label: '🛡️ Enable Zero-Smoke-Lag & Auto-Laser-Jump Frame Interpolation',
+    idleStatus: 'Ready to inject cloud-rendered frames into cs2.exe pipeline...',
+    initialLogs: [
+      '[SOURCE3.API] GeronimoHQ Quantum Frame-Gen & Sub-Tick Pipeline online.',
+      '[MONITOR] Virtual 1,000Hz DisplayPort 3.0 Overdrive link established.',
+    ],
+  },
+};
+
 export const DownloadRamSection: React.FC = () => {
   const [memeMode, setMemeMode] = useState<MemePackageMode>('ram');
-  const [selectedGb, setSelectedGb] = useState<number>(64);
+  const [selectedTierIdByMode, setSelectedTierIdByMode] = useState<Record<MemePackageMode, string>>({
+    ram: 'ram-64',
+    gpu: 'gpu-6090-ti',
+    fps: 'fps-1000',
+  });
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
-  const [statusLine, setStatusLine] = useState<string>('Ready to inject virtual DIMM modules into motherboard...');
-  const [logs, setLogs] = useState<string[]>([
-    '[SYS.BIOS] GeronimoHQ Cloud-to-DIMM Neural Interface v4.20 initialized.',
-    '[MOTHERBOARD] 4x Virtual PCIe 6.0 Memory Slots detected and unlocked.',
-  ]);
+  const [statusLine, setStatusLine] = useState<string>(MODE_META.ram.idleStatus);
+  const [logs, setLogs] = useState<string[]>(MODE_META.ram.initialLogs);
   const [optRgb, setOptRgb] = useState<boolean>(true);
   const [optBhop, setOptBhop] = useState<boolean>(true);
   const [copiedFlex, setCopiedFlex] = useState<boolean>(false);
@@ -77,14 +230,11 @@ export const DownloadRamSection: React.FC = () => {
   });
   const poseRef = useRef<'stand' | 'jump' | 'crouch'>('stand');
 
-  const selectedTier = RAM_TIERS.find((t) => t.gb === selectedGb) || RAM_TIERS[2];
-
-  const activePackageLabel =
-    memeMode === 'gpu'
-      ? 'NVIDIA RTX 6090 Ti (64GB GDDR7)'
-      : memeMode === 'fps'
-      ? '+1,000 FPS SOURCE 2 SUB-TICKBOOSTER'
-      : `${selectedTier.gb} GB RAM (${selectedTier.speed})`;
+  const currentTiers = TIERS_BY_MODE[memeMode];
+  const currentMeta = MODE_META[memeMode];
+  const selectedTier =
+    currentTiers.find((t) => t.id === selectedTierIdByMode[memeMode]) || currentTiers[1];
+  const activePackageLabel = selectedTier.certLabel;
 
   useEffect(() => {
     return () => {
@@ -155,6 +305,16 @@ export const DownloadRamSection: React.FC = () => {
     setLaserGameActive(true);
   };
 
+  const switchMemeMode = (nextMode: MemePackageMode) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setMemeMode(nextMode);
+    setIsDownloading(false);
+    setIsCompleted(false);
+    setProgress(0);
+    setStatusLine(MODE_META[nextMode].idleStatus);
+    setLogs(MODE_META[nextMode].initialLogs);
+  };
+
   const startRamDownload = () => {
     if (isDownloading) return;
     setIsDownloading(true);
@@ -164,14 +324,33 @@ export const DownloadRamSection: React.FC = () => {
       `[START] Requesting ${activePackageLabel} from GeronimoHQ Quantum Cloud...`,
     ]);
 
-    const stages: { pct: number; msg: string }[] = [
-      { pct: 12, msg: `[SLOTS] Bypassing physical motherboard limits... Allocating ${activePackageLabel}...` },
-      { pct: 28, msg: `[TIMINGS] Soldering cloud capacitors & tightening CAS Latency to 0.01ns...` },
-      { pct: 46, msg: optRgb ? `[RGB] Injecting 16.8 Million ARGB Rainbow Wave photons into heatsinks...` : `[COOLING] Flushing liquid nitrogen through virtual heatspreaders...` },
-      { pct: 65, msg: optBhop ? `[CS2_ENGINE] Calibrating sub-tick bhop & Zombie Escape laser-dodge memory registers...` : `[XMP_EXPO] Enabling AMD EXPO / Intel XMP 4.0 Overdrive profile...` },
-      { pct: 84, msg: `[VERIFY] Running MemTest69-Pro (0 errors found)...` },
-      { pct: 96, msg: `[FINALIZE] Sealing PCIe / DIMM latches *CLICK* *CLICK*...` },
-    ];
+    const stages: { pct: number; msg: string }[] =
+      memeMode === 'gpu'
+        ? [
+            { pct: 12, msg: `[PCIE_6.0] Unlocking virtual PCIe 6.0 x16 lane & allocating ${activePackageLabel}...` },
+            { pct: 28, msg: `[CUDA_CORES] Materializing 32,768 Blackwell-Ultra Shader Cores & GDDR7X VRAM modules...` },
+            { pct: 46, msg: optRgb ? `[DLSS_5.0] Training Neural Time-Travel Frame Predictor (shoots zombies 2 ticks early)...` : `[RAYTRACING] Compiling 16K path-traced Mako Reactor laser reflections...` },
+            { pct: 65, msg: optBhop ? `[LN2_COOLING] Flooding virtual GPU waterblock with -196°C Liquid Nitrogen (0 dB coil whine)...` : `[VBIOS] Flashing 4,200 MHz Core Clock Overdrive VBIOS...` },
+            { pct: 84, msg: `[BENCHMARK] 3DMark Port Royal Score: 420,069 pts (World Record Verified)...` },
+            { pct: 96, msg: `[FINALIZE] Locking 16-pin melt-proof titanium power latch *CLICK*...` },
+          ]
+        : memeMode === 'fps'
+        ? [
+            { pct: 12, msg: `[SOURCE_2] Attaching Quantum Frame-Generator to cs2.exe render queue...` },
+            { pct: 28, msg: `[SHADERS] Pre-deleting 64-player HE grenade, Molotov & Negev tracer lag spikes...` },
+            { pct: 46, msg: optRgb ? `[SUB_TICK] Overclocking 64-tick server packets to 1,024-tick Quantum Desubticker...` : `[RENDERER] Unlocking Gaben's secret Source 3 multi-threaded pipeline...` },
+            { pct: 65, msg: optBhop ? `[LASER_SYNC] Calibrating 0.00ms crouch/jump frame interpolation for ZE ending lasers...` : `[1%_LOWS] Locking minimum 1% Low FPS above 999.9 FPS...` },
+            { pct: 84, msg: `[TELEMETRY] Frame-time variance stabilized at 0.01ms (Zero choke / 0% loss)...` },
+            { pct: 96, msg: `[FINALIZE] Injecting ${activePackageLabel} directly into display refresh buffer...` },
+          ]
+        : [
+            { pct: 12, msg: `[SLOTS] Bypassing physical motherboard limits... Allocating ${activePackageLabel}...` },
+            { pct: 28, msg: `[TIMINGS] Soldering cloud capacitors & tightening CAS Latency to 0.01ns...` },
+            { pct: 46, msg: optRgb ? `[RGB] Injecting 16.8 Million ARGB Rainbow Wave photons into heatsinks...` : `[COOLING] Flushing liquid nitrogen through virtual heatspreaders...` },
+            { pct: 65, msg: optBhop ? `[CS2_ENGINE] Calibrating sub-tick bhop & Zombie Escape laser-dodge memory registers...` : `[XMP_EXPO] Enabling AMD EXPO / Intel XMP 4.0 Overdrive profile...` },
+            { pct: 84, msg: `[VERIFY] Running MemTest69-Pro (0 errors found)...` },
+            { pct: 96, msg: `[FINALIZE] Sealing PCIe / DIMM latches *CLICK* *CLICK*...` },
+          ];
 
     const triggeredStages = new Set<number>();
     let currentPct = 0;
@@ -214,7 +393,8 @@ export const DownloadRamSection: React.FC = () => {
     setIsDownloading(false);
     setIsCompleted(false);
     setProgress(0);
-    setStatusLine('Ready to inject virtual DIMM modules into motherboard...');
+    setStatusLine(currentMeta.idleStatus);
+    setLogs(currentMeta.initialLogs);
   };
 
   const copyDiscordFlex = () => {
@@ -236,55 +416,55 @@ export const DownloadRamSection: React.FC = () => {
         <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-lime-400/80" />
 
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-5 border-b border-lime-500/30 pb-4">
-          <div>
-            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5 border-b border-lime-500/30 pb-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="px-2.5 py-0.5 text-[10px] font-code rounded bg-lime-950/90 text-lime-300 border border-lime-500/50">
-                OFFICIAL GERONIMOHQ.COM CLOUD MEMORY GENERATOR
+                {currentMeta.topPill}
               </span>
-              <span className="text-xs font-code text-cyan-400">
+              <span className="px-2.5 py-0.5 text-[10px] font-code font-bold rounded bg-slate-900 text-cyan-300 border border-cyan-500/50">
+                {currentMeta.rangeBadge}
+              </span>
+              <span className="text-[11px] font-code text-lime-400">
                 100% FREE DEDOTATED WAM
               </span>
             </div>
             <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
-              <Cpu className="w-7 h-7 text-lime-400 animate-pulse" />
-              <span>DOWNLOAD MORE RAM</span>
-              <span className="text-xs font-code px-2 py-0.5 bg-lime-950 text-lime-300 border border-lime-400/60 rounded">
-                16GB — 128GB
-              </span>
+              <Cpu className="w-7 h-7 text-lime-400 animate-pulse flex-shrink-0" />
+              <span>{currentMeta.heading}</span>
             </h2>
             <p className="text-sm font-tech text-slate-300 mt-1 max-w-2xl">
-              Came here from Geronimo&apos;s Discord bio? Why pay $300 for physical RAM sticks when you can download high-frequency DDR5/DDR6 memory directly into your browser!
+              {currentMeta.subtitle}
             </p>
           </div>
 
           {/* Bonus Cloud Hardware Mode Switcher */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800">
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 flex-shrink-0 self-start lg:self-end">
             <button
-              onClick={() => { setMemeMode('ram'); resetDownload(); }}
+              onClick={() => switchMemeMode('ram')}
               className={`px-3 py-1.5 rounded-lg text-xs font-code font-bold cursor-pointer transition-all ${
                 memeMode === 'ram'
-                  ? 'bg-lime-500/20 text-lime-300 border border-lime-400/60'
+                  ? 'bg-lime-500/20 text-lime-300 border border-lime-400/60 shadow-[0_0_12px_rgba(57,255,20,0.25)]'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               💾 FREE RAM (16-128GB)
             </button>
             <button
-              onClick={() => { setMemeMode('gpu'); resetDownload(); }}
+              onClick={() => switchMemeMode('gpu')}
               className={`px-3 py-1.5 rounded-lg text-xs font-code font-bold cursor-pointer transition-all ${
                 memeMode === 'gpu'
-                  ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-400/60'
+                  ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-400/60 shadow-[0_0_12px_rgba(255,0,127,0.25)]'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               🎮 RTX 6090 Ti
             </button>
             <button
-              onClick={() => { setMemeMode('fps'); resetDownload(); }}
+              onClick={() => switchMemeMode('fps')}
               className={`px-3 py-1.5 rounded-lg text-xs font-code font-bold cursor-pointer transition-all ${
                 memeMode === 'fps'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/60'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/60 shadow-[0_0_12px_rgba(0,240,255,0.25)]'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -293,41 +473,62 @@ export const DownloadRamSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Step 1: Select RAM Capacity (16 GB to 128 GB) */}
+        {/* Step 1: Select Hardware Tier (Dynamic per Mode: RAM / RTX 6090 Ti / +1,000 FPS Pack) */}
         <div className="mb-6">
-          <div className="text-xs font-code text-slate-400 uppercase tracking-wider mb-3 flex items-center justify-between">
-            <span>STEP 1 // SELECT HOW MUCH RAM YOU WANT TO DOWNLOAD (16 GB – 128 GB):</span>
-            <span className="text-lime-400">INSTANT CLOUD TRANSFER</span>
+          <div className="text-xs font-code text-slate-400 uppercase tracking-wider mb-3 flex flex-wrap items-center justify-between gap-2">
+            <span>{currentMeta.step1Title}</span>
+            <span className="text-lime-400">{currentMeta.step1Right}</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            {RAM_TIERS.map((tier) => {
-              const isSelected = selectedGb === tier.gb;
+            {currentTiers.map((tier) => {
+              const isSelected = selectedTier.id === tier.id;
+              const activeCardColors =
+                memeMode === 'gpu'
+                  ? 'bg-gradient-to-br from-fuchsia-950/80 via-slate-900 to-cyan-950/60 border-fuchsia-400 shadow-[0_0_25px_rgba(255,0,127,0.3)] scale-[1.02]'
+                  : memeMode === 'fps'
+                  ? 'bg-gradient-to-br from-cyan-950/80 via-slate-900 to-lime-950/60 border-cyan-400 shadow-[0_0_25px_rgba(0,240,255,0.3)] scale-[1.02]'
+                  : 'bg-gradient-to-br from-lime-950/80 via-slate-900 to-cyan-950/60 border-lime-400 shadow-[0_0_25px_rgba(57,255,20,0.3)] scale-[1.02]';
+              const badgeColors =
+                memeMode === 'gpu'
+                  ? 'text-fuchsia-300 border-fuchsia-500/40'
+                  : memeMode === 'fps'
+                  ? 'text-cyan-300 border-cyan-500/40'
+                  : 'text-lime-300 border-lime-500/40';
+              const dotColor =
+                memeMode === 'gpu'
+                  ? 'bg-fuchsia-400'
+                  : memeMode === 'fps'
+                  ? 'bg-cyan-400'
+                  : 'bg-lime-400';
+
               return (
                 <button
-                  key={tier.gb}
+                  key={tier.id}
                   disabled={isDownloading}
                   onClick={() => {
-                    setMemeMode('ram');
-                    setSelectedGb(tier.gb);
+                    setSelectedTierIdByMode((prev) => ({
+                      ...prev,
+                      [memeMode]: tier.id,
+                    }));
                     if (isCompleted) setIsCompleted(false);
                   }}
                   className={`text-left p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
-                    isSelected && memeMode === 'ram'
-                      ? 'bg-gradient-to-br from-lime-950/80 via-slate-900 to-cyan-950/60 border-lime-400 shadow-[0_0_25px_rgba(57,255,20,0.3)] scale-[1.02]'
+                    isSelected
+                      ? activeCardColors
                       : 'bg-slate-900/60 border-slate-800 hover:border-slate-600 text-slate-300'
                   } ${isDownloading ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-[10px] font-code px-2 py-0.5 rounded bg-slate-950 text-lime-300 border border-lime-500/40">
+                      <span className={`text-[10px] font-code px-2 py-0.5 rounded bg-slate-950 border ${badgeColors}`}>
                         {tier.badge}
                       </span>
-                      {isSelected && memeMode === 'ram' && (
-                        <span className="w-2.5 h-2.5 rounded-full bg-lime-400 animate-ping" />
+                      {isSelected && (
+                        <span className={`w-2.5 h-2.5 rounded-full animate-ping ${dotColor}`} />
                       )}
                     </div>
-                    <div className="text-2xl font-cyber font-black text-white">
+                    <div className="text-xl xl:text-2xl font-cyber font-black text-white">
                       {tier.title}
                     </div>
                     <div className="text-xs font-code text-cyan-300 mt-0.5">
@@ -349,7 +550,7 @@ export const DownloadRamSection: React.FC = () => {
           {/* Left: Toggles & Action Button (5 cols) */}
           <div className="lg:col-span-5 flex flex-col gap-3">
             <div className="text-xs font-code text-slate-300 font-bold uppercase">
-              STEP 2 // CONFIGURE MEMORY ENHANCEMENTS:
+              {currentMeta.step2Title}
             </div>
 
             <label className="flex items-center gap-2.5 text-xs font-tech text-slate-300 cursor-pointer select-none">
@@ -358,9 +559,9 @@ export const DownloadRamSection: React.FC = () => {
                 checked={optRgb}
                 disabled={isDownloading}
                 onChange={(e) => setOptRgb(e.target.checked)}
-                className="w-4 h-4 accent-lime-400 rounded cursor-pointer"
+                className="w-4 h-4 accent-lime-400 rounded cursor-pointer flex-shrink-0"
               />
-              <span>🌈 Enable ARGB Rainbow Heatsink Overclock (+420% Aura)</span>
+              <span>{currentMeta.opt1Label}</span>
             </label>
 
             <label className="flex items-center gap-2.5 text-xs font-tech text-slate-300 cursor-pointer select-none">
@@ -369,9 +570,9 @@ export const DownloadRamSection: React.FC = () => {
                 checked={optBhop}
                 disabled={isDownloading}
                 onChange={(e) => setOptBhop(e.target.checked)}
-                className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
+                className="w-4 h-4 accent-cyan-400 rounded cursor-pointer flex-shrink-0"
               />
-              <span>🧟 Pre-Load CS2 Zombie Escape Laser-Dodge Timings</span>
+              <span>{currentMeta.opt2Label}</span>
             </label>
 
             <div className="pt-2 flex flex-wrap items-center gap-3">
@@ -389,11 +590,7 @@ export const DownloadRamSection: React.FC = () => {
                   <span>
                     {isDownloading
                       ? `DOWNLOADING (${progress}%)...`
-                      : memeMode === 'gpu'
-                      ? 'DOWNLOAD RTX 6090 Ti NOW'
-                      : memeMode === 'fps'
-                      ? 'DOWNLOAD +1,000 FPS PACK'
-                      : `DOWNLOAD ${selectedTier.gb} GB RAM NOW`}
+                      : `DOWNLOAD ${selectedTier.shortActionLabel} NOW`}
                   </span>
                 </button>
               ) : (
