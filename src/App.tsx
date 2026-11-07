@@ -47,6 +47,23 @@ export const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, [theme]);
 
+  // Handle direct URL hash navigation on initial page load (e.g., https://geronimohq.com/#download-ram)
+  useEffect(() => {
+    const handleInitialHash = () => {
+      const rawHash = window.location.hash.replace('#', '').trim();
+      if (rawHash) {
+        // Small delay to ensure all DOM elements and images have completed initial mount/layout
+        window.setTimeout(() => {
+          scrollToSectionById(rawHash);
+        }, 150);
+      }
+    };
+
+    handleInitialHash();
+    window.addEventListener('hashchange', handleInitialHash);
+    return () => window.removeEventListener('hashchange', handleInitialHash);
+  }, []);
+
   // Callback fired by BananaHeroStage right after the 2nd, 3rd, or 4th loop of Banana Phone music finishes completely
   const handleBananaLoopsFinished = useCallback(() => {
     setTheme('pepe');
