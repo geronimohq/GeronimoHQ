@@ -62,7 +62,7 @@ export const DeployHudFooter: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-slate-400 font-tech leading-relaxed">
-              Have inquiries, custom config requests, or server suggestions? Reach out directly via encrypted relay:
+              Need more downloaded RAM? Broke your ankles on Cybo lasers, got a cursed ZE map suggestion, or wanna flame our 420W toaster? Transmit your signal to Geronimo HQ via direct encrypted pigeon:
             </p>
 
             {/* Email Terminal Card */}
