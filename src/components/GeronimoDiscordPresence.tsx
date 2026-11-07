@@ -146,11 +146,11 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
                     <span className="text-cyan-400 font-code font-bold ml-1">⏱️ {formatMapElapsed(mapDuration)}</span>
                   </span>
                 ) : state === 'main_menu' ? (
-                  <span className="text-amber-400">CS2 Menu</span>
+                  <span className="text-amber-400">Idle in CS2 Menu</span>
                 ) : state === 'other_game' ? (
                   <span className="text-purple-300 truncate">{presence?.game || 'In-Game'}</span>
                 ) : state === 'online' ? (
-                  <span className="text-slate-400">Idle on Steam</span>
+                  <span className="text-slate-400">Idle</span>
                 ) : (
                   <span className="text-slate-400">Offline</span>
                 )}
@@ -262,7 +262,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             ) : state === 'main_menu' ? (
               <>
                 <Gamepad2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                <span className="truncate font-bold text-amber-300">Counter-Strike 2 &bull; Standby in Lobby</span>
+                <span className="truncate font-bold text-amber-300">Counter-Strike 2 &bull; Idle in Main Menu</span>
               </>
             ) : state === 'other_game' ? (
               <>
@@ -272,7 +272,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             ) : state === 'online' ? (
               <>
                 <Compass className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
-                <span className="truncate text-slate-300">Online on Steam &bull; Available</span>
+                <span className="truncate text-slate-300">Online on Steam &bull; Idle</span>
               </>
             ) : (
               <>
@@ -335,7 +335,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
               CS2 Status
             </span>
             <span className="text-xs text-amber-300 font-semibold block truncate">
-              In Main Menu / Lobby
+              Idle in Main Menu / Lobby
             </span>
           </div>
         </div>

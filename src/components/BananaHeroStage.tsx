@@ -324,11 +324,13 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
       playerContainerRef.current.innerHTML = '';
       playerContainerRef.current.appendChild(iframe);
 
+      const unlockEvents = ['pointerdown', 'mousedown', 'keydown', 'touchstart', 'click'];
+
       const unlockPlay = () => {
         if (isCancelled || !playerRef.current) return;
         try {
           playerRef.current.unMute();
-          playerRef.current.setVolume(100);
+          playerRef.current.setVolume(30);
           const st = playerRef.current.getPlayerState();
           if (st !== 1) {
             playerRef.current.playVideo();
@@ -336,9 +338,13 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
         } catch {
           // ignore
         }
+        // Run once on initial user gesture to unlock browser audio, then remove immediately
+        // so user's volume preference is never reset or blasted back to 100%!
+        unlockEvents.forEach((evt) => {
+          window.removeEventListener(evt, unlockPlay, { capture: true });
+        });
       };
 
-      const unlockEvents = ['pointerdown', 'mousedown', 'keydown', 'touchstart', 'click'];
       unlockEvents.forEach((evt) => {
         window.addEventListener(evt, unlockPlay, { capture: true, passive: true });
       });
@@ -350,7 +356,7 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
             if (isCancelled) return;
             try {
               event.target.unMute();
-              event.target.setVolume(100);
+              event.target.setVolume(30);
               event.target.playVideo();
             } catch {
               // ignore
@@ -363,7 +369,6 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
               ytActivelyPlayingRef.current = true;
               try {
                 event.target.unMute();
-                event.target.setVolume(100);
               } catch {
                 // ignore
               }
@@ -560,10 +565,21 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
                 AUTO-LOOPING ACTIVE
               </span>
             </div>
-            <div
-              ref={playerContainerRef}
-              className="relative w-full aspect-video rounded-lg overflow-hidden border border-yellow-500/30 bg-black [&>iframe]:w-full [&>iframe]:h-full"
-            />
+            <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-yellow-500/30 bg-black">
+              <div
+                ref={playerContainerRef}
+                className="w-full h-full pointer-events-none select-none [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:pointer-events-none"
+              />
+              {/* Invisible non-clickable protective shield: prevents accidental pauses or opening external YouTube links */}
+              <div
+                className="absolute inset-0 z-10 cursor-default"
+                title="Raffi — Banana Phone (Holo-Player)"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+              />
+            </div>
           </div>
         )}
 
