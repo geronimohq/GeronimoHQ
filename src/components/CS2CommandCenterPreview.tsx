@@ -30,7 +30,7 @@ interface AppFeatureModule {
 }
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=1.3.2';
+  const downloadUrl = '/CS2_Command_Center.exe?v=1.3.3';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -103,24 +103,24 @@ export const CS2CommandCenterPreview: React.FC = () => {
     },
     {
       id: 'sniper',
-      name: 'Rapid 1s Console Slot Sniper (10s Cooldown)',
+      name: 'True Silent Slot Sniper (0 RAM Stacking)',
       shortTag: 'DIRECT NETWORK',
-      badge: '1S CONSOLE + 0.25S UDP',
+      badge: 'SILENT UDP + 10S COOLDOWN',
       icon: <Target className="w-5 h-5 text-lime-400" />,
-      summary: 'When clicked, the button switches to "Active", detects player count at the lowest and safest interval (0.25s UDP query), and sends console connect to your chosen server every 1.0 second. The instant a player leaves based on your set priority, it stops immediately and enters a 10-second cooldown.',
+      summary: 'Monitors server player counts via low-latency UDP A2S queries at 0.25s while full—consuming 0 CS2 RAM, 0 SDR network sessions, and 0 clipboard usage. The exact millisecond a player disconnects, it executes the in-game console connect immediately with a 10-second cooldown!',
       details: [
-        'Shows "🎯 Active" on the button while sniping (zero intrusive Windows or popup notifications).',
-        'Ultra-fast, safe UDP A2S player count detection every 0.25s (4x per second).',
-        'Dispatches in-game console connect (connect IP:PORT) every 1.0 second while waiting.',
-        'Immediately stops the 1s console connect loop the millisecond a player leaves based on your set priority (≤61, ≤62, or ≤63) and replaces "Active" with a 10-second cooldown countdown.',
-        'If someone else got into the slot first, simply click Slot Sniper again manually once the 10s cooldown finishes to repeat!'
+        'True Silent Sniping: Watches server player count via lightweight UDP packets outside the game engine—preventing CS2 memory heap & SDR session leaks.',
+        'Ultra-Fast 0.25s Player Count Detection: Checks 4 times per second for instant slot detection.',
+        'Zero Console & Clipboard Spam while waiting (avoids Windows Clipboard History buildup).',
+        'Instant In-Engine Console Connect & 10s Button Cooldown the exact millisecond a player leaves.',
+        'GFL Priority Slot Tiers (Normal ≤61, Mapper/Supporter ≤62, VIP ≤63).'
       ],
       parameters: [
-        { name: 'Player Detection', value: '0.25s Safe UDP A2S', desc: 'Lowest & safest real-time slot detection' },
-        { name: 'Console Connect', value: 'Every 1.0 Second', desc: 'Continuous in-engine console connect loop' },
-        { name: 'Auto-Stop Cooldown', value: '10s Timer on Slot Drop', desc: 'Stops immediately when a player leaves' }
+        { name: 'Waiting Mode', value: 'Silent UDP A2S (0.25s)', desc: 'Zero CS2 RAM & Zero SDR leaks' },
+        { name: 'Slot Detection Trigger', value: 'Instant Console Connect', desc: 'Fires in-game connect the millisecond slot opens' },
+        { name: 'Auto-Stop Cooldown', value: '10s Timer on Button', desc: 'Prevents duplicate spam & allows clean retry' }
       ],
-      proTip: 'CS2 must be open. Set your slot priority (Normal ≤61, Supporter ≤62, VIP ≤63) and click Slot Sniper—it shows "Active", connects every 1s via console, and automatically stops with a 10s cooldown when a player leaves!',
+      proTip: 'CS2 must be open. Set your slot priority (Normal ≤61, Supporter ≤62, VIP ≤63) and click Slot Sniper—it watches silently via UDP without touching CS2 memory, and connects via console the instant a spot opens!',
       vacSafe: true
     },
     {
@@ -233,7 +233,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v1.3.2
+              v1.3.3
             </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-2xl">

@@ -31,7 +31,8 @@ import {
   ChevronUp,
   ChevronDown,
   Music,
-  Volume2
+  Volume2,
+  Target
 } from 'lucide-react';
 
 type PrimaryTab = 'global' | 'china';
@@ -116,6 +117,79 @@ export const ServerRadarPreview: React.FC = () => {
     return () => clearTimeout(timer);
   }, [connectScenario, launchCountdown, connectModalServer]);
   const [showMusicModal, setShowMusicModal] = useState(false);
+
+  // Web Auto Join (Slot Sniper Equivalent for Web)
+  const [autoJoinServerId, setAutoJoinServerId] = useState<string | null>(null);
+  const [autoJoinStatus, setAutoJoinStatus] = useState<string | null>(null);
+
+  const handleToggleAutoJoin = (server: ZEServer) => {
+    if (autoJoinServerId === server.id) {
+      setAutoJoinServerId(null);
+      setAutoJoinStatus(null);
+      return;
+    }
+
+    const live = telemetry?.servers?.[server.id];
+    let curr = 0;
+    let max = 64;
+    if (live?.players && live.players.includes('/')) {
+      const parts = live.players.split('/').map((n) => parseInt(n, 10));
+      if (!isNaN(parts[0])) curr = parts[0];
+      if (!isNaN(parts[1])) max = parts[1];
+    }
+
+    if (curr < max) {
+      // Slot open right now! Connect via Steam Game Server immediately
+      dispatchSteamProtocol(`steam://connect/${server.host}:${server.port}`);
+      setAutoJoinStatus(`⚡ Slot open on ${server.name} (${curr}/${max})! Dispatched Steam connection.`);
+      setTimeout(() => setAutoJoinStatus(null), 3500);
+      return;
+    }
+
+    // Server is full: Arm Auto Join Watcher
+    setAutoJoinServerId(server.id);
+    setAutoJoinStatus(`🎯 Auto Join Armed for ${server.name} (${curr}/${max}). Watching live radar for an open slot...`);
+  };
+
+  // Monitor live telemetry for open slot while Auto Join is armed
+  useEffect(() => {
+    if (!autoJoinServerId || !telemetry?.servers) return;
+    const targetServer = ZE_SERVERS.find((s) => s.id === autoJoinServerId);
+    if (!targetServer) return;
+
+    const live = telemetry.servers[autoJoinServerId];
+    if (live?.players && live.players.includes('/')) {
+      const parts = live.players.split('/').map((n) => parseInt(n, 10));
+      const curr = parts[0];
+      const max = parts[1];
+      if (!isNaN(curr) && !isNaN(max) && curr < max) {
+        // OPEN SLOT FOUND! Dispatch Steam Game Server connect
+        dispatchSteamProtocol(`steam://connect/${targetServer.host}:${targetServer.port}`);
+        try {
+          const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+          if (AudioCtx) {
+            const ctx = new AudioCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.25);
+            gain.gain.setValueAtTime(0.25, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.3);
+          }
+        } catch {
+          // ignore
+        }
+        setAutoJoinStatus(`🎯 Open slot detected on ${targetServer.name} (${curr}/${max})! Connecting you now via Steam Game Server!`);
+        setAutoJoinServerId(null);
+        setTimeout(() => setAutoJoinStatus(null), 7000);
+      }
+    }
+  }, [telemetry, autoJoinServerId]);
 
   // Total live players across all queried servers
   const totalOnlinePlayers = useMemo(() => {
@@ -284,6 +358,27 @@ export const ServerRadarPreview: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Active Auto Join Live Banner */}
+      {autoJoinStatus && (
+        <div className="mb-6 p-3.5 rounded-xl bg-amber-950/80 border border-amber-400/80 text-amber-200 text-xs font-code flex items-center justify-between gap-3 shadow-[0_0_25px_rgba(251,191,36,0.25)]">
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-amber-400 animate-spin" />
+            <span>{autoJoinStatus}</span>
+          </div>
+          {autoJoinServerId && (
+            <button
+              onClick={() => {
+                setAutoJoinServerId(null);
+                setAutoJoinStatus(null);
+              }}
+              className="px-2.5 py-1 rounded bg-amber-900/60 hover:bg-amber-800 text-amber-100 border border-amber-400/50 cursor-pointer text-[10px] uppercase font-bold"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ==================================================================== */}
       {/* PINNED PREMIER FEATURED GFL CARD                                     */}
@@ -454,7 +549,7 @@ export const ServerRadarPreview: React.FC = () => {
             <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center gap-2.5 text-xs font-tech text-slate-300">
               <Zap className="w-4 h-4 text-amber-400 flex-shrink-0" />
               <span>
-                <strong>Server Full at 64/64?</strong> The <a href="#cs2-command" className="text-fuchsia-400 underline hover:text-fuchsia-300 font-code">CS2 Command Center desktop app</a> includes a <strong>Slot Sniper</strong> that detects player count at 0.25s, fires console connect every 1s, and stops with a 10s cooldown the instant a player leaves!
+                <strong>Server Full at 64/64?</strong> The <a href="#cs2-command" className="text-fuchsia-400 underline hover:text-fuchsia-300 font-code">CS2 Command Center desktop app</a> includes a <strong>True Silent Slot Sniper</strong> that monitors player count via silent UDP at 0.25s (0 CS2 RAM stacking) and auto-joins via in-game console the millisecond someone disconnects!
               </span>
             </div>
           </div>
@@ -471,14 +566,18 @@ export const ServerRadarPreview: React.FC = () => {
               <span>CONNECT VIA STEAM</span>
             </button>
 
-            {/* Quick Instant Connect CTA: Scenario 2 (CS2 Open: 0s Delay) */}
+            {/* Auto Join Watcher (Replaces old instant button) */}
             <button
-              onClick={() => handleOpenConnect(gflServer, true)}
-              className="px-3 py-1.5 bg-slate-900/90 hover:bg-emerald-950/60 border border-slate-700 hover:border-emerald-500/70 text-[11px] font-code text-slate-300 hover:text-emerald-300 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              title="Scenario 2: Connect immediately via Steam Game Server (if CS2 is already open)"
+              onClick={() => handleToggleAutoJoin(gflServer)}
+              className={`px-3 py-1.5 border text-[11px] font-code rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                autoJoinServerId === gflServer.id
+                  ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse shadow-[0_0_15px_rgba(251,191,36,0.4)]'
+                  : 'bg-slate-900/90 hover:bg-emerald-950/60 border-slate-700 hover:border-emerald-500/70 text-slate-300 hover:text-emerald-300'
+              }`}
+              title="Auto Join: watches server for an open slot and launches CS2 via Steam the millisecond someone leaves"
             >
-              <Zap className="w-3 h-3 text-emerald-400 fill-current" />
-              <span>CS2 Open? Connect Instantly (0s)</span>
+              <Target className={`w-3.5 h-3.5 ${autoJoinServerId === gflServer.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
+              <span>{autoJoinServerId === gflServer.id ? '🎯 AUTO JOIN: ACTIVE (CANCEL)' : '🎯 AUTO JOIN (WATCH FOR SLOT)'}</span>
             </button>
 
             <div className="flex items-center gap-2">
@@ -800,12 +899,18 @@ export const ServerRadarPreview: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => handleOpenConnect(server, true)}
-                  className="px-2.5 py-2 bg-slate-900 hover:bg-emerald-950/80 border border-slate-700 hover:border-emerald-500 text-slate-300 hover:text-emerald-300 rounded-lg text-xs font-code transition-colors cursor-pointer flex items-center gap-1 flex-shrink-0"
-                  title="Scenario 2: Connect immediately (if CS2 is already open)"
+                  onClick={() => handleToggleAutoJoin(server)}
+                  className={`px-2.5 py-2 border rounded-lg text-xs font-code transition-colors cursor-pointer flex items-center gap-1 flex-shrink-0 ${
+                    autoJoinServerId === server.id
+                      ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse'
+                      : 'bg-slate-900 hover:bg-emerald-950/80 border-slate-700 hover:border-emerald-500 text-slate-300 hover:text-emerald-300'
+                  }`}
+                  title="Auto Join: monitors player count and dispatches steam://connect the millisecond a slot opens"
                 >
-                  <Zap className="w-3 h-3 text-emerald-400 fill-current" />
-                  <span className="hidden sm:inline">INSTANT</span>
+                  <Target className={`w-3 h-3 ${autoJoinServerId === server.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
+                  <span className="hidden sm:inline">
+                    {autoJoinServerId === server.id ? 'ACTIVE' : 'AUTO JOIN'}
+                  </span>
                 </button>
 
                 {/* Non-China Server: Live Players Modal */}
@@ -1232,6 +1337,123 @@ export const ServerRadarPreview: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* ==================================================================== */}
+      {/* COMMUNITY ZE ECOSYSTEM & ESSENTIAL WEB TOOLS                        */}
+      {/* ==================================================================== */}
+      <div className="mt-8">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="w-4 h-4 text-cyan-400" />
+          <h3 className="text-sm font-cyber font-bold text-white tracking-wider uppercase">
+            COMMUNITY ZE TOOLKIT &amp; WEB PLATFORMS
+          </h3>
+          <span className="text-[10px] font-code px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 font-bold">
+            RECOMMENDED BY GERONIMO
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* Tool 1: Cybo Laser Trainer */}
+          <a
+            href="https://trainer.cybo.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group p-4 rounded-xl bg-slate-950/90 border border-rose-500/30 hover:border-rose-400/80 transition-all shadow-[0_0_20px_rgba(244,63,94,0.1)] flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between text-[11px] font-code text-rose-300 mb-1.5 font-bold">
+                <span>⚡ LASER JUMP TRAINER</span>
+                <ExternalLink className="w-3.5 h-3.5 text-rose-400 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+              <h4 className="text-sm font-cyber font-bold text-white group-hover:text-rose-300 transition-colors mb-1">
+                Cybo Laser Reflex Simulator
+              </h4>
+              <p className="text-xs font-tech text-slate-400 leading-relaxed">
+                Browser-based reflex and crouch jump trainer for surviving high, low, and diagonal ending lasers.
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] font-code text-slate-500 flex items-center justify-between">
+              <span>trainer.cybo.dev</span>
+              <span className="text-rose-400 font-bold">by cybo</span>
+            </div>
+          </a>
+
+          {/* Tool 2: Cybo 3D Map Explorer */}
+          <a
+            href="https://maps.cybo.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group p-4 rounded-xl bg-slate-950/90 border border-cyan-500/30 hover:border-cyan-400/80 transition-all shadow-[0_0_20px_rgba(0,240,255,0.1)] flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between text-[11px] font-code text-cyan-300 mb-1.5 font-bold">
+                <span>🌐 3D MAP EXPLORER</span>
+                <ExternalLink className="w-3.5 h-3.5 text-cyan-400 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+              <h4 className="text-sm font-cyber font-bold text-white group-hover:text-cyan-300 transition-colors mb-1">
+                Cybo 3D Spatial Geometry
+              </h4>
+              <p className="text-xs font-tech text-slate-400 leading-relaxed">
+                Interactive real-time 3D viewport for inspecting complete CS2 Zombie Escape map topologies, triggers, and routes.
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] font-code text-slate-500 flex items-center justify-between">
+              <span>maps.cybo.dev</span>
+              <span className="text-cyan-400 font-bold">by cybo</span>
+            </div>
+          </a>
+
+          {/* Tool 3: Slime VPK Editor */}
+          <a
+            href="https://vpkeditor.xyz/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group p-4 rounded-xl bg-slate-950/90 border border-emerald-500/30 hover:border-emerald-400/80 transition-all shadow-[0_0_20px_rgba(52,211,153,0.1)] flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between text-[11px] font-code text-emerald-300 mb-1.5 font-bold">
+                <span>📦 ONLINE VPK STUDIO</span>
+                <ExternalLink className="w-3.5 h-3.5 text-emerald-400 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+              <h4 className="text-sm font-cyber font-bold text-white group-hover:text-emerald-300 transition-colors mb-1">
+                Slime Web VPK Editor
+              </h4>
+              <p className="text-xs font-tech text-slate-400 leading-relaxed">
+                Zero-install web tool to explore, unpack, and edit Valve Pak (.vpk) game assets, sound cues, and materials in browser.
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] font-code text-slate-500 flex items-center justify-between">
+              <span>vpkeditor.xyz</span>
+              <span className="text-emerald-400 font-bold">by слизь (slime)</span>
+            </div>
+          </a>
+
+          {/* Tool 4: ZE Graph */}
+          <a
+            href="https://zegraph.xyz/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group p-4 rounded-xl bg-slate-950/90 border border-purple-500/30 hover:border-purple-400/80 transition-all shadow-[0_0_20px_rgba(168,85,247,0.1)] flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between text-[11px] font-code text-purple-300 mb-1.5 font-bold">
+                <span>📊 ZE GRAPH TELEMETRY</span>
+                <ExternalLink className="w-3.5 h-3.5 text-purple-400 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+              <h4 className="text-sm font-cyber font-bold text-white group-hover:text-purple-300 transition-colors mb-1">
+                ZE Graph Live Intelligence
+              </h4>
+              <p className="text-xs font-tech text-slate-400 leading-relaxed">
+                Live match scoring, player activity heatmaps, map soundtrack links, and global community nomination history.
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] font-code text-slate-500 flex items-center justify-between">
+              <span>zegraph.xyz</span>
+              <span className="text-purple-400 font-bold">by queeniemella</span>
+            </div>
+          </a>
+        </div>
+      </div>
 
       {/* Community Attribution & Credits */}
       <div className="mt-8 p-4 rounded-xl bg-gradient-to-r from-purple-950/40 via-slate-950/80 to-cyan-950/40 border border-purple-500/30 backdrop-blur-md">

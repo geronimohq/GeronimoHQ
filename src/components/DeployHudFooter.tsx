@@ -33,6 +33,24 @@ export const DeployHudFooter: React.FC = () => {
               <Radio className="w-3.5 h-3.5 text-cyan-400" />
               <span>FREQUENCY: ENCRYPTED // 24/7 ONLINE</span>
             </div>
+
+            {/* Troll Base Address & Phone Hotline */}
+            <div className="p-3 bg-slate-900/70 border border-slate-800 rounded-xl space-y-1.5 text-[11px] font-code text-slate-400">
+              <div className="text-cyan-300 font-bold flex items-center gap-1.5">
+                <span>🏢 HQ PHYSICAL LOCATION:</span>
+              </div>
+              <p className="text-slate-300 leading-tight">
+                Sector 7G, Mako Reactor Core #1, Midgar Upper Plate <br />
+                <span className="text-slate-500">(Sub-Basement 07, Cyber Bunker, GeronimoHQ)</span>
+              </p>
+              <div className="text-amber-300 font-bold pt-1 flex items-center gap-1">
+                <span>📞 BANANA HOTLINE:</span>
+                <span className="text-amber-200">1-800-RAM-DOWNLOAD (Ext. 6090-TI)</span>
+              </div>
+              <div className="text-[10px] text-slate-500">
+                Alt Relay: +1 (420) 69-PEPE-HQ &bull; Toll-Free 24/7 Meme Dispatch
+              </div>
+            </div>
           </div>
 
           {/* Col 2: Direct Contact Transmission */}
@@ -95,15 +113,23 @@ export const DeployHudFooter: React.FC = () => {
             <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2 text-xs font-code">
               <div className="flex justify-between py-0.5 border-b border-slate-800/80">
                 <span className="text-slate-400">CS2 SUITE</span>
-                <span className="text-fuchsia-300 font-bold">BETA COMING SOON</span>
+                <span className="text-emerald-400 font-bold">v1.3.3 // LIVE READY</span>
               </div>
               <div className="flex justify-between py-0.5 border-b border-slate-800/80">
                 <span className="text-slate-400">ZE CLUSTER</span>
                 <span className="text-lime-300 font-bold">128 TICK // ACTIVE</span>
               </div>
-              <div className="flex justify-between py-0.5">
+              <div className="flex justify-between py-0.5 border-b border-slate-800/80">
+                <span className="text-slate-400">CLOUD RAM</span>
+                <span className="text-cyan-300 font-bold">128 GB // DOWNLOADED</span>
+              </div>
+              <div className="flex justify-between py-0.5 border-b border-slate-800/80">
                 <span className="text-slate-400">MEME CORE</span>
-                <span className="text-cyan-300 font-bold">PEPE TRIPTYCH</span>
+                <span className="text-yellow-400 font-bold">PEPE &amp; BANANA PHONE</span>
+              </div>
+              <div className="flex justify-between py-0.5">
+                <span className="text-slate-400">RTX 6090 Ti</span>
+                <span className="text-rose-400 font-bold">OVERCLOCKED // 420W</span>
               </div>
             </div>
 
@@ -126,9 +152,15 @@ export const DeployHudFooter: React.FC = () => {
 
         {/* Bottom Clean Copyright Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-code text-slate-500">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-cyan-400" />
-            <span>GERONIMO HQ &copy; {new Date().getFullYear()} // ALL SYSTEMS NOMINAL</span>
+          <div className="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-cyan-400" />
+              <span>GERONIMO HQ &copy; {new Date().getFullYear()} // ALL SYSTEMS NOMINAL</span>
+            </div>
+            <span className="hidden sm:inline text-slate-700">&bull;</span>
+            <span className="text-[11px] text-slate-500">
+              Zero RAM Refunds &bull; 100% Downloaded RAM Certified &bull; All Rights Reserved By The Meme Syndicate
+            </span>
           </div>
           <div className="flex items-center gap-4 text-[11px]">
             <span className="text-slate-400">CYBERPUNK HUD</span>
