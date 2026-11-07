@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { RetroGridCanvas } from './components/RetroGridCanvas';
 import { CyberNavbar } from './components/CyberNavbar';
 import { PepeHeroStage } from './components/PepeHeroStage';
@@ -12,49 +12,82 @@ import { DeployHudFooter } from './components/DeployHudFooter';
 import { cyberSynth } from './utils/synthAudio';
 import { ChevronDown, Cpu } from 'lucide-react';
 
+const pickRandomBananaLoops = (): number => {
+  const choices = [2, 3, 4];
+  return choices[Math.floor(Math.random() * choices.length)];
+};
+
 export const App: React.FC = () => {
-  const [theme, setTheme] = useState<'pepe' | 'banana'>('pepe');
-  const [autoSwitchRemainingSec, setAutoSwitchRemainingSec] = useState<number | null>(120);
+  // Randomize initial theme on open: either 'pepe' or 'banana'
+  const [theme, setTheme] = useState<'pepe' | 'banana'>(() =>
+    Math.random() < 0.5 ? 'pepe' : 'banana'
+  );
+  // Random loop count (2, 3, or 4 loops) before Banana Phone switches back to Pepe theme
+  const [bananaTargetLoops, setBananaTargetLoops] = useState<number>(() => pickRandomBananaLoops());
+  // Synth ON by default when user visits the website (with option to switch it off)
+  const [synthEnabled, setSynthEnabled] = useState<boolean>(true);
+  const [pepeVideoOpen, setPepeVideoOpen] = useState<boolean>(false);
   const [gremlinEnabled, setGremlinEnabled] = useState<boolean>(true);
   const [transitionBanner, setTransitionBanner] = useState<string | null>(null);
 
-  // Sync synthAudio mode whenever theme changes
+  // Strict audio mutual exclusion:
+  // - Pepe Synth ONLY plays when theme === 'pepe' AND synthEnabled === true AND Pepe YT modal is closed.
+  // - Whenever theme === 'banana', Pepe Synth stops immediately so Pepe music and Banana Phone music NEVER play simultaneously.
   useEffect(() => {
-    cyberSynth.setMode(theme);
+    if (theme === 'pepe' && synthEnabled && !pepeVideoOpen) {
+      cyberSynth.startSynth();
+    } else {
+      cyberSynth.stopSynth();
+    }
+    return () => {
+      cyberSynth.stopSynth();
+    };
+  }, [theme, synthEnabled, pepeVideoOpen]);
+
+  // Automatic Pepe -> Banana Phone transition after a random 2 minutes (120s) or 3 minutes (180s)
+  useEffect(() => {
+    if (theme !== 'pepe') return;
+
+    const randomMinutes = Math.random() < 0.5 ? 2 : 3;
+    const durationMs = randomMinutes * 60 * 1000;
+
+    const timer = window.setTimeout(() => {
+      setPepeVideoOpen(false);
+      setBananaTargetLoops(pickRandomBananaLoops());
+      setTheme('banana');
+      setTransitionBanner('🍌 SMOOTHLY TRANSITIONED TO BANANA PHONE THEME! RING RING RING!');
+      window.setTimeout(() => setTransitionBanner(null), 5000);
+    }, durationMs);
+
+    return () => clearTimeout(timer);
   }, [theme]);
 
-  // 2-Minute (120s) Automatic Smooth Transition from Pepe Retro-Futuristic to Banana Phone Theme
-  useEffect(() => {
-    if (autoSwitchRemainingSec === null) return;
-
-    const timer = window.setInterval(() => {
-      setAutoSwitchRemainingSec((prev) => {
-        if (prev === null) return null;
-        if (prev <= 1) {
-          setTheme('banana');
-          setTransitionBanner('🍌 2 MINUTES ELAPSED — SMOOTHLY TRANSITIONED TO BANANA PHONE THEME! RING RING RING!');
-          window.setTimeout(() => setTransitionBanner(null), 6000);
-          return null;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [autoSwitchRemainingSec]);
+  // Callback fired by BananaHeroStage right after the 2nd, 3rd, or 4th loop of Banana Phone music finishes completely
+  const handleBananaLoopsFinished = useCallback(() => {
+    setTheme('pepe');
+    setTransitionBanner('🐸 BANANA PHONE LOOPS COMPLETE — SWITCHED BACK TO PEPE RETRO-FUTURISTIC THEME!');
+    window.setTimeout(() => setTransitionBanner(null), 5000);
+  }, []);
 
   const handleToggleTheme = () => {
-    setAutoSwitchRemainingSec(null); // Stop auto-timer once user manually switches
+    setPepeVideoOpen(false);
     setTheme((prev) => {
       const next = prev === 'pepe' ? 'banana' : 'pepe';
+      if (next === 'banana') {
+        setBananaTargetLoops(pickRandomBananaLoops());
+      }
       setTransitionBanner(
         next === 'banana'
           ? '🍌 ACTIVATED SECONDARY THEME: BANANA PHONE MODE!'
-          : '🐸 RESTORED PRIMARY THEME: PEPE RETRO-FUTURISTIC MODE!'
+          : '🐸 ACTIVATED PRIMARY THEME: PEPE RETRO-FUTURISTIC MODE!'
       );
       window.setTimeout(() => setTransitionBanner(null), 4000);
       return next;
     });
+  };
+
+  const handleToggleSynth = () => {
+    setSynthEnabled((prev) => !prev);
   };
 
   return (
@@ -75,10 +108,10 @@ export const App: React.FC = () => {
       {/* Cyberpunk HUD Navbar */}
       <CyberNavbar
         theme={theme}
-        onToggleTheme={handleToggleTheme}
-        autoSwitchRemainingSec={autoSwitchRemainingSec}
         gremlinEnabled={gremlinEnabled}
         onToggleGremlin={() => setGremlinEnabled((prev) => !prev)}
+        synthEnabled={synthEnabled}
+        onToggleSynth={handleToggleSynth}
       />
 
       {/* Smooth Theme Transition Toast Notification */}
@@ -92,7 +125,7 @@ export const App: React.FC = () => {
       <main className="relative z-10 flex-grow flex flex-col items-center">
         
         {/* HERO TITLE & INTRO BANNER */}
-        <div id="hero-stage" className="w-full max-w-5xl mx-auto pt-8 pb-4 px-4 text-center">
+        <div id="hero-stage" className="w-full max-w-5xl mx-auto pt-8 pb-4 px-4 text-center scroll-mt-32">
           
           {/* Top Status Pill */}
           <div
@@ -170,7 +203,14 @@ export const App: React.FC = () => {
 
         {/* HERO CENTER STAGE: SMOOTH TRANSITION BETWEEN PEPE HOLO STAGE & BANANA PHONE STAGE */}
         <div className="w-full transition-opacity duration-700">
-          {theme === 'banana' ? <BananaHeroStage /> : <PepeHeroStage />}
+          {theme === 'banana' ? (
+            <BananaHeroStage
+              targetLoops={bananaTargetLoops}
+              onAllLoopsCompleted={handleBananaLoopsFinished}
+            />
+          ) : (
+            <PepeHeroStage onYoutubeVideoToggle={setPepeVideoOpen} />
+          )}
         </div>
 
         {/* Down Indicator */}

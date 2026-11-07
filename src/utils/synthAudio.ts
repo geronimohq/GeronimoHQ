@@ -1,6 +1,6 @@
 // Web Audio API Retro-Futuristic Cyberpunk Darksynth Engine
 // Pure browser audio synthesis - Zero external files!
-// Inspired by Kavinsky, Carpenter Brut, Daft Punk Tron Legacy
+// Strictly plays for the Pepe Retro-Futuristic theme (never overlaps with Banana Phone music)
 
 class CyberSynthEngine {
   private ctx: AudioContext | null = null;
@@ -8,7 +8,7 @@ class CyberSynthEngine {
   private timer: number | null = null;
   private step = 0;
   private masterGain: GainNode | null = null;
-  private mode: 'pepe' | 'banana' = 'pepe';
+  private unlockBound = false;
 
   // D-Minor Bassline (D1, D1, D2, D1, F1, F1, C1, Bb1)
   private bassNotes = [
@@ -22,47 +22,144 @@ class CyberSynthEngine {
     523.25, 659.25, 783.99, 1046.50, 466.16, 587.33, 698.46, 880.00
   ];
 
-  // Banana Phone Bouncy Bassline (C major / G major upbeat walking bass)
-  private bananaBassNotes = [
-    130.81, 164.81, 196.00, 261.63, 196.00, 164.81, 130.81, 196.00,
-    146.83, 174.61, 196.00, 293.66, 196.00, 174.61, 130.81, 196.00
-  ];
+  private ensureUnlockListeners() {
+    if (this.unlockBound || typeof window === 'undefined') return;
+    this.unlockBound = true;
 
-  // "Ring ring ring ring ring ring ring, Banana Phone! Boop-boo-ba-doo-ba-doop!"
-  private bananaLeadNotes = [
-    523.25, 523.25, 523.25, 523.25, 523.25, 523.25, 523.25, 659.25,
-    587.33, 523.25, 392.00, 523.25, 659.25, 783.99, 659.25, 523.25
-  ];
+    const tryResume = () => {
+      if (!this.isPlaying) return;
+      if (!this.ctx) {
+        this.initContext();
+      }
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+    };
 
-  public setMode(newMode: 'pepe' | 'banana') {
-    this.mode = newMode;
+    window.addEventListener('pointerdown', tryResume, { passive: true });
+    window.addEventListener('keydown', tryResume, { passive: true });
+    window.addEventListener('touchstart', tryResume, { passive: true });
+    window.addEventListener('click', tryResume, { passive: true });
   }
 
-  public getMode(): 'pepe' | 'banana' {
-    return this.mode;
-  }
-
-  public init() {
-    if (!this.ctx) {
-      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      this.ctx = new AudioContextClass();
-      this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.setValueAtTime(0.18, this.ctx.currentTime);
-      this.masterGain.connect(this.ctx.destination);
+  private initContext() {
+    if (!this.ctx && typeof window !== 'undefined') {
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (AudioContextClass) {
+        this.ctx = new AudioContextClass();
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+        this.masterGain.connect(this.ctx.destination);
+      }
     }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
     }
   }
 
-  public toggle(): boolean {
-    this.init();
-    if (this.isPlaying) {
-      this.stop();
-      return false;
-    } else {
-      this.start();
-      return true;
+  public startSynth() {
+    this.ensureUnlockListeners();
+    this.initContext();
+    if (this.isPlaying && this.timer !== null) {
+      return;
+    }
+    this.isPlaying = true;
+    if (this.timer !== null) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+
+    const stepIntervalMs = 125; // 120 BPM 16th-note clock
+    this.timer = window.setInterval(() => {
+      if (!this.isPlaying) return;
+      if (!this.ctx || !this.masterGain) {
+        this.initContext();
+        return;
+      }
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+        return;
+      }
+
+      const now = this.ctx.currentTime;
+      const stepInMeasure = this.step % 16;
+
+      // 1. Four-on-the-floor Punchy Kick Drum (Beats 1, 2, 3, 4)
+      if (stepInMeasure % 4 === 0) {
+        this.triggerKick(now);
+      }
+
+      // 2. Snappy Electro Snare on Beats 2 and 4 (Steps 4 and 12)
+      if (stepInMeasure === 4 || stepInMeasure === 12) {
+        this.triggerSnare(now);
+      }
+
+      // 3. Off-beat Hi-Hats
+      if (stepInMeasure % 2 === 1) {
+        this.triggerHiHat(now);
+      }
+
+      // 4. Rolling 16th-note Analog Bassline
+      const bassFreq = this.bassNotes[this.step % this.bassNotes.length];
+      const bassOsc = this.ctx.createOscillator();
+      const bassGain = this.ctx.createGain();
+      const bassFilter = this.ctx.createBiquadFilter();
+
+      bassOsc.type = 'sawtooth';
+      bassOsc.frequency.setValueAtTime(bassFreq, now);
+
+      bassFilter.type = 'lowpass';
+      const sweepCutoff = 350 + (stepInMeasure % 4) * 80;
+      bassFilter.frequency.setValueAtTime(sweepCutoff, now);
+      bassFilter.Q.setValueAtTime(5, now);
+
+      bassGain.gain.setValueAtTime(0.24, now);
+      bassGain.gain.exponentialRampToValueAtTime(0.02, now + 0.11);
+
+      bassOsc.connect(bassFilter);
+      bassFilter.connect(bassGain);
+      bassGain.connect(this.masterGain);
+
+      bassOsc.start(now);
+      bassOsc.stop(now + 0.12);
+
+      // 5. Shimmering Neon Arpeggio Lead
+      if (stepInMeasure % 2 === 0) {
+        const idx = (this.step / 2) % this.leadNotes.length;
+        const leadFreq = this.leadNotes[idx];
+        const leadOsc = this.ctx.createOscillator();
+        const leadGain = this.ctx.createGain();
+        const leadFilter = this.ctx.createBiquadFilter();
+
+        leadOsc.type = 'square';
+        leadOsc.frequency.setValueAtTime(leadFreq, now);
+
+        leadFilter.type = 'bandpass';
+        leadFilter.frequency.setValueAtTime(leadFreq, now);
+        leadFilter.Q.setValueAtTime(2, now);
+
+        leadGain.gain.setValueAtTime(0.12, now);
+        leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+        leadOsc.connect(leadFilter);
+        leadFilter.connect(leadGain);
+        leadGain.connect(this.masterGain);
+
+        leadOsc.start(now);
+        leadOsc.stop(now + 0.23);
+      }
+
+      this.step++;
+    }, stepIntervalMs);
+  }
+
+  public stopSynth() {
+    this.isPlaying = false;
+    if (this.timer !== null) {
+      clearInterval(this.timer);
+      this.timer = null;
     }
   }
 
@@ -91,7 +188,6 @@ class CyberSynthEngine {
 
   private triggerSnare(now: number) {
     if (!this.ctx || !this.masterGain) return;
-    // Noise buffer
     const bufferSize = this.ctx.sampleRate * 0.1;
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const output = buffer.getChannelData(0);
@@ -145,96 +241,6 @@ class CyberSynthEngine {
 
     whiteNoise.start(now);
     whiteNoise.stop(now + 0.05);
-  }
-
-  private start() {
-    if (!this.ctx || !this.masterGain) return;
-    this.isPlaying = true;
-    const stepIntervalMs = 125; // 120 BPM 16th-note clock
-
-    this.timer = window.setInterval(() => {
-      if (!this.ctx || !this.masterGain) return;
-      const now = this.ctx.currentTime;
-      const stepInMeasure = this.step % 16;
-
-      // 1. Four-on-the-floor Punchy Kick Drum (Beats 1, 2, 3, 4)
-      if (stepInMeasure % 4 === 0) {
-        this.triggerKick(now);
-      }
-
-      // 2. Snappy Electro Snare on Beats 2 and 4 (Steps 4 and 12)
-      if (stepInMeasure === 4 || stepInMeasure === 12) {
-        this.triggerSnare(now);
-      }
-
-      // 3. Off-beat Hi-Hats
-      if (stepInMeasure % 2 === 1) {
-        this.triggerHiHat(now);
-      }
-
-      // 4. Rolling 16th-note Analog Bassline
-      const activeBass = this.mode === 'banana' ? this.bananaBassNotes : this.bassNotes;
-      const bassFreq = activeBass[this.step % activeBass.length];
-      const bassOsc = this.ctx.createOscillator();
-      const bassGain = this.ctx.createGain();
-      const bassFilter = this.ctx.createBiquadFilter();
-
-      bassOsc.type = this.mode === 'banana' ? 'triangle' : 'sawtooth';
-      bassOsc.frequency.setValueAtTime(bassFreq, now);
-
-      bassFilter.type = 'lowpass';
-      // Dynamic filter sweep
-      const sweepCutoff = 350 + (stepInMeasure % 4) * 80;
-      bassFilter.frequency.setValueAtTime(sweepCutoff, now);
-      bassFilter.Q.setValueAtTime(5, now);
-
-      bassGain.gain.setValueAtTime(0.24, now);
-      bassGain.gain.exponentialRampToValueAtTime(0.02, now + 0.11);
-
-      bassOsc.connect(bassFilter);
-      bassFilter.connect(bassGain);
-      bassGain.connect(this.masterGain);
-
-      bassOsc.start(now);
-      bassOsc.stop(now + 0.12);
-
-      // 5. Shimmering Neon Arpeggio Lead / Banana Phone Marimba Lead
-      if (this.mode === 'banana' || stepInMeasure % 2 === 0) {
-        const activeLead = this.mode === 'banana' ? this.bananaLeadNotes : this.leadNotes;
-        const idx = this.mode === 'banana' ? (this.step % activeLead.length) : ((this.step / 2) % activeLead.length);
-        const leadFreq = activeLead[idx];
-        const leadOsc = this.ctx.createOscillator();
-        const leadGain = this.ctx.createGain();
-        const leadFilter = this.ctx.createBiquadFilter();
-
-        leadOsc.type = this.mode === 'banana' ? 'sine' : 'square';
-        leadOsc.frequency.setValueAtTime(leadFreq, now);
-
-        leadFilter.type = 'bandpass';
-        leadFilter.frequency.setValueAtTime(leadFreq, now);
-        leadFilter.Q.setValueAtTime(2, now);
-
-        leadGain.gain.setValueAtTime(this.mode === 'banana' ? 0.16 : 0.12, now);
-        leadGain.gain.exponentialRampToValueAtTime(0.001, now + (this.mode === 'banana' ? 0.11 : 0.22));
-
-        leadOsc.connect(leadFilter);
-        leadFilter.connect(leadGain);
-        leadGain.connect(this.masterGain);
-
-        leadOsc.start(now);
-        leadOsc.stop(now + (this.mode === 'banana' ? 0.12 : 0.23));
-      }
-
-      this.step++;
-    }, stepIntervalMs);
-  }
-
-  public stop() {
-    this.isPlaying = false;
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
-    }
   }
 }
 

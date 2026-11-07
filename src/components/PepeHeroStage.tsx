@@ -6,10 +6,24 @@ import { Activity, Play, ExternalLink, X } from 'lucide-react';
 
 type PepeViewMode = 'all' | 'cry' | 'laugh' | 'dance';
 
-export const PepeHeroStage: React.FC = () => {
+interface PepeHeroStageProps {
+  onYoutubeVideoToggle?: (isOpen: boolean) => void;
+}
+
+export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({ onYoutubeVideoToggle }) => {
   const [activeTab, setActiveTab] = useState<PepeViewMode>('all');
   const [showYoutubePlayer, setShowYoutubePlayer] = useState(false);
   const pepeYoutubeUrl = 'https://www.youtube.com/watch?v=nBza-xpJ0gI';
+
+  const togglePepeVideo = (nextState?: boolean) => {
+    setShowYoutubePlayer((prev) => {
+      const next = typeof nextState === 'boolean' ? nextState : !prev;
+      if (onYoutubeVideoToggle) {
+        onYoutubeVideoToggle(next);
+      }
+      return next;
+    });
+  };
 
   return (
     <section className="relative w-full max-w-6xl mx-auto px-4 py-8 flex flex-col items-center">
@@ -68,7 +82,7 @@ export const PepeHeroStage: React.FC = () => {
             [03] PARTY RAVE
           </button>
           <button
-            onClick={() => setShowYoutubePlayer((prev) => !prev)}
+            onClick={() => togglePepeVideo()}
             className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer flex items-center gap-1.5 ${
               showYoutubePlayer
                 ? 'bg-red-500/25 text-red-300 border border-red-400/70 shadow-[0_0_12px_rgba(239,68,68,0.5)]'
@@ -110,7 +124,7 @@ export const PepeHeroStage: React.FC = () => {
                 <ExternalLink className="w-3 h-3" />
               </a>
               <button
-                onClick={() => setShowYoutubePlayer(false)}
+                onClick={() => togglePepeVideo(false)}
                 className="p-1 rounded bg-slate-900 text-slate-400 hover:text-white cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />

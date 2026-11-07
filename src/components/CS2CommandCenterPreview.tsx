@@ -30,7 +30,7 @@ interface AppFeatureModule {
 }
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=1.2.0';
+  const downloadUrl = '/CS2_Command_Center.exe?v=1.2.1';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -150,20 +150,20 @@ export const CS2CommandCenterPreview: React.FC = () => {
       shortTag: 'NETWORK RESOLVER',
       badge: 'REAL-TIME PING TEST',
       icon: <Sparkles className="w-5 h-5 text-violet-400" />,
-      summary: 'Benchmarks 6 global Gaming DNS providers in parallel (Cloudflare, Google, Quad9, OpenDNS, Level3, AdGuard) for real UDP latency and jitter, with 1-Click Apply & ISP DHCP Restore.',
+      summary: 'Benchmarks 6 global Gaming DNS providers in parallel (Cloudflare, Google, Quad9, OpenDNS, Level3, AdGuard) for real UDP latency and jitter, with full Pros/Cons guidance, 1-Click Apply, and 100% safe ISP DHCP Restore.',
       details: [
         'Parallel real-time UDP port 53 latency & jitter benchmark against your physical location.',
-        'Automatically ranks and highlights the #1 fastest DNS server for Valve Steam SDR & FastDL.',
-        '1-Click Apply Fastest/Selected DNS directly to your active Windows network adapter + flushes DNS cache.',
-        '1-Click Restore to ISP Default (Automatic DHCP) anytime with 100% safety.',
+        'All DNS Purposes covered: fast Steam SDR/FastDL lookups, bypassing ISP DNS outages, malware/phishing filtering (Quad9), ad/telemetry blocking (AdGuard), and privacy protection.',
+        'Honest Pros & Cons built-in: improves domain lookups & CDN reliability while explaining that raw in-game UDP ping after connecting is governed by ISP physical routing.',
+        '1-Click Apply Fastest/Selected DNS + 1-Click Restore to ISP Default (Automatic DHCP) anytime with 100% safety.',
         'Zero risky RAM cleaners: protects browser, Discord, and CS2 from page-fault stutters and crashes.'
       ],
       parameters: [
         { name: 'Cloudflare / Google', value: '1.1.1.1 / 8.8.8.8', desc: 'Ultra-low latency global edge resolvers' },
-        { name: 'Quad9 / OpenDNS', value: '9.9.9.9 / 208.67.222.222', desc: 'Backbone peering & security filtering' },
-        { name: 'Safety Guarantee', value: '100% Reversible DHCP', desc: 'Restores default ISP DNS in 1 click' }
+        { name: 'Quad9 / AdGuard', value: '9.9.9.9 / 94.140.14.14', desc: 'Malware protection & ad-telemetry filtering' },
+        { name: 'Safety Guarantee', value: '100% Reversible DHCP', desc: 'Official Windows netsh • 1-Click Restore' }
       ],
-      proTip: 'Unlike third-party "RAM Cleaners" that force active app memory into pagefile.sys and cause browser/game crashes, CS2 Command Center strictly uses safe CPU scheduling and real network DNS optimization.',
+      proTip: 'Always click "Benchmark All DNS Servers" first so you select the lowest-latency resolver for your physical region, ensuring optimal Steam & FastDL CDN mirror routing.',
       vacSafe: true
     },
     {
@@ -219,7 +219,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
   };
 
   return (
-    <section id="cs2-command" className="relative w-full max-w-6xl mx-auto px-4 py-12">
+    <section id="cs2-command" className="relative w-full max-w-6xl mx-auto px-4 py-12 scroll-mt-28">
       {/* Section Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 border-b border-fuchsia-500/30 pb-5">
         <div>

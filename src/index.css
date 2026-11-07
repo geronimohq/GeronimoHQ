@@ -6,6 +6,11 @@
     --font-tech: 'Rajdhani', sans-serif;
     --font-code: 'JetBrains Mono', monospace;
   }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 7.5rem;
+  }
 }
 
 /* Custom Cyberpunk Font Classes */

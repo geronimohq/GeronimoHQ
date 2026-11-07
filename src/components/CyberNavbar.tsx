@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Volume2, VolumeX, Radio, Shield, Wifi, Mail, Cpu, Sparkles } from 'lucide-react';
-import { cyberSynth } from '../utils/synthAudio';
 
 interface CyberNavbarProps {
   theme: 'pepe' | 'banana';
-  onToggleTheme: () => void;
-  autoSwitchRemainingSec: number | null;
   gremlinEnabled: boolean;
   onToggleGremlin: () => void;
+  synthEnabled: boolean;
+  onToggleSynth: () => void;
 }
 
 export const CyberNavbar: React.FC<CyberNavbarProps> = ({
   theme,
-  onToggleTheme,
-  autoSwitchRemainingSec,
   gremlinEnabled,
   onToggleGremlin,
+  synthEnabled,
+  onToggleSynth,
 }) => {
-  const [isPlayingSound, setIsPlayingSound] = useState(false);
   const [timeStr, setTimeStr] = useState('');
   const [ping, setPing] = useState(14);
 
@@ -46,30 +44,30 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
     };
   }, []);
 
-  const toggleSound = () => {
-    cyberSynth.setMode(theme);
-    const state = cyberSynth.toggle();
-    setIsPlayingSound(state);
-  };
-
-  const formatCountdown = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  const handleHoloDeckClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (window.history?.pushState) {
+      window.history.pushState(null, '', '#hero-stage');
+    }
   };
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full backdrop-blur-xl transition-colors duration-700 px-4 py-3 border-b ${
+      className={`sticky top-0 z-50 w-full backdrop-blur-xl transition-colors duration-700 px-4 py-2.5 border-b ${
         theme === 'banana'
           ? 'bg-[#0c0902]/90 border-yellow-500/35'
           : 'bg-[#060810]/85 border-cyan-500/20'
       }`}
     >
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
         
         {/* Brand & Terminal Identifier */}
-        <div className="flex items-center gap-3">
+        <a
+          href="#hero-stage"
+          onClick={handleHoloDeckClick}
+          className="flex items-center gap-2.5 group"
+        >
           <div
             className={`relative flex items-center justify-center w-9 h-9 rounded-lg border transition-all duration-700 ${
               theme === 'banana'
@@ -106,12 +104,13 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
               {theme === 'banana' ? 'geronimohq.com // banana.phone' : 'geronimohq.com // sys.core'}
             </div>
           </div>
-        </div>
+        </a>
 
-        {/* Center Nav Anchors (Including DOWNLOAD RAM where Geronimo underlined!) */}
-        <nav className="hidden xl:flex items-center gap-5 text-xs font-cyber tracking-wider text-slate-300">
+        {/* Center Nav Anchors */}
+        <nav className="hidden lg:flex items-center gap-4 text-xs font-cyber tracking-wider text-slate-300">
           <a
             href="#hero-stage"
+            onClick={handleHoloDeckClick}
             className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
           >
             <Radio className="w-3.5 h-3.5 text-cyan-400" />
@@ -147,35 +146,29 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           </a>
         </nav>
 
-        {/* Right HUD Controls: Download RAM quick-jump (mobile/tablet) + Theme Switcher + Gremlin Toggle + Synth + Clock */}
+        {/* Right HUD Controls: Read-Only Theme Status Badge + Gremlin Toggle + Synth Toggle + Clock */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Mobile/Tablet Download RAM Button */}
           <a
             href="#download-ram"
-            className="xl:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-lime-950/80 border border-lime-400/60 text-lime-300 text-xs font-code font-bold"
+            className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-lime-950/80 border border-lime-400/60 text-lime-300 text-xs font-code font-bold"
           >
             <Cpu className="w-3.5 h-3.5 text-lime-400" />
             <span>RAM</span>
           </a>
 
-          {/* Manual Theme Switcher (Pepe Retro-Futuristic <-> Banana Phone) */}
-          <button
-            onClick={onToggleTheme}
+          {/* Read-Only Active Theme Indicator Badge (Non-clickable as requested by Geronimo) */}
+          <div
             data-gremlin-ignore="true"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-code font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-code font-bold select-none cursor-default ${
               theme === 'banana'
-                ? 'bg-amber-950/90 border-yellow-400 text-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.5)]'
-                : 'bg-cyan-950/80 border-cyan-400/70 text-cyan-300 hover:border-yellow-400 hover:text-yellow-300'
+                ? 'bg-amber-950/90 border-yellow-400/80 text-yellow-300 shadow-[0_0_12px_rgba(250,204,21,0.35)]'
+                : 'bg-cyan-950/75 border-cyan-400/60 text-cyan-300'
             }`}
-            title="Switch between Pepe Retro-Futuristic Theme and Banana Phone Theme (Auto-switches after 2 minutes!)"
+            title="Current Active Theme (Read-Only Indicator)"
           >
             <span>{theme === 'banana' ? '🍌 THEME: BANANA PHONE' : '🐸 THEME: PEPE HOLO'}</span>
-            {theme === 'pepe' && autoSwitchRemainingSec !== null && autoSwitchRemainingSec > 0 && (
-              <span className="text-[10px] text-yellow-300 bg-slate-950/80 px-1.5 py-0.5 rounded border border-yellow-500/40">
-                🍌 in {formatCountdown(autoSwitchRemainingSec)}
-              </span>
-            )}
-          </button>
+          </div>
 
           {/* Roaming Character Toggle */}
           <button
@@ -192,18 +185,18 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             <span className="hidden md:inline">{gremlinEnabled ? 'ROAMER: ON' : 'ROAMER: OFF'}</span>
           </button>
 
-          {/* Synth Soundtrack Toggle */}
+          {/* Synth Soundtrack Toggle (ON by default on website open; muted automatically during Banana Phone theme so tracks never overlap) */}
           <button
-            onClick={toggleSound}
+            onClick={onToggleSynth}
             data-gremlin-ignore="true"
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-code transition-all cursor-pointer ${
-              isPlayingSound
-                ? 'bg-fuchsia-950/80 border-fuchsia-400 text-fuchsia-300 shadow-[0_0_15px_rgba(255,0,127,0.5)] animate-pulse'
+              synthEnabled
+                ? 'bg-fuchsia-950/80 border-fuchsia-400 text-fuchsia-300 shadow-[0_0_15px_rgba(255,0,127,0.5)]'
                 : 'bg-slate-900/80 border-slate-700 text-slate-300 hover:border-cyan-500 hover:text-cyan-300'
             }`}
-            title="Toggle Web Audio Synth / Banana Phone Melody"
+            title="Toggle Pepe Retro-Futuristic Synth (Automatically pauses during Banana Phone theme)"
           >
-            {isPlayingSound ? (
+            {synthEnabled ? (
               <>
                 <Volume2 className="w-3.5 h-3.5 text-fuchsia-400 animate-spin-slow" />
                 <span className="hidden sm:inline">SYNTH: ON</span>

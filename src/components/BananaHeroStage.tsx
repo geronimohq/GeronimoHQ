@@ -1,6 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { PhoneCall, Play, ExternalLink, Activity, Sparkles } from 'lucide-react';
+import { PhoneCall, Volume2, VolumeX, ExternalLink, Activity, Sparkles } from 'lucide-react';
+
+declare global {
+  interface Window {
+    YT?: {
+      Player: new (
+        element: HTMLElement | string,
+        options: {
+          videoId: string;
+          playerVars?: Record<string, number | string>;
+          events?: {
+            onReady?: (event: { target: YTPlayerInstance }) => void;
+            onStateChange?: (event: { data: number; target: YTPlayerInstance }) => void;
+          };
+        }
+      ) => YTPlayerInstance;
+      PlayerState?: {
+        ENDED: number;
+        PLAYING: number;
+        PAUSED: number;
+      };
+    };
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+interface YTPlayerInstance {
+  playVideo: () => void;
+  pauseVideo: () => void;
+  stopVideo: () => void;
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  destroy: () => void;
+}
 
 interface DancingBananaCharacterProps {
   label: string;
@@ -96,7 +128,7 @@ export const DancingBananaCharacter: React.FC<DancingBananaCharacterProps> = ({
             strokeLinecap="round"
           />
 
-          {/* Left Fluffy White Cheerleader Pom-Pom (Spiky Starburst Polygon matching image) */}
+          {/* Left Fluffy White Cheerleader Pom-Pom */}
           <polygon
             points="35,44 43,54 55,48 52,61 64,66 54,75 60,87 47,86 42,98 33,88 21,94 24,81 12,76 22,67 16,55 29,56"
             fill="#ffffff"
@@ -222,8 +254,180 @@ export const DancingBananaCharacter: React.FC<DancingBananaCharacterProps> = ({
   );
 };
 
-export const BananaHeroStage: React.FC = () => {
-  const [showYoutubeEmbed, setShowYoutubeEmbed] = useState(true);
+interface BananaHeroStageProps {
+  targetLoops: number;
+  onAllLoopsCompleted: () => void;
+}
+
+export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
+  targetLoops,
+  onAllLoopsCompleted,
+}) => {
+  const [isMusicOn, setIsMusicOn] = useState<boolean>(true);
+  const playerContainerRef = useRef<HTMLDivElement | null>(null);
+  const playerRef = useRef<YTPlayerInstance | null>(null);
+  const completedLoopsRef = useRef<number>(0);
+  const ytActivelyPlayingRef = useRef<boolean>(false);
+  const targetLoopsRef = useRef<number>(targetLoops);
+  const onCompleteRef = useRef<() => void>(onAllLoopsCompleted);
+
+  useEffect(() => {
+    targetLoopsRef.current = targetLoops;
+  }, [targetLoops]);
+
+  useEffect(() => {
+    onCompleteRef.current = onAllLoopsCompleted;
+  }, [onAllLoopsCompleted]);
+
+  // Mount & control the YouTube IFrame API player for seamless looping and exact end-of-loop theme transition
+  useEffect(() => {
+    if (!isMusicOn) {
+      if (playerRef.current) {
+        try {
+          playerRef.current.stopVideo();
+          playerRef.current.destroy();
+        } catch {
+          // ignore
+        }
+        playerRef.current = null;
+      }
+      ytActivelyPlayingRef.current = false;
+      return;
+    }
+
+    let isCancelled = false;
+
+    const createPlayer = () => {
+      if (isCancelled || !playerContainerRef.current || !window.YT || !window.YT.Player) return;
+
+      // Clean previous instance if any
+      if (playerRef.current) {
+        try {
+          playerRef.current.destroy();
+        } catch {
+          // ignore
+        }
+        playerRef.current = null;
+      }
+
+      const mountDiv = document.createElement('div');
+      playerContainerRef.current.innerHTML = '';
+      playerContainerRef.current.appendChild(mountDiv);
+
+      playerRef.current = new window.YT.Player(mountDiv, {
+        videoId: 'j5C6X9vOEkU',
+        playerVars: {
+          autoplay: 1,
+          rel: 0,
+          playsinline: 1,
+          enablejsapi: 1,
+          origin: window.location.origin,
+        },
+        events: {
+          onReady: (event) => {
+            if (isCancelled) return;
+            try {
+              event.target.playVideo();
+            } catch {
+              // ignore
+            }
+          },
+          onStateChange: (event) => {
+            if (isCancelled) return;
+            // 1 = PLAYING
+            if (event.data === 1) {
+              ytActivelyPlayingRef.current = true;
+            }
+            // 0 = ENDED (Song finished 1 complete loop!)
+            if (event.data === 0) {
+              completedLoopsRef.current += 1;
+              if (completedLoopsRef.current >= targetLoopsRef.current) {
+                // Finished the final loop! Switch back to Pepe theme now!
+                try {
+                  event.target.stopVideo();
+                } catch {
+                  // ignore
+                }
+                onCompleteRef.current();
+              } else {
+                // Loop again seamlessly!
+                try {
+                  event.target.seekTo(0, true);
+                  event.target.playVideo();
+                } catch {
+                  // ignore
+                }
+              }
+            }
+          },
+        },
+      });
+    };
+
+    if (window.YT && window.YT.Player) {
+      createPlayer();
+    } else {
+      const existingScript = document.getElementById('yt-iframe-api-script');
+      if (!existingScript) {
+        const tag = document.createElement('script');
+        tag.id = 'yt-iframe-api-script';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+      }
+      const prevCallback = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        if (prevCallback) prevCallback();
+        createPlayer();
+      };
+      // Poll briefly in case script already loaded
+      const checkTimer = window.setInterval(() => {
+        if (window.YT && window.YT.Player) {
+          clearInterval(checkTimer);
+          createPlayer();
+        }
+      }, 250);
+      return () => {
+        isCancelled = true;
+        clearInterval(checkTimer);
+        if (playerRef.current) {
+          try {
+            playerRef.current.stopVideo();
+            playerRef.current.destroy();
+          } catch {
+            // ignore
+          }
+          playerRef.current = null;
+        }
+      };
+    }
+
+    return () => {
+      isCancelled = true;
+      if (playerRef.current) {
+        try {
+          playerRef.current.stopVideo();
+          playerRef.current.destroy();
+        } catch {
+          // ignore
+        }
+        playerRef.current = null;
+      }
+    };
+  }, [isMusicOn]);
+
+  // Fallback timer ONLY if the user turned off the Banana Phone music or if YT autoplay was blocked by browser
+  // (Never interrupts if the YouTube song is actively playing, so the song always finishes its loop first!)
+  useEffect(() => {
+    const songDurationMs = 147_000; // Raffi Banana Phone (j5C6X9vOEkU) is 2:27 (147s)
+    const fallbackTimer = window.setTimeout(() => {
+      if (!ytActivelyPlayingRef.current || !isMusicOn) {
+        onCompleteRef.current();
+      }
+    }, targetLoops * songDurationMs + 3000);
+
+    return () => clearTimeout(fallbackTimer);
+  }, [targetLoops, isMusicOn]);
+
   const bananaYoutubeUrl = 'https://www.youtube.com/watch?v=j5C6X9vOEkU&list=RDj5C6X9vOEkU&start_radio=1';
 
   return (
@@ -240,14 +444,29 @@ export const BananaHeroStage: React.FC = () => {
           </span>
         </div>
 
-        {/* Banana Phone Music Controls */}
+        {/* Banana Phone Music Controls (Loops automatically; User can turn ON/OFF anytime) */}
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setShowYoutubeEmbed((prev) => !prev)}
-            className="px-3 py-1.5 text-xs font-code rounded-lg bg-yellow-500/20 text-yellow-300 border border-yellow-400/70 hover:bg-yellow-500/30 shadow-[0_0_15px_rgba(250,204,21,0.35)] flex items-center gap-1.5 cursor-pointer transition-all"
+            onClick={() => setIsMusicOn((prev) => !prev)}
+            data-gremlin-ignore="true"
+            className={`px-3 py-1.5 text-xs font-code font-bold rounded-lg border flex items-center gap-1.5 cursor-pointer transition-all ${
+              isMusicOn
+                ? 'bg-yellow-500/20 text-yellow-300 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]'
+                : 'bg-slate-900/90 text-slate-400 border-slate-700 hover:border-yellow-400 hover:text-yellow-300'
+            }`}
+            title="Toggle Banana Phone Looping Music Player ON or OFF"
           >
-            <Play className="w-4 h-4 text-red-400" />
-            <span>{showYoutubeEmbed ? 'HIDE BANANA PHONE PLAYER' : '🎵 PLAY BANANA PHONE SONG'}</span>
+            {isMusicOn ? (
+              <>
+                <Volume2 className="w-4 h-4 text-yellow-400 animate-bounce" />
+                <span>BANANA PHONE MUSIC: ON (LOOPING)</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="w-4 h-4 text-slate-400" />
+                <span>BANANA PHONE MUSIC: OFF (CLICK TO PLAY)</span>
+              </>
+            )}
           </button>
 
           <a
@@ -299,33 +518,26 @@ export const BananaHeroStage: React.FC = () => {
           />
         </div>
 
-        {/* Embedded Banana Phone YouTube Music Player */}
-        {showYoutubeEmbed && (
+        {/* Embedded Banana Phone YouTube Music Player (Loops automatically via YT API) */}
+        {isMusicOn && (
           <div className="relative z-20 w-full max-w-xl mt-2 mb-6 rounded-xl border border-yellow-400/50 bg-black/90 p-2.5 shadow-[0_0_30px_rgba(250,204,21,0.3)]">
             <div className="flex items-center justify-between text-[11px] font-code text-yellow-300 mb-1.5 px-1">
               <span className="flex items-center gap-1.5 font-bold">
                 <PhoneCall className="w-3.5 h-3.5 text-yellow-400" />
-                NOW PLAYING: RAFFI — BANANA PHONE (OFFICIAL THEME)
+                NOW PLAYING (AUTO-LOOP): RAFFI — BANANA PHONE
               </span>
-              <a
-                href={bananaYoutubeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-amber-300 hover:underline flex items-center gap-1"
+              <button
+                onClick={() => setIsMusicOn(false)}
+                data-gremlin-ignore="true"
+                className="text-red-300 hover:text-red-200 bg-red-950/70 border border-red-500/40 px-2 py-0.5 rounded text-[10px] cursor-pointer"
               >
-                <span>Open Full Playlist</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
+                🔇 Turn Off Music
+              </button>
             </div>
-            <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-yellow-500/30">
-              <iframe
-                src="https://www.youtube.com/embed/j5C6X9vOEkU?autoplay=1&rel=0"
-                title="Banana Phone Song"
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
+            <div
+              ref={playerContainerRef}
+              className="relative w-full aspect-video rounded-lg overflow-hidden border border-yellow-500/30 bg-black [&>iframe]:w-full [&>iframe]:h-full"
+            />
           </div>
         )}
 

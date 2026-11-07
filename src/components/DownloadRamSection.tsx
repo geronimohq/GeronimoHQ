@@ -139,7 +139,7 @@ export const DownloadRamSection: React.FC = () => {
   };
 
   return (
-    <section id="download-ram" className="relative w-full max-w-6xl mx-auto px-4 py-12">
+    <section id="download-ram" className="relative w-full max-w-6xl mx-auto px-4 py-12 scroll-mt-28">
       {/* Outer Cyberpunk Container */}
       <div className="relative rounded-2xl border border-lime-500/40 bg-gradient-to-b from-emerald-950/25 via-slate-950/90 to-[#05080f] p-6 md:p-8 shadow-[0_0_50px_rgba(16,185,129,0.15)] overflow-hidden">
         
