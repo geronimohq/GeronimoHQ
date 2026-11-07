@@ -241,10 +241,6 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
               <span className="px-1.5 py-0.2 rounded text-[9px] font-sans font-bold bg-[#23a55a]/20 text-[#23a55a] border border-[#23a55a]/40 flex items-center gap-1">
                 <Sparkles className="w-2 h-2" /> IN-SERVER
               </span>
-            ) : state === 'main_menu' ? (
-              <span className="px-1.5 py-0.2 rounded text-[9px] font-sans font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
-                <Gamepad2 className="w-2 h-2" /> MAIN MENU
-              </span>
             ) : state === 'other_game' ? (
               <span className="px-1.5 py-0.2 rounded text-[9px] font-sans font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1">
                 <Flame className="w-2 h-2" /> IN-GAME
@@ -262,7 +258,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             ) : state === 'main_menu' ? (
               <>
                 <Gamepad2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                <span className="truncate font-bold text-amber-300">Counter-Strike 2 &bull; Main Menu</span>
+                <span className="truncate font-bold text-amber-300">Counter-Strike 2</span>
               </>
             ) : state === 'other_game' ? (
               <>
