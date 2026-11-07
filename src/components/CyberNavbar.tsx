@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Radio, Shield, Wifi, Mail, Cpu, Sparkles, Sliders, Wrench } from 'lucide-react';
+import { Radio, Shield, Wifi, Mail, Cpu, Sparkles, Sliders, Wrench, Lock } from 'lucide-react';
 
 interface CyberNavbarProps {
   theme: 'pepe' | 'banana';
   gremlinEnabled: boolean;
   onToggleGremlin: () => void;
+  onOpenVault?: () => void;
 }
 
 export const scrollToSectionById = (sectionId: string) => {
@@ -39,6 +40,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
   theme,
   gremlinEnabled,
   onToggleGremlin,
+  onOpenVault,
 }) => {
   const [timeStr, setTimeStr] = useState('');
   const [ping, setPing] = useState(14);
@@ -177,6 +179,14 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             <Shield className="w-3.5 h-3.5 text-fuchsia-400" />
             CS2 APP
           </a>
+          <button
+            onClick={onOpenVault}
+            className="hover:text-red-400 text-red-300 transition-colors flex items-center gap-1.5 cursor-pointer font-bold relative"
+          >
+            <Lock className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+            <span>VAULT</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping absolute -top-1 -right-1" />
+          </button>
           <a
             href="#contact"
             onClick={(e) => handleNavClick(e, 'contact')}
@@ -189,6 +199,17 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
 
         {/* Right HUD Controls: Read-Only Theme Status Badge + Gremlin Toggle + Clock */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* Secret Vault Header Trigger Button */}
+          <button
+            onClick={onOpenVault}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-950/80 border border-red-500/70 text-red-300 text-xs font-code font-bold hover:bg-red-900/90 transition-all cursor-pointer shadow-[0_0_12px_rgba(239,68,68,0.3)] animate-pulse"
+            title="Classified Level-5 Vault: Access Forbidden Intel, Binds & Golden Banana"
+          >
+            <Lock className="w-3.5 h-3.5 text-red-400" />
+            <span className="hidden sm:inline">VAULT [TOP SECRET]</span>
+            <span className="sm:hidden">VAULT</span>
+          </button>
+
           {/* Mobile/Tablet Download RAM Button */}
           <a
             href="#download-ram"

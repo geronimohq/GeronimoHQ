@@ -118,9 +118,10 @@ export const ServerRadarPreview: React.FC = () => {
   }, [connectScenario, launchCountdown, connectModalServer]);
   const [showMusicModal, setShowMusicModal] = useState(false);
 
-  // Web Auto Join (Slot Sniper Equivalent for Web)
+  // Web Auto Join (Slot Sniper Equivalent for Web) - Fully Independent GFL & Community Priorities
   type PriorityTier = 'normal' | 'supporter' | 'vip';
-  const [slotPriority, setSlotPriority] = useState<PriorityTier>('normal');
+  const [gflSlotPriority, setGflSlotPriority] = useState<PriorityTier>('supporter');
+  const [commSlotPriority, setCommSlotPriority] = useState<PriorityTier>('normal');
   const [autoJoinServerId, setAutoJoinServerId] = useState<string | null>(null);
   const [autoJoinStatus, setAutoJoinStatus] = useState<string | null>(null);
 
@@ -136,6 +137,10 @@ export const ServerRadarPreview: React.FC = () => {
     return 'Normal Player (≤61)';
   };
 
+  const getServerPriorityTier = (server: ZEServer): PriorityTier => {
+    return server.id === gflServer.id ? gflSlotPriority : commSlotPriority;
+  };
+
   const handleToggleAutoJoin = (server: ZEServer) => {
     if (autoJoinServerId === server.id) {
       setAutoJoinServerId(null);
@@ -143,6 +148,7 @@ export const ServerRadarPreview: React.FC = () => {
       return;
     }
 
+    const priority = getServerPriorityTier(server);
     const live = telemetry?.servers?.[server.id];
     let curr = 0;
     let max = 64;
@@ -152,7 +158,7 @@ export const ServerRadarPreview: React.FC = () => {
       if (!isNaN(parts[1])) max = parts[1];
     }
 
-    const targetThreshold = getTargetThreshold(max, slotPriority);
+    const targetThreshold = getTargetThreshold(max, priority);
 
     if (curr <= targetThreshold) {
       // Slot open right now! Connect via Steam Game Server immediately
@@ -164,7 +170,7 @@ export const ServerRadarPreview: React.FC = () => {
 
     // Server is full or at priority limit: Arm Auto Join Watcher
     setAutoJoinServerId(server.id);
-    setAutoJoinStatus(`🎯 Auto Join Armed for ${server.name} (${curr}/${max}). Watching live radar for ${getTierLabel(slotPriority)} (≤${targetThreshold}/${max})...`);
+    setAutoJoinStatus(`🎯 Auto Join Armed for ${server.name} (${curr}/${max}). Watching live radar for ${getTierLabel(priority)} (≤${targetThreshold}/${max})...`);
   };
 
   // Monitor live telemetry for open slot while Auto Join is armed
@@ -173,12 +179,13 @@ export const ServerRadarPreview: React.FC = () => {
     const targetServer = ZE_SERVERS.find((s) => s.id === autoJoinServerId);
     if (!targetServer) return;
 
+    const priority = targetServer.id === gflServer.id ? gflSlotPriority : commSlotPriority;
     const live = telemetry.servers[autoJoinServerId];
     if (live?.players && live.players.includes('/')) {
       const parts = live.players.split('/').map((n) => parseInt(n, 10));
       const curr = parts[0];
       const max = parts[1];
-      const targetThreshold = getTargetThreshold(max, slotPriority);
+      const targetThreshold = getTargetThreshold(max, priority);
       if (!isNaN(curr) && !isNaN(max) && curr <= targetThreshold) {
         // OPEN SLOT FOUND! Dispatch Steam Game Server connect
         dispatchSteamProtocol(`steam://connect/${targetServer.host}:${targetServer.port}`);
@@ -206,7 +213,7 @@ export const ServerRadarPreview: React.FC = () => {
         setTimeout(() => setAutoJoinStatus(null), 7000);
       }
     }
-  }, [telemetry, autoJoinServerId, slotPriority]);
+  }, [telemetry, autoJoinServerId, gflSlotPriority, commSlotPriority]);
 
   // Total live players across all queried servers
   const totalOnlinePlayers = useMemo(() => {
@@ -388,19 +395,26 @@ export const ServerRadarPreview: React.FC = () => {
             {/* Priority Tier Selector in Banner */}
             <div className="flex items-center gap-1 bg-amber-950/90 p-1 rounded-lg border border-amber-500/40 text-[10px]">
               <span className="text-amber-300 font-bold px-1">Tier:</span>
-              {(['normal', 'supporter', 'vip'] as PriorityTier[]).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setSlotPriority(t)}
-                  className={`px-1.5 py-0.5 rounded font-bold cursor-pointer transition-colors ${
-                    slotPriority === t
-                      ? 'bg-amber-400 text-slate-950 shadow-[0_0_8px_rgba(251,191,36,0.5)]'
-                      : 'text-amber-200 hover:text-white hover:bg-amber-900/60'
-                  }`}
-                >
-                  {t === 'normal' ? '≤61' : t === 'supporter' ? '≤62' : '≤63'}
-                </button>
-              ))}
+              {(['normal', 'supporter', 'vip'] as PriorityTier[]).map((t) => {
+                const isGfl = autoJoinServerId === gflServer.id;
+                const activeTier = isGfl ? gflSlotPriority : commSlotPriority;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => {
+                      if (isGfl) setGflSlotPriority(t);
+                      else setCommSlotPriority(t);
+                    }}
+                    className={`px-1.5 py-0.5 rounded font-bold cursor-pointer transition-colors ${
+                      activeTier === t
+                        ? 'bg-amber-400 text-slate-950 shadow-[0_0_8px_rgba(251,191,36,0.5)]'
+                        : 'text-amber-200 hover:text-white hover:bg-amber-900/60'
+                    }`}
+                  >
+                    {t === 'normal' ? '≤61' : t === 'supporter' ? '≤62' : '≤63'}
+                  </button>
+                );
+              })}
             </div>
 
             {autoJoinServerId && (
@@ -606,14 +620,14 @@ export const ServerRadarPreview: React.FC = () => {
 
             {/* GFL Auto Join Slot Priority Tier Selector */}
             <div className="w-full flex items-center justify-between text-[10px] font-code text-slate-400 bg-slate-900/80 px-2 py-1.5 rounded-lg border border-slate-800">
-              <span className="text-amber-300 font-bold">Slot Tier:</span>
+              <span className="text-amber-300 font-bold">GFL Slot Tier:</span>
               <div className="flex items-center gap-1">
                 {(['normal', 'supporter', 'vip'] as PriorityTier[]).map((tier) => (
                   <button
                     key={tier}
-                    onClick={() => setSlotPriority(tier)}
+                    onClick={() => setGflSlotPriority(tier)}
                     className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition-colors cursor-pointer ${
-                      slotPriority === tier
+                      gflSlotPriority === tier
                         ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-[0_0_6px_rgba(251,191,36,0.4)]'
                         : 'bg-slate-950 text-slate-400 border-slate-700 hover:text-white'
                     }`}
@@ -635,7 +649,11 @@ export const ServerRadarPreview: React.FC = () => {
               title="Auto Join: watches server for an open slot and launches CS2 via Steam the millisecond someone leaves"
             >
               <Target className={`w-3.5 h-3.5 ${autoJoinServerId === gflServer.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
-              <span>{autoJoinServerId === gflServer.id ? '🎯 AUTO JOIN: ACTIVE (CANCEL)' : '🎯 AUTO JOIN (WATCH FOR SLOT)'}</span>
+              <span>
+                {autoJoinServerId === gflServer.id
+                  ? '🎯 AUTO JOIN: ACTIVE (CANCEL)'
+                  : `🎯 AUTO JOIN (${gflSlotPriority === 'normal' ? '≤61' : gflSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
+              </span>
             </button>
 
             <div className="flex items-center gap-2">
@@ -679,19 +697,19 @@ export const ServerRadarPreview: React.FC = () => {
       <div className="flex flex-col gap-3 mb-6">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
           
-          {/* Clean 2-Tab Navigation */}
-          <div className="flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 backdrop-blur-md">
+          {/* Clean 2-Tab Navigation (Strictly One-Liner) */}
+          <div className="flex items-center gap-1.5 bg-slate-950/90 p-1 rounded-xl border border-slate-800 backdrop-blur-md flex-shrink-0">
             {/* Global Servers Tab */}
             <button
               onClick={() => setSelectedTab('global')}
-              className={`px-4 py-2 text-xs font-cyber tracking-wider font-bold rounded-lg transition-all cursor-pointer flex items-center gap-2 ${
+              className={`px-3 py-1.5 text-xs font-cyber tracking-wider font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 ${
                 selectedTab === 'global'
                   ? 'bg-gradient-to-r from-lime-500/20 to-emerald-500/20 text-lime-300 border border-lime-400/60 shadow-[0_0_15px_rgba(57,255,20,0.3)]'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Globe className="w-3.5 h-3.5 text-lime-400" />
-              <span>GLOBAL SERVERS ({globalServers.length})</span>
+              <Globe className="w-3.5 h-3.5 text-lime-400 flex-shrink-0" />
+              <span className="whitespace-nowrap">GLOBAL SERVERS ({globalServers.length})</span>
             </button>
 
             {/* Planet China Meme Tab */}
@@ -700,14 +718,14 @@ export const ServerRadarPreview: React.FC = () => {
                 setSelectedTab('china');
                 setSelectedChinaFilter('all');
               }}
-              className={`px-4 py-2 text-xs font-cyber tracking-wider font-bold rounded-lg transition-all cursor-pointer flex items-center gap-2 ${
+              className={`px-3 py-1.5 text-xs font-cyber tracking-wider font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 ${
                 selectedTab === 'china'
                   ? 'bg-gradient-to-r from-rose-500/20 to-amber-500/20 text-rose-300 border border-rose-400/60 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Rocket className="w-3.5 h-3.5 text-rose-400 animate-bounce" />
-              <span>PLANET CHINA ({chinaServers.length}) 🚀🇨🇳</span>
+              <Rocket className="w-3.5 h-3.5 text-rose-400 animate-bounce flex-shrink-0" />
+              <span className="whitespace-nowrap">PLANET CHINA ({chinaServers.length}) 🇨🇳</span>
             </button>
           </div>
 
@@ -721,9 +739,9 @@ export const ServerRadarPreview: React.FC = () => {
               {(['normal', 'supporter', 'vip'] as PriorityTier[]).map((tier) => (
                 <button
                   key={tier}
-                  onClick={() => setSlotPriority(tier)}
+                  onClick={() => setCommSlotPriority(tier)}
                   className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
-                    slotPriority === tier
+                    commSlotPriority === tier
                       ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.4)]'
                       : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-white'
                   }`}
@@ -987,11 +1005,11 @@ export const ServerRadarPreview: React.FC = () => {
                       ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse'
                       : 'bg-slate-900 hover:bg-emerald-950/80 border-slate-700 hover:border-emerald-500 text-slate-300 hover:text-emerald-300'
                   }`}
-                  title={`Auto Join: monitors player count and dispatches steam://connect the millisecond slots drop to ${slotPriority === 'normal' ? '≤61' : slotPriority === 'supporter' ? '≤62' : '≤63'}`}
+                  title={`Auto Join: monitors player count and dispatches steam://connect the millisecond slots drop to ${commSlotPriority === 'normal' ? '≤61' : commSlotPriority === 'supporter' ? '≤62' : '≤63'}`}
                 >
                   <Target className={`w-3 h-3 ${autoJoinServerId === server.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
                   <span className="hidden sm:inline">
-                    {autoJoinServerId === server.id ? 'ACTIVE' : `AUTO JOIN (${slotPriority === 'normal' ? '≤61' : slotPriority === 'supporter' ? '≤62' : '≤63'})`}
+                    {autoJoinServerId === server.id ? 'ACTIVE' : `AUTO JOIN (${commSlotPriority === 'normal' ? '≤61' : commSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
                   </span>
                 </button>
 

@@ -10,7 +10,9 @@ import { CS2AutoexecGeneratorSection } from './components/CS2AutoexecGeneratorSe
 import { CS2CommandCenterPreview } from './components/CS2CommandCenterPreview';
 import { GeronimoDiscordPresence } from './components/GeronimoDiscordPresence';
 import { DeployHudFooter } from './components/DeployHudFooter';
-import { ChevronDown, Cpu } from 'lucide-react';
+import { SecretGeronimoVault } from './components/SecretGeronimoVault';
+import { ChaosAnomalyEngine } from './components/ChaosAnomalyEngine';
+import { ChevronDown, Cpu, Lock } from 'lucide-react';
 
 const pickRandomBananaLoops = (): number => {
   const choices = [2, 3, 4];
@@ -26,6 +28,7 @@ export const App: React.FC = () => {
   const [bananaTargetLoops, setBananaTargetLoops] = useState<number>(() => pickRandomBananaLoops());
   const [gremlinEnabled, setGremlinEnabled] = useState<boolean>(true);
   const [transitionBanner, setTransitionBanner] = useState<string | null>(null);
+  const [isVaultOpen, setIsVaultOpen] = useState<boolean>(false);
 
   // Automatic Pepe -> Banana Phone transition after a random 2 minutes (120s) or 3 minutes (180s)
   useEffect(() => {
@@ -92,6 +95,7 @@ export const App: React.FC = () => {
         theme={theme}
         gremlinEnabled={gremlinEnabled}
         onToggleGremlin={() => setGremlinEnabled((prev) => !prev)}
+        onOpenVault={() => setIsVaultOpen(true)}
       />
 
       {/* Smooth Theme Transition Toast Notification */}
@@ -181,6 +185,13 @@ export const App: React.FC = () => {
             >
               ⚙️ WEB CFG STUDIO
             </a>
+            <button
+              onClick={() => setIsVaultOpen(true)}
+              className="px-3 py-1 rounded bg-red-950/90 border border-red-500/80 text-red-300 hover:bg-red-900 flex items-center gap-1.5 font-bold shadow-[0_0_15px_rgba(239,68,68,0.4)] animate-pulse cursor-pointer"
+            >
+              <Lock className="w-3 h-3 text-red-400" />
+              <span>🔒 CLASSIFIED VAULT [TOP SECRET]</span>
+            </button>
             <a
               href="#cs2-command"
               onClick={(e) => handleQuickScroll(e, 'cs2-command')}
@@ -227,6 +238,15 @@ export const App: React.FC = () => {
 
       {/* Floating Geronimo Discord-Style Live Presence (Fixed Lower-Left) */}
       <GeronimoDiscordPresence />
+
+      {/* Interactive Random Chaos Anomaly Protocol Button */}
+      <ChaosAnomalyEngine />
+
+      {/* Classified Geronimo Secret Vault Chamber Modal */}
+      <SecretGeronimoVault
+        isOpen={isVaultOpen}
+        onClose={() => setIsVaultOpen(false)}
+      />
 
       {/* Clean Transmission / Contact Terminal Footer */}
       <DeployHudFooter />
