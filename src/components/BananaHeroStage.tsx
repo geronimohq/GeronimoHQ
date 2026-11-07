@@ -270,7 +270,7 @@ interface BananaHeroStageProps {
 export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
   targetLoops,
   onAllLoopsCompleted,
-  masterVolume = 20,
+  masterVolume = 15,
   isMasterMuted = false,
   onToggleMasterMute,
   onMasterVolumeChange,
@@ -315,6 +315,35 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
       }
     }
   }, [masterVolume, isMasterMuted]);
+
+  // Automatically wake up and resume audio if user switches back to the tab from other applications
+  useEffect(() => {
+    const handleResumeOnFocus = () => {
+      if (playerRef.current && isMusicOn && !isMasterMutedRef.current) {
+        try {
+          const st = playerRef.current.getPlayerState();
+          if (st !== 1) { // 1 = PLAYING
+            playerRef.current.playVideo();
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleResumeOnFocus);
+    const handleVis = () => {
+      if (document.visibilityState === 'visible') {
+        handleResumeOnFocus();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVis);
+
+    return () => {
+      window.removeEventListener('focus', handleResumeOnFocus);
+      document.removeEventListener('visibilitychange', handleVis);
+    };
+  }, [isMusicOn]);
 
   // Mount & control the YouTube IFrame API player for seamless looping and exact end-of-loop theme transition
   useEffect(() => {

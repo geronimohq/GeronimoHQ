@@ -373,9 +373,9 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
                 "state": "main_menu",
                 "game": "Counter-Strike 2",
                 "server_id": None,
-                "server_name": "In Main Menu",
-                "map": "Main Menu / Lobby",
-                "players": "Solo / In Lobby",
+                "server_name": "Main Menu",
+                "map": "Main Menu",
+                "players": "Solo",
                 "connect_url": "steam://rungameid/730",
                 "player_duration": 0
             }
@@ -417,9 +417,9 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
             "state": "main_menu",
             "game": "Counter-Strike 2",
             "server_id": None,
-            "server_name": "In Main Menu",
-            "map": "Main Menu / Lobby",
-            "players": "Solo / In Lobby",
+            "server_name": "Main Menu",
+            "map": "Main Menu",
+            "players": "Solo",
             "connect_url": "steam://rungameid/730",
             "player_duration": 0
         }

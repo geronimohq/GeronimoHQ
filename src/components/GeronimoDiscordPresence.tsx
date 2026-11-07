@@ -92,7 +92,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
   // Active Map, Server & Status
   const currentMap = state === 'in_server'
     ? (presence?.map && presence.map !== '-' && presence.map !== 'Idle' ? presence.map : (gflTelemetry?.map && gflTelemetry.map !== '-' ? gflTelemetry.map : 'ze_eizures_b1_1'))
-    : (state === 'main_menu' ? 'In Main Menu' : state === 'other_game' ? (presence?.game || 'Steam Game') : state === 'online' ? 'Idle' : 'Offline');
+    : (state === 'main_menu' ? 'Main Menu' : state === 'other_game' ? (presence?.game || 'Steam Game') : state === 'online' ? 'Idle' : 'Offline');
 
   // Player display matching server telemetry exactly
   const playerDisplay = state === 'in_server'
@@ -146,7 +146,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
                     <span className="text-cyan-400 font-code font-bold ml-1">⏱️ {formatMapElapsed(mapDuration)}</span>
                   </span>
                 ) : state === 'main_menu' ? (
-                  <span className="text-amber-400">Idle in CS2 Menu</span>
+                  <span className="text-amber-400">CS2 Main Menu</span>
                 ) : state === 'other_game' ? (
                   <span className="text-purple-300 truncate">{presence?.game || 'In-Game'}</span>
                 ) : state === 'online' ? (
@@ -262,7 +262,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             ) : state === 'main_menu' ? (
               <>
                 <Gamepad2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                <span className="truncate font-bold text-amber-300">Counter-Strike 2 &bull; Idle in Main Menu</span>
+                <span className="truncate font-bold text-amber-300">Counter-Strike 2 &bull; Main Menu</span>
               </>
             ) : state === 'other_game' ? (
               <>
@@ -335,7 +335,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
               CS2 Status
             </span>
             <span className="text-xs text-amber-300 font-semibold block truncate">
-              Idle in Main Menu / Lobby
+              Main Menu
             </span>
           </div>
         </div>

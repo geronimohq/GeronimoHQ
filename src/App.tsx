@@ -9,6 +9,7 @@ import { ServerRadarPreview } from './components/ServerRadarPreview';
 import { CS2AutoexecGeneratorSection } from './components/CS2AutoexecGeneratorSection';
 import { CS2CommandCenterPreview } from './components/CS2CommandCenterPreview';
 import { GeronimoDiscordPresence } from './components/GeronimoDiscordPresence';
+import { FakeRetroScamAds } from './components/FakeRetroScamAds';
 import { DeployHudFooter } from './components/DeployHudFooter';
 import { SecretGeronimoVault } from './components/SecretGeronimoVault';
 import { ChaosAnomalyEngine } from './components/ChaosAnomalyEngine';
@@ -30,13 +31,13 @@ export const App: React.FC = () => {
   const [transitionBanner, setTransitionBanner] = useState<string | null>(null);
   const [isVaultOpen, setIsVaultOpen] = useState<boolean>(false);
 
-  // Global Master Audio State (Persisted in localStorage; Defaults to 20% per Geronimo's request)
+  // Global Master Audio State (Persisted in localStorage; Defaults to 15% per Geronimo's request)
   const [masterVolume, setMasterVolume] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('geronimo_master_vol');
-      return saved !== null ? Math.max(0, Math.min(100, Number(saved))) : 20;
+      return saved !== null ? Math.max(0, Math.min(100, Number(saved))) : 15;
     } catch {
-      return 20;
+      return 15;
     }
   });
 
@@ -72,25 +73,29 @@ export const App: React.FC = () => {
     });
   }, []);
 
-  // Exact 3 minutes and 16 seconds (196 seconds) continuous theme cycle:
-  // Pepe (3m 16s) -> Banana Phone (3m 16s) -> Vice Versa
+  // Theme Switching Cycle:
+  // Pepe (exact 3m 16s synth loop) -> Banana Phone (plays 100% of the YouTube song to completion) -> Vice Versa
   useEffect(() => {
-    const SONG_DURATION_MS = (3 * 60 + 16) * 1000; // 196,000 ms
-
-    const timer = window.setTimeout(() => {
-      setTheme((prev) => {
-        const next = prev === 'pepe' ? 'banana' : 'pepe';
-        setTransitionBanner(
-          next === 'banana'
-            ? '🍌 3:16 COMPLETE — SMOOTHLY SWITCHED TO BANANA PHONE THEME!'
-            : '🐸 3:16 COMPLETE — SMOOTHLY SWITCHED TO PEPE RETRO-FUTURISTIC THEME!'
-        );
+    if (theme === 'pepe') {
+      const PEPE_DURATION_MS = (3 * 60 + 16) * 1000; // 196,000 ms (3m 16s)
+      const timer = window.setTimeout(() => {
+        setTheme('banana');
+        setTransitionBanner('🍌 3:16 COMPLETE — SMOOTHLY SWITCHED TO BANANA PHONE THEME!');
         window.setTimeout(() => setTransitionBanner(null), 5000);
-        return next;
-      });
-    }, SONG_DURATION_MS);
-
-    return () => clearTimeout(timer);
+      }, PEPE_DURATION_MS);
+      return () => clearTimeout(timer);
+    } else {
+      // For Banana theme: theme switch is driven strictly by YouTube reaching event.data === 0 (song ended)
+      // via handleBananaLoopsFinished, preventing cutting off the song early if buffering or loading.
+      // 240s safety fallback in case YouTube API is blocked.
+      const FALLBACK_MS = 240 * 1000;
+      const fallbackTimer = window.setTimeout(() => {
+        setTheme('pepe');
+        setTransitionBanner('🐸 BANANA PHONE FINISHED — SWITCHED BACK TO PEPE THEME!');
+        window.setTimeout(() => setTransitionBanner(null), 5000);
+      }, FALLBACK_MS);
+      return () => clearTimeout(fallbackTimer);
+    }
   }, [theme]);
 
   // Handle direct URL hash navigation on initial page load (e.g., https://geronimohq.com/#download-ram)
@@ -270,6 +275,9 @@ export const App: React.FC = () => {
 
       {/* Floating Geronimo Discord-Style Live Presence (Fixed Lower-Left) */}
       <GeronimoDiscordPresence />
+
+      {/* Floating Retro Scam Parody Banners & Endless Verification Hologram */}
+      <FakeRetroScamAds />
 
       {/* Interactive Random Chaos Anomaly Protocol Button */}
       <ChaosAnomalyEngine />
