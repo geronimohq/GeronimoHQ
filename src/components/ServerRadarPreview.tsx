@@ -131,10 +131,15 @@ export const ServerRadarPreview: React.FC = () => {
     return Math.max(1, max - 3);
   };
 
-  const getTierLabel = (tier: PriorityTier) => {
-    if (tier === 'vip') return 'VIP / Admin (≤63)';
-    if (tier === 'supporter') return 'Supporter / Mapper (≤62)';
-    return 'Normal Player (≤61)';
+  const getTierLabel = (tier: PriorityTier, isGfl: boolean = false) => {
+    if (isGfl) {
+      if (tier === 'vip') return 'VIP / Admin (≤63)';
+      if (tier === 'supporter') return 'Supporter / Mapper (≤62)';
+      return 'Normal Player (≤61)';
+    }
+    if (tier === 'vip') return '≤63 Players';
+    if (tier === 'supporter') return '≤62 Players';
+    return '≤61 Players';
   };
 
   const getServerPriorityTier = (server: ZEServer): PriorityTier => {
@@ -149,6 +154,7 @@ export const ServerRadarPreview: React.FC = () => {
     }
 
     const priority = getServerPriorityTier(server);
+    const isGfl = server.id === gflServer.id;
     const live = telemetry?.servers?.[server.id];
     let curr = 0;
     let max = 64;
@@ -170,7 +176,8 @@ export const ServerRadarPreview: React.FC = () => {
 
     // Server is full or at priority limit: Arm Auto Join Watcher
     setAutoJoinServerId(server.id);
-    setAutoJoinStatus(`🎯 Auto Join Armed for ${server.name} (${curr}/${max}). Watching live radar for ${getTierLabel(priority)} (≤${targetThreshold}/${max})...`);
+    const label = isGfl ? getTierLabel(priority, true) : `≤${targetThreshold} Players`;
+    setAutoJoinStatus(`🎯 Auto Join Armed for ${server.name} (${curr}/${max}). Watching live radar for ${label}...`);
   };
 
   // Monitor live telemetry for open slot while Auto Join is armed
@@ -394,7 +401,7 @@ export const ServerRadarPreview: React.FC = () => {
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Priority Tier Selector in Banner */}
             <div className="flex items-center gap-1 bg-amber-950/90 p-1 rounded-lg border border-amber-500/40 text-[10px]">
-              <span className="text-amber-300 font-bold px-1">Tier:</span>
+              <span className="text-amber-300 font-bold px-1">{autoJoinServerId === gflServer.id ? 'Tier:' : 'Target:'}</span>
               {(['normal', 'supporter', 'vip'] as PriorityTier[]).map((t) => {
                 const isGfl = autoJoinServerId === gflServer.id;
                 const activeTier = isGfl ? gflSlotPriority : commSlotPriority;
@@ -410,6 +417,7 @@ export const ServerRadarPreview: React.FC = () => {
                         ? 'bg-amber-400 text-slate-950 shadow-[0_0_8px_rgba(251,191,36,0.5)]'
                         : 'text-amber-200 hover:text-white hover:bg-amber-900/60'
                     }`}
+                    title={isGfl ? (t === 'normal' ? 'Normal (≤61)' : t === 'supporter' ? 'Supporter (≤62)' : 'VIP (≤63)') : (t === 'normal' ? '≤61 Players' : t === 'supporter' ? '≤62 Players' : '≤63 Players')}
                   >
                     {t === 'normal' ? '≤61' : t === 'supporter' ? '≤62' : '≤63'}
                   </button>
@@ -597,22 +605,30 @@ export const ServerRadarPreview: React.FC = () => {
               </button>
             </div>
 
-            {/* Desktop Slot Sniper Banner */}
-            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center gap-2.5 text-xs font-tech text-slate-300">
-              <Zap className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <span>
-                <strong>Server Full at 64/64?</strong> The <a href="#cs2-command" className="text-fuchsia-400 underline hover:text-fuchsia-300 font-code">CS2 Command Center desktop app</a> includes a <strong>True Silent Slot Sniper</strong> that monitors player count via silent UDP at 0.25s (0 CS2 RAM stacking) and auto-joins via in-game console the millisecond someone disconnects!
-              </span>
+            {/* Desktop Slot Sniper & Web Auto Join Instructions Banner */}
+            <div className="p-3.5 rounded-xl bg-slate-950/85 border border-slate-800 flex flex-col gap-2 text-xs font-tech text-slate-300">
+              <div className="flex items-start gap-2.5">
+                <Zap className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <span>
+                  <strong>Server Full at 64/64?</strong> Before arming <strong>Web Auto Join</strong>, ensure <strong>Counter-Strike 2 is already opened</strong> on your PC so Steam connects you directly to the server. If CS2 is closed, Steam protocol will only launch CS2 to the Main Menu (requiring you to click connect again once loaded).
+                </span>
+              </div>
+              <div className="flex items-center gap-2 pl-6 text-[11px] text-fuchsia-300 font-code bg-fuchsia-950/40 p-2 rounded-lg border border-fuchsia-500/30">
+                <Target className="w-3.5 h-3.5 text-fuchsia-400 flex-shrink-0" />
+                <span>
+                  <strong>Pro-Tip:</strong> The <a href="#cs2-command" className="underline text-fuchsia-300 hover:text-white font-bold">CS2 Command Center desktop app</a> includes a <strong>True In-Engine Slot Sniper</strong> that monitors player count via 0.25s UDP and connects directly via CS2 console the exact millisecond a player disconnects!
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Right Action CTAs */}
           <div className="flex flex-col sm:flex-row lg:flex-col items-stretch lg:items-end justify-center gap-2 flex-shrink-0">
-            {/* Primary Connect CTA: Scenario 1 (CS2 Closed: Clean Launch + 15s Countdown) */}
+            {/* Primary Connect CTA */}
             <button
               onClick={() => handleOpenConnect(gflServer, false)}
               className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 via-orange-500 to-lime-500 hover:from-amber-400 hover:to-lime-400 text-slate-950 font-cyber text-xs tracking-wider font-black rounded-xl shadow-[0_0_25px_rgba(251,191,36,0.4)] transition-all cursor-pointer transform hover:-translate-y-0.5"
-              title="Scenario 1: Clean launch CS2 via steam://run/730 -> 15s countdown -> Connects via Steam Game Server"
+              title="Connect directly to GFL ZE via Steam protocol (steam://connect/...). Launches CS2 if closed, or connects immediately if already running."
             >
               <Play className="w-4 h-4 fill-current" />
               <span>CONNECT VIA STEAM</span>
@@ -646,7 +662,7 @@ export const ServerRadarPreview: React.FC = () => {
                   ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse shadow-[0_0_15px_rgba(251,191,36,0.4)]'
                   : 'bg-slate-900/90 hover:bg-emerald-950/60 border-slate-700 hover:border-emerald-500/70 text-slate-300 hover:text-emerald-300'
               }`}
-              title="Auto Join: watches server for an open slot and launches CS2 via Steam the millisecond someone leaves"
+              title="Auto Join Slot Watcher:&#10;• If CS2 is OPEN: Connects you directly to the server the instant a slot opens!&#10;• If CS2 is CLOSED: Steam protocol only opens CS2 to Main Menu (will not join directly). Launch CS2 first, then arm Auto Join!&#10;• Pro-Tip: For 100% automated in-game console sniping that bypasses Steam, use the CS2 Command Center desktop app."
             >
               <Target className={`w-3.5 h-3.5 ${autoJoinServerId === gflServer.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
               <span>
@@ -745,9 +761,9 @@ export const ServerRadarPreview: React.FC = () => {
                       ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.4)]'
                       : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-white'
                   }`}
-                  title={`Trigger Steam Game Server connect when server drops to ${tier === 'normal' ? '≤ 61 (Normal)' : tier === 'supporter' ? '≤ 62 (Supporter/Mapper)' : '≤ 63 (VIP/Admin)'}`}
+                  title={`Trigger Steam connect when server drops to ${tier === 'normal' ? '≤ 61 Players' : tier === 'supporter' ? '≤ 62 Players' : '≤ 63 Players'}`}
                 >
-                  {tier === 'normal' ? '≤ 61 Normal' : tier === 'supporter' ? '≤ 62 Supporter' : '≤ 63 VIP'}
+                  {tier === 'normal' ? '≤ 61 Players' : tier === 'supporter' ? '≤ 62 Players' : '≤ 63 Players'}
                 </button>
               ))}
             </div>
@@ -988,11 +1004,11 @@ export const ServerRadarPreview: React.FC = () => {
 
               {/* Action Buttons */}
               <div className="pt-3 border-t border-slate-800/80 flex items-center gap-2">
-                {/* 1-Click Steam Connect: Scenario 1 (Clean Launch CS2 + 15s Delay) & Scenario 2 (Instant) */}
+                {/* 1-Click Steam Connect */}
                 <button
                   onClick={() => handleOpenConnect(server, false)}
                   className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-lime-600 hover:from-emerald-500 hover:to-lime-500 text-white font-cyber text-xs tracking-wider font-bold rounded-lg shadow-[0_0_15px_rgba(57,255,20,0.3)] transition-all cursor-pointer"
-                  title="Scenario 1: Launches CS2 cleanly via steam://run/730, waits 15s, then connects"
+                  title="Connect directly to server via Steam protocol (steam://connect/...). Launches CS2 if not running, or connects immediately if already open."
                 >
                   <Play className="w-3.5 h-3.5 fill-current" />
                   <span>CONNECT VIA STEAM</span>
@@ -1005,7 +1021,7 @@ export const ServerRadarPreview: React.FC = () => {
                       ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse'
                       : 'bg-slate-900 hover:bg-emerald-950/80 border-slate-700 hover:border-emerald-500 text-slate-300 hover:text-emerald-300'
                   }`}
-                  title={`Auto Join: monitors player count and dispatches steam://connect the millisecond slots drop to ${commSlotPriority === 'normal' ? '≤61' : commSlotPriority === 'supporter' ? '≤62' : '≤63'}`}
+                  title={`Auto Join Slot Watcher (Target: ${commSlotPriority === 'normal' ? '≤61 Players' : commSlotPriority === 'supporter' ? '≤62 Players' : '≤63 Players'}):&#10;• If CS2 is OPEN: Connects you directly into the server the moment a slot opens!&#10;• If CS2 is CLOSED: Steam protocol only opens CS2 to Main Menu (will not join directly). Launch CS2 first, then arm Auto Join!&#10;• Pro-Tip: For 100% automated in-game console sniping that bypasses Steam, use the CS2 Command Center desktop app.`}
                 >
                   <Target className={`w-3 h-3 ${autoJoinServerId === server.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
                   <span className="hidden sm:inline">

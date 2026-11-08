@@ -372,63 +372,24 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
 
     # 2. Check local CS2 Command Center desktop app heartbeat (Sub-second real-time GSI detection)
     now = time.time()
-    if LOCAL_HEARTBEAT.get("timestamp", 0) > 0 and (now - LOCAL_HEARTBEAT["timestamp"] < 25):
-        if LOCAL_HEARTBEAT.get("is_cs2"):
-            return {
-                "online": True,
-                "in_game": True,
-                "state": "main_menu",
-                "game": "Counter-Strike 2",
-                "server_id": None,
-                "server_name": "Main Menu",
-                "map": "Main Menu",
-                "players": "Solo",
-                "connect_url": "steam://rungameid/730",
-                "player_duration": 0
-            }
-        elif LOCAL_HEARTBEAT.get("is_online"):
-            return {
-                "online": True,
-                "in_game": False,
-                "state": "online",
-                "game": "Steam Community",
-                "server_id": None,
-                "server_name": None,
-                "map": "Idle",
-                "players": "N/A",
-                "connect_url": None,
-                "player_duration": 0
-            }
-        else:
-            return {
-                "online": False,
-                "in_game": False,
-                "state": "offline",
-                "game": "Offline",
-                "server_id": None,
-                "server_name": None,
-                "map": "Offline",
-                "players": "N/A",
-                "connect_url": None,
-                "player_duration": 0
-            }
+    has_recent_heartbeat = LOCAL_HEARTBEAT.get("timestamp", 0) > 0 and (now - LOCAL_HEARTBEAT["timestamp"] < 25)
 
-    # 3. Check public Steam profile status as fallback
-    st = query_steam_profile_cached()
-
-    if not st.get("is_online"):
+    if has_recent_heartbeat and LOCAL_HEARTBEAT.get("is_cs2"):
         return {
-            "online": False,
-            "in_game": False,
-            "state": "offline",
-            "game": "Offline",
+            "online": True,
+            "in_game": True,
+            "state": "main_menu",
+            "game": "Counter-Strike 2",
             "server_id": None,
-            "server_name": None,
-            "map": "Offline",
-            "players": "N/A",
-            "connect_url": None,
+            "server_name": "Main Menu",
+            "map": "Main Menu",
+            "players": "Solo",
+            "connect_url": "steam://rungameid/730",
             "player_duration": 0
         }
+
+    # 3. Check public Steam profile status (Works 100% independently from the desktop app)
+    st = query_steam_profile_cached()
 
     if st.get("is_in_game") and st.get("is_cs2"):
         return {
@@ -452,12 +413,16 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
             "game": game_title,
             "server_id": None,
             "server_name": None,
-            "map": "Playing on Steam",
+            "map": game_title,
             "players": "In-Game",
             "connect_url": None,
             "player_duration": 0
         }
-    else:
+
+    # Geronimo is online on Steam if either the local desktop app detects steam.exe, OR Steam community profile indicates online
+    is_steam_online = (has_recent_heartbeat and LOCAL_HEARTBEAT.get("is_online")) or st.get("is_online")
+
+    if is_steam_online:
         return {
             "online": True,
             "in_game": False,
@@ -470,6 +435,20 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
             "connect_url": None,
             "player_duration": 0
         }
+
+    # Geronimo is offline if Steam is closed and no games are running
+    return {
+        "online": False,
+        "in_game": False,
+        "state": "offline",
+        "game": "Offline",
+        "server_id": None,
+        "server_name": None,
+        "map": "Offline",
+        "players": "N/A",
+        "connect_url": None,
+        "player_duration": 0
+    }
 
 import ssl
 

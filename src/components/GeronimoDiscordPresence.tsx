@@ -285,17 +285,17 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             ) : state === 'main_menu' ? (
               <>
                 <Gamepad2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                <span className="truncate font-bold text-amber-300">Counter-Strike 2</span>
+                <span className="truncate font-bold text-amber-300">Counter-Strike 2 &bull; Main Menu</span>
               </>
             ) : state === 'other_game' ? (
               <>
-                <Gamepad2 className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
-                <span className="truncate font-bold">{presence?.game || 'Steam Game'}</span>
+                <Flame className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+                <span className="truncate font-bold text-purple-300">In-Game &bull; {presence?.game || 'Steam Game'}</span>
               </>
             ) : state === 'online' ? (
               <>
                 <Compass className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
-                <span className="truncate text-slate-300 font-semibold">Online on Steam &bull; Idle</span>
+                <span className="truncate text-slate-300 font-semibold">Online on Steam &bull; Standby for CS2</span>
               </>
             ) : (
               <>
@@ -307,8 +307,8 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
         </div>
       </div>
 
-      {/* Dynamic Content Block */}
-      {state === 'in_server' ? (
+      {/* Dynamic Content Block - Only rendered for active in-server matches with map telemetry */}
+      {state === 'in_server' && (
         <div className="mt-2.5 p-2 rounded-lg bg-[#18191c] border border-[#2b2d31]/80 flex items-center gap-2.5">
           {/* Prominent Map Thumbnail */}
           <div className="relative w-20 h-13 rounded-md overflow-hidden border border-slate-700/80 bg-slate-950 flex-shrink-0 shadow-sm group">
@@ -326,7 +326,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             </span>
           </div>
 
-          {/* Server Name Header (Replaces generic "Active Map") & Map Telemetry */}
+          {/* Server Name Header & Map Telemetry */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1 text-[10px] text-cyan-300 uppercase font-bold tracking-wider leading-none mb-1 truncate" title={serverDisplayName}>
               <Server className="w-2.5 h-2.5 text-cyan-400 flex-shrink-0" />
@@ -349,49 +349,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             </div>
           </div>
         </div>
-      ) : state === 'main_menu' ? (
-        <div className="mt-2.5 p-2 rounded-lg bg-[#18191c] border border-[#2b2d31]/80 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
-            <Gamepad2 className="w-4 h-4 text-amber-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold block leading-none mb-0.5">
-              CS2 Status
-            </span>
-            <span className="text-xs text-amber-300 font-semibold block truncate">
-              Main Menu
-            </span>
-          </div>
-        </div>
-      ) : state === 'other_game' ? (
-        <div className="mt-2.5 p-2 rounded-lg bg-[#18191c] border border-[#2b2d31]/80 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center flex-shrink-0">
-            <Flame className="w-4 h-4 text-purple-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold block leading-none mb-0.5">
-              Playing on Steam
-            </span>
-            <span className="text-xs text-purple-300 font-semibold block truncate">
-              {presence?.game || 'In-Game'}
-            </span>
-          </div>
-        </div>
-      ) : state === 'online' ? (
-        <div className="mt-2.5 p-2 rounded-lg bg-[#18191c] border border-[#2b2d31]/80 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
-            <Compass className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold block leading-none mb-0.5">
-              Steam Status
-            </span>
-            <span className="text-xs text-emerald-300 font-semibold block truncate">
-              Online &bull; Standby for CS2
-            </span>
-          </div>
-        </div>
-      ) : null}
+      )}
 
       {/* Action Buttons */}
       <div className="mt-2.5 pt-2 border-t border-[#2b2d31]/80">
