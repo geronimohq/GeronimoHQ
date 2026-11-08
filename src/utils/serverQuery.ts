@@ -280,8 +280,9 @@ export function formatMapElapsed(totalSeconds: number): string {
 }
 
 /**
- * Returns the primary CDN thumbnail image URL for a given CS2 Zombie Escape map from zegraph.xyz.
- * Preserves the actual map name while stripping any workshop directory prefixes.
+* Returns the primary thumbnail image URL for a given CS2 Zombie Escape map.
+ * Prioritizes GeronimoHQ's self-hosted online map pack (/images/maps/<clean>.jpg)
+ * served directly from GitHub Pages' global CDN with zero latency and 100% uptime.
  */
 export function getMapThumbnailUrl(mapName?: string): string {
   if (!mapName || mapName === '-' || mapName === 'Unknown') {
@@ -292,35 +293,57 @@ export function getMapThumbnailUrl(mapName?: string): string {
   if (clean.includes('/')) {
     clean = clean.split('/').pop() || clean;
   }
-  return `https://zegraph.xyz/thumbnails/medium/730_cs2--${clean}.jpg`;
+  return `/images/maps/${clean}.jpg`;
 }
 
 /**
- * Universal multi-prefix error cascade for zegraph.xyz map thumbnails:
- * 1. 730_cs2--<map>.jpg (standard CS2 release)
- * 2. workshop--<map>.jpg (CS2 community workshop maps, e.g. zm_dust_v3, ze_scp, ze_obj_blue_depth)
- * 3. 730_cs2--<stripped>.jpg (stripped _p / version suffix, e.g. ze_fapescape_rote)
- * 4. 730--<map>.jpg (legacy CS:GO archive)
- * 5. /images/map_placeholder.svg (sleek fallback placeholder)
+ * Universal multi-prefix error cascade for CS2 map thumbnails:
+ * 1. /images/maps/<map>.jpg (self-hosted online repository pack on Fastly CDN)
+ * 2. workshop--<map>.jpg (zegraph CS2 workshop maps, e.g. zm_dust_v3, ze_scp)
+ * 3. 730_cs2--<map>.jpg (zegraph standard CS2 release)
+ * 4. 730_cs2--<stripped>.jpg (stripped _p / version suffix, e.g. ze_fapescape_rote)
+ * 5. 730--<map>.jpg (legacy CS:GO archive)
+ * 6. /images/map_placeholder.svg (sleek fallback placeholder)
  */
 export function handleMapImageFallback(e: React.SyntheticEvent<HTMLImageElement, Event>) {
   const target = e.target as HTMLImageElement;
   const currentSrc = target.src;
-  if (currentSrc.includes('730_cs2--')) {
-    target.src = currentSrc.replace('730_cs2--', 'workshop--');
-  } else if (currentSrc.includes('workshop--')) {
+
+  // 1. If self-hosted online pack (/images/maps/<map>.jpg) missed, cascade to zegraph workshop--
+  if (currentSrc.includes('/images/maps/')) {
+    const mapMatch = currentSrc.match(/\/images\/maps\/(.+?)\.jpg/);
+    const clean = mapMatch ? mapMatch[1] : '';
+    if (clean) {
+      target.src = 'https://zegraph.xyz/thumbnails/medium/workshop--' + clean + '.jpg';
+      return;
+    }
+  }
+
+  // 2. zegraph workshop-- to 730_cs2--
+  if (currentSrc.includes('workshop--')) {
     const match = currentSrc.match(/workshop--(.+?)\.jpg$/);
     if (match && /_(?:p|v\d+[\w]*|[a-z]\d+[\w]*|rc\d+|beta\d*|final|test)$/i.test(match[1])) {
       const stripped = match[1].replace(/_(?:p|v\d+[\w]*|[a-z]\d+[\w]*|rc\d+|beta\d*|final|test)$/i, '');
-      target.src = currentSrc.replace(`workshop--${match[1]}.jpg`, `730_cs2--${stripped}.jpg`);
+      target.src = currentSrc.replace('workshop--' + match[1] + '.jpg', '730_cs2--' + stripped + '.jpg');
     } else {
-      target.src = currentSrc.replace('workshop--', '730--');
+      target.src = currentSrc.replace('workshop--', '730_cs2--');
     }
-  } else if (currentSrc.includes('730--')) {
-    target.src = '/images/map_placeholder.svg';
-  } else {
-    target.src = '/images/map_placeholder.svg';
+    return;
   }
+
+  // 3. zegraph 730_cs2-- to legacy 730--
+  if (currentSrc.includes('730_cs2--')) {
+    target.src = currentSrc.replace('730_cs2--', '730--');
+    return;
+  }
+
+  // 4. legacy 730-- to fallback placeholder SVG
+  if (currentSrc.includes('730--')) {
+    target.src = '/images/map_placeholder.svg';
+    return;
+  }
+
+  target.src = '/images/map_placeholder.svg';
 }
 
 /**

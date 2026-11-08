@@ -11,6 +11,7 @@ import {
   type LiveTelemetryPayload, 
   type PlayerEntry 
 } from '../utils/serverQuery';
+import { ServerGeoDemographics } from './ServerGeoDemographics';
 import { 
   Play, 
   Copy, 
@@ -322,6 +323,16 @@ export const ServerRadarPreview: React.FC = () => {
   const gflMapStart = getMapStartTime('gfl', gflMap, gflLive?.map_start_time);
   const gflMapElapsed = Math.max(0, nowSec - gflMapStart);
   const gflRegionalPing = getEstimatedRegionalPing(gflServer.region);
+
+  const gflTotalPlayers = useMemo(() => {
+    if (!gflLive?.players) return 62;
+    const curr = parseInt(gflLive.players.split('/')[0], 10);
+    return isNaN(curr) ? 62 : curr;
+  }, [gflLive]);
+
+  const gflPlayerNames = useMemo(() => {
+    return gflLive?.players_list?.map((p) => p.name) || [];
+  }, [gflLive]);
 
   // Global servers (5 nodes - strictly non-China, excluding premier featured GFL)
   const globalServers = useMemo(() => {
@@ -647,6 +658,13 @@ export const ServerRadarPreview: React.FC = () => {
 
           {/* Right Action CTAs */}
           <div className="flex flex-col sm:flex-row lg:flex-col items-stretch lg:items-end justify-center gap-2 flex-shrink-0">
+            {/* Geographic Demographics Radar HUD */}
+            <ServerGeoDemographics
+              serverRegion={gflServer.region}
+              totalPlayers={gflTotalPlayers}
+              playerNames={gflPlayerNames}
+            />
+
             {/* Primary Connect CTA */}
             <button
               onClick={() => handleOpenConnect(gflServer, false)}
@@ -694,6 +712,12 @@ export const ServerRadarPreview: React.FC = () => {
                   : `🎯 AUTO JOIN (${gflSlotPriority === 'normal' ? '≤61' : gflSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
               </span>
             </button>
+
+            {/* CS2 Open Requirement Note */}
+            <div className="text-[10px] font-sans text-amber-300/80 text-center w-full mt-0.5 flex items-center justify-center gap-1">
+              <span>💡</span>
+              <span>Note: Only use Auto Join if CS2 is already open.</span>
+            </div>
 
             <div className="flex items-center gap-2">
               <button
@@ -901,6 +925,8 @@ export const ServerRadarPreview: React.FC = () => {
           const mapStart = getMapStartTime(server.id, currentMap, liveInfo?.map_start_time);
           const mapDuration = Math.max(0, nowSec - mapStart);
           const regionalPing = getEstimatedRegionalPing(server.region);
+          const currPlayersNum = currentPlayers ? parseInt(currentPlayers.split('/')[0], 10) : 0;
+          const serverPlayerNames = liveInfo?.players_list?.map((p) => p.name) || [];
 
           return (
             <div
@@ -972,9 +998,11 @@ export const ServerRadarPreview: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Live Telemetry Pill Row */}
-                <div className="flex flex-wrap items-center gap-2 mb-4">
-                  {/* Current Active Map & Live Timer */}
+                {/* Live Telemetry Row: Map/Pills on Left, Geo Radar on Right */}
+                <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-4">
+                  {/* Left: Map & Player Stats */}
+                  <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+                    {/* Current Active Map & Live Timer */}
                   <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code text-slate-300">
                     {/* Prominent Map Thumbnail */}
                     <div className="w-14 h-9 sm:w-16 sm:h-10 rounded-md overflow-hidden border border-slate-700 bg-slate-950 flex-shrink-0 shadow-sm group-hover:border-lime-400/50 transition-colors">
@@ -1033,9 +1061,20 @@ export const ServerRadarPreview: React.FC = () => {
                     <span className="text-[10px] text-slate-500 font-normal hidden sm:inline">({regionalPing.route})</span>
                   </div>
                 </div>
-              </div>
 
-              {/* Action Buttons */}
+                {/* Right: Geographic Demographics Radar HUD */}
+                <div className="w-full lg:w-auto lg:min-w-[210px] lg:max-w-[250px] flex-shrink-0">
+                  <ServerGeoDemographics
+                    serverRegion={server.region}
+                    totalPlayers={currPlayersNum}
+                    playerNames={serverPlayerNames}
+                    compact
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
               <div className="pt-3 border-t border-slate-800/80 flex items-center gap-2">
                 {/* 1-Click Steam Connect */}
                 <button
@@ -1103,6 +1142,12 @@ export const ServerRadarPreview: React.FC = () => {
                     </>
                   )}
                 </button>
+              </div>
+
+              {/* CS2 Open Requirement Note */}
+              <div className="text-[10px] font-sans text-amber-300/80 mt-2 flex items-center justify-center sm:justify-start gap-1">
+                <span>💡</span>
+                <span>Note: Only use Auto Join if CS2 is already open.</span>
               </div>
 
             </div>
