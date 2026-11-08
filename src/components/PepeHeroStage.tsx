@@ -37,7 +37,7 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({
   }, [isMusicOn, masterVolume, isMasterMuted]);
 
   return (
-    <section className="relative w-full max-w-6xl mx-auto px-4 py-8 flex flex-col items-center">
+    <section className="relative w-full max-w-6xl mx-auto px-4 py-8 flex flex-col items-center overflow-hidden">
       {/* HUD Header for Center Chamber */}
       <div className="w-full flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-cyan-500/30 pb-3">
         <div className="flex items-center gap-2">
@@ -177,11 +177,11 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({
         </div>
 
         {/* 3D PERSPECTIVE NEON PEDESTAL (Bottom Floor) */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-80 md:w-[620px] h-40 pointer-events-none flex items-center justify-center [perspective:800px]">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-72 sm:w-80 md:w-[620px] h-40 pointer-events-none flex items-center justify-center [perspective:800px] overflow-hidden">
           <div className="relative w-full h-full [transform:rotateX(72deg)] flex items-center justify-center">
-            <div className="absolute w-[360px] md:w-[580px] h-[360px] md:h-[580px] rounded-full border border-cyan-500/30 animate-spin-slow shadow-[0_0_30px_rgba(0,240,255,0.2)]" />
-            <div className="absolute w-[280px] md:w-[440px] h-[280px] md:h-[440px] rounded-full border border-dashed border-fuchsia-500/40 animate-spin-reverse-slow" />
-            <div className="absolute w-[180px] md:w-[280px] h-[180px] md:h-[280px] rounded-full border-2 border-lime-400/50 bg-gradient-to-tr from-cyan-500/20 via-fuchsia-500/20 to-lime-500/20 shadow-[0_0_40px_rgba(57,255,20,0.4)]" />
+            <div className="absolute w-[280px] sm:w-[360px] md:w-[580px] h-[280px] sm:h-[360px] md:h-[580px] rounded-full border border-cyan-500/30 animate-spin-slow shadow-[0_0_30px_rgba(0,240,255,0.2)]" />
+            <div className="absolute w-[220px] sm:w-[280px] md:w-[440px] h-[220px] sm:h-[280px] md:h-[440px] rounded-full border border-dashed border-fuchsia-500/40 animate-spin-reverse-slow" />
+            <div className="absolute w-[160px] sm:w-[180px] md:w-[280px] h-[160px] sm:h-[180px] md:h-[280px] rounded-full border-2 border-lime-400/50 bg-gradient-to-tr from-cyan-500/20 via-fuchsia-500/20 to-lime-500/20 shadow-[0_0_40px_rgba(57,255,20,0.4)]" />
           </div>
         </div>
 

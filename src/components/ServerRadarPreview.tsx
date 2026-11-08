@@ -181,7 +181,7 @@ export const ServerRadarPreview: React.FC = () => {
       if (!isNaN(parts[1])) max = parts[1];
     }
 
-    const targetThreshold = getTargetThreshold(max, priority);
+    const targetThreshold = isGfl ? getTargetThreshold(max, priority) : Math.max(0, max - 1);
 
     if (curr <= targetThreshold) {
       // Slot open right now! Present visible Connect Now button without auto-launching
@@ -208,13 +208,14 @@ export const ServerRadarPreview: React.FC = () => {
     const targetServer = ZE_SERVERS.find((s) => s.id === slotWatcherServerId);
     if (!targetServer) return;
 
-    const priority = targetServer.id === gflServer.id ? gflSlotPriority : commSlotPriority;
+    const isGfl = targetServer.id === gflServer.id;
+    const priority = isGfl ? gflSlotPriority : commSlotPriority;
     const live = telemetry.servers[slotWatcherServerId];
     if (live?.players && live.players.includes('/')) {
       const parts = live.players.split('/').map((n) => parseInt(n, 10));
       const curr = parts[0];
       const max = parts[1];
-      const targetThreshold = getTargetThreshold(max, priority);
+      const targetThreshold = isGfl ? getTargetThreshold(max, priority) : Math.max(0, max - 1);
       if (!isNaN(curr) && !isNaN(max) && curr <= targetThreshold) {
         // OPEN SLOT FOUND! Present prominent 'Connect Now' button (No auto-launch)
         setSlotOpenAlert({
@@ -607,7 +608,7 @@ export const ServerRadarPreview: React.FC = () => {
                   alt={gflMap}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=300&q=80';
+                    (e.target as HTMLImageElement).src = '/images/map_placeholder.svg';
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
@@ -847,35 +848,6 @@ export const ServerRadarPreview: React.FC = () => {
             </button>
           </div>
 
-          {/* Global Community Sniper Target Selector */}
-          <div className="flex flex-col gap-1 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-amber-500/30" title="Set slot sniper target player threshold for community servers">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-code text-amber-400 font-bold flex items-center gap-1">
-                <Target className="w-3.5 h-3.5 text-amber-400" />
-                SNIPER TARGET:
-              </span>
-              <div className="flex items-center gap-1">
-                {(['normal', 'supporter', 'vip'] as PriorityTier[]).map((tier) => (
-                  <button
-                    key={tier}
-                    onClick={() => setCommSlotPriority(tier)}
-                    className={`min-h-[32px] px-2 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer touch-manipulation ${
-                      commSlotPriority === tier
-                        ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.4)]'
-                        : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-white'
-                    }`}
-                    title={tier === 'normal' ? 'Set community sniper target to ≤61 players (leaves 3 slots for normal players)' : tier === 'supporter' ? 'Set community sniper target to ≤62 players (leaves 2 slots for supporters)' : 'Set community sniper target to ≤63 players (leaves 1 slot for VIPs)'}
-                  >
-                    {tier === 'normal' ? '≤ 61 Players' : tier === 'supporter' ? '≤ 62 Players' : '≤ 63 Players'}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <span className="text-[10px] font-sans text-amber-200/70">
-              Slot Watcher Threshold: Normal (≤61 leaves 3 reserve slots) &bull; Supporter (≤62) &bull; VIP (≤63)
-            </span>
-          </div>
-
           {/* Search Input */}
           <div className="relative min-w-[280px]">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -1065,7 +1037,7 @@ export const ServerRadarPreview: React.FC = () => {
                         alt={currentMap} 
                         className="w-full h-full object-cover"
                         onError={(e) => { 
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=300&q=80';
+                          (e.target as HTMLImageElement).src = '/images/map_placeholder.svg';
                         }}
                       />
                     </div>
@@ -1142,7 +1114,7 @@ export const ServerRadarPreview: React.FC = () => {
                 >
                   <Target className={`w-3 h-3 ${slotWatcherServerId === server.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
                   <span className="hidden sm:inline">
-                    {slotWatcherServerId === server.id ? 'ACTIVE' : `WATCH SLOTS (${commSlotPriority === 'normal' ? '≤61' : commSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
+                    {slotWatcherServerId === server.id ? 'ACTIVE' : `WATCH SLOTS`}
                   </span>
                 </button>
 

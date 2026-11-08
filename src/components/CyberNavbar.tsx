@@ -209,7 +209,8 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             }`}
             title="Current Active Theme (Read-Only Indicator)"
           >
-            <span>{theme === 'banana' ? '🍌 THEME: BANANA PHONE' : '🐸 THEME: PEPE HOLO'}</span>
+            <span className="hidden sm:inline">{theme === 'banana' ? '🍌 THEME: BANANA PHONE' : '🐸 THEME: PEPE HOLO'}</span>
+            <span className="sm:hidden">{theme === 'banana' ? '🍌 BANANA' : '🐸 PEPE'}</span>
           </div>
 
           {/* Roaming Character Toggle */}

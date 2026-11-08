@@ -152,7 +152,7 @@ export const App: React.FC = () => {
 
   return (
     <div
-      className={`relative min-h-screen text-slate-100 flex flex-col font-tech transition-colors duration-1000 selection:bg-fuchsia-500 selection:text-white ${
+      className={`relative min-h-screen text-slate-100 flex flex-col font-tech transition-colors duration-1000 selection:bg-fuchsia-500 selection:text-white overflow-x-hidden w-full max-w-full ${
         theme === 'banana' ? 'bg-[#090701]' : 'bg-[#05070d]'
       }`}
     >

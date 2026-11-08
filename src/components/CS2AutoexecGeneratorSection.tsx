@@ -14,7 +14,8 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
   const [maxSubtickRates, setMaxSubtickRates] = useState(true);
   const [crispAudioEq, setCrispAudioEq] = useState(true);
   const [smartTelemetryHud, setSmartTelemetryHud] = useState(true);
-  const [hudColor, setHudColor] = useState('3');
+  const [performanceTweaks, setPerformanceTweaks] = useState(true);
+  const [hudColor, setHudColor] = useState('none');
   const [fpsMax, setFpsMax] = useState('0');
   const [copiedCfg, setCopiedCfg] = useState(false);
   const [copiedLaunch, setCopiedLaunch] = useState(false);
@@ -32,9 +33,31 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
       '',
     ];
 
+    if (performanceTweaks) {
+      lines.push(
+        '// ============================================================',
+        '// [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS]',
+        '// ============================================================',
+        `fps_max "${sanitizedFps}"`,
+        'engine_low_latency_sleep_after_client_tick true  // Synchronizes engine ticks to reduce frame stutter',
+        'snd_mixahead "0.025"                        // Low audio buffer (0.025s) reduces sound delay & spikes',
+        'snd_headphone_eq "0"                        // Disables headphone EQ DSP for lowest CPU overhead',
+        'snd_spatialize_lerp "1"',
+        'rate "1000000"                              // 1 Mbps max bandwidth',
+        'cl_net_buffer_ticks "0"                     // Minimum interpolation delay (fastest packet processing)',
+        'cl_allow_animated_avatars "0"               // Disables animated Steam avatars (fixes scoreboard FPS drop)',
+        'r_player_visibility_mode "1"                // Enhances enemy contrast',
+        'cl_hud_telemetry_frametime_show "2"         // Shows frametime graph if a micro-stutter occurs',
+        'cl_hud_telemetry_ping_show "2"              // Real-time ping display',
+        'cl_hud_telemetry_net_misdelivery_show "2"   // Real-time packet loss / choke notification',
+        'cl_ragdoll_workaround_threshold "0"',
+        ''
+      );
+    }
+
     if (hudColor && hudColor !== 'none') {
       lines.push(
-        '// HUD Color index: 0-12 (presets unverified in-game)',
+        '// --- CUSTOM HUD COLOR THEME ---',
         `cl_hud_color "${hudColor}"`,
         ''
       );
@@ -157,6 +180,11 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
       '// cl_hud_color 0 // (typical default: 0 - Team Color, check yours)',
       '// rate 786432 // (CS2 engine default, check yours)',
       '// cl_net_buffer_ticks 1 // (CS2 1-packet buffer interpolation default - typical, check yours)',
+      '// engine_low_latency_sleep_after_client_tick false // (CS2 default - typical, check yours)',
+      '// snd_mixahead 0.025 // (CS2 default: 0.025, check yours)',
+      '// cl_allow_animated_avatars 1 // (CS2 default: 1, check yours)',
+      '// r_player_visibility_mode 1 // (CS2 default: 1, check yours)',
+      '// cl_ragdoll_workaround_threshold 1 // (CS2 default: 1, check yours)',
       '// viewmodel_presetpos 1 // (restores CS2 default viewmodel)',
       '// r_drawtracers_firstperson 1 // (typical default: 1, check yours)',
       '// snd_headphone_eq 0 // (typical default: 0 - Natural, check yours)',
@@ -191,6 +219,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
     smartTelemetryHud,
     hudColor,
     fpsMax,
+    performanceTweaks,
   ]);
 
   const handleDownloadCfg = () => {
@@ -295,6 +324,30 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
             <div className="text-xs font-code text-cyan-300 font-bold uppercase flex items-center gap-1.5 border-b border-slate-800 pb-2">
               <Eye className="w-4 h-4 text-cyan-400" />
               <span>1. ZOMBIE ESCAPE VISUAL &amp; AUDIO PRESETS</span>
+            </div>
+
+            {/* In-App Engine & Sub-Tick Performance Tweaks */}
+            <div className="p-3 rounded-xl bg-slate-950/80 border border-cyan-500/30">
+              <label 
+                title="Applies CS2 FPS Optimizer engine & sub-tick tweaks: engine_low_latency_sleep, snd_mixahead 0.025, 1 Mbps bandwidth, and animated avatar fix."
+                className="flex items-start gap-2.5 text-xs font-tech text-slate-200 cursor-pointer select-none"
+              >
+                <input
+                  type="checkbox"
+                  checked={performanceTweaks}
+                  onChange={(e) => setPerformanceTweaks(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-cyan-400 rounded cursor-pointer"
+                />
+                <div>
+                  <span className="font-bold text-white flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                    CS2 FPS Optimizer Engine &amp; Sub-Tick Performance Tweaks
+                  </span>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Low-latency tick sleep (<code className="text-cyan-300">engine_low_latency_sleep_after_client_tick true</code>), 0.025s sound buffer, 1 Mbps bandwidth, and animated avatar fix.
+                  </p>
+                </div>
+              </label>
             </div>
 
             <label 
@@ -458,42 +511,50 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
               <div>
-                <label className="block text-[11px] font-code text-slate-400 mb-1">HUD COLOR THEME (Unverified In-Game Presets):</label>
-                <select
-                  value={hudColor}
-                  onChange={(e) => setHudColor(e.target.value)}
-                  title="Choose custom CS2 HUD color theme index (cl_hud_color 0-12)"
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs font-code text-cyan-300"
-                >
-                  <option value="none">No Change (Keep Current CS2 HUD Color)</option>
-                  <option value="3">3 — Blue / Light Blue (unverified)</option>
-                  <option value="10">10 — Aqua / Cyan (Cyberpunk)</option>
-                  <option value="9">9 — Emerald Green</option>
-                  <option value="8">8 — Vibrant Yellow</option>
-                  <option value="7">7 — Bright Orange</option>
-                  <option value="6">6 — Crimson Red</option>
-                  <option value="5">5 — Neon Purple</option>
-                  <option value="11">11 — Hot Pink</option>
-                  <option value="4">4 — Dark Blue</option>
-                  <option value="1">1 — Soft White</option>
-                  <option value="2">2 — Bright White</option>
-                  <option value="12">12 — Light Yellow</option>
-                  <option value="0">0 — Team Color (Dynamic)</option>
-                </select>
+                <label className="block text-[11px] font-code text-slate-400 mb-1">HUD COLOR THEME:</label>
+                <div className="relative">
+                  <select
+                    value={hudColor}
+                    onChange={(e) => setHudColor(e.target.value)}
+                    title="Choose custom CS2 HUD color theme index (cl_hud_color 0-12)"
+                    className="w-full pl-2.5 pr-10 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs font-mono text-cyan-300 truncate cursor-pointer focus:outline-none focus:border-cyan-500"
+                  >
+                    <option value="none">Default (No Change)</option>
+                    <option value="0">0 (Default / Team)</option>
+                    <option value="1">1 (White)</option>
+                    <option value="2">2 (Bright White)</option>
+                    <option value="3">3 (Light Blue)</option>
+                    <option value="4">4 (Dark Blue)</option>
+                    <option value="5">5 (Purple)</option>
+                    <option value="6">6 (Red)</option>
+                    <option value="7">7 (Orange)</option>
+                    <option value="8">8 (Yellow)</option>
+                    <option value="9">9 (Green)</option>
+                    <option value="10">10 (Aqua / Cyan)</option>
+                    <option value="11">11 (Pink)</option>
+                    <option value="12">12 (Light Yellow)</option>
+                  </select>
+                </div>
               </div>
               <div>
                 <label className="block text-[11px] font-code text-slate-400 mb-1">FPS CAP (fps_max):</label>
-                <select
-                  value={fpsMax}
-                  onChange={(e) => setFpsMax(e.target.value)}
-                  title="Set in-game maximum frame rate limiter (fps_max 0-999)"
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs font-code text-lime-300"
-                >
-                  <option value="0">0 — Uncapped (Max Framerate)</option>
-                  <option value="240">240 FPS (240Hz Monitor)</option>
-                  <option value="360">360 FPS (360Hz Monitor)</option>
-                  <option value="400">400 FPS (Consistent Frame Pacing)</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={fpsMax}
+                    onChange={(e) => setFpsMax(e.target.value)}
+                    title="Set in-game maximum frame rate limiter (fps_max 0-999)"
+                    className="w-full pl-2.5 pr-10 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs font-mono text-lime-300 truncate cursor-pointer focus:outline-none focus:border-lime-500"
+                  >
+                    <option value="0">0 — Uncapped (Max FPS)</option>
+                    <option value="400">400 — Competitive (400)</option>
+                    <option value="360">360 — 360Hz Match</option>
+                    <option value="300">300 — Stable Cap (300)</option>
+                    <option value="240">240 — 240Hz Match</option>
+                    <option value="165">165 — 165Hz Match</option>
+                    <option value="144">144 — 144Hz Match</option>
+                    <option value="60">60 — Power Saver (60)</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>

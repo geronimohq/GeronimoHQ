@@ -537,7 +537,7 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
   const bananaYoutubeUrl = 'https://www.youtube.com/watch?v=j5C6X9vOEkU&list=RDj5C6X9vOEkU&start_radio=1';
 
   return (
-    <section className="relative w-full max-w-6xl mx-auto px-4 py-8 flex flex-col items-center">
+    <section className="relative w-full max-w-6xl mx-auto px-4 py-8 flex flex-col items-center overflow-hidden">
       {/* HUD Header for Banana Phone Stage */}
       <div className="w-full flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-yellow-500/40 pb-3">
         <div className="flex items-center gap-2">
@@ -690,10 +690,10 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
         )}
 
         {/* Golden Pedestal Floor Rings */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-80 md:w-[620px] h-36 pointer-events-none flex items-center justify-center [perspective:800px]">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-72 sm:w-80 md:w-[620px] h-36 pointer-events-none flex items-center justify-center [perspective:800px] overflow-hidden">
           <div className="relative w-full h-full [transform:rotateX(72deg)] flex items-center justify-center">
-            <div className="absolute w-[360px] md:w-[580px] h-[360px] md:h-[580px] rounded-full border border-yellow-400/40 animate-spin-slow shadow-[0_0_30px_rgba(250,204,21,0.3)]" />
-            <div className="absolute w-[260px] md:w-[420px] h-[260px] md:h-[420px] rounded-full border border-dashed border-amber-500/50 animate-spin-reverse-slow" />
+            <div className="absolute w-[280px] sm:w-[360px] md:w-[580px] h-[280px] sm:h-[360px] md:h-[580px] rounded-full border border-yellow-400/40 animate-spin-slow shadow-[0_0_30px_rgba(250,204,21,0.3)]" />
+            <div className="absolute w-[220px] sm:w-[260px] md:w-[420px] h-[220px] sm:h-[260px] md:h-[420px] rounded-full border border-dashed border-amber-500/50 animate-spin-reverse-slow" />
           </div>
         </div>
 
