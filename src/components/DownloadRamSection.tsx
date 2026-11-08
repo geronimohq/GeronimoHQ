@@ -239,6 +239,23 @@ export const DownloadRamSection: React.FC = () => {
     speed: 3.6,
   });
   const poseRef = useRef<'stand' | 'jump' | 'crouch'>('stand');
+  const gameContainerRef = useRef<HTMLDivElement>(null);
+  const [isGameInViewport, setIsGameInViewport] = useState<boolean>(true);
+
+  // Pause game when mini-game scrolls out of view
+  useEffect(() => {
+    const el = gameContainerRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsGameInViewport(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const currentTiers = TIERS_BY_MODE[memeMode];
   const currentMeta = MODE_META[memeMode];
@@ -252,9 +269,9 @@ export const DownloadRamSection: React.FC = () => {
     };
   }, []);
 
-  // ZE Laser Mini-Game Loop (Automatically pauses when tab is hidden to prevent CPU and memory leak)
+  // ZE Laser Mini-Game Loop (Automatically pauses when tab is hidden or scrolled out of viewport)
   useEffect(() => {
-    if (!laserGameActive || isTabHidden) return;
+    if (!laserGameActive || isTabHidden || !isGameInViewport) return;
 
     const tick = window.setInterval(() => {
       setLaserBeam((prev) => {
@@ -293,22 +310,26 @@ export const DownloadRamSection: React.FC = () => {
     }, 30);
 
     return () => clearInterval(tick);
-  }, [laserGameActive, isTabHidden]);
+  }, [laserGameActive, isTabHidden, isGameInViewport]);
 
   // Keyboard navigation for laser game (Space/Up = Jump, Down/Ctrl = Crouch)
-  // Strictly active ONLY while laserGameActive is true, and ignores keystrokes when focused in inputs/textareas
+  // Strictly active ONLY while laserGameActive is true AND visible in viewport, and never hijacks inputs or focused buttons
   useEffect(() => {
-    if (!laserGameActive) return;
+    if (!laserGameActive || !isGameInViewport || isTabHidden) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Never hijack keystrokes if the user is typing in any form input, textarea, or search box
+      // Never hijack keystrokes if the user is typing or if an interactive button/link/control is focused
       const target = e.target as HTMLElement | null;
       if (
         target &&
         (target.tagName === 'INPUT' ||
           target.tagName === 'TEXTAREA' ||
+          target.tagName === 'BUTTON' ||
+          target.tagName === 'A' ||
+          target.tagName === 'SELECT' ||
           target.isContentEditable ||
-          target.getAttribute('role') === 'textbox')
+          target.getAttribute('role') === 'textbox' ||
+          target.getAttribute('role') === 'button')
       ) {
         return;
       }
@@ -329,7 +350,7 @@ export const DownloadRamSection: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [laserGameActive]);
+  }, [laserGameActive, isGameInViewport, isTabHidden]);
 
   const triggerPose = (pose: 'jump' | 'crouch') => {
     poseRef.current = pose;
@@ -751,7 +772,7 @@ export const DownloadRamSection: React.FC = () => {
         </div>
 
         {/* BONUS INTERACTIVE MINI-GAME: DODGE THE ZE ENDING LASERS! */}
-        <div className="mt-6 rounded-xl border border-fuchsia-500/40 bg-slate-950/90 p-4">
+        <div ref={gameContainerRef} className="mt-6 rounded-xl border border-fuchsia-500/40 bg-slate-950/90 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
               <Gamepad2 className="w-5 h-5 text-fuchsia-400" />

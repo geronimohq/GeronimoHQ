@@ -228,6 +228,9 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
             <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
               *Note: Your drive letter or Steam library folder may differ (e.g. <code className="text-cyan-300">H:\SteamLibrary\...</code>). To locate your exact folder in Steam: right-click Counter-Strike 2 &rarr; Manage &rarr; Browse local files &rarr; open <code className="text-cyan-300">game/csgo/cfg/</code>.
             </p>
+            <p className="text-[11px] text-amber-300/90 font-sans">
+              💡 <strong>Console Tip:</strong> If your settings do not apply automatically at game launch (e.g. overridden by Steam Cloud), open the in-game console (`~`) and type <code className="text-lime-300 font-code font-bold">exec autoexec</code>.
+            </p>
           </div>
           <button
             onClick={() => {
@@ -252,7 +255,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
             </div>
 
             <label 
-              title="Sets weapon viewmodel_fov 68 and offsets gun model (X:2.0, Y:2.0, Z:-2.0) down and right for maximum screen visibility. Note: Player camera FOV is locked by CS2 engine at 90."
+              title="Sets weapon viewmodel_fov 68 and offsets gun model (X:2.0, Y:2.0, Z:-2.0) down and right for improved bottom-screen visibility. Note: Player camera FOV is locked by CS2 engine at 90."
               className="flex items-start gap-2.5 text-xs font-tech text-slate-200 cursor-pointer select-none"
             >
               <input

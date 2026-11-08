@@ -147,10 +147,10 @@ export const ServerRadarPreview: React.FC = () => {
   };
 
   const handleToggleAutoJoin = (server: ZEServer) => {
-    // Check if on a mobile phone (phones cannot launch PC CS2 via steam:// URI)
-    const isMobileDevice = typeof navigator !== 'undefined' && (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 640);
+    // Check if on a mobile handheld device (phones cannot launch PC CS2 via steam:// URI)
+    const isMobileDevice = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     if (isMobileDevice) {
-      alert(`📱 Mobile Notice:\n\nAutomated Steam slot-sniping requires a desktop Windows PC with Counter-Strike 2 installed.\n\nOn mobile, please tap "CONNECT" to copy the server IP (${server.host}:${server.port}) and connect from your gaming PC console.`);
+      alert(`📱 Mobile Notice:\n\nAutomated Steam slot-sniping requires a desktop PC with Steam and Counter-Strike 2 installed.\n\nOn mobile, please tap "CONNECT" to copy the server IP (${server.host}:${server.port}) and connect from your gaming PC console.`);
       return;
     }
 
@@ -270,14 +270,37 @@ export const ServerRadarPreview: React.FC = () => {
 
   useEffect(() => {
     loadTelemetry();
-    // 5-second automatic polling loop for near-real-time updates
-    const pollTimer = setInterval(() => {
-      fetchLiveTelemetry().then((data) => {
-        if (data) setTelemetry(data);
-      });
-    }, 5000);
-    return () => clearInterval(pollTimer);
-  }, [loadTelemetry]);
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+    const startPolling = () => {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(() => {
+        fetchLiveTelemetry().then((data) => {
+          if (data) setTelemetry(data);
+        });
+      }, 5000);
+    };
+
+    const handleVisibility = () => {
+      // If tab is hidden and autoJoin sniper is NOT armed, pause polling to conserve resources
+      if (document.hidden && !autoJoinServerId) {
+        if (pollTimer) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+        }
+      } else {
+        startPolling();
+        loadTelemetry();
+      }
+    };
+
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      if (pollTimer) clearInterval(pollTimer);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [loadTelemetry, autoJoinServerId]);
 
   // 1-second ticker for live map elapsed counters
   const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
@@ -773,27 +796,32 @@ export const ServerRadarPreview: React.FC = () => {
           </div>
 
           {/* Global Community Sniper Target Selector */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-amber-500/30" title="Set slot sniper target player threshold for community servers">
-            <span className="text-[10px] font-code text-amber-400 font-bold flex items-center gap-1">
-              <Target className="w-3.5 h-3.5 text-amber-400" />
-              SNIPER TARGET:
-            </span>
-            <div className="flex items-center gap-1">
-              {(['normal', 'supporter', 'vip'] as PriorityTier[]).map((tier) => (
-                <button
-                  key={tier}
-                  onClick={() => setCommSlotPriority(tier)}
-                  className={`min-h-[32px] px-2 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer touch-manipulation ${
-                    commSlotPriority === tier
-                      ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.4)]'
-                      : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-white'
-                  }`}
-                  title={tier === 'normal' ? 'Set community sniper target to ≤61 players (leaves 3 slots for normal players)' : tier === 'supporter' ? 'Set community sniper target to ≤62 players (leaves 2 slots for supporters)' : 'Set community sniper target to ≤63 players (leaves 1 slot for VIPs)'}
-                >
-                  {tier === 'normal' ? '≤ 61 Players' : tier === 'supporter' ? '≤ 62 Players' : '≤ 63 Players'}
-                </button>
-              ))}
+          <div className="flex flex-col gap-1 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-amber-500/30" title="Set slot sniper target player threshold for community servers">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-code text-amber-400 font-bold flex items-center gap-1">
+                <Target className="w-3.5 h-3.5 text-amber-400" />
+                SNIPER TARGET:
+              </span>
+              <div className="flex items-center gap-1">
+                {(['normal', 'supporter', 'vip'] as PriorityTier[]).map((tier) => (
+                  <button
+                    key={tier}
+                    onClick={() => setCommSlotPriority(tier)}
+                    className={`min-h-[32px] px-2 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer touch-manipulation ${
+                      commSlotPriority === tier
+                        ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.4)]'
+                        : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-white'
+                    }`}
+                    title={tier === 'normal' ? 'Set community sniper target to ≤61 players (leaves 3 slots for normal players)' : tier === 'supporter' ? 'Set community sniper target to ≤62 players (leaves 2 slots for supporters)' : 'Set community sniper target to ≤63 players (leaves 1 slot for VIPs)'}
+                  >
+                    {tier === 'normal' ? '≤ 61 Players' : tier === 'supporter' ? '≤ 62 Players' : '≤ 63 Players'}
+                  </button>
+                ))}
+              </div>
             </div>
+            <span className="text-[10px] font-sans text-amber-200/70">
+              Auto Join Threshold: Normal (≤61 leaves 3 reserve slots) &bull; Supporter (≤62) &bull; VIP (≤63)
+            </span>
           </div>
 
           {/* Search Input */}
@@ -883,6 +911,9 @@ export const ServerRadarPreview: React.FC = () => {
             >
               93X 社区 (2)
             </button>
+            <div className="w-full text-[11px] font-sans text-rose-300/80 px-2 pt-1 border-t border-rose-500/20">
+              🇨🇳 <strong>Chinese Community Clusters:</strong> <strong>EXG</strong> (Edge Gamers) &bull; <strong>FyS</strong> (Feng Yun She) &bull; <strong>UB</strong> (Moe UB) &bull; <strong>ZL</strong> (Zombie Land) &bull; <strong>93X</strong> (93X Community)
+            </div>
           </div>
         )}
       </div>
