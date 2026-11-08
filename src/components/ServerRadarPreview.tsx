@@ -122,8 +122,8 @@ export const ServerRadarPreview: React.FC = () => {
   type PriorityTier = 'normal' | 'supporter' | 'vip';
   const [gflSlotPriority, setGflSlotPriority] = useState<PriorityTier>('supporter');
   const [commSlotPriority, setCommSlotPriority] = useState<PriorityTier>('normal');
-  const [autoJoinServerId, setAutoJoinServerId] = useState<string | null>(null);
-  const [autoJoinStatus, setAutoJoinStatus] = useState<string | null>(null);
+  const [slotWatcherServerId, setSlotWatcherServerId] = useState<string | null>(null);
+  const [slotWatcherStatus, setSlotWatcherStatus] = useState<string | null>(null);
   const [slotOpenAlert, setSlotOpenAlert] = useState<{
     serverName: string;
     connectUrl: string;
@@ -153,7 +153,7 @@ export const ServerRadarPreview: React.FC = () => {
     return server.id === gflServer.id ? gflSlotPriority : commSlotPriority;
   };
 
-  const handleToggleAutoJoin = (server: ZEServer) => {
+  const handleToggleSlotWatcher = (server: ZEServer) => {
     // Check if on a mobile or tablet handheld device (including iPads reporting as MacIntel)
     const isMobileDevice = typeof navigator !== 'undefined' && (
       /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -164,9 +164,9 @@ export const ServerRadarPreview: React.FC = () => {
       return;
     }
 
-    if (autoJoinServerId === server.id) {
-      setAutoJoinServerId(null);
-      setAutoJoinStatus(null);
+    if (slotWatcherServerId === server.id) {
+      setSlotWatcherServerId(null);
+      setSlotWatcherStatus(null);
       return;
     }
 
@@ -192,24 +192,24 @@ export const ServerRadarPreview: React.FC = () => {
         max,
         hostPort: `${server.host}:${server.port}`
       });
-      setAutoJoinStatus(`⚡ Slot open on ${server.name} (${curr}/${max} ≤ ${targetThreshold})! Click 'Connect Now' above.`);
+      setSlotWatcherStatus(`⚡ Slot open on ${server.name} (${curr}/${max} ≤ ${targetThreshold})! Click 'Connect Now' above.`);
       return;
     }
 
     // Server is full or at priority limit: Arm Slot Watcher
-    setAutoJoinServerId(server.id);
+    setSlotWatcherServerId(server.id);
     const label = isGfl ? getTierLabel(priority, true) : `≤${targetThreshold} Players`;
-    setAutoJoinStatus(`🎯 Slot Watcher Armed for ${server.name} (${curr}/${max}). Watching live radar for ${label} — alerts you and presents a Connect button when a slot opens...`);
+    setSlotWatcherStatus(`🎯 Slot Watcher Armed for ${server.name} (${curr}/${max}). Watching live radar for ${label} — alerts you and presents a Connect button when a slot opens...`);
   };
 
   // Monitor live telemetry for open slot while Slot Watcher is armed
   useEffect(() => {
-    if (!autoJoinServerId || !telemetry?.servers) return;
-    const targetServer = ZE_SERVERS.find((s) => s.id === autoJoinServerId);
+    if (!slotWatcherServerId || !telemetry?.servers) return;
+    const targetServer = ZE_SERVERS.find((s) => s.id === slotWatcherServerId);
     if (!targetServer) return;
 
     const priority = targetServer.id === gflServer.id ? gflSlotPriority : commSlotPriority;
-    const live = telemetry.servers[autoJoinServerId];
+    const live = telemetry.servers[slotWatcherServerId];
     if (live?.players && live.players.includes('/')) {
       const parts = live.players.split('/').map((n) => parseInt(n, 10));
       const curr = parts[0];
@@ -255,11 +255,11 @@ export const ServerRadarPreview: React.FC = () => {
         } catch {
           // ignore
         }
-        setAutoJoinStatus(`🎯 Open slot detected on ${targetServer.name} (${curr}/${max} ≤ ${targetThreshold})! Click 'Connect Now' button above.`);
-        setAutoJoinServerId(null);
+        setSlotWatcherStatus(`🎯 Open slot detected on ${targetServer.name} (${curr}/${max} ≤ ${targetThreshold})! Click 'Connect Now' button above.`);
+        setSlotWatcherServerId(null);
       }
     }
-  }, [telemetry, autoJoinServerId, gflSlotPriority, commSlotPriority]);
+  }, [telemetry, slotWatcherServerId, gflSlotPriority, commSlotPriority]);
 
   // Total live players across all queried servers
   const totalOnlinePlayers = useMemo(() => {
@@ -302,8 +302,8 @@ export const ServerRadarPreview: React.FC = () => {
     };
 
     const handleVisibility = () => {
-      // If tab is hidden and autoJoin sniper is NOT armed, pause polling to conserve resources
-      if (document.hidden && !autoJoinServerId) {
+      // If tab is hidden and slot watcher is NOT armed, pause polling to conserve resources
+      if (document.hidden && !slotWatcherServerId) {
         if (pollTimer) {
           clearInterval(pollTimer);
           pollTimer = null;
@@ -320,7 +320,7 @@ export const ServerRadarPreview: React.FC = () => {
       if (pollTimer) clearInterval(pollTimer);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [loadTelemetry, autoJoinServerId]);
+  }, [loadTelemetry, slotWatcherServerId]);
 
   // 1-second ticker for live map elapsed counters
   const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
@@ -485,12 +485,12 @@ export const ServerRadarPreview: React.FC = () => {
       </div>
 
       {/* Active Slot Watcher Live Banner */}
-      {autoJoinStatus && (
+      {slotWatcherStatus && (
         <div className="mb-6 p-4 rounded-xl bg-amber-950/90 border border-amber-400 text-amber-200 text-xs font-code flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-[0_0_25px_rgba(251,191,36,0.3)]">
           <div className="flex items-start gap-2.5 min-w-0">
             <Target className="w-5 h-5 text-amber-400 animate-spin flex-shrink-0 mt-0.5" />
             <div>
-              <div className="font-bold text-amber-300">{autoJoinStatus}</div>
+              <div className="font-bold text-amber-300">{slotWatcherStatus}</div>
               <div className="text-[11px] text-amber-200/90 mt-1 font-sans flex items-center gap-1.5">
                 <span className="font-bold text-yellow-300">⚠️ IMPORTANT:</span> Keep this tab active to allow the Slot Watcher to monitor live telemetry. When a slot opens, it rings an audio alert and presents an instant Connect button!
               </div>
@@ -500,9 +500,9 @@ export const ServerRadarPreview: React.FC = () => {
           <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-auto">
             {/* Priority Tier Selector in Banner */}
             <div className="flex items-center gap-1 bg-amber-950/90 p-1 rounded-lg border border-amber-500/40 text-[10px]" title="Change slot sniper player threshold">
-              <span className="text-amber-300 font-bold px-1">{autoJoinServerId === gflServer.id ? 'Tier:' : 'Target:'}</span>
+              <span className="text-amber-300 font-bold px-1">{slotWatcherServerId === gflServer.id ? 'Tier:' : 'Target:'}</span>
               {(['normal', 'supporter', 'vip'] as PriorityTier[]).map((t) => {
-                const isGfl = autoJoinServerId === gflServer.id;
+                const isGfl = slotWatcherServerId === gflServer.id;
                 const activeTier = isGfl ? gflSlotPriority : commSlotPriority;
                 return (
                   <button
@@ -524,14 +524,14 @@ export const ServerRadarPreview: React.FC = () => {
               })}
             </div>
 
-            {autoJoinServerId && (
+            {slotWatcherServerId && (
               <button
                 onClick={() => {
-                  setAutoJoinServerId(null);
-                  setAutoJoinStatus(null);
+                  setSlotWatcherServerId(null);
+                  setSlotWatcherStatus(null);
                 }}
                 className="min-h-[32px] px-3 py-1 rounded-lg bg-amber-900/80 hover:bg-amber-800 text-amber-100 border border-amber-400/50 cursor-pointer text-[10px] uppercase font-bold transition-colors"
-                title="Disarm slot sniper and cancel auto-join monitoring"
+                title="Disarm slot watcher"
               >
                 Cancel
               </button>
@@ -716,7 +716,7 @@ export const ServerRadarPreview: React.FC = () => {
               <div className="flex items-center gap-2 pl-6 text-[11px] text-fuchsia-300 font-code bg-fuchsia-950/40 p-2 rounded-lg border border-fuchsia-500/30">
                 <Target className="w-3.5 h-3.5 text-fuchsia-400 flex-shrink-0" />
                 <span>
-                  <strong>Pro-Tip:</strong> The <a href="#cs2-command" className="underline text-fuchsia-300 hover:text-white font-bold">CS2 Command Center desktop app</a> includes a <strong>True In-Engine Slot Sniper</strong> that monitors player count via 0.25s UDP and sends direct console commands the instant a player disconnects!
+                  <strong>Pro-Tip:</strong> The <a href="#cs2-command" className="underline text-fuchsia-300 hover:text-white font-bold">CS2 Command Center desktop app</a> includes a <strong>True In-Engine Slot Sniper</strong> that monitors player count via 0.25s UDP and sends direct console commands as soon as it detects an open slot!
                 </span>
               </div>
             </div>
@@ -756,17 +756,17 @@ export const ServerRadarPreview: React.FC = () => {
 
             {/* Slot Watcher (Replaces old instant button) */}
             <button
-              onClick={() => handleToggleAutoJoin(gflServer)}
+              onClick={() => handleToggleSlotWatcher(gflServer)}
               className={`w-full px-3 py-1.5 border text-[11px] font-code rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                autoJoinServerId === gflServer.id
+                slotWatcherServerId === gflServer.id
                   ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse shadow-[0_0_15px_rgba(251,191,36,0.4)]'
                   : 'bg-slate-900/90 hover:bg-emerald-950/60 border-slate-700 hover:border-emerald-500/70 text-slate-300 hover:text-emerald-300'
               }`}
               title="Slot Watcher:&#10;• Monitors live server telemetry in real-time.&#10;• When player count drops below threshold, alerts you and presents a one-click Connect button (no auto-launch popup).&#10;• For automated in-game console sniping, use the CS2 Command Center desktop companion."
             >
-              <Target className={`w-3.5 h-3.5 ${autoJoinServerId === gflServer.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
+              <Target className={`w-3.5 h-3.5 ${slotWatcherServerId === gflServer.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
               <span>
-                {autoJoinServerId === gflServer.id
+                {slotWatcherServerId === gflServer.id
                   ? '🎯 WATCHING SLOTS (CANCEL)'
                   : `🎯 WATCH SLOTS (${gflSlotPriority === 'normal' ? '≤61' : gflSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
               </span>
@@ -1132,17 +1132,17 @@ export const ServerRadarPreview: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => handleToggleAutoJoin(server)}
+                  onClick={() => handleToggleSlotWatcher(server)}
                   className={`min-h-[44px] px-2.5 py-2 border rounded-lg text-xs font-code transition-colors cursor-pointer flex items-center gap-1 flex-shrink-0 touch-manipulation ${
-                    autoJoinServerId === server.id
+                    slotWatcherServerId === server.id
                       ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse'
                       : 'bg-slate-900 hover:bg-emerald-950/80 border-slate-700 hover:border-emerald-500 text-slate-300 hover:text-emerald-300'
                   }`}
                   title={`Slot Watcher (Target: ${commSlotPriority === 'normal' ? '≤61 Players' : commSlotPriority === 'supporter' ? '≤62 Players' : '≤63 Players'}):&#10;• Alerts you and presents an instant Connect button when a slot opens.`}
                 >
-                  <Target className={`w-3 h-3 ${autoJoinServerId === server.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
+                  <Target className={`w-3 h-3 ${slotWatcherServerId === server.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
                   <span className="hidden sm:inline">
-                    {autoJoinServerId === server.id ? 'ACTIVE' : `WATCH SLOTS (${commSlotPriority === 'normal' ? '≤61' : commSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
+                    {slotWatcherServerId === server.id ? 'ACTIVE' : `WATCH SLOTS (${commSlotPriority === 'normal' ? '≤61' : commSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
                   </span>
                 </button>
 

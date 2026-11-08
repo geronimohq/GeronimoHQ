@@ -312,6 +312,11 @@ export const ChaosAnomalyEngine: React.FC = () => {
   ];
 
   const triggerRandomChaos = () => {
+    if (isReducedMotionPreferred()) {
+      setToastBanner('♿ Reduced Motion Active — visual flash & motion anomalies suppressed.');
+      setTimeout(() => setToastBanner(null), 3200);
+      return;
+    }
     const chosen = CHAOS_POOL[Math.floor(Math.random() * CHAOS_POOL.length)];
 
     if (chosen === 'barrel_roll') {
@@ -606,7 +611,7 @@ export const ChaosAnomalyEngine: React.FC = () => {
       {/* Floating Chaos Trigger Button with WCAG Photosensitivity Notice */}
       <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-1">
         <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded bg-black/90 border border-amber-400/50 text-[10px] font-sans font-bold text-amber-300 shadow select-none">
-          <span>⚠️ Flash / Strobe Notice (&lt;3Hz)</span>
+          <span>⚠️ Visual Effects: designed to stay under 3 flashes per second</span>
         </div>
         <button
           onClick={triggerRandomChaos}

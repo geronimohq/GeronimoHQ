@@ -265,7 +265,7 @@ export function getMapStartTime(serverId: string, currentMap?: string, serverTim
 
 /**
  * Formats elapsed seconds into clean integer MM:SS (or H:MM:SS if >= 1 hour).
- * Strictly floors the seconds to avoid any milliseconds or decimals.
+ * Strictly floors the seconds to avoid any sub-second fractions or decimals.
  */
 export function formatMapElapsed(totalSeconds: number): string {
   if (totalSeconds < 0 || isNaN(totalSeconds)) totalSeconds = 0;

@@ -390,7 +390,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                 <span className="text-amber-300/90">⚠️ Null Binds (Community ZE Only)</span>
               </label>
               <label 
-                title="Maximize CS2 network packet rates (rate 786432, cl_net_buffer_ticks 0) for sub-tick packet optimization & minimal buffering delay"
+                title="Sets CS2 maximum bandwidth rate (rate 786432, standard engine ceiling) and buffer ticks to 0 for minimal interpolation buffer delay"
                 className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input
@@ -399,10 +399,10 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                   onChange={(e) => setMaxSubtickRates(e.target.checked)}
                   className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
                 />
-                <span>🌐 Max Sub-Tick Network Rates</span>
+                <span>🌐 Network Rates & Buffer Ticks</span>
               </label>
               <label 
-                title="Spatial headphone audio EQ (snd_headphone_eq 1) and perspective correction for precise footstep sound"
+                title="Sets CS2 Headphone EQ profile to Crisp (snd_headphone_eq 1; profiles: 0=Natural, 1=Crisp, 2=Smooth) with 3D perspective correction"
                 className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input
@@ -411,7 +411,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                   onChange={(e) => setCrispAudioEq(e.target.checked)}
                   className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
                 />
-                <span>🎧 Crisp Footstep Audio EQ</span>
+                <span>🎧 Crisp Headphone Audio EQ (Preset 1)</span>
               </label>
               <label 
                 title="Show built-in CS2 frametime, ping, and network jitter HUD only when latency spikes occur"
