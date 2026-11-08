@@ -246,6 +246,46 @@ export const ZE_MAP_TIERS_REGISTRY: Record<
   // ==========================================
   // TIER 3: TACTICAL ESCORT & MATERIA
   // ==========================================
+  'ze_winter_warehouse': {
+    tier: 3,
+    tierLabel: 'Tactical',
+    badge: '🟠 T3 Tactical',
+    colorClass: 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.25)]',
+    mapper: 'Sween',
+    isHallOfFame: true,
+  },
+  'ze_1_schizo': {
+    tier: 3,
+    tierLabel: 'Tactical',
+    badge: '🟠 T3 Tactical',
+    colorClass: 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.25)]',
+    mapper: 'f0cker',
+    isHallOfFame: false,
+  },
+  'ze_rainbow_factory': {
+    tier: 2,
+    tierLabel: 'Casual',
+    badge: '🟡 T2 Casual',
+    colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]',
+    mapper: 'Soft Serve',
+    isHallOfFame: false,
+  },
+  'ze_ashen_keep': {
+    tier: 5,
+    tierLabel: 'Nightmare',
+    badge: '🔥 T5 Nightmare',
+    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
+    mapper: 'Luffaren',
+    isHallOfFame: true,
+  },
+  'ze_abandoned_project': {
+    tier: 3,
+    tierLabel: 'Tactical',
+    badge: '🟠 T3 Tactical',
+    colorClass: 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.25)]',
+    mapper: 'Hax',
+    isHallOfFame: false,
+  },
   'ze_pirates_port_royal': {
     tier: 3,
     tierLabel: 'Tactical',
@@ -399,7 +439,7 @@ export const ZE_MAP_TIERS_REGISTRY: Record<
     tierLabel: 'Casual',
     badge: '🟡 T2 Casual',
     colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]',
-    mapper: 'Valve / Community',
+    mapper: 'Nipper / Dave J.',
     isHallOfFame: false,
   },
   'ze_sky_athletic': {
@@ -419,7 +459,7 @@ export const ZE_MAP_TIERS_REGISTRY: Record<
     tierLabel: 'Warmup',
     badge: '🟢 T1 Warmup',
     colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
-    mapper: 'Valve / Community',
+    mapper: 'Nipper / Dave J.',
     isHallOfFame: false,
   },
   'zm_mansion': {
@@ -427,7 +467,7 @@ export const ZE_MAP_TIERS_REGISTRY: Record<
     tierLabel: 'Warmup',
     badge: '🟢 T1 Warmup',
     colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
-    mapper: 'Community Classic',
+    mapper: 'Magnus L.',
     isHallOfFame: false,
   },
   'ze_minecraft_drifts': {

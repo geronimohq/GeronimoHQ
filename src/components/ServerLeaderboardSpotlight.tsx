@@ -9,7 +9,8 @@ import {
   ShieldCheck, 
   Award,
   Globe,
-  Shield
+  Shield,
+  Info
 } from 'lucide-react';
 import { 
   TOP_PLAYERS_OF_THE_MONTH, 
@@ -55,6 +56,7 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
                     ? 'bg-amber-500 text-slate-950 shadow-[0_0_10px_rgba(251,191,36,0.4)]'
                     : 'text-slate-400 hover:text-white'
                 }`}
+                title="View top monthly competitive players ranked by win rate, score, and laser survivability"
               >
                 <Award className="w-3.5 h-3.5" />
                 <span>Top MVPs</span>
@@ -66,6 +68,7 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
                     ? 'bg-amber-500 text-slate-950 shadow-[0_0_10px_rgba(251,191,36,0.4)]'
                     : 'text-slate-400 hover:text-white'
                 }`}
+                title="View world-record fastest map escape clear times from round start to final extraction"
               >
                 <Timer className="w-3.5 h-3.5" />
                 <span>Speedruns</span>
@@ -89,8 +92,16 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
           {activeTab === 'mvps' ? (
             /* TAB 1: TOP MVPS OF THE MONTH */
             <div>
+              {/* Context Explanation Banner */}
+              <div className="mb-4 p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-xs font-tech text-amber-200/90 flex items-start gap-2.5">
+                <Info className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <strong className="text-amber-300 font-bold">What is a ZE MVP?</strong> Top competitive players ranked by monthly round win-rate, personal score (PR), and laser bridge survivability across community clan servers (GFL, EXG, PSE, Mapeadores, RSS, c0La). These players anchor defense chokes, manage materias/items, and survive difficult boss lasers.
+                </div>
+              </div>
+
               <div className="flex items-center justify-between text-xs font-code text-slate-400 mb-3 px-1">
-                <span>COMMUNITY TOP ZE ESCAPERS (RANKED BY PERSONAL SCORE & WIN RATE)</span>
+                <span>COMMUNITY TOP ESCAPERS (RANKED BY PERSONAL SCORE & WIN RATE)</span>
                 <span className="hidden sm:inline text-amber-300/80">Auto-Refreshed Monthly</span>
               </div>
 
@@ -99,6 +110,7 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
                   <div
                     key={p.rank}
                     className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col justify-between group shadow-sm"
+                    title={`Rank #${p.rank}: ${p.name}\n• Clan: ${p.clan}\n• Role: ${p.specialtyTitle}\n• Score: ${p.score.toLocaleString()} PR\n• Win Rate: ${p.winRate}%\n• Verified Source: ${p.source}`}
                   >
                     <div>
                       {/* Top Rank Header */}
@@ -130,10 +142,10 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
 
                     {/* Stats Footer */}
                     <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-xs font-code">
-                      <div className="text-slate-400">
+                      <div className="text-slate-400" title="Personal Rating (PR) score accumulated from round wins, item usage, and zombie knockbacks">
                         Score: <strong className="text-amber-300 font-bold">{p.score.toLocaleString()}</strong>
                       </div>
-                      <div className="flex items-center gap-1 text-emerald-400 font-bold">
+                      <div className="flex items-center gap-1 text-emerald-400 font-bold" title="Human Escape Win Rate: Percentage of played rounds successfully escaped alive as human without infection">
                         <ShieldCheck className="w-3.5 h-3.5" />
                         <span>{p.winRate}% Win</span>
                       </div>
@@ -145,6 +157,14 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
           ) : (
             /* TAB 2: FASTEST MAP SPEEDRUN CLEARS */
             <div>
+              {/* Context Explanation Banner */}
+              <div className="mb-4 p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-xs font-tech text-emerald-200/90 flex items-start gap-2.5">
+                <Info className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <strong className="text-emerald-300 font-bold">What is a ZE Speedrun?</strong> In Zombie Escape, a speedrun represents the <strong className="text-white">fastest recorded human extraction time</strong> from the moment the round spawns to the final boss defeat &amp; nuke detonation without wiping. A shorter time means the team cleared door triggers with zero stalling, melted boss HP instantly, and survived the final laser bridge!
+                </div>
+              </div>
+
               <div className="flex items-center justify-between text-xs font-code text-slate-400 mb-3 px-1">
                 <span>OFFICIAL RECORD MAP SPEEDRUNS (COMMUNITY LASER & ESCAPE FINISHES)</span>
                 <span className="hidden sm:inline text-amber-300/80">Season 2026-11 Records</span>
@@ -155,6 +175,7 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
                   <div
                     key={c.id}
                     className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col justify-between group shadow-sm"
+                    title={`Record Map Speedrun: ${c.mapName}\n• Stage: ${c.stage}\n• Clear Time: ${c.clearTime} (from round spawn to extraction nuke)\n• Survivors: ${c.survivorsCount} humans escaped\n• Clan: ${c.clanName}\n• Verified Source: ${c.recordSource}`}
                   >
                     <div>
                       {/* Map Title & Clear Time */}
@@ -168,8 +189,11 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Speedrun Time Pill */}
-                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 font-code font-bold text-xs shadow-[0_0_10px_rgba(16,185,129,0.25)] flex-shrink-0">
+                        {/* Speedrun Time Pill with Explanatory Tooltip */}
+                        <div 
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 font-code font-bold text-xs shadow-[0_0_10px_rgba(16,185,129,0.25)] flex-shrink-0 cursor-help"
+                          title="Record Clear Time: Total elapsed time from round spawn to final extraction & nuke detonation"
+                        >
                           <Timer className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
                           <span>{c.clearTime}</span>
                         </div>
@@ -194,7 +218,7 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
 
                     {/* Footer Info */}
                     <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[11px] font-code text-slate-400">
-                      <div className="flex items-center gap-1 text-slate-300">
+                      <div className="flex items-center gap-1 text-slate-300" title="Total human survivors who successfully escaped the final extraction without getting infected">
                         <Users className="w-3 h-3 text-cyan-400" />
                         <span>{c.survivorsCount} Survived</span>
                       </div>

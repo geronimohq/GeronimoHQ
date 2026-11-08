@@ -1027,58 +1027,57 @@ export const ServerRadarPreview: React.FC = () => {
                   {/* Left: Map & Player Stats */}
                   <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
                     {/* Current Active Map & Live Timer */}
-                  <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code text-slate-300">
-                    {/* Prominent Map Thumbnail */}
-                    <div className="w-14 h-9 sm:w-16 sm:h-10 rounded-md overflow-hidden border border-slate-700 bg-slate-950 flex-shrink-0 shadow-sm group-hover:border-lime-400/50 transition-colors">
-                      <img 
-                        src={getMapThumbnailUrl(currentMap)} 
-                        alt={currentMap} 
-                        className="w-full h-full object-cover"
-                        onError={handleMapImageFallback}
-                      />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <div className="flex items-center gap-1.5 text-[11px] text-slate-400 flex-wrap">
-                        <MapPin className="w-3 h-3 text-fuchsia-400 flex-shrink-0" />
-                        <span>Map:</span>
-                        <strong className="text-fuchsia-300 font-bold truncate max-w-[110px] sm:max-w-[130px]">
-                          {currentMap || 'ze_escape'}
-                        </strong>
-                        {/* Map Difficulty Tier Badge */}
-                        <span className={`px-1.5 py-0.2 rounded text-[9px] font-code font-bold border ${commMapTier.colorClass}`} title={`Difficulty: ${commMapTier.tierLabel}`}>
-                          {commMapTier.badge}
-                        </span>
+                    <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code text-slate-300">
+                      {/* Prominent Map Thumbnail */}
+                      <div className="w-14 h-9 sm:w-16 sm:h-10 rounded-md overflow-hidden border border-slate-700 bg-slate-950 flex-shrink-0 shadow-sm group-hover:border-lime-400/50 transition-colors">
+                        <img 
+                          src={getMapThumbnailUrl(currentMap)} 
+                          alt={currentMap} 
+                          className="w-full h-full object-cover"
+                          onError={handleMapImageFallback}
+                        />
                       </div>
-                      {/* Prominent Mapper Attribution Badge */}
-                      <div className="text-[10px] font-code text-slate-400 flex items-center gap-1">
-                        <span className="px-1.5 py-0.5 rounded bg-slate-950/90 border border-slate-800 text-slate-300 flex items-center gap-1 shadow-sm">
-                          <span>🔨 by:</span>
-                          <strong className="text-amber-300 font-bold">{commMapTier.mapper}</strong>
-                          {commMapTier.isHallOfFameMapper && (
-                            <span className="text-[8px] px-1 py-0.1 rounded bg-amber-950 text-amber-300 border border-amber-500/50 font-bold flex items-center gap-0.5" title="Legendary Mapper (Hall of Fame)">
-                              👑 HoF
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-cyan-300 text-[10px] font-bold bg-cyan-950/80 px-1.5 py-0.2 rounded border border-cyan-500/30 flex items-center gap-0.5">
-                          <Clock className="w-2.5 h-2.5 text-cyan-400" />
-                          {formatMapElapsed(mapDuration)}
-                        </span>
-                        <a
-                          href={getMap3DViewerUrl(currentMap)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[10px] font-code px-1.5 py-0.2 rounded bg-blue-950/80 text-blue-300 hover:text-white border border-blue-500/30 hover:border-blue-400 flex items-center gap-0.5 transition-colors"
-                          title="Explore 3D Map model on maps.cybo.dev (Powered by cybo)"
-                        >
-                          <span>3D</span>
-                          <ExternalLink className="w-2.5 h-2.5" />
-                        </a>
+                      <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 flex-wrap">
+                          <MapPin className="w-3 h-3 text-fuchsia-400 flex-shrink-0" />
+                          <span>Map:</span>
+                          <strong className="text-fuchsia-300 font-bold truncate max-w-[110px] sm:max-w-[130px]">
+                            {currentMap || 'ze_escape'}
+                          </strong>
+                          {/* Map Difficulty Tier Badge */}
+                          <span className={`px-1.5 py-0.2 rounded text-[9px] font-code font-bold border ${commMapTier.colorClass}`} title={`Difficulty: ${commMapTier.tierLabel}`}>
+                            {commMapTier.badge}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-cyan-300 text-[10px] font-bold bg-cyan-950/80 px-1.5 py-0.2 rounded border border-cyan-500/30 flex items-center gap-0.5">
+                            <Clock className="w-2.5 h-2.5 text-cyan-400" />
+                            {formatMapElapsed(mapDuration)}
+                          </span>
+                          <a
+                            href={getMap3DViewerUrl(currentMap)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] font-code px-1.5 py-0.2 rounded bg-blue-950/80 text-blue-300 hover:text-white border border-blue-500/30 hover:border-blue-400 flex items-center gap-0.5 transition-colors"
+                            title="Explore 3D Map model on maps.cybo.dev (Powered by cybo)"
+                          >
+                            <span>3D</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        </div>
                       </div>
                     </div>
-                  </div>
+
+                    {/* Dedicated Mapper Attribution Pill */}
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code whitespace-nowrap shadow-sm">
+                      <span className="text-slate-400">🔨 by:</span>
+                      <strong className="text-amber-300 font-bold">{commMapTier.mapper}</strong>
+                      {commMapTier.isHallOfFameMapper && (
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-500/50 font-bold flex items-center gap-0.5" title="Legendary Mapper (Hall of Fame)">
+                          👑 HoF
+                        </span>
+                      )}
+                    </div>
 
                   {/* Player Count */}
                   {currentPlayers ? (
@@ -1225,10 +1224,10 @@ export const ServerRadarPreview: React.FC = () => {
           <div className="space-y-1.5 p-3 rounded-xl bg-slate-900/40 border border-slate-800/60">
             <div className="font-bold text-slate-200 flex items-center gap-1.5">
               <span>🌐</span>
-              <span>cybo Telemetry &amp; 3D Engine</span>
+              <span>queenimella &amp; cybo Telemetry Tools</span>
             </div>
             <p>
-              Live server telemetry enrichment, round scoring, custom soundtrack indexing, and 3D interactive map models are powered by APIs and services created by cybo (<a href="https://zegraph.xyz" target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline">zegraph.xyz</a> &bull; <a href="https://maps.cybo.dev" target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline">maps.cybo.dev</a>).
+              Live server telemetry enrichment and community graphing are powered by queenimella (<a href="https://zegraph.xyz" target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline">zegraph.xyz</a>). Custom soundtrack indexing and 3D interactive map spatial models are powered by cybo (<a href="https://maps.cybo.dev" target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline">maps.cybo.dev</a>).
             </p>
           </div>
 
