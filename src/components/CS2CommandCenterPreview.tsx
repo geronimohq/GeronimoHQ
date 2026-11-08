@@ -31,8 +31,10 @@ interface AppFeatureModule {
 
 export const CS2CommandCenterPreview: React.FC = () => {
   const downloadUrl = '/CS2_Command_Center.exe?v=1.4.0';
+  const exeSha256 = '739E821B12704ADC21464173D886E490B78390E3779856C2C6736AF932B92BB6';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [copiedHash, setCopiedHash] = useState<boolean>(false);
 
   const modules: AppFeatureModule[] = [
     {
@@ -108,34 +110,34 @@ export const CS2CommandCenterPreview: React.FC = () => {
       shortTag: 'DIRECT NETWORK',
       badge: 'SILENT UDP + 10S COOLDOWN',
       icon: <Target className="w-5 h-5 text-lime-400" />,
-      summary: 'Monitors server player counts via low-latency UDP A2S queries at 0.25s while full—consuming 0 CS2 RAM, 0 SDR network sessions, and 0 clipboard usage. The exact millisecond a player disconnects, it executes the in-game console connect immediately with a 10-second cooldown!',
+      summary: 'Monitors server player counts via low-latency UDP A2S queries at 0.25s while full—consuming 0 CS2 RAM, 0 SDR network sessions, and 0 clipboard usage. As soon as a slot opens, it executes the in-game console connect automatically with a 10-second cooldown to prevent spam.',
       details: [
         'True Silent Sniping: Watches server player count via lightweight UDP packets outside the game engine—preventing CS2 memory heap & SDR session leaks.',
-        'Ultra-Fast 0.25s Player Count Detection: Checks 4 times per second for instant slot detection.',
+        'Responsive 0.25s Player Count Detection: Checks 4 times per second for rapid slot detection.',
         'Zero Console & Clipboard Spam while waiting (avoids Windows Clipboard History buildup).',
-        'Instant In-Engine Console Connect & 10s Button Cooldown the exact millisecond a player leaves.',
-        'GFL Priority Slot Tiers (Normal ≤61, Mapper/Supporter ≤62, VIP ≤63).'
+        'Automated In-Engine Console Connect & 10s Button Cooldown as soon as a slot opens.',
+        'GFL Priority Slot Tiers (Normal ≤ 61, Mapper/Supporter ≤ 62, VIP ≤ 63) with snug pixel-measured dropdown UI.'
       ],
       parameters: [
         { name: 'Waiting Mode', value: 'Silent UDP A2S (0.25s)', desc: 'Zero CS2 RAM & Zero SDR leaks' },
-        { name: 'Slot Detection Trigger', value: 'Instant Console Connect', desc: 'Fires in-game connect the millisecond slot opens' },
+        { name: 'Slot Detection Trigger', value: 'Auto Console Connect', desc: 'Fires in-game connect when slot opens' },
         { name: 'Auto-Stop Cooldown', value: '10s Timer on Button', desc: 'Prevents duplicate spam & allows clean retry' }
       ],
-      proTip: 'CS2 must be open. Set your slot priority (Normal ≤61, Supporter ≤62, VIP ≤63) and click Slot Sniper—it watches silently via UDP without touching CS2 memory, and connects via console the instant a spot opens!',
+      proTip: 'CS2 must be open. Set your slot priority (Normal ≤ 61, Supporter ≤ 62, VIP ≤ 63) and click Slot Sniper—it watches silently via UDP without touching CS2 memory, and connects via console when a spot opens!',
       vacSafe: true
     },
     {
       id: 'cleaner',
       name: 'ZE Map Cleaner & VPK Health Verifier',
       shortTag: 'STORAGE & VPK DOCTOR',
-      badge: 'VERIFIES VPK HEADERS',
+      badge: 'PROTECTED PACKS & SAFE CLEAN',
       icon: <HardDrive className="w-5 h-5 text-emerald-400" />,
-      summary: 'Scans your CS2 Workshop and community maps directory to reclaim 10–50GB of SSD space AND verifies .vpk binary headers (0x55aa1234) to repair corrupted/incomplete Workshop downloads.',
+      summary: 'Scans your CS2 Workshop and community maps directory to reclaim 10–50GB of SSD space, protects subscribed server packs, and verifies .vpk binary headers (0x55aa1234) to repair corrupted/incomplete downloads.',
       details: [
+        'NEW: Protected Server Packs System - Automatically detects and safeguards subscribed packs (GFL 355+ ZE, Possession PSE, RSS Revenant, Mapeadores & cOLa) and maps played in the last 14 days.',
+        'NEW: 1-Click "Select All Temp Downloads (Safe)" - Safely purges non-subscribed temporary server downloads with zero risk to subscribed collections.',
         'NEW: Steam Workshop VPK Binary Header Verifier (checks 0x55aa1234 signature across steamapps/workshop/content/730/).',
-        'NEW: 1-Click Corrupted/Incomplete .tmp & .vpk Repair (fixes Host_Error / Pak01 VPK mismatch kicks).',
-        'Deep scan of steamapps/common/Counter-Strike Global Offensive/game/csgo/maps.',
-        'Identifies older versions of maps and frees tens of gigabytes of SSD space safely.'
+        'Multi-DPI High-Resolution Treeview: Column widths scale dynamically with display DPI to eliminate text cutoff at 125% and 150% scaling.'
       ],
       parameters: [
         { name: 'VPK Magic Signature', value: '0x55AA1234 (v1/v2)', desc: 'Detects truncated or corrupted Workshop packs' },
@@ -260,6 +262,22 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <span className="text-[10px] font-code text-amber-300/90 max-w-xs text-left md:text-right">
             🛡️ Unsigned community .exe: If Windows SmartScreen prompts, click &ldquo;More info&rdquo; &rarr; &ldquo;Run anyway&rdquo;.
           </span>
+          <div className="flex items-center gap-1.5 text-[10px] font-code text-slate-400 mt-0.5">
+            <span className="text-slate-500">SHA-256:</span>
+            <code className="text-cyan-300 select-all font-mono">739e821b...32b92bb6</code>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(exeSha256);
+                setCopiedHash(true);
+                setTimeout(() => setCopiedHash(false), 2000);
+              }}
+              title="Copy verified SHA-256 hash to clipboard"
+              className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 border border-slate-700 cursor-pointer flex items-center gap-1 transition-colors touch-manipulation"
+            >
+              {copiedHash ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
+              <span className="font-bold">{copiedHash ? 'COPIED' : 'COPY'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
