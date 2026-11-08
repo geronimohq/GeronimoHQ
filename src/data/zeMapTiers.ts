@@ -1,3 +1,5 @@
+import { lookupS2zeMapper } from './s2zeMappersCatalog';
+
 export type MapDifficultyTier = 1 | 2 | 3 | 4 | 5 | 6 | 'untiered';
 
 export interface MapTierData {
@@ -288,6 +290,38 @@ export const ZE_MAP_TIERS_REGISTRY: Record<
     badge: '🔴 T4 Hardcore',
     colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]',
     mapper: 'Hannibal [GER]',
+    isHallOfFame: true,
+  },
+  'ze_resident_evil_3': {
+    tier: 4,
+    tierLabel: 'Hardcore',
+    badge: '🔴 T4 Hardcore',
+    colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]',
+    mapper: 'Kuroki / ViSral',
+    isHallOfFame: true,
+  },
+  'ze_resident_evil_2': {
+    tier: 4,
+    tierLabel: 'Hardcore',
+    badge: '🔴 T4 Hardcore',
+    colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]',
+    mapper: 'Kuroki / ViSral',
+    isHallOfFame: true,
+  },
+  'ze_resident_evil': {
+    tier: 4,
+    tierLabel: 'Hardcore',
+    badge: '🔴 T4 Hardcore',
+    colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]',
+    mapper: 'Kuroki / ViSral',
+    isHallOfFame: true,
+  },
+  'ze_biohazard2_rpd_004': {
+    tier: 4,
+    tierLabel: 'Hardcore',
+    badge: '🔴 T4 Hardcore',
+    colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]',
+    mapper: 'Kuroki / ViSral',
     isHallOfFame: true,
   },
   'ze_devil_may_cry': {
@@ -786,7 +820,24 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
     }
   }
 
-  // 3. Heuristic Fallbacks for Untiered Maps (User Workaround)
+  // 3. Comprehensive S2ZE & Steam Workshop Catalog Lookup (500+ Maps)
+  const s2zeMapper = lookupS2zeMapper(clean);
+  if (s2zeMapper) {
+    const isHoF = /Kuroki|ViSral|Hannibal|Luffaren|Airvulpes|Clown|Kaemon|Nipper|Subzero|DarkerZ|TaskuVaras|Moltard|Waffel/i.test(s2zeMapper);
+    return {
+      mapKey: clean,
+      displayName: mapName,
+      tier: 'untiered',
+      tierLabel: 'Untiered',
+      badge: '⚪ UNTIERED',
+      colorClass: 'bg-slate-900/90 text-slate-400 border-slate-700',
+      mapper: s2zeMapper,
+      isHallOfFameMapper: isHoF,
+      isUntiered: false, // Valid mapper confirmed from s2ze / Steam workshop catalog
+    };
+  }
+
+  // 4. Heuristic Fallbacks for Untiered Maps (User Workaround)
   if (clean.startsWith('zm_') || clean.includes('warmup') || clean.includes('infection')) {
     return {
       mapKey: clean,

@@ -17,7 +17,7 @@ export interface HardestMapFastRotationRecord {
   tierColor: string;
   sessionDuration: string;
   rotationOutcome: string;
-  outcomeType: 'flawless_win' | 'fast_clutch' | 'quick_rotation';
+  outcomeType: 'flawless_win' | 'fast_clutch' | 'quick_rotation' | 'fast_rtv';
   clanServer: string;
   humanSurvivors: number;
   notes: string;
@@ -184,5 +184,47 @@ export const HARDEST_MAPS_FAST_ROTATIONS: HardestMapFastRotationRecord[] = [
     notes: 'Pyramid laser finale clutched on attempt #2 after an early round 1 reset; total session ended in 17m 15s.',
     date: 'Nov 7, 2026',
     recordSource: 'GFL Match Telemetry',
+  },
+  {
+    id: 'fast-rtv-1',
+    mapName: 'ze_obj_ouroboros',
+    difficultyTier: '⚡ T6 Hell',
+    tierColor: 'bg-fuchsia-950/80 text-fuchsia-300 border-fuchsia-500/50',
+    sessionDuration: '03:42',
+    rotationOutcome: '💀 Instant Server RTV (Wipe & Ragequit)',
+    outcomeType: 'fast_rtv',
+    clanServer: 'GFL Clan (US Chicago)',
+    humanSurvivors: 0,
+    notes: 'Calculated via (T_next - T_start): Entire human team infected at initial corridor choke. 64/64 players typed rtv in chat, forcing map change in 3m 42s!',
+    date: 'Nov 6, 2026',
+    recordSource: 'GFL Server Telemetry Delta',
+  },
+  {
+    id: 'fast-rtv-2',
+    mapName: 'ze_dark_souls',
+    difficultyTier: '🔥 T5 Nightmare',
+    tierColor: 'bg-orange-950/80 text-orange-300 border-orange-500/50',
+    sessionDuration: '04:15',
+    rotationOutcome: '💀 Instant Server RTV (Bridge Wipeout)',
+    outcomeType: 'fast_rtv',
+    clanServer: 'Mapeadores (EU France/Spain)',
+    humanSurvivors: 0,
+    notes: 'Calculated via (T_next - T_start): Fast zombie tp wiped defense line on narrow stage 1 bridge. Server rocked the vote and rotated in 4m 15s.',
+    date: 'Nov 8, 2026',
+    recordSource: 'Mapeadores Round Delta Logs',
+  },
+  {
+    id: 'fast-rtv-3',
+    mapName: 'ze_predator_ultimate_p',
+    difficultyTier: '🔥 T5 Nightmare',
+    tierColor: 'bg-orange-950/80 text-orange-300 border-orange-500/50',
+    sessionDuration: '04:58',
+    rotationOutcome: '💀 Instant Server RTV (Elevator Ambush)',
+    outcomeType: 'fast_rtv',
+    clanServer: 'c0La-TeaM (Europe)',
+    humanSurvivors: 0,
+    notes: 'Calculated via (T_next - T_start): Early zombie air-strafe breached the elevator choke. Unanimous RTV vote triggered subsequent map in under 5 minutes.',
+    date: 'Nov 3, 2026',
+    recordSource: 'c0La Live Query Delta',
   },
 ];

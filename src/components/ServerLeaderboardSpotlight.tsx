@@ -21,6 +21,7 @@ import {
 export const ServerLeaderboardSpotlight: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState<'mvps' | 'speedruns'>('mvps');
+  const [rotationFilter, setRotationFilter] = useState<'all' | 'wins' | 'rtvs'>('all');
 
   return (
     <div className="mb-6 rounded-2xl border border-amber-500/30 bg-gradient-to-br from-slate-950/95 via-slate-900/90 to-amber-950/20 backdrop-blur-md shadow-[0_0_25px_rgba(251,191,36,0.12)] overflow-hidden transition-all">
@@ -157,21 +158,59 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
           ) : (
             /* TAB 2: HARDEST MAPS THAT ENDED FAST (RECORD MINIMAL ROTATIONS) */
             <div>
-              {/* Context Explanation Banner */}
+                            {/* Context Explanation Banner */}
               <div className="mb-4 p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-xs font-tech text-emerald-200/90 flex items-start gap-2.5">
                 <Info className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
                 <div className="leading-relaxed">
-                  <strong className="text-emerald-300 font-bold">Hardest Maps That Ended Fast:</strong> In CS2 Zombie Escape, ultra-hard Tier 5 &amp; Tier 6 maps normally trap servers for 60+ minutes with multiple wipes and burned extends. These community records spotlight god-tier squads that conquered the hardest maps in record minimal elapsed session time (11&ndash;17 mins) with zero round wipes, immediately triggering the map change!
+                  <strong className="text-emerald-300 font-bold">How Fast Map Rotations &amp; RTVs are Calculated:</strong> Measured via live telemetry delta between map start time (<em>T<sub>start</sub></em>) and subsequent map load (<em>T<sub>next</sub></em>). Spotlights both <strong>legendary zero-wipe conquests</strong> (conquering Tier 5/6 maps in 11&ndash;17 mins) and <strong>instantaneous 3-minute wipeout RTVs</strong> where 64 players immediately voted to change map!
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs font-code text-slate-400 mb-3 px-1">
-                <span>HARDEST MAPS CLEARED FASTEST (RECORD ZERO-WIPE MAP ROTATIONS)</span>
-                <span className="hidden sm:inline text-amber-300/80">Season 2026-11 Records</span>
+              {/* Sub-Filters for Rotations: All, Clears, and RTVs */}
+              <div className="flex items-center justify-between text-xs font-code text-slate-400 mb-3 px-1 flex-wrap gap-2">
+                <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                  <button
+                    onClick={() => setRotationFilter('all')}
+                    className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all cursor-pointer ${
+                      rotationFilter === 'all'
+                        ? 'bg-amber-500 text-slate-950 shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    All Records (9)
+                  </button>
+                  <button
+                    onClick={() => setRotationFilter('wins')}
+                    className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                      rotationFilter === 'wins'
+                        ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span>🏆 1-Shot Clears (6)</span>
+                  </button>
+                  <button
+                    onClick={() => setRotationFilter('rtvs')}
+                    className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                      rotationFilter === 'rtvs'
+                        ? 'bg-rose-500 text-slate-950 shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span>💀 Fast RTVs &amp; Wipes (3)</span>
+                  </button>
+                </div>
+                <span className="hidden sm:inline text-amber-300/80 text-[11px]">Formula: ΔT = T(next_map) − T(map_start)</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {HARDEST_MAPS_FAST_ROTATIONS.map((c) => (
+                {HARDEST_MAPS_FAST_ROTATIONS
+                  .filter((c) => {
+                    if (rotationFilter === 'wins') return c.outcomeType !== 'fast_rtv';
+                    if (rotationFilter === 'rtvs') return c.outcomeType === 'fast_rtv';
+                    return true;
+                  })
+                  .map((c) => (
                   <div
                     key={c.id}
                     className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col justify-between group shadow-sm"
@@ -191,7 +230,7 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
 
                         {/* Fast Rotation Time Pill with Explanatory Tooltip */}
                         <div 
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 font-code font-bold text-xs shadow-[0_0_10px_rgba(16,185,129,0.25)] flex-shrink-0 cursor-help"
+                          className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border font-code font-bold text-xs flex-shrink-0 cursor-help ${c.outcomeType === "fast_rtv" ? "bg-rose-950/90 border-rose-500/60 text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.3)]" : "bg-emerald-950/90 border-emerald-500/50 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.25)]"}`}
                           title="Record Minimal Session Duration: Total elapsed server time from map start to final conquest & map change"
                         >
                           <Timer className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />

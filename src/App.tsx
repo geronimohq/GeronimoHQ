@@ -6,6 +6,7 @@ import { BananaHeroStage } from './components/BananaHeroStage';
 import { DownloadRamSection } from './components/DownloadRamSection';
 import { RoamingMemeGremlin } from './components/RoamingMemeGremlin';
 import { ServerRadarPreview } from './components/ServerRadarPreview';
+import { CrosshairStudio } from './components/CrosshairStudio';
 import { CS2AutoexecGeneratorSection } from './components/CS2AutoexecGeneratorSection';
 import { CS2CommandCenterPreview } from './components/CS2CommandCenterPreview';
 import { GeronimoDiscordPresence } from './components/GeronimoDiscordPresence';
@@ -84,29 +85,21 @@ export const App: React.FC = () => {
     });
   }, []);
 
-  // Theme Switching Cycle:
-  // Pepe (exact 3m 16s synth loop) -> Banana Phone (plays 100% of the YouTube song to completion) -> Vice Versa
+  // Symmetrical Theme Switching Cycle:
+  // Pepe (exact 3m 16s track) <-> Banana Phone (exact 3m 16s track) with identical transition & audio lifecycle
   useEffect(() => {
-    if (theme === 'pepe') {
-      const PEPE_DURATION_MS = (3 * 60 + 16) * 1000; // 196,000 ms (3m 16s)
-      const timer = window.setTimeout(() => {
+    const THEME_TRACK_DURATION_MS = (3 * 60 + 16) * 1000; // 196,000 ms (3m 16s)
+    const timer = window.setTimeout(() => {
+      if (theme === 'pepe') {
         setTheme('banana');
         setTransitionBanner('🍌 3:16 COMPLETE — SMOOTHLY SWITCHED TO BANANA PHONE THEME!');
-        window.setTimeout(() => setTransitionBanner(null), 5000);
-      }, PEPE_DURATION_MS);
-      return () => clearTimeout(timer);
-    } else {
-      // For Banana theme: theme switch is driven strictly by YouTube reaching event.data === 0 (song ended)
-      // via handleBananaLoopsFinished, preventing cutting off the song early if buffering or loading.
-      // 240s safety fallback in case YouTube API is blocked.
-      const FALLBACK_MS = 240 * 1000;
-      const fallbackTimer = window.setTimeout(() => {
+      } else {
         setTheme('pepe');
-        setTransitionBanner('🐸 BANANA PHONE FINISHED — SWITCHED BACK TO PEPE THEME!');
-        window.setTimeout(() => setTransitionBanner(null), 5000);
-      }, FALLBACK_MS);
-      return () => clearTimeout(fallbackTimer);
-    }
+        setTransitionBanner('🐸 3:16 COMPLETE — SMOOTHLY SWITCHED TO PEPE THEME!');
+      }
+      window.setTimeout(() => setTransitionBanner(null), 5000);
+    }, THEME_TRACK_DURATION_MS);
+    return () => clearTimeout(timer);
   }, [theme]);
 
   // Handle direct URL hash navigation on initial page load (e.g., https://geronimohq.com/#download-ram)
@@ -275,7 +268,10 @@ export const App: React.FC = () => {
         {/* MODULE 1: ZOMBIE ESCAPE SERVER RADAR + 24H TIMELINE + MAP & LASER ENCYCLOPEDIA */}
         <ServerRadarPreview />
 
-        {/* MODULE 2: INTERACTIVE WEB CS2 AUTOEXEC & ZE BINDS GENERATOR (#cfg-studio) */}
+        {/* MODULE 2: INTERACTIVE CS2 CROSSHAIR STUDIO (#crosshair-studio) */}
+        <CrosshairStudio />
+
+        {/* MODULE 3: INTERACTIVE WEB CS2 AUTOEXEC & ZE BINDS GENERATOR (#cfg-studio) */}
         <CS2AutoexecGeneratorSection />
 
         {/* MODULE 3: CS2 COMMAND CENTER DESKTOP SUITE (1-Click App Download v1.3.0) */}

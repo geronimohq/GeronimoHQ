@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Radio, Shield, Wifi, Mail, Cpu, Sparkles, Sliders, Wrench } from 'lucide-react';
+import { Radio, Shield, Wifi, Mail, Cpu, Sparkles, Sliders, Wrench, Crosshair } from 'lucide-react';
 
 interface CyberNavbarProps {
   theme: 'pepe' | 'banana';
@@ -152,6 +152,14 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           >
             <Wifi className="w-3.5 h-3.5 text-lime-400" />
             ZE SERVERS
+          </a>
+          <a
+            href="#crosshair-studio"
+            onClick={(e) => handleNavClick(e, 'crosshair-studio')}
+            className="hover:text-amber-400 transition-colors flex items-center gap-1.5"
+          >
+            <Crosshair className="w-3.5 h-3.5 text-amber-400" />
+            CROSSHAIR
           </a>
           <a
             href="#ze-toolkit"

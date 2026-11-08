@@ -223,7 +223,7 @@ export const DancingBananaCharacter: React.FC<DancingBananaCharacterProps> = ({
 };
 
 interface BananaHeroStageProps {
-  targetLoops: number;
+  targetLoops?: number;
   onAllLoopsCompleted: () => void;
   masterVolume?: number;
   isMasterMuted?: boolean;
@@ -231,18 +231,19 @@ interface BananaHeroStageProps {
   onMasterVolumeChange?: (vol: number) => void;
 }
 
+export type BananaTab = 'all' | 'commander' | 'pompom' | 'video';
+
 export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
-  targetLoops,
+  /* targetLoops */
   onAllLoopsCompleted,
   masterVolume = 15,
   isMasterMuted = false,
   onToggleMasterMute,
   onMasterVolumeChange,
 }) => {
+  const [activeTab, setActiveTab] = useState<BananaTab>('all');
   const [isMusicOn, setIsMusicOn] = useState<boolean>(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const completedLoopsRef = useRef<number>(0);
-  const targetLoopsRef = useRef<number>(targetLoops);
   const onCompleteRef = useRef<() => void>(onAllLoopsCompleted);
 
   const isMasterMutedRef = useRef<boolean>(isMasterMuted);
@@ -254,14 +255,10 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
   }, [isMasterMuted, masterVolume]);
 
   useEffect(() => {
-    targetLoopsRef.current = targetLoops;
-  }, [targetLoops]);
-
-  useEffect(() => {
     onCompleteRef.current = onAllLoopsCompleted;
   }, [onAllLoopsCompleted]);
 
-  // Reactive listener to masterVolume and isMasterMuted changes - guarantees 100% volume parity
+  // Volume & Mute Parity
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.muted = isMasterMuted || masterVolume === 0;
@@ -269,7 +266,7 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
     }
   }, [masterVolume, isMasterMuted]);
 
-  // Synchronous native playback controller
+  // Autoplay / Pause Controller
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -280,7 +277,6 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
       const playPromise = video.play();
       if (playPromise !== undefined) {
         playPromise.catch(() => {
-          // If browser policy requires user interaction, resume on first click
           const resumeOnGesture = () => {
             if (videoRef.current && isMusicOn) {
               videoRef.current.play().catch(() => {});
@@ -297,7 +293,7 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
     }
   }, [isMusicOn]);
 
-  // Handle visibility & focus resumption - native HTML5 media does not get throttled like cross-origin YouTube iframes
+  // Focus & Visibility Auto-Resume
   useEffect(() => {
     const handleResumeOnFocus = () => {
       if (videoRef.current && isMusicOn && !isMasterMutedRef.current) {
@@ -322,22 +318,14 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
   }, [isMusicOn]);
 
   const handleVideoEnded = () => {
-    completedLoopsRef.current += 1;
-    if (completedLoopsRef.current >= targetLoopsRef.current) {
-      onCompleteRef.current();
-    } else {
-      if (videoRef.current) {
-        videoRef.current.currentTime = 0;
-        videoRef.current.play().catch(() => {});
-      }
-    }
+    onCompleteRef.current();
   };
 
   const bananaYoutubeUrl = 'https://www.youtube.com/watch?v=j5C6X9vOEkU&list=RDj5C6X9vOEkU&start_radio=1';
 
   return (
     <section className="relative w-full max-w-6xl mx-auto px-4 py-8 flex flex-col items-center overflow-hidden">
-      {/* HUD Header for Banana Phone Stage */}
+      {/* HUD Header for Banana Phone Stage (Matching Pepe Hero Stage Architecture) */}
       <div className="w-full flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-yellow-500/40 pb-3">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-ping" />
@@ -345,11 +333,11 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
             🍌 BANANA PHONE HOLO-CHAMBER // SECTOR-BANANA
           </span>
           <span className="text-[10px] font-code px-2 py-0.5 rounded bg-amber-950/90 text-yellow-300 border border-yellow-400/50">
-            RING RING RINGx7
+            POTASSIUM: 9,999%
           </span>
         </div>
 
-        {/* Banana Phone Master Music & Volume Controls */}
+        {/* Music Controls + Tabs Header */}
         <div className="flex flex-wrap items-center gap-2">
           {onToggleMasterMute ? (
             <button
@@ -407,23 +395,56 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
             </div>
           )}
 
-          <a
-            href={bananaYoutubeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Open official Banana Phone music video on YouTube in a new tab"
-            aria-label="Open YouTube Banana Phone Mix"
-            className="px-3.5 py-2 min-h-[44px] text-xs font-code rounded-lg bg-slate-900/90 text-amber-300 border border-amber-500/40 hover:border-yellow-400 flex items-center gap-1.5 transition-all touch-manipulation"
-          >
-            <PhoneCall className="w-3.5 h-3.5 text-yellow-400 animate-bounce" />
-            <span>YOUTUBE MIX ↗</span>
-            <ExternalLink className="w-3 h-3" />
-          </a>
+          {/* Symmetrical Specimen Filter Tabs */}
+          <div className="flex items-center gap-1 bg-black/80 border border-yellow-500/40 p-1 rounded-xl">
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`px-3 py-1.5 text-xs font-code rounded-lg transition-all cursor-pointer ${
+                activeTab === 'all'
+                  ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/60 shadow-[0_0_10px_rgba(250,204,21,0.4)] font-bold'
+                  : 'text-slate-400 hover:text-yellow-300'
+              }`}
+            >
+              [01] ALL BANANAS
+            </button>
+            <button
+              onClick={() => setActiveTab('commander')}
+              className={`px-3 py-1.5 text-xs font-code rounded-lg transition-all cursor-pointer ${
+                activeTab === 'commander'
+                  ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/60 shadow-[0_0_10px_rgba(250,204,21,0.4)] font-bold'
+                  : 'text-slate-400 hover:text-yellow-300'
+              }`}
+            >
+              [02] COMMANDER PEEL
+            </button>
+            <button
+              onClick={() => setActiveTab('pompom')}
+              className={`px-3 py-1.5 text-xs font-code rounded-lg transition-all cursor-pointer ${
+                activeTab === 'pompom'
+                  ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/60 shadow-[0_0_10px_rgba(250,204,21,0.4)] font-bold'
+                  : 'text-slate-400 hover:text-yellow-300'
+              }`}
+            >
+              [03] POM-POM SQUAD
+            </button>
+            <button
+              onClick={() => setActiveTab('video')}
+              className={`px-3 py-1.5 text-xs font-code rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                activeTab === 'video'
+                  ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/60 shadow-[0_0_10px_rgba(250,204,21,0.4)] font-bold'
+                  : 'text-slate-400 hover:text-yellow-300'
+              }`}
+            >
+              <PhoneCall className="w-3 h-3 text-yellow-400" />
+              [04] MUSIC VIDEO
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main Banana Phone Holographic Stage */}
       <div className="relative w-full min-h-[500px] flex flex-col items-center justify-between rounded-2xl border border-yellow-500/40 bg-gradient-to-b from-amber-950/35 via-slate-950/75 to-[#090702]/95 backdrop-blur-xl overflow-hidden shadow-[0_0_60px_rgba(234,179,8,0.2)] p-6">
+        
         {/* Corner Brackets */}
         <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-yellow-400/90" />
         <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-yellow-400/90" />
@@ -436,52 +457,114 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
           <span>♪ RING RING RING RING RING RING RING... BANANA PHONE! BOOP-BOO-BA-DOO-BA-DOOP! ♪</span>
         </div>
 
-        {/* 3x Dancing Bananas Squad */}
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 items-end justify-items-center gap-8 md:gap-4 w-full max-w-4xl my-4">
-          <DancingBananaCharacter
-            label="BANANA-01 // POM-POM LEFT"
-            subLabel="Ring Ring Ring // 100% Potassium"
-            scaleClass="w-44 md:w-52"
-          />
+        {/* TAB 1: ALL BANANAS (3D Rotating Stage) */}
+        {activeTab === 'all' && (
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 items-end justify-items-center gap-8 md:gap-4 w-full max-w-4xl my-4">
+            <DancingBananaCharacter
+              label="BANANA-01 // POM-POM LEFT"
+              subLabel="Ring Ring Ring // 100% Potassium"
+              scaleClass="w-44 md:w-52"
+            />
 
-          <DancingBananaCharacter
-            label="BANANA-02 // COMMANDER PEEL"
-            subLabel="Banana Phone Operator // VIP Gooner"
-            scaleClass="w-52 md:w-60"
-          />
+            <DancingBananaCharacter
+              label="BANANA-02 // COMMANDER PEEL"
+              subLabel="Banana Phone Operator // VIP Gooner"
+              scaleClass="w-52 md:w-60"
+            />
 
-          <DancingBananaCharacter
-            label="BANANA-03 // POM-POM RIGHT"
-            subLabel="Ding Dong Ding // Cellular Modular"
-            scaleClass="w-44 md:w-52"
-            flip={true}
-          />
-        </div>
+            <DancingBananaCharacter
+              label="BANANA-03 // POM-POM RIGHT"
+              subLabel="Ding Dong Ding // Cellular Modular"
+              scaleClass="w-44 md:w-52"
+              flip={true}
+            />
+          </div>
+        )}
 
-        {/* Embedded Banana Phone Native HTML5 Media Player (Instant offline/local playback) */}
-        {isMusicOn && (
-          <div className="relative z-20 w-full max-w-xl mt-2 mb-6 rounded-xl border border-yellow-400/50 bg-black/90 p-2.5 shadow-[0_0_30px_rgba(250,204,21,0.3)]">
-            <div className="flex items-center justify-between text-[11px] font-code text-yellow-300 mb-1.5 px-1">
+        {/* TAB 2: COMMANDER PEEL (Inspect Lore & Stats Card) */}
+        {activeTab === 'commander' && (
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-center gap-8 max-w-2xl text-left my-4">
+            <div className="w-56 md:w-64 flex justify-center">
+              <DancingBananaCharacter
+                label="COMMANDER PEEL // #002"
+                subLabel="Live Operator"
+                scaleClass="w-48 md:w-56"
+              />
+            </div>
+            <div className="space-y-3 bg-slate-900/90 border border-yellow-500/40 p-5 rounded-xl backdrop-blur-md">
+              <div className="flex items-center justify-between">
+                <span className="font-cyber text-yellow-400 text-sm font-bold">COMMANDER_PEEL // OPERATOR</span>
+                <span className="text-[10px] font-code bg-amber-950 text-yellow-300 px-2 py-0.5 rounded border border-yellow-500/50">CLASS: VIP</span>
+              </div>
+              <p className="text-xs text-amber-100/90 leading-relaxed font-tech">
+                The supreme hotline operator of GeronimoHQ. Equipped with dual wireless pom-pom antennas capable of intercepting CS2 server traffic and transmitting instant Potassium signals.
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-code text-slate-300 border-t border-slate-800 pt-2">
+                <div>POTASSIUM: <span className="text-yellow-400 font-bold">9,999%</span></div>
+                <div>RING FREQUENCY: <span className="text-yellow-400 font-bold">128 BPM</span></div>
+                <div>TYPE: <span className="text-yellow-400 font-bold">Cellular / Modular</span></div>
+                <div>HOTLINE: <span className="text-yellow-400 font-bold">Ring Ring Ring</span></div>
+              </div>
+              <p className="text-[11px] text-yellow-400 italic">💡 Click Commander Peel to send confetti rings into the stratosphere!</p>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: POM-POM SQUAD (Cheerleader Solo) */}
+        {activeTab === 'pompom' && (
+          <div className="relative z-10 flex flex-col items-center justify-center gap-4 my-4 max-w-md text-center">
+            <div className="w-56 md:w-64 flex justify-center">
+              <DancingBananaCharacter
+                label="POM-POM CHEERLEADER"
+                subLabel="Party Mode Active"
+                speedClass="animate-bounce"
+                scaleClass="w-52 md:w-60"
+              />
+            </div>
+            <p className="text-xs font-tech text-yellow-200/90 max-w-sm">
+              High-frequency cheerleader pom-poms synchronized to sub-tick tickrates. Click to ring!
+            </p>
+          </div>
+        )}
+
+        {/* TAB 4: BANANA PHONE OFFICIAL MEDIA VIDEO */}
+        {activeTab === 'video' && (
+          <div className="relative z-20 w-full max-w-xl my-4 rounded-xl border border-yellow-400/50 bg-black/90 p-3 shadow-[0_0_30px_rgba(250,204,21,0.3)]">
+            <div className="flex items-center justify-between text-[11px] font-code text-yellow-300 mb-2 px-1">
               <span className="flex items-center gap-1.5 font-bold">
                 <PhoneCall className="w-3.5 h-3.5 text-yellow-400" />
-                NOW PLAYING: RAFFI — BANANA PHONE
+                RAFFI — BANANA PHONE (OFFICIAL VIDEO)
               </span>
-              <span className="text-[10px] text-amber-300/80">
-                OFFLINE NATIVE AUDIO/VIDEO
-              </span>
+              <a
+                href={bananaYoutubeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-amber-300/80 hover:text-white flex items-center gap-1"
+              >
+                <span>YOUTUBE LINK</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
             </div>
             <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-yellow-500/30 bg-black flex items-center justify-center">
               <video
-                ref={videoRef}
                 src="/media/banana_phone.mp4"
                 playsInline
-                autoPlay
-                className="w-full h-full object-contain pointer-events-none select-none"
-                onEnded={handleVideoEnded}
+                controls
+                className="w-full h-full object-contain"
               />
             </div>
           </div>
         )}
+
+        {/* Dedicated Background Video Player (Never displaces the stage layout) */}
+        <video
+          ref={videoRef}
+          src="/media/banana_phone.mp4"
+          playsInline
+          autoPlay
+          className="hidden"
+          onEnded={handleVideoEnded}
+        />
 
         {/* Golden Pedestal Floor Rings */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-72 sm:w-80 md:w-[620px] h-36 pointer-events-none flex items-center justify-center [perspective:800px] overflow-hidden">
@@ -492,9 +575,9 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
         </div>
 
         {/* Bottom Telemetry Bar */}
-        <div className="relative z-10 w-full flex items-center justify-between text-[10px] font-code text-amber-300/70 border-t border-yellow-500/20 pt-2">
+        <div className="relative z-10 w-full flex items-center justify-between text-[10px] font-code text-amber-300/70 border-t border-yellow-500/20 pt-2 mt-4">
           <span className="flex items-center gap-1">
-            <Activity className="w-3 h-3 text-yellow-400" /> POTASSIUM LEVEL: 9,999%
+            <Activity className="w-3 h-3 text-yellow-400" /> STATUS: BANANA PHONE HOTLINE ACTIVE
           </span>
           <span>CLICK ANY BANANA TO RING THE BANANA PHONE!</span>
         </div>
