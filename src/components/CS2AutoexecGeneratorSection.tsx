@@ -339,7 +339,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
 
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950/80 border border-slate-800/90 rounded-lg p-2.5">
               <label 
-                title="Sub-tick jumpthrow alias bind ensuring 100% consistent grenade trajectory"
+                title="Sub-tick jumpthrow alias bind for consistent grenade release timing"
                 className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input
@@ -364,7 +364,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
               <label 
-                title="Null-cancelling strafe binds (A/D) ensuring opposite strafe key immediately cancels prior input (Allowed on community servers)"
+                title="Null-cancelling strafe binds (A/D) ensuring opposite strafe key immediately cancels prior input (Check individual community server rules regarding null binds)"
                 className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input
@@ -376,7 +376,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                 <span>⚡ Null-Movement Binds (A/D)</span>
               </label>
               <label 
-                title="Maximize CS2 network packet rates (rate 786432, cl_net_buffer_ticks 0) for zero input delay"
+                title="Maximize CS2 network packet rates (rate 786432, cl_net_buffer_ticks 0) for sub-tick packet optimization & minimal buffering delay"
                 className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input

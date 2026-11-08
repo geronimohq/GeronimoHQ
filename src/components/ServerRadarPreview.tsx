@@ -133,13 +133,13 @@ export const ServerRadarPreview: React.FC = () => {
 
   const getTierLabel = (tier: PriorityTier, isGfl: boolean = false) => {
     if (isGfl) {
-      if (tier === 'vip') return 'VIP / Admin (≤63)';
-      if (tier === 'supporter') return 'Supporter / Mapper (≤62)';
-      return 'Normal Player (≤61)';
+      if (tier === 'vip') return 'VIP / Admin (≤ 63)';
+      if (tier === 'supporter') return 'Mapper / Supporter (≤ 62)';
+      return 'Normal Player (≤ 61)';
     }
-    if (tier === 'vip') return '≤63 Players';
-    if (tier === 'supporter') return '≤62 Players';
-    return '≤61 Players';
+    if (tier === 'vip') return '≤ 63 Players';
+    if (tier === 'supporter') return '≤ 62 Players';
+    return '≤ 61 Players';
   };
 
   const getServerPriorityTier = (server: ZEServer): PriorityTier => {
@@ -147,8 +147,11 @@ export const ServerRadarPreview: React.FC = () => {
   };
 
   const handleToggleAutoJoin = (server: ZEServer) => {
-    // Check if on a mobile handheld device (phones cannot launch PC CS2 via steam:// URI)
-    const isMobileDevice = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // Check if on a mobile or tablet handheld device (including iPads reporting as MacIntel)
+    const isMobileDevice = typeof navigator !== 'undefined' && (
+      /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    );
     if (isMobileDevice) {
       alert(`📱 Mobile Notice:\n\nAutomated Steam slot-sniping requires a desktop PC with Steam and Counter-Strike 2 installed.\n\nOn mobile, please tap "CONNECT" to copy the server IP (${server.host}:${server.port}) and connect from your gaming PC console.`);
       return;
@@ -207,7 +210,11 @@ export const ServerRadarPreview: React.FC = () => {
           const origTitle = document.title;
           let count = 0;
           const flashTimer = window.setInterval(() => {
-            document.title = count % 2 === 0 ? `🎯 [SLOT OPEN: ${curr}/${max}] CONNECTING!` : origTitle;
+            if (document.hidden) {
+              document.title = count % 2 === 0 ? `🎯 [SLOT OPEN: ${curr}/${max}] Return to tab to connect!` : origTitle;
+            } else {
+              document.title = count % 2 === 0 ? `🎯 [SLOT OPEN: ${curr}/${max}] CONNECTING!` : origTitle;
+            }
             count++;
             if (count > 12) {
               clearInterval(flashTimer);
@@ -847,72 +854,72 @@ export const ServerRadarPreview: React.FC = () => {
             </span>
             <button
               onClick={() => setSelectedChinaFilter('all')}
-              title="Show all 35 verified Chinese Zombie Escape servers across all clusters"
+              title={`Show all ${chinaServers.length} verified Chinese Zombie Escape servers across all clusters`}
               className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'all'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              ALL PLANET CHINA (35)
+              ALL PLANET CHINA ({chinaServers.length})
             </button>
             <button
               onClick={() => setSelectedChinaFilter('exg')}
-              title="Filter to EXG Clan (Edge Gamers) CS2 Zombie Escape server cluster (16 servers)"
+              title="Filter to EXG Clan (Edge Gamers) CS2 Zombie Escape server cluster"
               className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'exg'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              EXG 社区 (16)
+              EXG 社区 ({chinaServers.filter((s) => s.cluster === 'exg').length})
             </button>
             <button
               onClick={() => setSelectedChinaFilter('fys')}
-              title="Filter to Feng Ye Shou (FYS) CS2 Zombie Escape server cluster (6 servers)"
+              title="Filter to Feng Yun She (FyS) CS2 Zombie Escape server cluster"
               className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'fys'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              风云社 / FyS (6)
+              风云社 / FyS ({chinaServers.filter((s) => s.cluster === 'fys').length})
             </button>
             <button
               onClick={() => setSelectedChinaFilter('ub')}
-              title="Filter to UB Community CS2 Zombie Escape server cluster (6 servers)"
+              title="Filter to UB Community (Moe UB) CS2 Zombie Escape server cluster"
               className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'ub'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              萌UB / MoeUB (6)
+              萌UB / MoeUB ({chinaServers.filter((s) => s.cluster === 'ub').length})
             </button>
             <button
               onClick={() => setSelectedChinaFilter('zl')}
-              title="Filter to ZL (Zoneloli) CS2 Zombie Escape server cluster (5 servers)"
+              title="Filter to Zombie Land (ZL / ZoneLoli) CS2 Zombie Escape server cluster"
               className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'zl'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              僵尸乐园 / ZL (5)
+              僵尸乐园 / ZL ({chinaServers.filter((s) => s.cluster === 'zl').length})
             </button>
             <button
               onClick={() => setSelectedChinaFilter('93x')}
-              title="Filter to 93X Zombie Escape server cluster (2 servers)"
+              title="Filter to 93X Zombie Escape server cluster"
               className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === '93x'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              93X 社区 (2)
+              93X 社区 ({chinaServers.filter((s) => s.cluster === '93x').length})
             </button>
             <div className="w-full text-[11px] font-sans text-rose-300/80 px-2 pt-1 border-t border-rose-500/20">
-              🇨🇳 <strong>Chinese Community Clusters:</strong> <strong>EXG</strong> (Edge Gamers) &bull; <strong>FyS</strong> (Feng Yun She) &bull; <strong>UB</strong> (Moe UB) &bull; <strong>ZL</strong> (Zombie Land) &bull; <strong>93X</strong> (93X Community)
+              🇨🇳 <strong>Chinese Community Clusters (Hong Kong & Mainland China):</strong> <strong>EXG</strong> (Edge Gamers) &bull; <strong>FyS</strong> (Feng Yun She) &bull; <strong>UB</strong> (Moe UB) &bull; <strong>ZL</strong> (Zombie Land / ZoneLoli) &bull; <strong>93X</strong> (93X Community)
             </div>
           </div>
         )}

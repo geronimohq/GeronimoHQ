@@ -633,11 +633,13 @@ export const ChaosAnomalyEngine: React.FC = () => {
       {/* 2. EARTHQUAKE */}
       {earthquake && (
         <style dangerouslySetInnerHTML={{ __html: `
-          body { animation: earthquakeShake 0.12s infinite alternate !important; }
-          @keyframes earthquakeShake {
-            0% { transform: translate(3px, 2px) rotate(0.4deg); }
-            50% { transform: translate(-3px, -2px) rotate(-0.4deg); }
-            100% { transform: translate(2px, -3px) rotate(0.2deg); }
+          @media (prefers-reduced-motion: no-preference) {
+            body { animation: earthquakeShake 0.12s infinite alternate !important; }
+            @keyframes earthquakeShake {
+              0% { transform: translate(3px, 2px) rotate(0.4deg); }
+              50% { transform: translate(-3px, -2px) rotate(-0.4deg); }
+              100% { transform: translate(2px, -3px) rotate(0.2deg); }
+            }
           }
         ` }} />
       )}
@@ -645,8 +647,10 @@ export const ChaosAnomalyEngine: React.FC = () => {
       {/* 3. RAINBOW RAVE */}
       {rainbowRave && (
         <style dangerouslySetInnerHTML={{ __html: `
-          body { animation: rainbowHue 0.6s infinite linear !important; }
-          @keyframes rainbowHue { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+          @media (prefers-reduced-motion: no-preference) {
+            body { animation: rainbowHue 0.6s infinite linear !important; }
+            @keyframes rainbowHue { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+          }
         ` }} />
       )}
 
@@ -712,8 +716,10 @@ export const ChaosAnomalyEngine: React.FC = () => {
       {/* 13. ZERO GRAVITY */}
       {zeroGrav && (
         <style dangerouslySetInnerHTML={{ __html: `
-          body { animation: zeroGravFloat 2s infinite ease-in-out alternate !important; }
-          @keyframes zeroGravFloat { 0% { transform: translateY(0px); } 100% { transform: translateY(-20px); } }
+          @media (prefers-reduced-motion: no-preference) {
+            body { animation: zeroGravFloat 2s infinite ease-in-out alternate !important; }
+            @keyframes zeroGravFloat { 0% { transform: translateY(0px); } 100% { transform: translateY(-20px); } }
+          }
         ` }} />
       )}
 
@@ -938,8 +944,10 @@ export const ChaosAnomalyEngine: React.FC = () => {
       {/* 32. SUB-TICK JITTER */}
       {subtickJitter && (
         <style dangerouslySetInnerHTML={{ __html: `
-          body { animation: subtickShake 0.08s 4 ease-in-out !important; }
-          @keyframes subtickShake { 0% { transform: translateX(4px); } 100% { transform: translateX(-4px); } }
+          @media (prefers-reduced-motion: no-preference) {
+            body { animation: subtickShake 0.08s 4 ease-in-out !important; }
+            @keyframes subtickShake { 0% { transform: translateX(4px); } 100% { transform: translateX(-4px); } }
+          }
         ` }} />
       )}
 

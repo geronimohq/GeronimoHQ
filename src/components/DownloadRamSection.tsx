@@ -313,25 +313,26 @@ export const DownloadRamSection: React.FC = () => {
   }, [laserGameActive, isTabHidden, isGameInViewport]);
 
   // Keyboard navigation for laser game (Space/Up = Jump, Down/Ctrl = Crouch)
-  // Strictly active ONLY while laserGameActive is true AND visible in viewport, and never hijacks inputs or focused buttons
+  // Strictly active ONLY while laserGameActive is true AND visible in viewport, and never hijacks text inputs
   useEffect(() => {
     if (!laserGameActive || !isGameInViewport || isTabHidden) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Never hijack keystrokes if the user is typing or if an interactive button/link/control is focused
+      // Never hijack keystrokes if the user is typing in any text box or input
       const target = e.target as HTMLElement | null;
       if (
         target &&
         (target.tagName === 'INPUT' ||
           target.tagName === 'TEXTAREA' ||
-          target.tagName === 'BUTTON' ||
-          target.tagName === 'A' ||
-          target.tagName === 'SELECT' ||
           target.isContentEditable ||
-          target.getAttribute('role') === 'textbox' ||
-          target.getAttribute('role') === 'button')
+          target.getAttribute('role') === 'textbox')
       ) {
         return;
+      }
+
+      // If user presses Space on a focused button, blur the button and execute the jump
+      if (target && target.tagName === 'BUTTON') {
+        target.blur();
       }
 
       if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
@@ -364,6 +365,9 @@ export const DownloadRamSection: React.FC = () => {
   };
 
   const startLaserMiniGame = () => {
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     poseRef.current = 'stand';
     setPlayerPose('stand');
     setLaserScore(0);

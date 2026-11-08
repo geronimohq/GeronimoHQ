@@ -81,22 +81,32 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
         }
         // If data is missing or incomplete, evaluate timeout threshold
         if (Date.now() - mountTimeRef.current >= 15000) {
+          consecutiveStandbyFailuresRef.current += 1;
+          // If previously connected, require 3 consecutive failures before dropping to standby to prevent flapping
+          if (connectionStatus === 'connected' && consecutiveStandbyFailuresRef.current < 3) {
+            scheduleNextPoll(5000);
+            return;
+          }
           setConnectionStatus('standby');
           setIsRetrying(false);
-          consecutiveStandbyFailuresRef.current += 1;
           const fails = consecutiveStandbyFailuresRef.current;
-          const backoff = fails === 1 ? 5000 : fails === 2 ? 15000 : fails === 3 ? 30000 : 60000;
+          const backoff = fails <= 1 ? 5000 : fails === 2 ? 15000 : fails === 3 ? 30000 : 60000;
           scheduleNextPoll(backoff);
         } else {
           scheduleNextPoll(5000);
         }
       } catch {
         if (Date.now() - mountTimeRef.current >= 15000) {
+          consecutiveStandbyFailuresRef.current += 1;
+          // If previously connected, require 3 consecutive failures before dropping to standby
+          if (connectionStatus === 'connected' && consecutiveStandbyFailuresRef.current < 3) {
+            scheduleNextPoll(5000);
+            return;
+          }
           setConnectionStatus('standby');
           setIsRetrying(false);
-          consecutiveStandbyFailuresRef.current += 1;
           const fails = consecutiveStandbyFailuresRef.current;
-          const backoff = fails === 1 ? 5000 : fails === 2 ? 15000 : fails === 3 ? 30000 : 60000;
+          const backoff = fails <= 1 ? 5000 : fails === 2 ? 15000 : fails === 3 ? 30000 : 60000;
           scheduleNextPoll(backoff);
         } else {
           scheduleNextPoll(5000);

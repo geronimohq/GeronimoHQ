@@ -29,9 +29,11 @@ interface AppFeatureModule {
   vacSafe: boolean;
 }
 
+declare const __APP_EXE_SHA256__: string;
+
 export const CS2CommandCenterPreview: React.FC = () => {
   const downloadUrl = '/CS2_Command_Center.exe?v=1.4.0';
-  const exeSha256 = '739E821B12704ADC21464173D886E490B78390E3779856C2C6736AF932B92BB6';
+  const exeSha256 = typeof __APP_EXE_SHA256__ !== 'undefined' ? __APP_EXE_SHA256__ : '739E821B12704ADC21464173D886E490B78390E3779856C2C6736AF932B92BB6';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [copiedHash, setCopiedHash] = useState<boolean>(false);
