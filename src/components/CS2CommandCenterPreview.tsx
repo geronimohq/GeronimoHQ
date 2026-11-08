@@ -261,10 +261,15 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <span className="text-[11px] font-code text-slate-400">
             Portable &bull; ~33 MB &bull; No installation required
           </span>
-          <span className="text-[10px] font-code text-amber-300/90 max-w-xs text-left md:text-right">
-            🛡️ Unsigned community .exe: If Windows SmartScreen prompts, click &ldquo;More info&rdquo; &rarr; &ldquo;Run anyway&rdquo;.
-          </span>
-          <div className="flex items-center gap-1.5 text-[10px] font-code text-slate-400 mt-0.5">
+          <div className="max-w-xs text-left md:text-right space-y-0.5">
+            <span className="block text-[10px] font-code text-amber-300/90">
+              🛡️ Unsigned Portable EXE: Windows SmartScreen may display an alert. Click &ldquo;More info&rdquo; &rarr; &ldquo;Run anyway&rdquo;.
+            </span>
+            <span className="block text-[10px] font-code text-slate-400">
+              Verify binary safety using the <a href="#exe-sha256-badge" className="text-cyan-400 underline hover:text-cyan-300">verified SHA-256 hash below</a>.
+            </span>
+          </div>
+          <div id="exe-sha256-badge" className="flex items-center gap-1.5 text-[10px] font-code text-slate-400 mt-0.5 scroll-mt-28">
             <span className="text-slate-500">SHA-256:</span>
             <code className="text-cyan-300 select-all font-mono">739e821b...32b92bb6</code>
             <button

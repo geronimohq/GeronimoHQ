@@ -9,11 +9,29 @@ import crypto from 'node:crypto'
 let calculatedExeHash = '739E821B12704ADC21464173D886E490B78390E3779856C2C6736AF932B92BB6'
 try {
   const exePath = path.resolve('public', 'CS2_Command_Center.exe')
+  const distExePath = path.resolve('dist', 'CS2_Command_Center.exe')
   if (fs.existsSync(exePath)) {
     const buf = fs.readFileSync(exePath)
     calculatedExeHash = crypto.createHash('sha256').update(buf).digest('hex').toUpperCase()
+
+    // Safety check: ensure dist/ and public/ binaries have not diverged locally
+    if (fs.existsSync(distExePath)) {
+      const distBuf = fs.readFileSync(distExePath)
+      const distHash = crypto.createHash('sha256').update(distBuf).digest('hex').toUpperCase()
+      if (calculatedExeHash !== distHash) {
+        throw new Error(
+          `[EXE_DIVERGENCE_ERROR] Binary divergence detected! ` +
+          `public/ (${calculatedExeHash.slice(0, 8)}...) != dist/ (${distHash.slice(0, 8)}...). ` +
+          `Sync freshly built desktop executable to public/ before web build.`
+        )
+      }
+    }
   }
-} catch {}
+} catch (err: any) {
+  if (err.message?.includes('EXE_DIVERGENCE_ERROR')) {
+    throw err
+  }
+}
 
 function safeCopyPublicPlugin() {
   return {

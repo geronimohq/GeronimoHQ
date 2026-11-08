@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { Dices, Trophy, AlertTriangle, ShieldAlert, Radio, Sparkles } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import canvasConfetti from 'canvas-confetti';
+
+const safeConfetti = (opts: any) => {
+  if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return;
+  }
+  canvasConfetti(opts);
+};
 
 interface Achievement {
   title: string;
@@ -339,14 +346,14 @@ export const ChaosAnomalyEngine: React.FC = () => {
     } else if (chosen === 'airhorn') {
       playChaosSynth('airhorn');
       setToastBanner('🎺 MLG TRIPLE AIRHORN BLAST // 360 NO-SCOPE READY!');
-      confetti({ particleCount: 75, spread: 80, origin: { y: 0.8 }, colors: ['#ef4444', '#f59e0b', '#3b82f6'] });
+      safeConfetti({ particleCount: 75, spread: 80, origin: { y: 0.8 }, colors: ['#ef4444', '#f59e0b', '#3b82f6'] });
       setTimeout(() => setToastBanner(null), 3000);
     } else if (chosen === 'confetti_nuke') {
       playChaosSynth('achievement');
       setToastBanner('🎉 MAXIMUM CONFETTI NUKE DETONATED OVER GERONIMOHQ!');
       for (let i = 0; i < 4; i++) {
         setTimeout(() => {
-          confetti({
+          safeConfetti({
             particleCount: 65,
             angle: 60 + i * 30,
             spread: 75,
@@ -464,12 +471,12 @@ export const ChaosAnomalyEngine: React.FC = () => {
     } else if (chosen === 'case_unboxing') {
       playChaosSynth('achievement');
       setCaseModal(true);
-      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+      safeConfetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
       setTimeout(() => setCaseModal(false), 4000);
     } else if (chosen === 'cs2_rank_up') {
       playChaosSynth('achievement');
       setRankUpModal(true);
-      confetti({ particleCount: 90, spread: 85, origin: { y: 0.6 }, colors: ['#ffd700', '#f59e0b'] });
+      safeConfetti({ particleCount: 90, spread: 85, origin: { y: 0.6 }, colors: ['#ffd700', '#f59e0b'] });
       setTimeout(() => setRankUpModal(false), 4000);
     } else if (chosen === 'dvd_screensaver') {
       playChaosSynth('coin');
@@ -565,7 +572,7 @@ export const ChaosAnomalyEngine: React.FC = () => {
     } else if (chosen === 'banana_overdrive') {
       playChaosSynth('rave');
       setToastBanner('🍌 BANANA OVERDRIVE 9000 // VITAMIN B POTASSIUM MAXIMUM!');
-      confetti({ particleCount: 70, spread: 80, colors: ['#facc15', '#fef08a'] });
+      safeConfetti({ particleCount: 70, spread: 80, colors: ['#facc15', '#fef08a'] });
       setTimeout(() => setToastBanner(null), 3200);
     } else if (chosen === 'dialup_handshake') {
       playChaosSynth('dialup');
@@ -579,7 +586,7 @@ export const ChaosAnomalyEngine: React.FC = () => {
     } else if (chosen === 'crowd_cheer') {
       playChaosSynth('cheer');
       setToastBanner('🏆 STADIUM STANDING OVATION // MVP ROUND GERONIMO!');
-      confetti({ particleCount: 85, spread: 90, origin: { y: 0.7 } });
+      safeConfetti({ particleCount: 85, spread: 90, origin: { y: 0.7 } });
       setTimeout(() => setToastBanner(null), 3200);
     } else if (chosen === 'ram_injection') {
       playChaosSynth('coin');
@@ -601,8 +608,11 @@ export const ChaosAnomalyEngine: React.FC = () => {
 
   return (
     <>
-      {/* Floating Chaos Trigger Button */}
-      <div className="fixed bottom-6 right-6 z-40">
+      {/* Floating Chaos Trigger Button with WCAG Photosensitivity Notice */}
+      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-1">
+        <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded bg-black/90 border border-amber-400/50 text-[10px] font-sans font-bold text-amber-300 shadow select-none">
+          <span>⚠️ Flash / Strobe Notice (&lt;3Hz)</span>
+        </div>
         <button
           onClick={triggerRandomChaos}
           className="group relative px-4 py-2.5 min-h-[44px] rounded-2xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white font-cyber text-xs font-bold shadow-[0_0_25px_rgba(217,70,239,0.5)] hover:shadow-[0_0_35px_rgba(217,70,239,0.8)] border border-fuchsia-400/60 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-2 touch-manipulation"

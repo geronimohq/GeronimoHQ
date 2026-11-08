@@ -34,6 +34,10 @@
       border-color: rgba(239, 68, 68, 0.5);
       box-shadow: 0 0 40px rgba(239, 68, 68, 0.2);
     }
+    .container.unverified-state {
+      border-color: rgba(245, 158, 11, 0.5);
+      box-shadow: 0 0 40px rgba(245, 158, 11, 0.2);
+    }
     .badge {
       display: inline-flex;
       align-items: center;
@@ -54,6 +58,11 @@
       border-color: rgba(239, 68, 68, 0.5);
       color: #f87171;
     }
+    .badge.unverified-badge {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.5);
+      color: #fbbf24;
+    }
     .pulse-dot {
       width: 7px;
       height: 7px;
@@ -66,6 +75,11 @@
       background: #ef4444;
       box-shadow: 0 0 8px #ef4444;
       animation: none;
+    }
+    .pulse-dot.unverified-dot {
+      background: #fbbf24;
+      box-shadow: 0 0 8px #fbbf24;
+      animation: pulse 1.8s infinite;
     }
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
@@ -81,7 +95,7 @@
     p.sub {
       font-size: 14px;
       color: #94a3b8;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       line-height: 1.5;
     }
     .ip-box {
@@ -89,7 +103,7 @@
       border: 1px dashed rgba(245, 158, 11, 0.4);
       border-radius: 10px;
       padding: 12px 16px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -98,6 +112,10 @@
     .ip-box.ip-box-error {
       border-color: rgba(239, 68, 68, 0.6);
       background: rgba(127, 29, 29, 0.15);
+    }
+    .ip-box.ip-box-unverified {
+      border-color: rgba(245, 158, 11, 0.6);
+      background: rgba(120, 53, 15, 0.15);
     }
     .ip-box span.label {
       color: #94a3b8;
@@ -115,6 +133,46 @@
     .ip-box span.ip.ip-error {
       color: #f87171;
       font-size: 15px;
+    }
+    .warning-box {
+      display: none;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 20px;
+      font-size: 12px;
+      color: #fde68a;
+      line-height: 1.4;
+      text-align: left;
+    }
+    .countdown-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0, 255, 204, 0.08);
+      border: 1px solid rgba(0, 255, 204, 0.25);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 20px;
+      font-size: 12px;
+      color: #00ffcc;
+      font-family: ui-monospace, monospace;
+    }
+    .btn-cancel {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      color: #fca5a5;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-cancel:hover {
+      background: rgba(239, 68, 68, 0.4);
+      color: #ffffff;
     }
     .actions {
       display: flex;
@@ -190,6 +248,17 @@
       <span id="ip-text" class="ip">Verifying address...</span>
     </div>
 
+    <!-- Security Warning for Unverified External Servers -->
+    <div id="warning-box" class="warning-box">
+      ⚠️ <strong>Unverified Server Target:</strong> This address is not in the GeronimoHQ verified server directory. Auto-launch is disabled. Confirm you trust this host before connecting.
+    </div>
+
+    <!-- 3-Second Auto-Launch Countdown for Catalog Servers -->
+    <div id="countdown-bar" class="countdown-bar">
+      <span id="countdown-text">Connecting in 3s...</span>
+      <button id="cancel-btn" class="btn-cancel" onclick="cancelAutoLaunch()">Cancel Countdown</button>
+    </div>
+
     <div class="actions">
       <a id="connect-link" href="#" class="btn-primary">
         🎮 Launch CS2 & Connect Now
@@ -209,13 +278,36 @@
 
   <script>
     (function() {
-      var params = new URLSearchParams(window.location.search);
-      var rawIp = (params.get('ip') || params.get('server') || params.get('host') || window.location.hash.replace('#', '') || '').trim();
+      // Catalog of verified CS2 Zombie Escape server hosts
+      var CATALOG_HOSTS = {
+        '74.91.124.21': true,     // GFL Clan ZE 24/7
+        '103.62.49.55': true,    // Possession ZE
+        '87.98.228.196': true,   // Mapeadores ZE
+        '178.33.160.187': true,  // cOLa-TeaM ZE
+        '14.5.33.30': true,      // RSS ZE
+        'rsscs2.kr': true,       // RSS Domain
+        '46.174.54.231': true,   // Net4All.ru ZE
+        // EXG Cluster
+        '202.189.10.89': true, '202.189.4.122': true, '202.189.10.208': true, '202.189.5.229': true,
+        '202.189.5.227': true, '202.189.4.230': true, '202.189.10.203': true, '202.189.5.221': true,
+        '202.189.5.225': true, '202.189.10.196': true, '202.189.5.236': true,
+        // FyS Cluster
+        '110.42.9.107': true, '110.42.9.139': true, '110.42.9.155': true, '110.42.9.138': true,
+        // UB Cluster
+        '110.42.9.188': true, '110.42.9.195': true,
+        // ZL Cluster
+        '110.42.9.181': true, '110.42.9.22': true, '110.42.9.149': true,
+        // 93X Cluster
+        '43.142.148.163': true
+      };
 
       var domainMap = {
         'rsscs2.kr': '14.5.33.30:27015',
         'rsscs2.kr:27015': '14.5.33.30:27015'
       };
+
+      var params = new URLSearchParams(window.location.search);
+      var rawIp = (params.get('ip') || params.get('server') || params.get('host') || window.location.hash.replace('#', '') || '').trim();
 
       if (rawIp && Object.prototype.hasOwnProperty.call(domainMap, rawIp)) {
         rawIp = domainMap[rawIp];
@@ -241,7 +333,7 @@
           var host = matchWithPort[1];
           var port = parseInt(matchWithPort[2], 10);
           if (port >= 1 && port <= 65535) {
-            return { valid: true, target: host + ':' + port };
+            return { valid: true, host: host, target: host + ':' + port };
           } else {
             return { valid: false, error: 'Invalid server address (port must be 1-65535)' };
           }
@@ -250,7 +342,7 @@
         var matchHostOnly = cleaned.match(HOST_ONLY_REGEX);
         if (matchHostOnly) {
           var hostOnly = matchHostOnly[1];
-          return { valid: true, target: hostOnly + ':27015' };
+          return { valid: true, host: hostOnly, target: hostOnly + ':27015' };
         }
 
         return { valid: false, error: 'Invalid server address' };
@@ -258,19 +350,22 @@
 
       var validation = validateTarget(rawIp);
 
-      var ipTextEl = document.getElementById('ip-text');
-      var titleEl = document.getElementById('title-el');
-      var subEl = document.getElementById('sub-el');
-      var connectLinkEl = document.getElementById('connect-link');
-      var copyBtnEl = document.getElementById('copy-btn');
       var containerEl = document.getElementById('main-container');
       var badgeEl = document.getElementById('badge-el');
       var dotEl = document.getElementById('dot-el');
       var badgeTextEl = document.getElementById('badge-text');
+      var titleEl = document.getElementById('title-el');
+      var subEl = document.getElementById('sub-el');
       var ipBoxEl = document.getElementById('ip-box-el');
+      var ipTextEl = document.getElementById('ip-text');
+      var warningBoxEl = document.getElementById('warning-box');
+      var countdownBarEl = document.getElementById('countdown-bar');
+      var countdownTextEl = document.getElementById('countdown-text');
+      var connectLinkEl = document.getElementById('connect-link');
+      var copyBtnEl = document.getElementById('copy-btn');
 
       if (!validation.valid) {
-        // Render Error State: Zero Steam Launch, No Fallback to Default
+        // Error State: Zero Steam Launch, No Fallback to Default
         containerEl.className = 'container error-state';
         badgeEl.className = 'badge error-badge';
         dotEl.className = 'pulse-dot error-dot';
@@ -286,16 +381,59 @@
         return;
       }
 
-      // Valid State: Show Target, Build Steam Link Without encodeURIComponent, and Connect
+      // Valid State: Show Target, Build Steam Link Without encodeURIComponent
       var targetIp = validation.target;
+      var hostOnly = validation.host;
       ipTextEl.textContent = targetIp;
 
       var steamUri = 'steam://connect/' + targetIp;
       connectLinkEl.href = steamUri;
 
-      try {
-        window.location.href = steamUri;
-      } catch (e) {}
+      var isCatalogServer = Object.prototype.hasOwnProperty.call(CATALOG_HOSTS, hostOnly);
+      var countdownTimer = null;
+
+      window.cancelAutoLaunch = function() {
+        if (countdownTimer) {
+          clearInterval(countdownTimer);
+          countdownTimer = null;
+        }
+        countdownBarEl.style.display = 'none';
+        subEl.textContent = 'Automatic launch cancelled. Click the button below when ready to connect.';
+      };
+
+      if (isCatalogServer) {
+        // Verified Catalog Server: 3-Second Visual Countdown with Cancel Button
+        badgeTextEl.textContent = 'Verified Catalog Server';
+        countdownBarEl.style.display = 'flex';
+        var remainingSeconds = 3;
+        countdownTextEl.textContent = 'Connecting in ' + remainingSeconds + 's...';
+
+        countdownTimer = setInterval(function() {
+          remainingSeconds -= 1;
+          if (remainingSeconds > 0) {
+            countdownTextEl.textContent = 'Connecting in ' + remainingSeconds + 's...';
+          } else {
+            clearInterval(countdownTimer);
+            countdownTimer = null;
+            countdownBarEl.style.display = 'none';
+            subEl.textContent = 'Dispatched Steam protocol launch command...';
+            try {
+              window.location.href = steamUri;
+            } catch (e) {}
+          }
+        }, 1000);
+      } else {
+        // Unknown / External Host: ZERO Auto-Launch! Explicit Click Required
+        containerEl.className = 'container unverified-state';
+        badgeEl.className = 'badge unverified-badge';
+        dotEl.className = 'pulse-dot unverified-dot';
+        badgeTextEl.textContent = 'Unverified External Server';
+        ipBoxEl.className = 'ip-box ip-box-unverified';
+        titleEl.textContent = 'External Community Server';
+        subEl.textContent = 'Target server is outside the GeronimoHQ verified directory. Manual confirmation required.';
+        warningBoxEl.style.display = 'block';
+        // Auto-launch strictly disabled!
+      }
 
       window.copyConsoleCommand = function() {
         var cmd = 'connect ' + targetIp;

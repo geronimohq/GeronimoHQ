@@ -315,7 +315,8 @@ export const DownloadRamSection: React.FC = () => {
   // Keyboard navigation for laser game (Space/Up = Jump, Down/Ctrl = Crouch)
   // Strictly active ONLY while laserGameActive is true AND visible in viewport, and never hijacks text inputs
   useEffect(() => {
-    if (!laserGameActive || !isGameInViewport || isTabHidden) return;
+    // Space and arrows act strictly while game is actively running in visible viewport
+    if (!laserGameActive || laserGameOver || !isGameInViewport || isTabHidden) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Never hijack keystrokes if the user is typing in any text box or input
@@ -351,7 +352,7 @@ export const DownloadRamSection: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [laserGameActive, isGameInViewport, isTabHidden]);
+  }, [laserGameActive, laserGameOver, isGameInViewport, isTabHidden]);
 
   const triggerPose = (pose: 'jump' | 'crouch') => {
     poseRef.current = pose;

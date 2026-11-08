@@ -124,6 +124,13 @@ export const ServerRadarPreview: React.FC = () => {
   const [commSlotPriority, setCommSlotPriority] = useState<PriorityTier>('normal');
   const [autoJoinServerId, setAutoJoinServerId] = useState<string | null>(null);
   const [autoJoinStatus, setAutoJoinStatus] = useState<string | null>(null);
+  const [slotOpenAlert, setSlotOpenAlert] = useState<{
+    serverName: string;
+    connectUrl: string;
+    curr: number;
+    max: number;
+    hostPort: string;
+  } | null>(null);
 
   const getTargetThreshold = (max: number, tier: PriorityTier) => {
     if (tier === 'vip') return Math.max(1, max - 1);
@@ -177,10 +184,15 @@ export const ServerRadarPreview: React.FC = () => {
     const targetThreshold = getTargetThreshold(max, priority);
 
     if (curr <= targetThreshold) {
-      // Slot open right now! Connect via Steam Game Server immediately
-      dispatchSteamProtocol(`steam://connect/${server.host}:${server.port}`);
-      setAutoJoinStatus(`⚡ Slot open on ${server.name} (${curr}/${max} ≤ ${targetThreshold})! Dispatched Steam connection.`);
-      setTimeout(() => setAutoJoinStatus(null), 3500);
+      // Slot open right now! Present visible Connect Now button without auto-launching
+      setSlotOpenAlert({
+        serverName: server.name,
+        connectUrl: `steam://connect/${server.host}:${server.port}`,
+        curr,
+        max,
+        hostPort: `${server.host}:${server.port}`
+      });
+      setAutoJoinStatus(`⚡ Slot open on ${server.name} (${curr}/${max} ≤ ${targetThreshold})! Click 'Connect Now' above.`);
       return;
     }
 
@@ -204,17 +216,19 @@ export const ServerRadarPreview: React.FC = () => {
       const max = parts[1];
       const targetThreshold = getTargetThreshold(max, priority);
       if (!isNaN(curr) && !isNaN(max) && curr <= targetThreshold) {
-        // OPEN SLOT FOUND! Dispatch Steam Game Server connect
-        dispatchSteamProtocol(`steam://connect/${targetServer.host}:${targetServer.port}`);
+        // OPEN SLOT FOUND! Present prominent 'Connect Now' button (No auto-launch)
+        setSlotOpenAlert({
+          serverName: targetServer.name,
+          connectUrl: `steam://connect/${targetServer.host}:${targetServer.port}`,
+          curr,
+          max,
+          hostPort: `${targetServer.host}:${targetServer.port}`
+        });
         try {
           const origTitle = document.title;
           let count = 0;
           const flashTimer = window.setInterval(() => {
-            if (document.hidden) {
-              document.title = count % 2 === 0 ? `🎯 [SLOT OPEN: ${curr}/${max}] Return to tab to connect!` : origTitle;
-            } else {
-              document.title = count % 2 === 0 ? `🎯 [SLOT OPEN: ${curr}/${max}] CONNECTING!` : origTitle;
-            }
+            document.title = count % 2 === 0 ? `🎯 [SLOT OPEN: ${curr}/${max}] Click Connect Now!` : origTitle;
             count++;
             if (count > 12) {
               clearInterval(flashTimer);
@@ -241,9 +255,8 @@ export const ServerRadarPreview: React.FC = () => {
         } catch {
           // ignore
         }
-        setAutoJoinStatus(`🎯 Open slot detected on ${targetServer.name} (${curr}/${max} ≤ ${targetThreshold})! Dispatched Steam connection. Console: connect ${targetServer.host}:${targetServer.port}`);
+        setAutoJoinStatus(`🎯 Open slot detected on ${targetServer.name} (${curr}/${max} ≤ ${targetThreshold})! Click 'Connect Now' button above.`);
         setAutoJoinServerId(null);
-        setTimeout(() => setAutoJoinStatus(null), 8000);
       }
     }
   }, [telemetry, autoJoinServerId, gflSlotPriority, commSlotPriority]);
@@ -396,6 +409,38 @@ export const ServerRadarPreview: React.FC = () => {
 
   return (
     <section id="server-radar" className="relative w-full max-w-6xl mx-auto px-4 pt-12 pb-28 sm:pb-24 scroll-mt-28">
+      {/* Sniper Open Slot Alert Notification (Zero Auto-Launch - Requires Explicit Click) */}
+      {slotOpenAlert && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-2xl bg-slate-950/95 border-2 border-lime-400 shadow-[0_0_40px_rgba(163,230,53,0.7)] flex flex-wrap items-center justify-between gap-3 backdrop-blur-xl animate-pulse max-w-[90vw] font-code">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🎯</span>
+            <div className="flex flex-col">
+              <span className="text-lime-300 font-bold text-xs uppercase tracking-wider">Slot Open Detected!</span>
+              <span className="text-white text-xs font-semibold">{slotOpenAlert.serverName} ({slotOpenAlert.curr}/{slotOpenAlert.max})</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                dispatchSteamProtocol(slotOpenAlert.connectUrl);
+                setSlotOpenAlert(null);
+              }}
+              className="px-4 py-2 min-h-[44px] rounded-xl bg-gradient-to-r from-lime-400 to-emerald-400 hover:from-lime-300 hover:to-emerald-300 text-slate-950 font-cyber font-extrabold text-xs uppercase shadow transition-all cursor-pointer touch-manipulation flex items-center gap-1.5"
+            >
+              <span>CONNECT NOW</span>
+              <span>➔</span>
+            </button>
+            <button
+              onClick={() => setSlotOpenAlert(null)}
+              className="p-2 min-h-[44px] min-w-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs cursor-pointer touch-manipulation flex items-center justify-center"
+              title="Dismiss slot alert"
+              aria-label="Dismiss slot alert"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 border-b border-lime-500/30 pb-5">
         <div>
@@ -865,14 +910,14 @@ export const ServerRadarPreview: React.FC = () => {
             </button>
             <button
               onClick={() => setSelectedChinaFilter('exg')}
-              title="Filter to EXG Community (EXG 装备服) CS2 Zombie Escape server cluster"
+              title="Filter to EXG CS2 Zombie Escape server cluster"
               className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'exg'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              EXG 社区 ({chinaServers.filter((s) => s.cluster === 'exg').length})
+              EXG ({chinaServers.filter((s) => s.cluster === 'exg').length})
             </button>
             <button
               onClick={() => setSelectedChinaFilter('fys')}
@@ -919,7 +964,7 @@ export const ServerRadarPreview: React.FC = () => {
               93X 社区 ({chinaServers.filter((s) => s.cluster === '93x').length})
             </button>
             <div className="w-full text-[11px] font-sans text-rose-300/80 px-2 pt-1 border-t border-rose-500/20">
-              🇨🇳 <strong>Chinese Community Clusters (Hong Kong & Mainland China):</strong> <strong>EXG</strong> (EXG社区 / 装备服) &bull; <strong>FyS</strong> (风云社 / Feng Yun She) &bull; <strong>UB</strong> (UB社区 / Moe UB) &bull; <strong>ZL</strong> (僵尸乐园 / Zombie Land) &bull; <strong>93X</strong> (93X社区)
+              🇨🇳 <strong>Chinese Community Clusters (Hong Kong & Mainland China):</strong> <strong>EXG</strong> &bull; <strong>FyS</strong> (风云社 / Feng Yun She) &bull; <strong>UB</strong> (UB社区 / Moe UB) &bull; <strong>ZL</strong> (僵尸乐园 / Zombie Land) &bull; <strong>93X</strong> (93X社区)
             </div>
           </div>
         )}
