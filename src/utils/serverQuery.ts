@@ -284,10 +284,16 @@ export function formatMapElapsed(totalSeconds: number): string {
  */
 export function getMapThumbnailUrl(mapName?: string): string {
   if (!mapName || mapName === '-' || mapName === 'Unknown') {
-    return '/images/hero_ze_backdrop.jpg';
+    return '/images/map_placeholder.svg';
   }
   let clean = mapName.trim().toLowerCase();
-  if (clean.endsWith('_p')) clean = clean.slice(0, -2);
+  // Strip workshop path prefix if any (e.g. workshop/12345/ze_map -> ze_map)
+  if (clean.includes('/')) {
+    clean = clean.split('/').pop() || clean;
+  }
+  // Strip version, test, and port suffixes like _p, _v1, _v2, _v3, _a1, _b1, _rc1, _final, _test, _dd_v1
+  clean = clean.replace(/_(?:p|v\d+[\w]*|[a-z]\d+[\w]*|rc\d+|beta\d*|final|test)$/i, '');
+  clean = clean.replace(/_[a-z0-9]+_v\d+$/i, '');
   return `https://zegraph.xyz/thumbnails/medium/730_cs2--${clean}.jpg`;
 }
 

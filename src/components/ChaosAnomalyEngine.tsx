@@ -610,9 +610,6 @@ export const ChaosAnomalyEngine: React.FC = () => {
     <>
       {/* Floating Chaos Trigger Button with WCAG Photosensitivity Notice */}
       <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-1">
-        <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded bg-black/90 border border-amber-400/50 text-[10px] font-sans font-bold text-amber-300 shadow select-none">
-          <span>⚠️ Visual Effects: designed to stay under 3 flashes per second</span>
-        </div>
         <button
           onClick={triggerRandomChaos}
           className="group relative px-4 py-2.5 min-h-[44px] rounded-2xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white font-cyber text-xs font-bold shadow-[0_0_25px_rgba(217,70,239,0.5)] hover:shadow-[0_0_35px_rgba(217,70,239,0.8)] border border-fuchsia-400/60 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-2 touch-manipulation"

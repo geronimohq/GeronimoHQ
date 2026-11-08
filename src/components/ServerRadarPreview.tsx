@@ -81,6 +81,9 @@ export const ServerRadarPreview: React.FC = () => {
 
   const handleOpenConnect = (server: ZEServer, instantIfOpen = false) => {
     setConnectModalServer(server);
+    setSlotWatcherServerId(null);
+    setSlotWatcherStatus(null);
+    setSlotOpenAlert(null);
     if (instantIfOpen) {
       dispatchSteamProtocol(`steam://connect/${server.host}:${server.port}`);
       setConnectScenario('connected');
@@ -181,7 +184,7 @@ export const ServerRadarPreview: React.FC = () => {
       if (!isNaN(parts[1])) max = parts[1];
     }
 
-    const targetThreshold = isGfl ? getTargetThreshold(max, priority) : Math.max(0, max - 1);
+    const targetThreshold = getTargetThreshold(max, priority);
 
     if (curr <= targetThreshold) {
       // Slot open right now! Present visible Connect Now button without auto-launching
@@ -215,7 +218,7 @@ export const ServerRadarPreview: React.FC = () => {
       const parts = live.players.split('/').map((n) => parseInt(n, 10));
       const curr = parts[0];
       const max = parts[1];
-      const targetThreshold = isGfl ? getTargetThreshold(max, priority) : Math.max(0, max - 1);
+      const targetThreshold = getTargetThreshold(max, priority);
       if (!isNaN(curr) && !isNaN(max) && curr <= targetThreshold) {
         // OPEN SLOT FOUND! Present prominent 'Connect Now' button (No auto-launch)
         setSlotOpenAlert({
@@ -425,6 +428,8 @@ export const ServerRadarPreview: React.FC = () => {
               onClick={() => {
                 dispatchSteamProtocol(slotOpenAlert.connectUrl);
                 setSlotOpenAlert(null);
+                setSlotWatcherServerId(null);
+                setSlotWatcherStatus(null);
               }}
               className="px-4 py-2 min-h-[44px] rounded-xl bg-gradient-to-r from-lime-400 to-emerald-400 hover:from-lime-300 hover:to-emerald-300 text-slate-950 font-cyber font-extrabold text-xs uppercase shadow transition-all cursor-pointer touch-manipulation flex items-center gap-1.5"
             >
@@ -525,18 +530,17 @@ export const ServerRadarPreview: React.FC = () => {
               })}
             </div>
 
-            {slotWatcherServerId && (
-              <button
-                onClick={() => {
-                  setSlotWatcherServerId(null);
-                  setSlotWatcherStatus(null);
-                }}
-                className="min-h-[32px] px-3 py-1 rounded-lg bg-amber-900/80 hover:bg-amber-800 text-amber-100 border border-amber-400/50 cursor-pointer text-[10px] uppercase font-bold transition-colors"
-                title="Disarm slot watcher"
-              >
-                Cancel
-              </button>
-            )}
+            <button
+              onClick={() => {
+                setSlotWatcherServerId(null);
+                setSlotWatcherStatus(null);
+                setSlotOpenAlert(null);
+              }}
+              className="min-h-[32px] px-3 py-1 rounded-lg bg-amber-900/80 hover:bg-amber-800 text-amber-100 border border-amber-400/50 cursor-pointer text-[10px] uppercase font-bold transition-colors"
+              title="Disarm and dismiss slot watcher"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
@@ -608,7 +612,13 @@ export const ServerRadarPreview: React.FC = () => {
                   alt={gflMap}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/images/map_placeholder.svg';
+                    const target = e.target as HTMLImageElement;
+                    const currentSrc = target.src;
+                    if (currentSrc.includes('730_cs2--')) {
+                      target.src = currentSrc.replace('730_cs2--', '730--');
+                    } else {
+                      target.src = '/images/map_placeholder.svg';
+                    }
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
@@ -768,8 +778,8 @@ export const ServerRadarPreview: React.FC = () => {
               <Target className={`w-3.5 h-3.5 ${slotWatcherServerId === gflServer.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
               <span>
                 {slotWatcherServerId === gflServer.id
-                  ? '🎯 WATCHING SLOTS (CANCEL)'
-                  : `🎯 WATCH SLOTS (${gflSlotPriority === 'normal' ? '≤61' : gflSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
+                  ? '🎯 AUTO JOINING (CANCEL)'
+                  : `🎯 AUTO JOIN (${gflSlotPriority === 'normal' ? '≤61' : gflSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
               </span>
             </button>
 
@@ -846,6 +856,30 @@ export const ServerRadarPreview: React.FC = () => {
               <Rocket className="w-3.5 h-3.5 text-rose-400 animate-bounce flex-shrink-0" />
               <span className="whitespace-nowrap">PLANET CHINA ({chinaServers.length}) 🇨🇳</span>
             </button>
+          </div>
+
+          {/* Global Community Sniper Target Selector */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-amber-500/30" title="Set slot sniper target player threshold for community servers">
+            <span className="text-[10px] font-code text-amber-400 font-bold flex items-center gap-1">
+              <Target className="w-3.5 h-3.5 text-amber-400" />
+              SNIPER TARGET:
+            </span>
+            <div className="flex items-center gap-1">
+              {(['normal', 'supporter', 'vip'] as PriorityTier[]).map((tier) => (
+                <button
+                  key={tier}
+                  onClick={() => setCommSlotPriority(tier)}
+                  className={`min-h-[32px] px-2 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer touch-manipulation ${
+                    commSlotPriority === tier
+                      ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.4)]'
+                      : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-white'
+                  }`}
+                  title={tier === 'normal' ? 'Set community sniper target to ≤61 players (leaves 3 slots for normal players)' : tier === 'supporter' ? 'Set community sniper target to ≤62 players (leaves 2 slots for supporters)' : 'Set community sniper target to ≤63 players (leaves 1 slot for VIPs)'}
+                >
+                  {tier === 'normal' ? '≤ 61 Players' : tier === 'supporter' ? '≤ 62 Players' : '≤ 63 Players'}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Search Input */}
@@ -1114,7 +1148,7 @@ export const ServerRadarPreview: React.FC = () => {
                 >
                   <Target className={`w-3 h-3 ${slotWatcherServerId === server.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
                   <span className="hidden sm:inline">
-                    {slotWatcherServerId === server.id ? 'ACTIVE' : `WATCH SLOTS`}
+                    {slotWatcherServerId === server.id ? 'ACTIVE' : `AUTO JOIN (${commSlotPriority === 'normal' ? '≤61' : commSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
                   </span>
                 </button>
 
