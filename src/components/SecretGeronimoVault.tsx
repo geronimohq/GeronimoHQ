@@ -14,7 +14,7 @@ import {
   Dices, 
   Gift
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { safeConfetti } from '../utils/motion';
 
 interface SecretGeronimoVaultProps {
   isOpen: boolean;
@@ -386,7 +386,7 @@ export const SecretGeronimoVault: React.FC<SecretGeronimoVaultProps> = ({ isOpen
       playVaultSynth('loot_win');
 
       if (wonItem.tier === 'LEGENDARY' || wonItem.tier === 'MYTHIC') {
-        confetti({
+        safeConfetti({
           particleCount: 100,
           spread: 80,
           origin: { y: 0.6 },

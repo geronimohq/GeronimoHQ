@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import confetti from 'canvas-confetti';
+import { safeConfetti } from '../../utils/motion';
 
 interface DancingPepeProps {
   className?: string;
@@ -19,7 +19,7 @@ export const DancingPepe: React.FC<DancingPepeProps> = ({ className = '', isInsp
     const x = (rect.left + rect.width / 2) / window.innerWidth;
     const y = (rect.top + rect.height / 2) / window.innerHeight;
 
-    confetti({
+    safeConfetti({
       particleCount: 45,
       spread: 70,
       origin: { x, y },

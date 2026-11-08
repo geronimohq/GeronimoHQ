@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
 import { Dices, Trophy, AlertTriangle, ShieldAlert, Radio, Sparkles } from 'lucide-react';
-import canvasConfetti from 'canvas-confetti';
+import { safeConfetti, isReducedMotionPreferred } from '../utils/motion';
 
-const safeConfetti = (opts: any) => {
-  if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    return;
-  }
-  canvasConfetti(opts);
-};
+
 
 interface Achievement {
   title: string;
@@ -967,7 +962,7 @@ export const ChaosAnomalyEngine: React.FC = () => {
       )}
 
       {/* 34. FLASHBANG */}
-      {flashbang && (
+      {flashbang && !isReducedMotionPreferred() && (
         <div className="fixed inset-0 z-50 bg-white/95 transition-opacity duration-1000 flex items-center justify-center animate-fadeOut">
           <div className="text-slate-900 font-cyber font-black text-2xl tracking-widest animate-bounce">
             ⚠️ BLINDED BY TEAMMATE FLASHBANG ⚠️

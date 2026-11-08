@@ -118,7 +118,7 @@ export const ServerRadarPreview: React.FC = () => {
   }, [connectScenario, launchCountdown, connectModalServer]);
   const [showMusicModal, setShowMusicModal] = useState(false);
 
-  // Web Auto Join (Slot Sniper Equivalent for Web) - Fully Independent GFL & Community Priorities
+  // Web Slot Watcher (Slot Sniper Equivalent for Web) - Fully Independent GFL & Community Priorities
   type PriorityTier = 'normal' | 'supporter' | 'vip';
   const [gflSlotPriority, setGflSlotPriority] = useState<PriorityTier>('supporter');
   const [commSlotPriority, setCommSlotPriority] = useState<PriorityTier>('normal');
@@ -196,13 +196,13 @@ export const ServerRadarPreview: React.FC = () => {
       return;
     }
 
-    // Server is full or at priority limit: Arm Auto Join Watcher
+    // Server is full or at priority limit: Arm Slot Watcher
     setAutoJoinServerId(server.id);
     const label = isGfl ? getTierLabel(priority, true) : `≤${targetThreshold} Players`;
-    setAutoJoinStatus(`🎯 Auto Join Armed for ${server.name} (${curr}/${max}). Watching live radar for ${label}...`);
+    setAutoJoinStatus(`🎯 Slot Watcher Armed for ${server.name} (${curr}/${max}). Watching live radar for ${label} — alerts you and presents a Connect button when a slot opens...`);
   };
 
-  // Monitor live telemetry for open slot while Auto Join is armed
+  // Monitor live telemetry for open slot while Slot Watcher is armed
   useEffect(() => {
     if (!autoJoinServerId || !telemetry?.servers) return;
     const targetServer = ZE_SERVERS.find((s) => s.id === autoJoinServerId);
@@ -484,7 +484,7 @@ export const ServerRadarPreview: React.FC = () => {
         </div>
       </div>
 
-      {/* Active Auto Join Live Banner */}
+      {/* Active Slot Watcher Live Banner */}
       {autoJoinStatus && (
         <div className="mb-6 p-4 rounded-xl bg-amber-950/90 border border-amber-400 text-amber-200 text-xs font-code flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-[0_0_25px_rgba(251,191,36,0.3)]">
           <div className="flex items-start gap-2.5 min-w-0">
@@ -492,7 +492,7 @@ export const ServerRadarPreview: React.FC = () => {
             <div>
               <div className="font-bold text-amber-300">{autoJoinStatus}</div>
               <div className="text-[11px] text-amber-200/90 mt-1 font-sans flex items-center gap-1.5">
-                <span className="font-bold text-yellow-300">⚠️ IMPORTANT:</span> Keep this browser tab visible to allow the slot sniper to watch live telemetry and auto-connect when a slot opens (background tabs may be throttled by browsers)!
+                <span className="font-bold text-yellow-300">⚠️ IMPORTANT:</span> Keep this tab active to allow the Slot Watcher to monitor live telemetry. When a slot opens, it rings an audio alert and presents an instant Connect button!
               </div>
             </div>
           </div>
@@ -705,18 +705,18 @@ export const ServerRadarPreview: React.FC = () => {
               </button>
             </div>
 
-            {/* Desktop Slot Sniper & Web Auto Join Instructions Banner */}
+            {/* Desktop Slot Sniper & Web Slot Watcher Instructions Banner */}
             <div className="p-3.5 rounded-xl bg-slate-950/85 border border-slate-800 flex flex-col gap-2 text-xs font-tech text-slate-300">
               <div className="flex items-start gap-2.5">
                 <Zap className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <span>
-                  <strong>Server Full at 64/64?</strong> Before arming <strong>Web Auto Join</strong>, ensure <strong>Counter-Strike 2 is already opened</strong> on your PC so Steam connects you directly to the server. If CS2 is closed, Steam protocol will only launch CS2 to the Main Menu (requiring you to click connect again once loaded).
+                  <strong>Server Full at 64/64?</strong> Arm the <strong>Web Slot Watcher</strong> below. When a player leaves, the radar alerts you with sound/tab notification and displays an instant <strong>Connect Now</strong> button to launch CS2!
                 </span>
               </div>
               <div className="flex items-center gap-2 pl-6 text-[11px] text-fuchsia-300 font-code bg-fuchsia-950/40 p-2 rounded-lg border border-fuchsia-500/30">
                 <Target className="w-3.5 h-3.5 text-fuchsia-400 flex-shrink-0" />
                 <span>
-                  <strong>Pro-Tip:</strong> The <a href="#cs2-command" className="underline text-fuchsia-300 hover:text-white font-bold">CS2 Command Center desktop app</a> includes a <strong>True In-Engine Slot Sniper</strong> that monitors player count via 0.25s UDP and connects directly via CS2 console the exact millisecond a player disconnects!
+                  <strong>Pro-Tip:</strong> The <a href="#cs2-command" className="underline text-fuchsia-300 hover:text-white font-bold">CS2 Command Center desktop app</a> includes a <strong>True In-Engine Slot Sniper</strong> that monitors player count via 0.25s UDP and sends direct console commands the instant a player disconnects!
                 </span>
               </div>
             </div>
@@ -734,7 +734,7 @@ export const ServerRadarPreview: React.FC = () => {
               <span>CONNECT VIA STEAM</span>
             </button>
 
-            {/* GFL Auto Join Slot Priority Tier Selector */}
+            {/* GFL Slot Watcher Priority Tier Selector */}
             <div className="w-full flex items-center justify-between text-[10px] font-code text-slate-400 bg-slate-900/80 px-2 py-1.5 rounded-lg border border-slate-800">
               <span className="text-amber-300 font-bold">GFL Slot Tier:</span>
               <div className="flex items-center gap-1">
@@ -754,7 +754,7 @@ export const ServerRadarPreview: React.FC = () => {
               </div>
             </div>
 
-            {/* Auto Join Watcher (Replaces old instant button) */}
+            {/* Slot Watcher (Replaces old instant button) */}
             <button
               onClick={() => handleToggleAutoJoin(gflServer)}
               className={`w-full px-3 py-1.5 border text-[11px] font-code rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
@@ -762,13 +762,13 @@ export const ServerRadarPreview: React.FC = () => {
                   ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse shadow-[0_0_15px_rgba(251,191,36,0.4)]'
                   : 'bg-slate-900/90 hover:bg-emerald-950/60 border-slate-700 hover:border-emerald-500/70 text-slate-300 hover:text-emerald-300'
               }`}
-              title="Auto Join Slot Watcher:&#10;• If CS2 is OPEN: Connects you directly to the server once player count drops below threshold.&#10;• If CS2 is CLOSED: Steam protocol only opens CS2 to Main Menu (will not join directly). Launch CS2 first, then arm Auto Join!&#10;• Pro-Tip: For 100% automated in-game console sniping that bypasses Steam, use the CS2 Command Center desktop app."
+              title="Slot Watcher:&#10;• Monitors live server telemetry in real-time.&#10;• When player count drops below threshold, alerts you and presents a one-click Connect button (no auto-launch popup).&#10;• For automated in-game console sniping, use the CS2 Command Center desktop companion."
             >
               <Target className={`w-3.5 h-3.5 ${autoJoinServerId === gflServer.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
               <span>
                 {autoJoinServerId === gflServer.id
-                  ? '🎯 AUTO JOIN: ACTIVE (CANCEL)'
-                  : `🎯 AUTO JOIN (${gflSlotPriority === 'normal' ? '≤61' : gflSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
+                  ? '🎯 WATCHING SLOTS (CANCEL)'
+                  : `🎯 WATCH SLOTS (${gflSlotPriority === 'normal' ? '≤61' : gflSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
               </span>
             </button>
 
@@ -872,7 +872,7 @@ export const ServerRadarPreview: React.FC = () => {
               </div>
             </div>
             <span className="text-[10px] font-sans text-amber-200/70">
-              Auto Join Threshold: Normal (≤61 leaves 3 reserve slots) &bull; Supporter (≤62) &bull; VIP (≤63)
+              Slot Watcher Threshold: Normal (≤61 leaves 3 reserve slots) &bull; Supporter (≤62) &bull; VIP (≤63)
             </span>
           </div>
 
@@ -1138,11 +1138,11 @@ export const ServerRadarPreview: React.FC = () => {
                       ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse'
                       : 'bg-slate-900 hover:bg-emerald-950/80 border-slate-700 hover:border-emerald-500 text-slate-300 hover:text-emerald-300'
                   }`}
-                  title={`Auto Join Slot Watcher (Target: ${commSlotPriority === 'normal' ? '≤61 Players' : commSlotPriority === 'supporter' ? '≤62 Players' : '≤63 Players'}):&#10;• If CS2 is OPEN: Connects you directly into the server once player count drops below threshold.&#10;• If CS2 is CLOSED: Steam protocol only opens CS2 to Main Menu (will not join directly). Launch CS2 first, then arm Auto Join!&#10;• Pro-Tip: For 100% automated in-game console sniping that bypasses Steam, use the CS2 Command Center desktop app.`}
+                  title={`Slot Watcher (Target: ${commSlotPriority === 'normal' ? '≤61 Players' : commSlotPriority === 'supporter' ? '≤62 Players' : '≤63 Players'}):&#10;• Alerts you and presents an instant Connect button when a slot opens.`}
                 >
                   <Target className={`w-3 h-3 ${autoJoinServerId === server.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
                   <span className="hidden sm:inline">
-                    {autoJoinServerId === server.id ? 'ACTIVE' : `AUTO JOIN (${commSlotPriority === 'normal' ? '≤61' : commSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
+                    {autoJoinServerId === server.id ? 'ACTIVE' : `WATCH SLOTS (${commSlotPriority === 'normal' ? '≤61' : commSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
                   </span>
                 </button>
 
@@ -1507,7 +1507,7 @@ export const ServerRadarPreview: React.FC = () => {
                       Launching Counter-Strike 2 Cleanly...
                     </h4>
                     <p className="text-xs font-tech text-slate-300 mt-1 max-w-sm mx-auto leading-relaxed">
-                      Dispatched <code className="text-amber-300 font-code">steam://run/730</code>. CS2 is initializing into main menu to bypass the server-full lock. Auto-connecting via Steam Game Server in:
+                      Dispatched <code className="text-amber-300 font-code">steam://run/730</code>. CS2 is initializing into main menu. Ready to connect via Steam Game Server in:
                     </p>
                     <div className="text-4xl font-code font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-lime-300 my-2">
                       {launchCountdown}s

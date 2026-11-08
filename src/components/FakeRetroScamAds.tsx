@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Gift } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { safeConfetti } from '../utils/motion';
 
 interface ScamAdConfig {
   id: string;
@@ -579,7 +579,7 @@ export const FakeRetroScamAds: React.FC = () => {
   };
 
   const handleClaimFinalPrize = () => {
-    confetti({
+    safeConfetti({
       particleCount: 120,
       spread: 100,
       origin: { y: 0.6 },

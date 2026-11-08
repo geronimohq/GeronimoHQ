@@ -364,6 +364,7 @@ def main():
         "iso_time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "total_servers": len(servers),
         "online_servers": sum(1 for r in results.values() if r["online"]),
+        "catalog_targets": sorted(list(set([f"{s['host']}:{s['port']}" for s in servers] + ["rsscs2.kr:27015"]))),
         "gfl_match_now": match_now,
         "gfl_map_musics": map_musics,
         "servers": results

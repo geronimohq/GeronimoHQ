@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import confetti from 'canvas-confetti';
+import { safeConfetti } from '../utils/motion';
 import { Cpu, Download, CheckCircle2, Sparkles, Terminal, RotateCcw, Copy, Check, Gamepad2, Trophy } from 'lucide-react';
 
 interface HardwareTier {
@@ -439,7 +439,7 @@ export const DownloadRamSection: React.FC = () => {
         setStatusLine(finalMsg);
         setLogs((prev) => [...prev, finalMsg]);
 
-        confetti({
+        safeConfetti({
           particleCount: 90,
           spread: 100,
           origin: { y: 0.65 },

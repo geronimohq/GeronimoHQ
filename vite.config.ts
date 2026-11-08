@@ -15,16 +15,24 @@ try {
     calculatedExeHash = crypto.createHash('sha256').update(buf).digest('hex').toUpperCase()
 
     // Safety check: ensure dist/ and public/ binaries have not diverged locally
+    // In CI or fresh checkouts where dist/ does not exist, this check is safely skipped.
     if (fs.existsSync(distExePath)) {
       const distBuf = fs.readFileSync(distExePath)
       const distHash = crypto.createHash('sha256').update(distBuf).digest('hex').toUpperCase()
       if (calculatedExeHash !== distHash) {
         throw new Error(
-          `[EXE_DIVERGENCE_ERROR] Binary divergence detected! ` +
-          `public/ (${calculatedExeHash.slice(0, 8)}...) != dist/ (${distHash.slice(0, 8)}...). ` +
-          `Sync freshly built desktop executable to public/ before web build.`
+          `\n[EXE_DIVERGENCE_ERROR] Binary divergence detected!\n` +
+          `  public/CS2_Command_Center.exe: ${calculatedExeHash}\n` +
+          `  dist/CS2_Command_Center.exe:   ${distHash}\n\n` +
+          `To resolve this mismatch, sync the binary:\n` +
+          `  Windows: copy /Y dist\\CS2_Command_Center.exe public\\CS2_Command_Center.exe\n` +
+          `  Unix:    cp dist/CS2_Command_Center.exe public/CS2_Command_Center.exe\n`
         )
+      } else {
+        console.log(`[BUILD_GUARD] Binary SHA-256 verified match between public/ and dist/ (${calculatedExeHash.slice(0, 8)}...).`)
       }
+    } else {
+      console.log('[BUILD_GUARD] No dist/ binary found (fresh clone / CI build). Skipping binary divergence check.')
     }
   }
 } catch (err: any) {

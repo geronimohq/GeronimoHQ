@@ -278,28 +278,6 @@
 
   <script>
     (function() {
-      // Catalog of verified CS2 Zombie Escape server hosts
-      var CATALOG_HOSTS = {
-        '74.91.124.21': true,     // GFL Clan ZE 24/7
-        '103.62.49.55': true,    // Possession ZE
-        '87.98.228.196': true,   // Mapeadores ZE
-        '178.33.160.187': true,  // cOLa-TeaM ZE
-        '14.5.33.30': true,      // RSS ZE
-        'rsscs2.kr': true,       // RSS Domain
-        '46.174.54.231': true,   // Net4All.ru ZE
-        // EXG Cluster
-        '202.189.10.89': true, '202.189.4.122': true, '202.189.10.208': true, '202.189.5.229': true,
-        '202.189.5.227': true, '202.189.4.230': true, '202.189.10.203': true, '202.189.5.221': true,
-        '202.189.5.225': true, '202.189.10.196': true, '202.189.5.236': true,
-        // FyS Cluster
-        '110.42.9.107': true, '110.42.9.139': true, '110.42.9.155': true, '110.42.9.138': true,
-        // UB Cluster
-        '110.42.9.188': true, '110.42.9.195': true,
-        // ZL Cluster
-        '110.42.9.181': true, '110.42.9.22': true, '110.42.9.149': true,
-        // 93X Cluster
-        '43.142.148.163': true
-      };
 
       var domainMap = {
         'rsscs2.kr': '14.5.33.30:27015',
@@ -389,7 +367,6 @@
       var steamUri = 'steam://connect/' + targetIp;
       connectLinkEl.href = steamUri;
 
-      var isCatalogServer = Object.prototype.hasOwnProperty.call(CATALOG_HOSTS, hostOnly);
       var countdownTimer = null;
 
       window.cancelAutoLaunch = function() {
@@ -401,9 +378,24 @@
         subEl.textContent = 'Automatic launch cancelled. Click the button below when ready to connect.';
       };
 
-      if (isCatalogServer) {
-        // Verified Catalog Server: 3-Second Visual Countdown with Cancel Button
+      function renderUnverifiedWarning() {
+        containerEl.className = 'container unverified-state';
+        badgeEl.className = 'badge unverified-badge';
+        dotEl.className = 'pulse-dot unverified-dot';
+        badgeTextEl.textContent = 'Unverified External Server';
+        ipBoxEl.className = 'ip-box ip-box-unverified';
+        titleEl.textContent = 'External Community Server';
+        subEl.textContent = 'Target host:port is not in the verified live server catalog. Auto-launch is disabled. Confirm you trust this host before connecting.';
+        warningBoxEl.style.display = 'block';
+        countdownBarEl.style.display = 'none';
+      }
+
+      function renderVerifiedCountdown() {
+        containerEl.className = 'container';
+        badgeEl.className = 'badge';
+        dotEl.className = 'pulse-dot';
         badgeTextEl.textContent = 'Verified Catalog Server';
+        warningBoxEl.style.display = 'none';
         countdownBarEl.style.display = 'flex';
         var remainingSeconds = 3;
         countdownTextEl.textContent = 'Connecting in ' + remainingSeconds + 's...';
@@ -422,18 +414,40 @@
             } catch (e) {}
           }
         }, 1000);
-      } else {
-        // Unknown / External Host: ZERO Auto-Launch! Explicit Click Required
-        containerEl.className = 'container unverified-state';
-        badgeEl.className = 'badge unverified-badge';
-        dotEl.className = 'pulse-dot unverified-dot';
-        badgeTextEl.textContent = 'Unverified External Server';
-        ipBoxEl.className = 'ip-box ip-box-unverified';
-        titleEl.textContent = 'External Community Server';
-        subEl.textContent = 'Target server is outside the GeronimoHQ verified directory. Manual confirmation required.';
-        warningBoxEl.style.display = 'block';
-        // Auto-launch strictly disabled!
       }
+
+      // Initial check state
+      subEl.textContent = 'Verifying server against live directory...';
+
+      // Load /data/live_servers.json. If load fails or host:port does not match, require manual click!
+      fetch('/data/live_servers.json')
+        .then(function(res) {
+          if (!res.ok) {
+            throw new Error('HTTP ' + res.status);
+          }
+          return res.json();
+        })
+        .then(function(data) {
+          var catalog = (data && data.catalog_targets) || [];
+          var isMatch = false;
+          var normTarget = targetIp.toLowerCase();
+          for (var i = 0; i < catalog.length; i++) {
+            if (catalog[i].toLowerCase() === normTarget) {
+              isMatch = true;
+              break;
+            }
+          }
+          if (isMatch) {
+            renderVerifiedCountdown();
+          } else {
+            renderUnverifiedWarning();
+          }
+        })
+        .catch(function(err) {
+          // Failed load MUST act as "unknown host" with manual click
+          console.warn('[CONNECT] Failed to load /data/live_servers.json, treating as unknown host:', err);
+          renderUnverifiedWarning();
+        });
 
       window.copyConsoleCommand = function() {
         var cmd = 'connect ' + targetIp;

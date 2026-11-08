@@ -90,8 +90,11 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
     if (voiceMuteBind) {
       const m = (muteKey || 'F8').trim();
       lines.push(
-        '// --- PANIC VOICE CHAT MUTE TOGGLE ---',
-        `bind "${m}" "voice_modenable_toggle"`,
+        '// --- PANIC VOICE CHAT MUTE TOGGLE (CS2 ENGINE VERIFIED) ---',
+        'alias "ze_voice_off" "voice_modenable 0; alias ze_voice_toggle ze_voice_on; echo [ZE] Voice Chat Muted (0)"',
+        'alias "ze_voice_on" "voice_modenable 1; alias ze_voice_toggle ze_voice_off; echo [ZE] Voice Chat Restored (1)"',
+        'alias "ze_voice_toggle" "ze_voice_off"',
+        `bind "${m}" "ze_voice_toggle"`,
         ''
       );
     }

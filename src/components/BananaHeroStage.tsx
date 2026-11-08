@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import confetti from 'canvas-confetti';
+import { safeConfetti } from '../utils/motion';
 import { PhoneCall, Volume2, VolumeX, ExternalLink, Activity, Sparkles } from 'lucide-react';
 
 declare global {
@@ -75,7 +75,7 @@ export const DancingBananaCharacter: React.FC<DancingBananaCharacterProps> = ({
     const x = (rect.left + rect.width / 2) / window.innerWidth;
     const y = (rect.top + rect.height / 2) / window.innerHeight;
 
-    confetti({
+    safeConfetti({
       particleCount: 40,
       spread: 75,
       origin: { x, y },

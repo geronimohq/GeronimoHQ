@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import confetti from 'canvas-confetti';
+import { safeConfetti } from '../utils/motion';
 
 interface RoamingMemeGremlinProps {
   theme: 'pepe' | 'banana';
@@ -129,7 +129,7 @@ export const RoamingMemeGremlin: React.FC<RoamingMemeGremlinProps> = ({ theme, e
     setIsInterrupting(false);
     lastInterruptRef.current = Date.now();
 
-    confetti({
+    safeConfetti({
       particleCount: 25,
       spread: 60,
       origin: {
