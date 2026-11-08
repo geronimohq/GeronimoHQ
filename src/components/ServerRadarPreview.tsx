@@ -6,6 +6,7 @@ import {
   formatMapElapsed, 
   getEstimatedRegionalPing,
   getMapThumbnailUrl,
+  handleMapImageFallback,
   getMap3DViewerUrl,
   type LiveTelemetryPayload, 
   type PlayerEntry 
@@ -83,7 +84,6 @@ export const ServerRadarPreview: React.FC = () => {
     setConnectModalServer(server);
     setSlotWatcherServerId(null);
     setSlotWatcherStatus(null);
-    setSlotOpenAlert(null);
     if (instantIfOpen) {
       dispatchSteamProtocol(`steam://connect/${server.host}:${server.port}`);
       setConnectScenario('connected');
@@ -127,13 +127,6 @@ export const ServerRadarPreview: React.FC = () => {
   const [commSlotPriority, setCommSlotPriority] = useState<PriorityTier>('normal');
   const [slotWatcherServerId, setSlotWatcherServerId] = useState<string | null>(null);
   const [slotWatcherStatus, setSlotWatcherStatus] = useState<string | null>(null);
-  const [slotOpenAlert, setSlotOpenAlert] = useState<{
-    serverName: string;
-    connectUrl: string;
-    curr: number;
-    max: number;
-    hostPort: string;
-  } | null>(null);
 
   const getTargetThreshold = (max: number, tier: PriorityTier) => {
     if (tier === 'vip') return Math.max(1, max - 1);
@@ -187,22 +180,17 @@ export const ServerRadarPreview: React.FC = () => {
     const targetThreshold = getTargetThreshold(max, priority);
 
     if (curr <= targetThreshold) {
-      // Slot open right now! Present visible Connect Now button without auto-launching
-      setSlotOpenAlert({
-        serverName: server.name,
-        connectUrl: `steam://connect/${server.host}:${server.port}`,
-        curr,
-        max,
-        hostPort: `${server.host}:${server.port}`
-      });
-      setSlotWatcherStatus(`⚡ Slot open on ${server.name} (${curr}/${max} ≤ ${targetThreshold})! Click 'Connect Now' above.`);
+      // Slot open right now! Connect via Steam Game Server immediately
+      dispatchSteamProtocol(`steam://connect/${server.host}:${server.port}`);
+      setSlotWatcherStatus(`⚡ Slot open on ${server.name} (${curr}/${max} ≤ ${targetThreshold})! Connecting via Steam protocol...`);
+      setTimeout(() => setSlotWatcherStatus(null), 4000);
       return;
     }
 
-    // Server is full or at priority limit: Arm Slot Watcher
+    // Server is full: Arm Auto Join
     setSlotWatcherServerId(server.id);
     const label = isGfl ? getTierLabel(priority, true) : `≤${targetThreshold} Players`;
-    setSlotWatcherStatus(`🎯 Slot Watcher Armed for ${server.name} (${curr}/${max}). Watching live radar for ${label} — alerts you and presents a Connect button when a slot opens...`);
+    setSlotWatcherStatus(`🎯 Auto Join Armed for ${server.name} (${curr}/${max}). Watching live radar for ${label} — will automatically connect when a slot opens...`);
   };
 
   // Monitor live telemetry for open slot while Slot Watcher is armed
@@ -220,19 +208,13 @@ export const ServerRadarPreview: React.FC = () => {
       const max = parts[1];
       const targetThreshold = getTargetThreshold(max, priority);
       if (!isNaN(curr) && !isNaN(max) && curr <= targetThreshold) {
-        // OPEN SLOT FOUND! Present prominent 'Connect Now' button (No auto-launch)
-        setSlotOpenAlert({
-          serverName: targetServer.name,
-          connectUrl: `steam://connect/${targetServer.host}:${targetServer.port}`,
-          curr,
-          max,
-          hostPort: `${targetServer.host}:${targetServer.port}`
-        });
+        // OPEN SLOT FOUND! Dispatch Steam Game Server connect directly
+        dispatchSteamProtocol(`steam://connect/${targetServer.host}:${targetServer.port}`);
         try {
           const origTitle = document.title;
           let count = 0;
           const flashTimer = window.setInterval(() => {
-            document.title = count % 2 === 0 ? `🎯 [SLOT OPEN: ${curr}/${max}] Click Connect Now!` : origTitle;
+            document.title = count % 2 === 0 ? `🎯 [SLOT OPEN: ${curr}/${max}] CONNECTING!` : origTitle;
             count++;
             if (count > 12) {
               clearInterval(flashTimer);
@@ -259,8 +241,9 @@ export const ServerRadarPreview: React.FC = () => {
         } catch {
           // ignore
         }
-        setSlotWatcherStatus(`🎯 Open slot detected on ${targetServer.name} (${curr}/${max} ≤ ${targetThreshold})! Click 'Connect Now' button above.`);
+        setSlotWatcherStatus(`🎯 Slot open detected on ${targetServer.name} (${curr}/${max} ≤ ${targetThreshold})! Connecting via Steam protocol...`);
         setSlotWatcherServerId(null);
+        setTimeout(() => setSlotWatcherStatus(null), 6000);
       }
     }
   }, [telemetry, slotWatcherServerId, gflSlotPriority, commSlotPriority]);
@@ -413,40 +396,7 @@ export const ServerRadarPreview: React.FC = () => {
 
   return (
     <section id="server-radar" className="relative w-full max-w-6xl mx-auto px-4 pt-12 pb-28 sm:pb-24 scroll-mt-28">
-      {/* Sniper Open Slot Alert Notification (Zero Auto-Launch - Requires Explicit Click) */}
-      {slotOpenAlert && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-2xl bg-slate-950/95 border-2 border-lime-400 shadow-[0_0_40px_rgba(163,230,53,0.7)] flex flex-wrap items-center justify-between gap-3 backdrop-blur-xl animate-pulse max-w-[90vw] font-code">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🎯</span>
-            <div className="flex flex-col">
-              <span className="text-lime-300 font-bold text-xs uppercase tracking-wider">Slot Open Detected!</span>
-              <span className="text-white text-xs font-semibold">{slotOpenAlert.serverName} ({slotOpenAlert.curr}/{slotOpenAlert.max})</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                dispatchSteamProtocol(slotOpenAlert.connectUrl);
-                setSlotOpenAlert(null);
-                setSlotWatcherServerId(null);
-                setSlotWatcherStatus(null);
-              }}
-              className="px-4 py-2 min-h-[44px] rounded-xl bg-gradient-to-r from-lime-400 to-emerald-400 hover:from-lime-300 hover:to-emerald-300 text-slate-950 font-cyber font-extrabold text-xs uppercase shadow transition-all cursor-pointer touch-manipulation flex items-center gap-1.5"
-            >
-              <span>CONNECT NOW</span>
-              <span>➔</span>
-            </button>
-            <button
-              onClick={() => setSlotOpenAlert(null)}
-              className="p-2 min-h-[44px] min-w-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs cursor-pointer touch-manipulation flex items-center justify-center"
-              title="Dismiss slot alert"
-              aria-label="Dismiss slot alert"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 border-b border-lime-500/30 pb-5">
         <div>
@@ -498,7 +448,7 @@ export const ServerRadarPreview: React.FC = () => {
             <div>
               <div className="font-bold text-amber-300">{slotWatcherStatus}</div>
               <div className="text-[11px] text-amber-200/90 mt-1 font-sans flex items-center gap-1.5">
-                <span className="font-bold text-yellow-300">⚠️ IMPORTANT:</span> Keep this tab active to allow the Slot Watcher to monitor live telemetry. When a slot opens, it rings an audio alert and presents an instant Connect button!
+                <span className="font-bold text-yellow-300">⚠️ IMPORTANT:</span> Keep this tab active to allow Auto Join to monitor live telemetry. When a slot opens, it will automatically connect via Steam protocol.
               </div>
             </div>
           </div>
@@ -534,8 +484,7 @@ export const ServerRadarPreview: React.FC = () => {
               onClick={() => {
                 setSlotWatcherServerId(null);
                 setSlotWatcherStatus(null);
-                setSlotOpenAlert(null);
-              }}
+                          }}
               className="min-h-[32px] px-3 py-1 rounded-lg bg-amber-900/80 hover:bg-amber-800 text-amber-100 border border-amber-400/50 cursor-pointer text-[10px] uppercase font-bold transition-colors"
               title="Disarm and dismiss slot watcher"
             >
@@ -611,15 +560,7 @@ export const ServerRadarPreview: React.FC = () => {
                   src={getMapThumbnailUrl(gflMap)} 
                   alt={gflMap}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    const currentSrc = target.src;
-                    if (currentSrc.includes('730_cs2--')) {
-                      target.src = currentSrc.replace('730_cs2--', '730--');
-                    } else {
-                      target.src = '/images/map_placeholder.svg';
-                    }
-                  }}
+                  onError={handleMapImageFallback}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
                 <span className="absolute bottom-1 left-1.5 text-[9px] font-cyber text-fuchsia-300 font-bold drop-shadow uppercase">
@@ -1070,9 +1011,7 @@ export const ServerRadarPreview: React.FC = () => {
                         src={getMapThumbnailUrl(currentMap)} 
                         alt={currentMap} 
                         className="w-full h-full object-cover"
-                        onError={(e) => { 
-                          (e.target as HTMLImageElement).src = '/images/map_placeholder.svg';
-                        }}
+                        onError={handleMapImageFallback}
                       />
                     </div>
                     <div className="flex flex-col min-w-0">
@@ -1739,24 +1678,11 @@ export const ServerRadarPreview: React.FC = () => {
               for interactive 3D map spatial models.
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0 text-[11px] font-code">
-            <a href="https://zegraph.xyz" target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 rounded-lg bg-purple-900/30 hover:bg-purple-900/50 border border-purple-500/40 text-purple-200 transition-colors">
-              ZE Graph ↗
-            </a>
-            <a href="https://maps.cybo.dev" target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 rounded-lg bg-cyan-900/30 hover:bg-cyan-900/50 border border-cyan-500/40 text-cyan-200 transition-colors">
-              Cybo 3D ↗
-            </a>
-          </div>
+
         </div>
       </div>
 
-      {/* Bottom Information Notice */}
-      <div className="mt-8 p-4 rounded-xl bg-slate-950/70 border border-slate-800/80 flex items-center gap-3 text-xs font-tech text-slate-400">
-        <Zap className="w-4 h-4 text-amber-400 flex-shrink-0" />
-        <span>
-          <strong>Direct Steam Connect Protocol:</strong> Clicking <strong>"CONNECT VIA STEAM"</strong> invokes <code className="text-lime-300">steam://connect/IP:PORT</code>, automatically opening Counter-Strike 2 directly into the community server without typing console commands.
-        </span>
-      </div>
+
     </section>
   );
 };

@@ -5,7 +5,7 @@ import {
   formatMapElapsed, 
   getMapStartTime, 
   fetchLiveTelemetry,
-  getMapThumbnailUrl 
+  getMapThumbnailUrl, handleMapImageFallback 
 } from '../utils/serverQuery';
 import { 
   Gamepad2, 
@@ -476,9 +476,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
               src={mapThumbnail} 
               alt={currentMap} 
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/images/hero_ze_backdrop.jpg';
-              }}
+              onError={handleMapImageFallback}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
             <span className="absolute bottom-0.5 left-1 text-[8px] font-cyber text-fuchsia-300 font-bold uppercase drop-shadow">

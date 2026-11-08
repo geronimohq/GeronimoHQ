@@ -171,6 +171,8 @@ export const App: React.FC = () => {
         gremlinEnabled={gremlinEnabled}
         onToggleGremlin={() => setGremlinEnabled((prev) => !prev)}
       />
+      {/* Fixed Navbar Spacer to ensure hero content never clips underneath */}
+      <div className="h-16 md:h-18 w-full flex-shrink-0 pointer-events-none" aria-hidden="true" />
 
       {/* Smooth Theme Transition Toast Notification */}
       {transitionBanner && (

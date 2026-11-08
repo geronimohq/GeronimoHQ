@@ -280,7 +280,8 @@ export function formatMapElapsed(totalSeconds: number): string {
 }
 
 /**
- * Returns the CDN thumbnail image URL for a given CS2 Zombie Escape map from zegraph.xyz.
+ * Returns the primary CDN thumbnail image URL for a given CS2 Zombie Escape map from zegraph.xyz.
+ * Preserves the actual map name while stripping any workshop directory prefixes.
  */
 export function getMapThumbnailUrl(mapName?: string): string {
   if (!mapName || mapName === '-' || mapName === 'Unknown') {
@@ -291,10 +292,35 @@ export function getMapThumbnailUrl(mapName?: string): string {
   if (clean.includes('/')) {
     clean = clean.split('/').pop() || clean;
   }
-  // Strip version, test, and port suffixes like _p, _v1, _v2, _v3, _a1, _b1, _rc1, _final, _test, _dd_v1
-  clean = clean.replace(/_(?:p|v\d+[\w]*|[a-z]\d+[\w]*|rc\d+|beta\d*|final|test)$/i, '');
-  clean = clean.replace(/_[a-z0-9]+_v\d+$/i, '');
   return `https://zegraph.xyz/thumbnails/medium/730_cs2--${clean}.jpg`;
+}
+
+/**
+ * Universal multi-prefix error cascade for zegraph.xyz map thumbnails:
+ * 1. 730_cs2--<map>.jpg (standard CS2 release)
+ * 2. workshop--<map>.jpg (CS2 community workshop maps, e.g. zm_dust_v3, ze_scp, ze_obj_blue_depth)
+ * 3. 730_cs2--<stripped>.jpg (stripped _p / version suffix, e.g. ze_fapescape_rote)
+ * 4. 730--<map>.jpg (legacy CS:GO archive)
+ * 5. /images/map_placeholder.svg (sleek fallback placeholder)
+ */
+export function handleMapImageFallback(e: React.SyntheticEvent<HTMLImageElement, Event>) {
+  const target = e.target as HTMLImageElement;
+  const currentSrc = target.src;
+  if (currentSrc.includes('730_cs2--')) {
+    target.src = currentSrc.replace('730_cs2--', 'workshop--');
+  } else if (currentSrc.includes('workshop--')) {
+    const match = currentSrc.match(/workshop--(.+?)\.jpg$/);
+    if (match && /_(?:p|v\d+[\w]*|[a-z]\d+[\w]*|rc\d+|beta\d*|final|test)$/i.test(match[1])) {
+      const stripped = match[1].replace(/_(?:p|v\d+[\w]*|[a-z]\d+[\w]*|rc\d+|beta\d*|final|test)$/i, '');
+      target.src = currentSrc.replace(`workshop--${match[1]}.jpg`, `730_cs2--${stripped}.jpg`);
+    } else {
+      target.src = currentSrc.replace('workshop--', '730--');
+    }
+  } else if (currentSrc.includes('730--')) {
+    target.src = '/images/map_placeholder.svg';
+  } else {
+    target.src = '/images/map_placeholder.svg';
+  }
 }
 
 /**
