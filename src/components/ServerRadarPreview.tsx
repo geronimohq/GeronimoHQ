@@ -1049,8 +1049,17 @@ export const ServerRadarPreview: React.FC = () => {
                           {commMapTier.badge}
                         </span>
                       </div>
-                      <div className="text-[10px] font-code text-slate-400 truncate max-w-[160px] flex items-center gap-1">
-                        <span>🔨 {commMapTier.mapper}</span>
+                      {/* Prominent Mapper Attribution Badge */}
+                      <div className="text-[10px] font-code text-slate-400 flex items-center gap-1">
+                        <span className="px-1.5 py-0.5 rounded bg-slate-950/90 border border-slate-800 text-slate-300 flex items-center gap-1 shadow-sm">
+                          <span>🔨 by:</span>
+                          <strong className="text-amber-300 font-bold">{commMapTier.mapper}</strong>
+                          {commMapTier.isHallOfFameMapper && (
+                            <span className="text-[8px] px-1 py-0.1 rounded bg-amber-950 text-amber-300 border border-amber-500/50 font-bold flex items-center gap-0.5" title="Legendary Mapper (Hall of Fame)">
+                              👑 HoF
+                            </span>
+                          )}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-cyan-300 text-[10px] font-bold bg-cyan-950/80 px-1.5 py-0.2 rounded border border-cyan-500/30 flex items-center gap-0.5">
@@ -1193,6 +1202,57 @@ export const ServerRadarPreview: React.FC = () => {
           </p>
         </div>
       )}
+
+      {/* ==================================================================== */}
+      {/* COMMUNITY DATA ATTRIBUTION & LEGAL DISCLAIMERS                       */}
+      {/* ==================================================================== */}
+      <div className="mt-8 p-5 rounded-2xl bg-slate-950/80 border border-slate-800/80 backdrop-blur-md shadow-sm">
+        <div className="flex items-center gap-2 text-cyan-300 font-cyber font-bold text-xs mb-3 tracking-wider">
+          <Shield className="w-4 h-4 text-cyan-400" />
+          <span>COMMUNITY ATTRIBUTION &amp; LEGAL DISCLAIMERS</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] font-tech text-slate-400 leading-relaxed">
+          <div className="space-y-1.5 p-3 rounded-xl bg-slate-900/40 border border-slate-800/60">
+            <div className="font-bold text-slate-200 flex items-center gap-1.5">
+              <span>🎮</span>
+              <span>Valve Corporation Disclaimer</span>
+            </div>
+            <p>
+              Counter-Strike, CS2, Steam, and the Steam logo are trademarks and/or registered trademarks of Valve Corporation. GeronimoHQ is an independent, non-commercial hobbyist project and is not affiliated with, sponsored, or endorsed by Valve Corporation.
+            </p>
+          </div>
+
+          <div className="space-y-1.5 p-3 rounded-xl bg-slate-900/40 border border-slate-800/60">
+            <div className="font-bold text-slate-200 flex items-center gap-1.5">
+              <span>🌐</span>
+              <span>cybo Telemetry &amp; 3D Engine</span>
+            </div>
+            <p>
+              Live server telemetry enrichment, round scoring, custom soundtrack indexing, and 3D interactive map models are powered by APIs and services created by cybo (<a href="https://zegraph.xyz" target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline">zegraph.xyz</a> &bull; <a href="https://maps.cybo.dev" target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline">maps.cybo.dev</a>).
+            </p>
+          </div>
+
+          <div className="space-y-1.5 p-3 rounded-xl bg-slate-900/40 border border-slate-800/60">
+            <div className="font-bold text-slate-200 flex items-center gap-1.5">
+              <span>🏰</span>
+              <span>Community Server Clans &amp; Mappers</span>
+            </div>
+            <p>
+              Server telemetry and connectivity are provided through the courtesy of GFL Clan, Possession (PSE), Mapeadores, c0La-Team, RSS, EXG, FyS, Moe UB, ZL, and 93X. All Zombie Escape maps, custom models, and soundtracks remain the intellectual property of their respective creators.
+            </p>
+          </div>
+
+          <div className="space-y-1.5 p-3 rounded-xl bg-slate-900/40 border border-slate-800/60">
+            <div className="font-bold text-slate-200 flex items-center gap-1.5">
+              <span>📊</span>
+              <span>Competitive Statistics &amp; Records</span>
+            </div>
+            <p>
+              Leaderboard metrics and speedrun logs are compiled from public community data sources including GFL HLstatsX, s2ze.com (Ruby Bot), cs2ze.org (NERV PR), and verified community video records.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* ==================================================================== */}
       {/* LIVE PLAYERS ROSTER MODAL                                            */}

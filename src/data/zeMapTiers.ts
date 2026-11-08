@@ -12,58 +12,20 @@ export interface MapTierData {
   isUntiered?: boolean;
 }
 
-export const ZE_MAP_TIERS_REGISTRY: Record<string, { tier: MapDifficultyTier; tierLabel: string; badge: string; colorClass: string; mapper: string; isHallOfFame?: boolean }> = {
+export const ZE_MAP_TIERS_REGISTRY: Record<
+  string,
+  {
+    tier: MapDifficultyTier;
+    tierLabel: string;
+    badge: string;
+    colorClass: string;
+    mapper: string;
+    isHallOfFame?: boolean;
+  }
+> = {
   // ==========================================
-  // TIER 5 / TIER 6: NIGHTMARE & LASER HELL
+  // TIER 6: HELL & MYTHIC ENDURANCE MARATHONS
   // ==========================================
-  'ze_ffvii_mako_reactor': {
-    tier: 5,
-    tierLabel: 'Nightmare',
-    badge: '🔥 T5 Nightmare',
-    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
-    mapper: 'Kaemon & Hannibal',
-    isHallOfFame: true,
-  },
-  'ze_ffvii_mako_reactor_v6': {
-    tier: 5,
-    tierLabel: 'Nightmare',
-    badge: '🔥 T5 Nightmare',
-    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
-    mapper: 'Kaemon & Hannibal',
-    isHallOfFame: true,
-  },
-  'ze_ffxii_westersand': {
-    tier: 5,
-    tierLabel: 'Nightmare',
-    badge: '🔥 T5 Nightmare',
-    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
-    mapper: 'Kaemon',
-    isHallOfFame: true,
-  },
-  'ze_deadcore': {
-    tier: 5,
-    tierLabel: 'Nightmare',
-    badge: '🔥 T5 Nightmare',
-    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
-    mapper: 'Airvulpes',
-    isHallOfFame: true,
-  },
-  'ze_santassination': {
-    tier: 5,
-    tierLabel: 'Nightmare',
-    badge: '🔥 T5 Nightmare',
-    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
-    mapper: 'Luffaren',
-    isHallOfFame: true,
-  },
-  'ze_mist': {
-    tier: 5,
-    tierLabel: 'Nightmare',
-    badge: '🔥 T5 Nightmare',
-    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
-    mapper: 'Airvulpes',
-    isHallOfFame: true,
-  },
   'ze_fapescape_rote': {
     tier: 6,
     tierLabel: 'Hell',
@@ -98,7 +60,91 @@ export const ZE_MAP_TIERS_REGISTRY: Record<string, { tier: MapDifficultyTier; ti
   },
 
   // ==========================================
-  // TIER 4: HARDCORE / BOSS GAUNTLETS
+  // TIER 5: NIGHTMARE & LASER BOSS FINALES
+  // ==========================================
+  'ze_ffvii_mako_reactor': {
+    tier: 5,
+    tierLabel: 'Nightmare',
+    badge: '🔥 T5 Nightmare',
+    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
+    mapper: 'Kaemon & Hannibal',
+    isHallOfFame: true,
+  },
+  'ze_ffvii_mako_reactor_v6': {
+    tier: 5,
+    tierLabel: 'Nightmare',
+    badge: '🔥 T5 Nightmare',
+    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
+    mapper: 'Kaemon & Hannibal',
+    isHallOfFame: true,
+  },
+  'ze_ffxii_westersand': {
+    tier: 5,
+    tierLabel: 'Nightmare',
+    badge: '🔥 T5 Nightmare',
+    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
+    mapper: 'Kaemon',
+    isHallOfFame: true,
+  },
+  'ze_deadcore': {
+    tier: 5,
+    tierLabel: 'Nightmare',
+    badge: '🔥 T5 Nightmare',
+    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
+    mapper: 'Airvulpes',
+    isHallOfFame: true,
+  },
+  'ze_sandstorm': {
+    tier: 5,
+    tierLabel: 'Nightmare',
+    badge: '🔥 T5 Nightmare',
+    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
+    mapper: 'Airvulpes',
+    isHallOfFame: true,
+  },
+  'ze_serpentis_temple': {
+    tier: 5,
+    tierLabel: 'Nightmare',
+    badge: '🔥 T5 Nightmare',
+    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
+    mapper: 'Kaemon & Subzero',
+    isHallOfFame: true,
+  },
+  'ze_santassination': {
+    tier: 5,
+    tierLabel: 'Nightmare',
+    badge: '🔥 T5 Nightmare',
+    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
+    mapper: 'Luffaren',
+    isHallOfFame: true,
+  },
+  'ze_mist': {
+    tier: 5,
+    tierLabel: 'Nightmare',
+    badge: '🔥 T5 Nightmare',
+    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
+    mapper: 'Airvulpes',
+    isHallOfFame: true,
+  },
+  'ze_obj_npst': {
+    tier: 5,
+    tierLabel: 'Nightmare',
+    badge: '🔥 T5 Nightmare',
+    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
+    mapper: 'Clown',
+    isHallOfFame: true,
+  },
+  'ze_obf_npst': {
+    tier: 5,
+    tierLabel: 'Nightmare',
+    badge: '🔥 T5 Nightmare',
+    colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]',
+    mapper: 'Clown',
+    isHallOfFame: true,
+  },
+
+  // ==========================================
+  // TIER 4: HARDCORE / MULTI-PHASE BOSS
   // ==========================================
   'ze_dark_souls': {
     tier: 4,
@@ -106,6 +152,30 @@ export const ZE_MAP_TIERS_REGISTRY: Record<string, { tier: MapDifficultyTier; ti
     badge: '🔴 T4 Hardcore',
     colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]',
     mapper: 'Tsubasa',
+    isHallOfFame: true,
+  },
+  'ze_dystopia': {
+    tier: 4,
+    tierLabel: 'Hardcore',
+    badge: '🔴 T4 Hardcore',
+    colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]',
+    mapper: 'Airvulpes',
+    isHallOfFame: true,
+  },
+  'ze_ffvii_cosmo_canyon': {
+    tier: 4,
+    tierLabel: 'Hardcore',
+    badge: '🔴 T4 Hardcore',
+    colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]',
+    mapper: 'HeadFox & Hannibal',
+    isHallOfFame: true,
+  },
+  'ze_ffxii_feywood': {
+    tier: 4,
+    tierLabel: 'Hardcore',
+    badge: '🔴 T4 Hardcore',
+    colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]',
+    mapper: 'Misaka',
     isHallOfFame: true,
   },
   'ze_lotr_minas_tirith': {
@@ -117,6 +187,14 @@ export const ZE_MAP_TIERS_REGISTRY: Record<string, { tier: MapDifficultyTier; ti
     isHallOfFame: true,
   },
   'ze_predator_ultimate': {
+    tier: 4,
+    tierLabel: 'Hardcore',
+    badge: '🔴 T4 Hardcore',
+    colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]',
+    mapper: 'Billy',
+    isHallOfFame: true,
+  },
+  'ze_alien_vs_predator': {
     tier: 4,
     tierLabel: 'Hardcore',
     badge: '🔴 T4 Hardcore',
@@ -148,11 +226,43 @@ export const ZE_MAP_TIERS_REGISTRY: Record<string, { tier: MapDifficultyTier; ti
     mapper: 'Moltard & GFL Team',
     isHallOfFame: true,
   },
+  'ze_starwars_v2': {
+    tier: 4,
+    tierLabel: 'Hardcore',
+    badge: '🔴 T4 Hardcore',
+    colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]',
+    mapper: 'Tsubasa',
+    isHallOfFame: true,
+  },
+  'ze_naruto': {
+    tier: 4,
+    tierLabel: 'Hardcore',
+    badge: '🔴 T4 Hardcore',
+    colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]',
+    mapper: 'Tsubasa',
+    isHallOfFame: true,
+  },
 
   // ==========================================
   // TIER 3: TACTICAL ESCORT & MATERIA
   // ==========================================
   'ze_pirates_port_royal': {
+    tier: 3,
+    tierLabel: 'Tactical',
+    badge: '🟠 T3 Tactical',
+    colorClass: 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.25)]',
+    mapper: 'Puklica',
+    isHallOfFame: true,
+  },
+  'ze_potc': {
+    tier: 3,
+    tierLabel: 'Tactical',
+    badge: '🟠 T3 Tactical',
+    colorClass: 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.25)]',
+    mapper: 'Puklica',
+    isHallOfFame: true,
+  },
+  'ze_portal_story': {
     tier: 3,
     tierLabel: 'Tactical',
     badge: '🟠 T3 Tactical',
@@ -192,6 +302,46 @@ export const ZE_MAP_TIERS_REGISTRY: Record<string, { tier: MapDifficultyTier; ti
     mapper: 'Moltard',
     isHallOfFame: true,
   },
+  'ze_tilex_escape': {
+    tier: 3,
+    tierLabel: 'Tactical',
+    badge: '🟠 T3 Tactical',
+    colorClass: 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.25)]',
+    mapper: 'Moltard',
+    isHallOfFame: true,
+  },
+  'ze_paper_escaper': {
+    tier: 3,
+    tierLabel: 'Tactical',
+    badge: '🟠 T3 Tactical',
+    colorClass: 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.25)]',
+    mapper: 'Moltard',
+    isHallOfFame: true,
+  },
+  'ze_stalker_corridor': {
+    tier: 3,
+    tierLabel: 'Tactical',
+    badge: '🟠 T3 Tactical',
+    colorClass: 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.25)]',
+    mapper: 'Kawa',
+    isHallOfFame: false,
+  },
+  'ze_undertale': {
+    tier: 3,
+    tierLabel: 'Tactical',
+    badge: '🟠 T3 Tactical',
+    colorClass: 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.25)]',
+    mapper: 'Tsubasa',
+    isHallOfFame: true,
+  },
+  'ze_rtcw_ominous_rumor': {
+    tier: 3,
+    tierLabel: 'Tactical',
+    badge: '🟠 T3 Tactical',
+    colorClass: 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.25)]',
+    mapper: 'Tsubasa',
+    isHallOfFame: true,
+  },
 
   // ==========================================
   // TIER 2: CASUAL ESCORT & SURF
@@ -227,6 +377,30 @@ export const ZE_MAP_TIERS_REGISTRY: Record<string, { tier: MapDifficultyTier; ti
     colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]',
     mapper: 'Puklica',
     isHallOfFame: true,
+  },
+  'ze_biohazard2_sewer': {
+    tier: 2,
+    tierLabel: 'Casual',
+    badge: '🟡 T2 Casual',
+    colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]',
+    mapper: 'DarkerZ',
+    isHallOfFame: false,
+  },
+  'ze_mirrors_edge': {
+    tier: 2,
+    tierLabel: 'Casual',
+    badge: '🟡 T2 Casual',
+    colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]',
+    mapper: 'DarkerZ',
+    isHallOfFame: false,
+  },
+  'ze_l4d2_c1m1_hotel': {
+    tier: 2,
+    tierLabel: 'Casual',
+    badge: '🟡 T2 Casual',
+    colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]',
+    mapper: 'Valve / Community',
+    isHallOfFame: false,
   },
   'ze_sky_athletic': {
     tier: 2,
@@ -272,6 +446,38 @@ export const ZE_MAP_TIERS_REGISTRY: Record<string, { tier: MapDifficultyTier; ti
     mapper: 'Community Classic',
     isHallOfFame: false,
   },
+  'ze_sorrento_escape': {
+    tier: 1,
+    tierLabel: 'Warmup',
+    badge: '🟢 T1 Warmup',
+    colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
+    mapper: 'Community Classic',
+    isHallOfFame: false,
+  },
+  'ze_panic_escape': {
+    tier: 1,
+    tierLabel: 'Warmup',
+    badge: '🟢 T1 Warmup',
+    colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
+    mapper: 'Community Classic',
+    isHallOfFame: false,
+  },
+  'ze_atix_extinction': {
+    tier: 1,
+    tierLabel: 'Warmup',
+    badge: '🟢 T1 Warmup',
+    colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
+    mapper: 'Community Classic',
+    isHallOfFame: false,
+  },
+  'ze_jurassicpark': {
+    tier: 1,
+    tierLabel: 'Warmup',
+    badge: '🟢 T1 Warmup',
+    colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
+    mapper: 'Community Classic',
+    isHallOfFame: false,
+  },
 };
 
 /**
@@ -296,7 +502,7 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
   if (clean.includes('/')) {
     clean = clean.split('/').pop() || clean;
   }
-  // Strip common suffixes: _p, _v6, _rc1, etc.
+  // Strip common suffixes: _p, _v6, _v5_6, _rc1, _final, etc.
   const stripped = clean.replace(/_(?:p|v\d+[\w]*|[a-z]\d+[\w]*|rc\d+|beta\d*|final|test)$/i, '');
 
   // 1. Direct registry lookup (either exact clean or stripped)
@@ -317,7 +523,7 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
 
   // 2. Keyword Substring Match (e.g. "ze_mako_v5" matching "ze_ffvii_mako_reactor")
   for (const [key, reg] of Object.entries(ZE_MAP_TIERS_REGISTRY)) {
-    if (clean.includes(key) || key.includes(clean)) {
+    if (clean.includes(key) || key.includes(clean) || stripped.includes(key) || key.includes(stripped)) {
       return {
         mapKey: clean,
         displayName: mapName,
@@ -341,7 +547,7 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
       tierLabel: 'Warmup',
       badge: '🟢 T1 Warmup',
       colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
-      mapper: 'Community Workshop',
+      mapper: 'Community Classic',
       isUntiered: false,
     };
   }

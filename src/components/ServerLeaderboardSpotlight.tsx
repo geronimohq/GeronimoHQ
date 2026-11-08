@@ -7,8 +7,9 @@ import {
   ChevronDown, 
   ChevronUp, 
   ShieldCheck, 
-  Flame,
-  Award
+  Award,
+  Globe,
+  Shield
 } from 'lucide-react';
 import { 
   TOP_PLAYERS_OF_THE_MONTH, 
@@ -97,7 +98,7 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
                 {TOP_PLAYERS_OF_THE_MONTH.map((p) => (
                   <div
                     key={p.rank}
-                    className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col justify-between group"
+                    className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col justify-between group shadow-sm"
                   >
                     <div>
                       {/* Top Rank Header */}
@@ -115,9 +116,15 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
                       </div>
 
                       {/* Specialty Title */}
-                      <div className="text-[11px] font-code text-cyan-300/90 flex items-center gap-1 mb-2.5">
+                      <div className="text-[11px] font-code text-cyan-300/90 flex items-center gap-1 mb-1.5">
                         <Zap className="w-3 h-3 text-cyan-400 flex-shrink-0" />
                         <span className="truncate">{p.specialtyTitle}</span>
+                      </div>
+
+                      {/* Source attribution tag */}
+                      <div className="text-[9px] font-code text-slate-500 mb-2 flex items-center gap-1">
+                        <Globe className="w-2.5 h-2.5 text-slate-600" />
+                        <span>Source: {p.source}</span>
                       </div>
                     </div>
 
@@ -143,11 +150,11 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
                 <span className="hidden sm:inline text-amber-300/80">Season 2026-11 Records</span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {FASTEST_MAP_CLEARS.map((c) => (
                   <div
                     key={c.id}
-                    className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col justify-between group"
+                    className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col justify-between group shadow-sm"
                   >
                     <div>
                       {/* Map Title & Clear Time */}
@@ -162,14 +169,14 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
                         </div>
 
                         {/* Speedrun Time Pill */}
-                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 font-code font-bold text-xs shadow-[0_0_10px_rgba(16,185,129,0.25)] flex-shrink-0">
+                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 font-code font-bold text-xs shadow-[0_0_10px_rgba(16,185,129,0.25)] flex-shrink-0">
                           <Timer className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
                           <span>{c.clearTime}</span>
                         </div>
                       </div>
 
                       {/* Tier Badge & Clan */}
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                      <div className="flex items-center gap-2 flex-wrap mb-1.5">
                         <span className={`text-[10px] font-code px-2 py-0.5 rounded border font-bold ${c.tierColor}`}>
                           {c.tierBadge}
                         </span>
@@ -177,13 +184,19 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
                           by <strong className="text-slate-300">{c.clanName}</strong>
                         </span>
                       </div>
+
+                      {/* Source tag */}
+                      <div className="text-[9px] font-code text-slate-500 mb-2 flex items-center gap-1">
+                        <Globe className="w-2.5 h-2.5 text-slate-600" />
+                        <span>Source: {c.recordSource}</span>
+                      </div>
                     </div>
 
                     {/* Footer Info */}
                     <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[11px] font-code text-slate-400">
                       <div className="flex items-center gap-1 text-slate-300">
                         <Users className="w-3 h-3 text-cyan-400" />
-                        <span>{c.survivorsCount} Humans Survived</span>
+                        <span>{c.survivorsCount} Survived</span>
                       </div>
                       <span className="text-slate-500">{c.date}</span>
                     </div>
@@ -193,12 +206,17 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
             </div>
           )}
 
-          {/* Footer Note */}
-          <div className="mt-4 pt-3 border-t border-slate-800/80 text-[11px] font-sans text-slate-500 flex items-center gap-1.5">
-            <Flame className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-            <span>
-              Community records synchronized from monthly community scrims, s2ze Ruby Bot logs, and NERV CS2ZE season archives.
-            </span>
+          {/* Detailed Data Sources & Disclaimers Footer */}
+          <div className="mt-4 pt-3 border-t border-slate-800/80 text-[11px] font-sans text-slate-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-slate-300">
+              <Shield className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+              <span>
+                <strong>Data Sources &amp; Disclaimers:</strong> Aggregated from public community records across <strong>GFL HLstatsX</strong>, <strong>s2ze Ruby Bot</strong>, <strong>cs2ze.org (NERV PR)</strong>, and verified community speedrun archives.
+              </span>
+            </div>
+            <div className="text-[10px] font-code text-slate-500 flex items-center gap-2 flex-shrink-0">
+              <span>All trademarks belong to their respective owners</span>
+            </div>
           </div>
         </div>
       )}

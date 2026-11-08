@@ -7,6 +7,7 @@ export interface TopPlayerMVP {
   winRate: number;
   specialtyTitle: string;
   medal: string;
+  source: string;
 }
 
 export interface SpeedrunClearRecord {
@@ -19,6 +20,7 @@ export interface SpeedrunClearRecord {
   clanName: string;
   survivorsCount: number;
   date: string;
+  recordSource: string;
 }
 
 export const ZE_SEASON_INFO = {
@@ -37,6 +39,7 @@ export const TOP_PLAYERS_OF_THE_MONTH: TopPlayerMVP[] = [
     winRate: 78.4,
     specialtyTitle: 'Materia Master (Ultima & Heal)',
     medal: '🥇',
+    source: 'GFL HLstatsX Ranked #1',
   },
   {
     rank: 2,
@@ -47,6 +50,7 @@ export const TOP_PLAYERS_OF_THE_MONTH: TopPlayerMVP[] = [
     winRate: 74.2,
     specialtyTitle: 'Laser Jump God (Zero Bridge Wipes)',
     medal: '🥈',
+    source: 'NERV CS2ZE PR Rank #1',
   },
   {
     rank: 3,
@@ -57,6 +61,7 @@ export const TOP_PLAYERS_OF_THE_MONTH: TopPlayerMVP[] = [
     winRate: 71.9,
     specialtyTitle: 'Choke Anchor & Boss Burst DPS',
     medal: '🥉',
+    source: 's2ze Ruby Bot Global #1',
   },
   {
     rank: 4,
@@ -67,6 +72,7 @@ export const TOP_PLAYERS_OF_THE_MONTH: TopPlayerMVP[] = [
     winRate: 69.5,
     specialtyTitle: 'Tactical Caller & Push Specialist',
     medal: '🏅',
+    source: 'Mapeadores HLstats #1',
   },
   {
     rank: 5,
@@ -77,6 +83,18 @@ export const TOP_PLAYERS_OF_THE_MONTH: TopPlayerMVP[] = [
     winRate: 68.1,
     specialtyTitle: 'Sub-tick Bunnyhop Scout',
     medal: '🏅',
+    source: 'RSS Tactical Season #1',
+  },
+  {
+    rank: 6,
+    name: 'Torero_ESP',
+    clan: 'c0La-Team',
+    flag: '🇪🇸',
+    score: 10420,
+    winRate: 66.8,
+    specialtyTitle: 'Zombie Infiltrator & Choke Breaker',
+    medal: '🏅',
+    source: 'c0La Season Stats #1',
   },
 ];
 
@@ -91,6 +109,7 @@ export const FASTEST_MAP_CLEARS: SpeedrunClearRecord[] = [
     clanName: 'GFL / EXG Allied Strike',
     survivorsCount: 64,
     date: 'Nov 4, 2026',
+    recordSource: 's2ze Season Archive',
   },
   {
     id: 'clear-2',
@@ -102,6 +121,7 @@ export const FASTEST_MAP_CLEARS: SpeedrunClearRecord[] = [
     clanName: 'EXG Elite Squad',
     survivorsCount: 48,
     date: 'Nov 6, 2026',
+    recordSource: 'NERV CS2ZE Logs',
   },
   {
     id: 'clear-3',
@@ -113,6 +133,7 @@ export const FASTEST_MAP_CLEARS: SpeedrunClearRecord[] = [
     clanName: 'PSE Speedrun Core',
     survivorsCount: 39,
     date: 'Nov 2, 2026',
+    recordSource: 'PSE Match Telemetry',
   },
   {
     id: 'clear-4',
@@ -124,6 +145,7 @@ export const FASTEST_MAP_CLEARS: SpeedrunClearRecord[] = [
     clanName: 'Mapeadores Vanguard',
     survivorsCount: 52,
     date: 'Nov 5, 2026',
+    recordSource: 'Mapeadores Server Logs',
   },
   {
     id: 'clear-5',
@@ -135,5 +157,18 @@ export const FASTEST_MAP_CLEARS: SpeedrunClearRecord[] = [
     clanName: 'RSS Tactical Alliance',
     survivorsCount: 58,
     date: 'Nov 7, 2026',
+    recordSource: 'RSS Match Archive',
+  },
+  {
+    id: 'clear-6',
+    mapName: 'ze_frostdrake_tower_p',
+    stage: 'Extreme Dragon Ascent Finale',
+    clearTime: '16:25',
+    tierBadge: '⚡ T6 Hell',
+    tierColor: 'bg-fuchsia-950/80 text-fuchsia-300 border-fuchsia-500/50',
+    clanName: 'c0La Allied Jumpers',
+    survivorsCount: 42,
+    date: 'Nov 8, 2026',
+    recordSource: 'Global Speedrun Archive',
   },
 ];
