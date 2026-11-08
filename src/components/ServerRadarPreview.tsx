@@ -865,7 +865,7 @@ export const ServerRadarPreview: React.FC = () => {
             </button>
             <button
               onClick={() => setSelectedChinaFilter('exg')}
-              title="Filter to EXG Clan (Edge Gamers) CS2 Zombie Escape server cluster"
+              title="Filter to EXG Community (EXG 装备服) CS2 Zombie Escape server cluster"
               className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'exg'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
@@ -898,7 +898,7 @@ export const ServerRadarPreview: React.FC = () => {
             </button>
             <button
               onClick={() => setSelectedChinaFilter('zl')}
-              title="Filter to Zombie Land (ZL / ZoneLoli) CS2 Zombie Escape server cluster"
+              title="Filter to Zombie Land (ZL / 僵尸乐园) CS2 Zombie Escape server cluster"
               className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'zl'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
@@ -919,7 +919,7 @@ export const ServerRadarPreview: React.FC = () => {
               93X 社区 ({chinaServers.filter((s) => s.cluster === '93x').length})
             </button>
             <div className="w-full text-[11px] font-sans text-rose-300/80 px-2 pt-1 border-t border-rose-500/20">
-              🇨🇳 <strong>Chinese Community Clusters (Hong Kong & Mainland China):</strong> <strong>EXG</strong> (Edge Gamers) &bull; <strong>FyS</strong> (Feng Yun She) &bull; <strong>UB</strong> (Moe UB) &bull; <strong>ZL</strong> (Zombie Land / ZoneLoli) &bull; <strong>93X</strong> (93X Community)
+              🇨🇳 <strong>Chinese Community Clusters (Hong Kong & Mainland China):</strong> <strong>EXG</strong> (EXG社区 / 装备服) &bull; <strong>FyS</strong> (风云社 / Feng Yun She) &bull; <strong>UB</strong> (UB社区 / Moe UB) &bull; <strong>ZL</strong> (僵尸乐园 / Zombie Land) &bull; <strong>93X</strong> (93X社区)
             </div>
           </div>
         )}
