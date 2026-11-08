@@ -451,32 +451,6 @@ export const ServerRadarPreview: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-auto">
-            {/* Priority Tier Selector in Banner */}
-            <div className="flex items-center gap-1 bg-amber-950/90 p-1 rounded-lg border border-amber-500/40 text-[10px]" title="Change slot sniper player threshold">
-              <span className="text-amber-300 font-bold px-1">{slotWatcherServerId === gflServer.id ? 'Tier:' : 'Target:'}</span>
-              {(['normal', 'supporter', 'vip'] as PriorityTier[]).map((t) => {
-                const isGfl = slotWatcherServerId === gflServer.id;
-                const activeTier = isGfl ? gflSlotPriority : commSlotPriority;
-                return (
-                  <button
-                    key={t}
-                    onClick={() => {
-                      if (isGfl) setGflSlotPriority(t);
-                      else setCommSlotPriority(t);
-                    }}
-                    className={`min-h-[28px] px-2 py-0.5 rounded font-bold cursor-pointer transition-colors ${
-                      activeTier === t
-                        ? 'bg-amber-400 text-slate-950 shadow-[0_0_8px_rgba(251,191,36,0.5)]'
-                        : 'text-amber-200 hover:text-white hover:bg-amber-900/60'
-                    }`}
-                    title={isGfl ? (t === 'normal' ? 'GFL Normal Player reserved threshold: ≤61 players' : t === 'supporter' ? 'GFL Supporter/Mapper reserved threshold: ≤62 players' : 'GFL VIP/Admin reserved threshold: ≤63 players') : (t === 'normal' ? 'Community reserved threshold: ≤61 players' : t === 'supporter' ? 'Community reserved threshold: ≤62 players' : 'Community reserved threshold: ≤63 players')}
-                  >
-                    {t === 'normal' ? '≤61' : t === 'supporter' ? '≤62' : '≤63'}
-                  </button>
-                );
-              })}
-            </div>
-
             <button
               onClick={() => {
                 setSlotWatcherServerId(null);
