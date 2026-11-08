@@ -18,15 +18,17 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
   const [fpsMax, setFpsMax] = useState('0');
   const [copiedCfg, setCopiedCfg] = useState(false);
   const [copiedLaunch, setCopiedLaunch] = useState(false);
+  const [copiedPath, setCopiedPath] = useState(false);
 
   const generatedCfg = useMemo(() => {
+    const sanitizedFps = Math.max(0, Math.min(999, parseInt(fpsMax || '0', 10) || 0));
     const lines: string[] = [
       '// ============================================================================',
       '// GERONIMOHQ.COM // CS2 & ZOMBIE ESCAPE PRO AUTOEXEC.CFG',
       '// 100% VAC-Safe Engine CVars • Place in: steamapps/common/Counter-Strike Global Offensive/game/csgo/cfg/',
       '// ============================================================================',
       '',
-      `fps_max "${fpsMax}"`,
+      `fps_max "${sanitizedFps}"`,
       `cl_hud_color "${hudColor}"`,
       'hud_scaling "0.90"',
       'cl_radar_always_centered "0"',
@@ -36,10 +38,8 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
 
     if (maxSubtickRates) {
       lines.push(
-        '// --- CS2 SUB-TICK & 64-PLAYER ZE NETWORK RATES ---',
+        '// --- CS2 SUB-TICK & 64-PLAYER ZE NETWORK RATES (CS2 ENGINE VERIFIED) ---',
         'rate "786432"',
-        'cl_updaterate "128"',
-        'cl_interp_ratio "1"',
         'cl_net_buffer_ticks "0"',
         ''
       );
@@ -201,19 +201,44 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleDownloadCfg}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-cyber text-xs font-black tracking-wider shadow-[0_0_20px_rgba(0,240,255,0.4)] cursor-pointer transition-all"
+              title="Download generated autoexec.cfg directly to your computer's Downloads folder"
+              className="min-h-[44px] flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-cyber text-xs font-black tracking-wider shadow-[0_0_20px_rgba(0,240,255,0.4)] cursor-pointer transition-all touch-manipulation"
             >
               <Download className="w-4 h-4" />
               <span>DOWNLOAD AUTOEXEC.CFG</span>
             </button>
             <button
               onClick={handleCopyCfg}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-cyan-500/40 font-code text-xs font-bold cursor-pointer transition-all"
+              title="Copy complete generated autoexec.cfg script to Windows clipboard"
+              className="min-h-[44px] flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-cyan-500/40 font-code text-xs font-bold cursor-pointer transition-all touch-manipulation"
             >
               {copiedCfg ? <Check className="w-4 h-4 text-lime-400" /> : <Copy className="w-4 h-4" />}
               <span>{copiedCfg ? 'COPIED!' : 'COPY CFG'}</span>
             </button>
           </div>
+        </div>
+
+        {/* File Installation Location Helper */}
+        <div className="mb-6 p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-code text-slate-300">
+          <div className="flex items-start sm:items-center gap-2 min-w-0">
+            <span className="text-amber-400 font-bold flex-shrink-0">📁 CFG DIRECTORY:</span>
+            <span className="text-slate-300 truncate">
+              Place downloaded <code className="text-cyan-300 font-bold">autoexec.cfg</code> in:
+              <code className="text-lime-300 select-all ml-1 hidden md:inline">steamapps/common/Counter-Strike Global Offensive/game/csgo/cfg/</code>
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive\\game\\csgo\\cfg");
+              setCopiedPath(true);
+              setTimeout(() => setCopiedPath(false), 2000);
+            }}
+            title="Copy exact Windows CS2 cfg installation directory path to clipboard"
+            className="min-h-[40px] px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer flex-shrink-0 transition-colors touch-manipulation"
+          >
+            {copiedPath ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copiedPath ? 'Copied Full Path!' : 'Copy Windows Path'}</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -224,7 +249,10 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
               <span>1. ZOMBIE ESCAPE VISUAL &amp; AUDIO PRESETS</span>
             </div>
 
-            <label className="flex items-start gap-2.5 text-xs font-tech text-slate-200 cursor-pointer select-none">
+            <label 
+              title="Set low laser-jump viewmodel (viewmodel_fov 68, viewmodel_offset_x 2.0, viewmodel_offset_y 2.0, viewmodel_offset_z -2.0) for maximum bottom-screen visibility"
+              className="flex items-start gap-2.5 text-xs font-tech text-slate-200 cursor-pointer select-none"
+            >
               <input
                 type="checkbox"
                 checked={zeLowViewmodel}
@@ -237,7 +265,10 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
               </div>
             </label>
 
-            <label className="flex items-start gap-2.5 text-xs font-tech text-slate-200 cursor-pointer select-none">
+            <label 
+              title="Disable first-person bullet tracers (r_drawtracers_firstperson 0) to eliminate blinding clutter"
+              className="flex items-start gap-2.5 text-xs font-tech text-slate-200 cursor-pointer select-none"
+            >
               <input
                 type="checkbox"
                 checked={disableTracers}
@@ -251,7 +282,10 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
             </label>
 
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950/80 border border-slate-800/90 rounded-lg p-2.5">
-              <label className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none">
+              <label 
+                title="Toggle boss audio ducking between 22% (ducked) and 85% (normal) during loud ZE boss lasers"
+                className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
+              >
                 <input
                   type="checkbox"
                   checked={bossDuckBind}
@@ -267,13 +301,17 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                   type="text"
                   value={duckKey}
                   onChange={(e) => setDuckKey(e.target.value)}
+                  title="Keyboard key to toggle boss audio ducking (e.g. F7, Mouse4)"
                   className="w-12 px-2 py-0.5 rounded bg-slate-900 border border-fuchsia-500/50 text-fuchsia-300 text-center font-bold"
                 />
               </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950/80 border border-slate-800/90 rounded-lg p-2.5">
-              <label className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none">
+              <label 
+                title="Panic voice chat mute keybind (voice_modenable_toggle)"
+                className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
+              >
                 <input
                   type="checkbox"
                   checked={voiceMuteBind}
@@ -288,13 +326,17 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                   type="text"
                   value={muteKey}
                   onChange={(e) => setMuteKey(e.target.value)}
+                  title="Keyboard key to toggle voice mute (e.g. F8)"
                   className="w-12 px-2 py-0.5 rounded bg-slate-900 border border-amber-500/50 text-amber-300 text-center font-bold"
                 />
               </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950/80 border border-slate-800/90 rounded-lg p-2.5">
-              <label className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none">
+              <label 
+                title="Sub-tick jumpthrow alias bind ensuring 100% consistent grenade trajectory"
+                className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
+              >
                 <input
                   type="checkbox"
                   checked={jumpthrowBind}
@@ -309,13 +351,17 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                   type="text"
                   value={jumpthrowKey}
                   onChange={(e) => setJumpthrowKey(e.target.value)}
+                  title="Keyboard key for jumpthrow bind (e.g. v, mouse5)"
                   className="w-12 px-2 py-0.5 rounded bg-slate-900 border border-lime-500/50 text-lime-300 text-center font-bold"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-              <label className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none">
+              <label 
+                title="Null-cancelling strafe binds (A/D) ensuring opposite strafe key immediately cancels prior input (Allowed on community servers)"
+                className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
+              >
                 <input
                   type="checkbox"
                   checked={nullMovement}
@@ -324,7 +370,10 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                 />
                 <span>⚡ Null-Movement Binds (A/D)</span>
               </label>
-              <label className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none">
+              <label 
+                title="Maximize CS2 network packet rates (rate 786432, cl_net_buffer_ticks 0) for zero input delay"
+                className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
+              >
                 <input
                   type="checkbox"
                   checked={maxSubtickRates}
@@ -333,7 +382,10 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                 />
                 <span>🌐 Max Sub-Tick Network Rates</span>
               </label>
-              <label className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none">
+              <label 
+                title="Spatial headphone audio EQ (snd_headphone_eq 1) and perspective correction for precise footstep sound"
+                className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
+              >
                 <input
                   type="checkbox"
                   checked={crispAudioEq}
@@ -342,7 +394,10 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                 />
                 <span>🎧 Crisp Footstep Audio EQ</span>
               </label>
-              <label className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none">
+              <label 
+                title="Show built-in CS2 frametime, ping, and network jitter HUD only when latency spikes occur"
+                className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
+              >
                 <input
                   type="checkbox"
                   checked={smartTelemetryHud}
@@ -359,6 +414,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                 <select
                   value={hudColor}
                   onChange={(e) => setHudColor(e.target.value)}
+                  title="Choose custom CS2 HUD color theme index (cl_hud_color 0-12)"
                   className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs font-code text-cyan-300"
                 >
                   <option value="11">11 — Light Blue (Pro Default)</option>
@@ -374,6 +430,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                 <select
                   value={fpsMax}
                   onChange={(e) => setFpsMax(e.target.value)}
+                  title="Set in-game maximum frame rate limiter (fps_max 0-999)"
                   className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs font-code text-lime-300"
                 >
                   <option value="0">0 — Uncapped (Max Framerate)</option>
@@ -410,7 +467,8 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
               </div>
               <button
                 onClick={handleCopyLaunch}
-                className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/40 text-xs font-code font-bold flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+                title="Copy recommended Steam launch options flags to Windows clipboard"
+                className="min-h-[40px] px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/40 text-xs font-code font-bold flex items-center gap-1.5 cursor-pointer self-start sm:self-auto transition-colors touch-manipulation"
               >
                 {copiedLaunch ? <Check className="w-3.5 h-3.5 text-lime-400" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedLaunch ? 'Copied!' : 'Copy Launch Flags'}</span>

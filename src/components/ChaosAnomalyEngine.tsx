@@ -605,8 +605,9 @@ export const ChaosAnomalyEngine: React.FC = () => {
       <div className="fixed bottom-6 right-6 z-40">
         <button
           onClick={triggerRandomChaos}
-          className="group relative px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white font-cyber text-xs font-bold shadow-[0_0_25px_rgba(217,70,239,0.5)] hover:shadow-[0_0_35px_rgba(217,70,239,0.8)] border border-fuchsia-400/60 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-2"
+          className="group relative px-4 py-2.5 min-h-[44px] rounded-2xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white font-cyber text-xs font-bold shadow-[0_0_25px_rgba(217,70,239,0.5)] hover:shadow-[0_0_35px_rgba(217,70,239,0.8)] border border-fuchsia-400/60 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-2 touch-manipulation"
           title="Trigger 50+ high-RNG chaotic anomalies across the website (Surprise Me!)"
+          aria-label="Trigger chaotic surprise anomaly"
         >
           <Dices className="w-4 h-4 text-yellow-300 group-hover:rotate-180 transition-transform duration-500" />
           <span className="hidden sm:inline tracking-wider">🎲 SURPRISE ME (CHAOS)</span>

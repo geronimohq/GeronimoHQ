@@ -247,7 +247,9 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <a
             href={downloadUrl}
             download="CS2_Command_Center.exe"
-            className="flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-fuchsia-600 via-pink-600 to-cyan-600 hover:from-fuchsia-500 hover:to-cyan-500 text-white font-cyber text-xs tracking-wider font-bold rounded-xl shadow-[0_0_25px_rgba(255,0,127,0.4)] transition-all transform hover:-translate-y-0.5 cursor-pointer"
+            title="Download portable CS2 Command Center standalone executable for Windows 10/11"
+            aria-label="Download CS2 Command Center executable"
+            className="flex items-center gap-2.5 px-6 py-3 min-h-[44px] bg-gradient-to-r from-fuchsia-600 via-pink-600 to-cyan-600 hover:from-fuchsia-500 hover:to-cyan-500 text-white font-cyber text-xs tracking-wider font-bold rounded-xl shadow-[0_0_25px_rgba(255,0,127,0.4)] transition-all transform hover:-translate-y-0.5 cursor-pointer touch-manipulation"
           >
             <Download className="w-4 h-4 animate-bounce" />
             <span>DOWNLOAD APP (.EXE)</span>
@@ -286,7 +288,9 @@ export const CS2CommandCenterPreview: React.FC = () => {
                 <button
                   key={mod.id}
                   onClick={() => setActiveTab(mod.id)}
-                  className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between cursor-pointer group ${
+                  title={`View details for ${mod.name}`}
+                  aria-label={`Select ${mod.name} module`}
+                  className={`w-full text-left p-3 min-h-[44px] rounded-xl border transition-all flex items-center justify-between cursor-pointer group touch-manipulation ${
                     isActive
                       ? 'bg-gradient-to-r from-fuchsia-950/80 to-slate-900 border-fuchsia-500/60 shadow-[0_0_15px_rgba(255,0,127,0.25)] text-white'
                       : 'bg-slate-900/40 border-slate-800/80 hover:bg-slate-900 hover:border-slate-700 text-slate-400 hover:text-slate-200'

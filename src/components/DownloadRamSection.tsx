@@ -215,7 +215,17 @@ export const DownloadRamSection: React.FC = () => {
   const [optRgb, setOptRgb] = useState<boolean>(true);
   const [optBhop, setOptBhop] = useState<boolean>(true);
   const [copiedFlex, setCopiedFlex] = useState<boolean>(false);
+  const [isTabHidden, setIsTabHidden] = useState<boolean>(false);
   const timerRef = useRef<number | null>(null);
+
+  // Watch for background tab visibility to pause mini-game and prevent background memory/CPU drain
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsTabHidden(document.hidden);
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   // Interactive "Dodge the ZE Ending Lasers" Mini-Game State
   const [laserGameActive, setLaserGameActive] = useState(false);
@@ -242,9 +252,9 @@ export const DownloadRamSection: React.FC = () => {
     };
   }, []);
 
-  // ZE Laser Mini-Game Loop
+  // ZE Laser Mini-Game Loop (Automatically pauses when tab is hidden to prevent CPU and memory leak)
   useEffect(() => {
-    if (!laserGameActive) return;
+    if (!laserGameActive || isTabHidden) return;
 
     const tick = window.setInterval(() => {
       setLaserBeam((prev) => {
@@ -283,6 +293,24 @@ export const DownloadRamSection: React.FC = () => {
     }, 30);
 
     return () => clearInterval(tick);
+  }, [laserGameActive, isTabHidden]);
+
+  // Keyboard navigation for laser game (Space/Up = Jump, Down/Ctrl = Crouch)
+  useEffect(() => {
+    if (!laserGameActive) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault();
+        triggerPose('jump');
+      } else if (e.code === 'ArrowDown' || e.code === 'KeyS' || e.code === 'ControlLeft' || e.code === 'ControlRight') {
+        e.preventDefault();
+        triggerPose('crouch');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [laserGameActive]);
 
   const triggerPose = (pose: 'jump' | 'crouch') => {
@@ -415,6 +443,14 @@ export const DownloadRamSection: React.FC = () => {
         <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-lime-400/80" />
         <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-lime-400/80" />
 
+        {/* Prominent Satirical Meme Disclaimer Banner */}
+        <div className="mb-5 flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-950/40 border border-amber-500/50 text-amber-200 text-xs font-tech">
+          <span className="text-base flex-shrink-0">⚠️</span>
+          <div>
+            <strong className="text-amber-300 font-cyber tracking-wider">OFFICIAL DISCLAIMER:</strong> This is an interactive satirical meme generator. It simulates virtual hardware installation directly in your browser. <span className="text-white font-bold underline underline-offset-2">Zero files are downloaded</span> and zero real PC changes occur.
+          </div>
+        </div>
+
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5 border-b border-lime-500/30 pb-4">
           <div className="min-w-0">
@@ -442,7 +478,9 @@ export const DownloadRamSection: React.FC = () => {
           <div className="flex flex-wrap items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 flex-shrink-0 self-start lg:self-end">
             <button
               onClick={() => switchMemeMode('ram')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-code font-bold cursor-pointer transition-all ${
+              title="Switch meme generator to virtual DDR5/DDR6 system RAM mode (16 GB - 128 GB)"
+              aria-label="Switch to RAM mode"
+              className={`px-3 py-2 min-h-[44px] rounded-lg text-xs font-code font-bold cursor-pointer transition-all touch-manipulation ${
                 memeMode === 'ram'
                   ? 'bg-lime-500/20 text-lime-300 border border-lime-400/60 shadow-[0_0_12px_rgba(57,255,20,0.25)]'
                   : 'text-slate-400 hover:text-white'
@@ -452,7 +490,9 @@ export const DownloadRamSection: React.FC = () => {
             </button>
             <button
               onClick={() => switchMemeMode('gpu')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-code font-bold cursor-pointer transition-all ${
+              title="Switch meme generator to unreleased NVIDIA RTX 6090 Ti GPU mode (32 GB - 256 GB)"
+              aria-label="Switch to GPU mode"
+              className={`px-3 py-2 min-h-[44px] rounded-lg text-xs font-code font-bold cursor-pointer transition-all touch-manipulation ${
                 memeMode === 'gpu'
                   ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-400/60 shadow-[0_0_12px_rgba(255,0,127,0.25)]'
                   : 'text-slate-400 hover:text-white'
@@ -462,7 +502,9 @@ export const DownloadRamSection: React.FC = () => {
             </button>
             <button
               onClick={() => switchMemeMode('fps')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-code font-bold cursor-pointer transition-all ${
+              title="Switch meme generator to Source 2 quantum frame-booster mode (+250 to +9,999 FPS)"
+              aria-label="Switch to FPS mode"
+              className={`px-3 py-2 min-h-[44px] rounded-lg text-xs font-code font-bold cursor-pointer transition-all touch-manipulation ${
                 memeMode === 'fps'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/60 shadow-[0_0_12px_rgba(0,240,255,0.25)]'
                   : 'text-slate-400 hover:text-white'
@@ -513,7 +555,9 @@ export const DownloadRamSection: React.FC = () => {
                     }));
                     if (isCompleted) setIsCompleted(false);
                   }}
-                  className={`text-left p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  title={`Select ${tier.title} (${tier.speed}) - ${tier.badge}`}
+                  aria-label={`Select ${tier.title}`}
+                  className={`text-left p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between touch-manipulation min-h-[44px] ${
                     isSelected
                       ? activeCardColors
                       : 'bg-slate-900/60 border-slate-800 hover:border-slate-600 text-slate-300'
@@ -553,7 +597,10 @@ export const DownloadRamSection: React.FC = () => {
               {currentMeta.step2Title}
             </div>
 
-            <label className="flex items-center gap-2.5 text-xs font-tech text-slate-300 cursor-pointer select-none">
+            <label
+              title="Simulate ARGB rainbow heatsink lighting and visual boost (+420% Aura)"
+              className="flex items-center gap-2.5 text-xs font-tech text-slate-300 cursor-pointer select-none min-h-[44px]"
+            >
               <input
                 type="checkbox"
                 checked={optRgb}
@@ -564,7 +611,10 @@ export const DownloadRamSection: React.FC = () => {
               <span>{currentMeta.opt1Label}</span>
             </label>
 
-            <label className="flex items-center gap-2.5 text-xs font-tech text-slate-300 cursor-pointer select-none">
+            <label
+              title="Simulate sub-tick timing calibration for Zombie Escape lasers"
+              className="flex items-center gap-2.5 text-xs font-tech text-slate-300 cursor-pointer select-none min-h-[44px]"
+            >
               <input
                 type="checkbox"
                 checked={optBhop}
@@ -580,7 +630,8 @@ export const DownloadRamSection: React.FC = () => {
                 <button
                   onClick={startRamDownload}
                   disabled={isDownloading}
-                  className={`w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-cyber text-xs md:text-sm font-black tracking-wider transition-all cursor-pointer ${
+                  title={`Simulate downloading and installing ${selectedTier.shortActionLabel} in your browser`}
+                  className={`w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3.5 min-h-[44px] rounded-xl font-cyber text-xs md:text-sm font-black tracking-wider transition-all cursor-pointer touch-manipulation ${
                     isDownloading
                       ? 'bg-amber-600/80 text-white border border-amber-400 animate-pulse cursor-wait'
                       : 'bg-gradient-to-r from-lime-500 via-emerald-500 to-cyan-500 hover:from-lime-400 hover:to-cyan-400 text-slate-950 shadow-[0_0_25px_rgba(57,255,20,0.5)] transform hover:-translate-y-0.5'
@@ -597,15 +648,16 @@ export const DownloadRamSection: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-2.5 w-full">
                   <button
                     onClick={copyDiscordFlex}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-lime-500 hover:bg-lime-400 text-slate-950 font-cyber text-xs font-black tracking-wider shadow-[0_0_20px_rgba(57,255,20,0.5)] cursor-pointer transition-all"
+                    title="Copy meme verification text to clipboard for Discord flex"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-xl bg-lime-500 hover:bg-lime-400 text-slate-950 font-cyber text-xs font-black tracking-wider shadow-[0_0_20px_rgba(57,255,20,0.5)] cursor-pointer transition-all touch-manipulation"
                   >
                     {copiedFlex ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     <span>{copiedFlex ? 'COPIED DISCORD FLEX!' : 'COPY CERTIFICATE FOR DISCORD'}</span>
                   </button>
                   <button
                     onClick={resetDownload}
-                    className="px-3.5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-code text-xs flex items-center gap-1.5 cursor-pointer transition-all"
-                    title="Download even more hardware"
+                    title="Reset meme hardware download generator to start over"
+                    className="px-3.5 py-3 min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-code text-xs flex items-center gap-1.5 cursor-pointer transition-all touch-manipulation"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>MORE</span>
@@ -703,7 +755,7 @@ export const DownloadRamSection: React.FC = () => {
           </div>
 
           {/* Laser Corridor Arena */}
-          <div className="relative w-full h-28 rounded-lg bg-[#040711] border border-slate-800 overflow-hidden flex items-center px-4">
+          <div className="relative w-full h-32 rounded-lg bg-[#040711] border border-slate-800 overflow-hidden flex items-center px-4">
             {/* Bridge Floor Line */}
             <div className="absolute bottom-3 inset-x-0 h-0.5 bg-cyan-500/40" />
 
@@ -711,7 +763,7 @@ export const DownloadRamSection: React.FC = () => {
             <div
               className={`absolute left-[15%] transition-all duration-150 select-none text-2xl ${
                 playerPose === 'jump'
-                  ? 'bottom-12 scale-110'
+                  ? 'bottom-14 scale-110'
                   : playerPose === 'crouch'
                   ? 'bottom-2 scale-y-50'
                   : 'bottom-3'
@@ -727,7 +779,7 @@ export const DownloadRamSection: React.FC = () => {
                 className={`absolute w-8 h-2.5 rounded-full shadow-[0_0_18px_rgba(0,240,255,0.95)] ${
                   laserBeam.heightType === 'low'
                     ? 'bottom-4 bg-cyan-400 border border-white'
-                    : 'bottom-10 bg-fuchsia-500 border border-white'
+                    : 'bottom-11 bg-fuchsia-500 border border-white'
                 }`}
               />
             )}
@@ -746,42 +798,64 @@ export const DownloadRamSection: React.FC = () => {
                       <strong className="text-fuchsia-300">HIGH PINK LASERS</strong>!
                     </span>
                   )}
+                  <span className="hidden md:inline text-slate-400 text-[11px] ml-2">
+                    (Keyboard: <kbd className="px-1 py-0.5 rounded bg-slate-800 border border-slate-700">Space</kbd> / <kbd className="px-1 py-0.5 rounded bg-slate-800 border border-slate-700">↑</kbd> to Jump &bull; <kbd className="px-1 py-0.5 rounded bg-slate-800 border border-slate-700">↓</kbd> / <kbd className="px-1 py-0.5 rounded bg-slate-800 border border-slate-700">Ctrl</kbd> to Crouch)
+                  </span>
                 </div>
                 <button
                   onClick={startLaserMiniGame}
-                  className="px-4 py-1.5 rounded-lg bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-cyber text-xs font-bold cursor-pointer shadow-[0_0_15px_rgba(255,0,127,0.4)]"
+                  title="Start Mako Reactor laser dodging training mini-game"
+                  className="px-5 py-2.5 min-h-[44px] rounded-lg bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-cyber text-xs font-bold cursor-pointer shadow-[0_0_15px_rgba(255,0,127,0.4)] touch-manipulation"
                 >
                   {laserGameOver ? '🔄 PLAY AGAIN' : '▶ START LASER TRAINING'}
                 </button>
               </div>
             )}
+          </div>
 
-            {laserGameActive && (
-              <div className="absolute right-3 top-2 flex items-center gap-2 z-10">
+          {/* On-Screen Mobile Touch & Desktop Interactive Controls */}
+          {laserGameActive && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => triggerPose('jump')}
-                  className="px-3 py-1.5 rounded bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-cyber text-xs font-black cursor-pointer"
+                  title="Jump over low cyan lasers (or press Space / Up Arrow)"
+                  className="px-4 py-2.5 min-h-[44px] min-w-[120px] rounded-lg bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-slate-950 font-cyber text-xs font-black cursor-pointer shadow-[0_0_12px_rgba(0,240,255,0.4)] touch-manipulation"
                 >
-                  ⬆ JUMP (LOW LASER)
+                  ⬆ JUMP (LOW)
                 </button>
                 <button
                   onClick={() => triggerPose('crouch')}
-                  className="px-3 py-1.5 rounded bg-fuchsia-500 hover:bg-fuchsia-400 text-white font-cyber text-xs font-black cursor-pointer"
+                  title="Crouch under high pink lasers (or press Down Arrow / Ctrl)"
+                  className="px-4 py-2.5 min-h-[44px] min-w-[120px] rounded-lg bg-fuchsia-500 hover:bg-fuchsia-400 active:bg-fuchsia-600 text-white font-cyber text-xs font-black cursor-pointer shadow-[0_0_12px_rgba(255,0,127,0.4)] touch-manipulation"
                 >
-                  ⬇ CROUCH (HIGH LASER)
+                  ⬇ CROUCH (HIGH)
                 </button>
               </div>
-            )}
-          </div>
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline text-[11px] font-code text-slate-400">
+                  Tab auto-pauses when backgrounded
+                </span>
+                <button
+                  onClick={startLaserMiniGame}
+                  title="Restart laser dodging mini-game from 0"
+                  className="px-3.5 py-2.5 min-h-[44px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-code text-xs flex items-center gap-1.5 cursor-pointer touch-manipulation"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>🔄 RESTART</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Bottom Meme Disclaimer */}
-        <div className="mt-3 flex items-center justify-between text-[10px] font-code text-slate-500">
-          <span className="flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-lime-400" />
-            MEME MODULE // PURELY INTERACTIVE BROWSER UI (NO ACTUAL FILE DOWNLOAD)
+        <div className="mt-4 p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] font-code text-slate-400">
+          <span className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-lime-400" />
+            <span>MEME GENERATOR // BROWSER-ONLY SIMULATION (DOWNLOADS 0 REAL BYTES)</span>
           </span>
-          <span>DISCORD BIO VERIFIED: GERONIMOHQ.COM</span>
+          <span className="text-slate-500">GERONIMOHQ.COM // DISCORD BIO VERIFIED</span>
         </div>
       </div>
     </section>

@@ -111,7 +111,9 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({
           <div className="flex flex-wrap items-center gap-1 bg-slate-900/90 border border-slate-800 p-1 rounded-lg backdrop-blur-md">
             <button
               onClick={() => setActiveTab('all')}
-              className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer ${
+              title="View all 3 Pepe holograms simultaneously side-by-side"
+              aria-label="View all Pepe holograms"
+              className={`px-3 py-2 min-h-[44px] text-xs font-code rounded transition-all cursor-pointer touch-manipulation ${
                 activeTab === 'all'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/60 shadow-[0_0_10px_rgba(0,240,255,0.4)]'
                   : 'text-slate-400 hover:text-slate-200'
@@ -121,7 +123,9 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('cry')}
-              className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer ${
+              title="View isolated Sad Frog (Crying Pepe) animation"
+              aria-label="View Sad Frog"
+              className={`px-3 py-2 min-h-[44px] text-xs font-code rounded transition-all cursor-pointer touch-manipulation ${
                 activeTab === 'cry'
                   ? 'bg-sky-500/20 text-sky-300 border border-sky-400/60 shadow-[0_0_10px_rgba(56,189,248,0.4)]'
                   : 'text-slate-400 hover:text-slate-200'
@@ -131,7 +135,9 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('laugh')}
-              className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer ${
+              title="View isolated Mock Laugh (Smug Pepe) animation"
+              aria-label="View Mock Laugh"
+              className={`px-3 py-2 min-h-[44px] text-xs font-code rounded transition-all cursor-pointer touch-manipulation ${
                 activeTab === 'laugh'
                   ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-400/60 shadow-[0_0_10px_rgba(255,0,127,0.4)]'
                   : 'text-slate-400 hover:text-slate-200'
@@ -141,7 +147,9 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('dance')}
-              className={`px-3 py-1 text-xs font-code rounded transition-all cursor-pointer ${
+              title="View isolated Party Rave (Dancing Pepe) animation"
+              aria-label="View Party Rave"
+              className={`px-3 py-2 min-h-[44px] text-xs font-code rounded transition-all cursor-pointer touch-manipulation ${
                 activeTab === 'dance'
                   ? 'bg-lime-500/20 text-lime-300 border border-lime-400/60 shadow-[0_0_10px_rgba(57,255,20,0.4)]'
                   : 'text-slate-400 hover:text-slate-200'

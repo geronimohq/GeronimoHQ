@@ -197,6 +197,18 @@ export const ServerRadarPreview: React.FC = () => {
         // OPEN SLOT FOUND! Dispatch Steam Game Server connect
         dispatchSteamProtocol(`steam://connect/${targetServer.host}:${targetServer.port}`);
         try {
+          const origTitle = document.title;
+          let count = 0;
+          const flashTimer = window.setInterval(() => {
+            document.title = count % 2 === 0 ? `🎯 [SLOT OPEN: ${curr}/${max}] CONNECTING!` : origTitle;
+            count++;
+            if (count > 12) {
+              clearInterval(flashTimer);
+              document.title = origTitle;
+            }
+          }, 600);
+        } catch {}
+        try {
           const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
           if (AudioCtx) {
             const ctx = new AudioCtx();
@@ -215,9 +227,9 @@ export const ServerRadarPreview: React.FC = () => {
         } catch {
           // ignore
         }
-        setAutoJoinStatus(`🎯 Open slot detected on ${targetServer.name} (${curr}/${max} ≤ ${targetThreshold})! Connecting you now via Steam Game Server!`);
+        setAutoJoinStatus(`🎯 Open slot detected on ${targetServer.name} (${curr}/${max} ≤ ${targetThreshold})! Dispatched Steam connection. Console: connect ${targetServer.host}:${targetServer.port}`);
         setAutoJoinServerId(null);
-        setTimeout(() => setAutoJoinStatus(null), 7000);
+        setTimeout(() => setAutoJoinStatus(null), 8000);
       }
     }
   }, [telemetry, autoJoinServerId, gflSlotPriority, commSlotPriority]);
@@ -392,15 +404,20 @@ export const ServerRadarPreview: React.FC = () => {
 
       {/* Active Auto Join Live Banner */}
       {autoJoinStatus && (
-        <div className="mb-6 p-3.5 rounded-xl bg-amber-950/80 border border-amber-400/80 text-amber-200 text-xs font-code flex flex-wrap items-center justify-between gap-3 shadow-[0_0_25px_rgba(251,191,36,0.25)]">
-          <div className="flex items-center gap-2 min-w-0">
-            <Target className="w-4 h-4 text-amber-400 animate-spin flex-shrink-0" />
-            <span className="truncate">{autoJoinStatus}</span>
+        <div className="mb-6 p-4 rounded-xl bg-amber-950/90 border border-amber-400 text-amber-200 text-xs font-code flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-[0_0_25px_rgba(251,191,36,0.3)]">
+          <div className="flex items-start gap-2.5 min-w-0">
+            <Target className="w-5 h-5 text-amber-400 animate-spin flex-shrink-0 mt-0.5" />
+            <div>
+              <div className="font-bold text-amber-300">{autoJoinStatus}</div>
+              <div className="text-[11px] text-amber-200/90 mt-1 font-sans flex items-center gap-1.5">
+                <span className="font-bold text-yellow-300">⚠️ IMPORTANT:</span> Keep this browser tab open to allow the background slot sniper to watch live telemetry and auto-connect when a slot opens!
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-auto">
             {/* Priority Tier Selector in Banner */}
-            <div className="flex items-center gap-1 bg-amber-950/90 p-1 rounded-lg border border-amber-500/40 text-[10px]">
+            <div className="flex items-center gap-1 bg-amber-950/90 p-1 rounded-lg border border-amber-500/40 text-[10px]" title="Change slot sniper player threshold">
               <span className="text-amber-300 font-bold px-1">{autoJoinServerId === gflServer.id ? 'Tier:' : 'Target:'}</span>
               {(['normal', 'supporter', 'vip'] as PriorityTier[]).map((t) => {
                 const isGfl = autoJoinServerId === gflServer.id;
@@ -412,12 +429,12 @@ export const ServerRadarPreview: React.FC = () => {
                       if (isGfl) setGflSlotPriority(t);
                       else setCommSlotPriority(t);
                     }}
-                    className={`px-1.5 py-0.5 rounded font-bold cursor-pointer transition-colors ${
+                    className={`min-h-[28px] px-2 py-0.5 rounded font-bold cursor-pointer transition-colors ${
                       activeTier === t
                         ? 'bg-amber-400 text-slate-950 shadow-[0_0_8px_rgba(251,191,36,0.5)]'
                         : 'text-amber-200 hover:text-white hover:bg-amber-900/60'
                     }`}
-                    title={isGfl ? (t === 'normal' ? 'Normal (≤61)' : t === 'supporter' ? 'Supporter (≤62)' : 'VIP (≤63)') : (t === 'normal' ? '≤61 Players' : t === 'supporter' ? '≤62 Players' : '≤63 Players')}
+                    title={isGfl ? (t === 'normal' ? 'GFL Normal Player reserved threshold: ≤61 players' : t === 'supporter' ? 'GFL Supporter/Mapper reserved threshold: ≤62 players' : 'GFL VIP/Admin reserved threshold: ≤63 players') : (t === 'normal' ? 'Community reserved threshold: ≤61 players' : t === 'supporter' ? 'Community reserved threshold: ≤62 players' : 'Community reserved threshold: ≤63 players')}
                   >
                     {t === 'normal' ? '≤61' : t === 'supporter' ? '≤62' : '≤63'}
                   </button>
@@ -431,7 +448,8 @@ export const ServerRadarPreview: React.FC = () => {
                   setAutoJoinServerId(null);
                   setAutoJoinStatus(null);
                 }}
-                className="px-2.5 py-1 rounded bg-amber-900/60 hover:bg-amber-800 text-amber-100 border border-amber-400/50 cursor-pointer text-[10px] uppercase font-bold"
+                className="min-h-[32px] px-3 py-1 rounded-lg bg-amber-900/80 hover:bg-amber-800 text-amber-100 border border-amber-400/50 cursor-pointer text-[10px] uppercase font-bold transition-colors"
+                title="Disarm slot sniper and cancel auto-join monitoring"
               >
                 Cancel
               </button>
@@ -718,7 +736,8 @@ export const ServerRadarPreview: React.FC = () => {
             {/* Global Servers Tab */}
             <button
               onClick={() => setSelectedTab('global')}
-              className={`px-3 py-1.5 text-xs font-cyber tracking-wider font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 ${
+              title="Filter to North American, European, and East Asian Zombie Escape community servers"
+              className={`min-h-[44px] px-3 py-1.5 text-xs font-cyber tracking-wider font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 touch-manipulation ${
                 selectedTab === 'global'
                   ? 'bg-gradient-to-r from-lime-500/20 to-emerald-500/20 text-lime-300 border border-lime-400/60 shadow-[0_0_15px_rgba(57,255,20,0.3)]'
                   : 'text-slate-400 hover:text-slate-200'
@@ -734,7 +753,8 @@ export const ServerRadarPreview: React.FC = () => {
                 setSelectedTab('china');
                 setSelectedChinaFilter('all');
               }}
-              className={`px-3 py-1.5 text-xs font-cyber tracking-wider font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 ${
+              title="Filter to Chinese Zombie Escape community servers (EXG, FYS, UB, ZL, 93X clusters)"
+              className={`min-h-[44px] px-3 py-1.5 text-xs font-cyber tracking-wider font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 touch-manipulation ${
                 selectedTab === 'china'
                   ? 'bg-gradient-to-r from-rose-500/20 to-amber-500/20 text-rose-300 border border-rose-400/60 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
                   : 'text-slate-400 hover:text-slate-200'
@@ -746,7 +766,7 @@ export const ServerRadarPreview: React.FC = () => {
           </div>
 
           {/* Global Community Sniper Target Selector */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-amber-500/30">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-amber-500/30" title="Set slot sniper target player threshold for community servers">
             <span className="text-[10px] font-code text-amber-400 font-bold flex items-center gap-1">
               <Target className="w-3.5 h-3.5 text-amber-400" />
               SNIPER TARGET:
@@ -756,12 +776,12 @@ export const ServerRadarPreview: React.FC = () => {
                 <button
                   key={tier}
                   onClick={() => setCommSlotPriority(tier)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+                  className={`min-h-[32px] px-2 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer touch-manipulation ${
                     commSlotPriority === tier
                       ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.4)]'
                       : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-white'
                   }`}
-                  title={`Trigger Steam connect when server drops to ${tier === 'normal' ? '≤ 61 Players' : tier === 'supporter' ? '≤ 62 Players' : '≤ 63 Players'}`}
+                  title={tier === 'normal' ? 'Set community sniper target to ≤61 players (leaves 3 slots for normal players)' : tier === 'supporter' ? 'Set community sniper target to ≤62 players (leaves 2 slots for supporters)' : 'Set community sniper target to ≤63 players (leaves 1 slot for VIPs)'}
                 >
                   {tier === 'normal' ? '≤ 61 Players' : tier === 'supporter' ? '≤ 62 Players' : '≤ 63 Players'}
                 </button>
@@ -776,8 +796,9 @@ export const ServerRadarPreview: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              title="Search servers by community name, active map (e.g. ze_mako), or IP address"
               placeholder="Search by server name, map, or IP..."
-              className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs font-code text-slate-200 placeholder-slate-500 focus:outline-none focus:border-lime-400 transition-colors"
+              className="w-full min-h-[44px] bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs font-code text-slate-200 placeholder-slate-500 focus:outline-none focus:border-lime-400 transition-colors"
             />
           </div>
 
@@ -791,7 +812,8 @@ export const ServerRadarPreview: React.FC = () => {
             </span>
             <button
               onClick={() => setSelectedChinaFilter('all')}
-              className={`px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer ${
+              title="Show all 35 verified Chinese Zombie Escape servers across all clusters"
+              className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'all'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
                   : 'text-slate-400 hover:text-slate-200'
@@ -801,7 +823,8 @@ export const ServerRadarPreview: React.FC = () => {
             </button>
             <button
               onClick={() => setSelectedChinaFilter('exg')}
-              className={`px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer ${
+              title="Filter to EXG Clan (Edge Gamers) CS2 Zombie Escape server cluster (16 servers)"
+              className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'exg'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
                   : 'text-slate-400 hover:text-slate-200'
@@ -811,7 +834,8 @@ export const ServerRadarPreview: React.FC = () => {
             </button>
             <button
               onClick={() => setSelectedChinaFilter('fys')}
-              className={`px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer ${
+              title="Filter to Feng Ye Shou (FYS) CS2 Zombie Escape server cluster (6 servers)"
+              className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'fys'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
                   : 'text-slate-400 hover:text-slate-200'
@@ -821,7 +845,8 @@ export const ServerRadarPreview: React.FC = () => {
             </button>
             <button
               onClick={() => setSelectedChinaFilter('ub')}
-              className={`px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer ${
+              title="Filter to UB Community CS2 Zombie Escape server cluster (6 servers)"
+              className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'ub'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
                   : 'text-slate-400 hover:text-slate-200'
@@ -831,7 +856,8 @@ export const ServerRadarPreview: React.FC = () => {
             </button>
             <button
               onClick={() => setSelectedChinaFilter('zl')}
-              className={`px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer ${
+              title="Filter to ZL (Zoneloli) CS2 Zombie Escape server cluster (5 servers)"
+              className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'zl'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
                   : 'text-slate-400 hover:text-slate-200'
@@ -841,7 +867,8 @@ export const ServerRadarPreview: React.FC = () => {
             </button>
             <button
               onClick={() => setSelectedChinaFilter('93x')}
-              className={`px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer ${
+              title="Filter to 93X Zombie Escape server cluster (2 servers)"
+              className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === '93x'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
                   : 'text-slate-400 hover:text-slate-200'
@@ -1007,8 +1034,8 @@ export const ServerRadarPreview: React.FC = () => {
                 {/* 1-Click Steam Connect */}
                 <button
                   onClick={() => handleOpenConnect(server, false)}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-lime-600 hover:from-emerald-500 hover:to-lime-500 text-white font-cyber text-xs tracking-wider font-bold rounded-lg shadow-[0_0_15px_rgba(57,255,20,0.3)] transition-all cursor-pointer"
-                  title="Connect directly to server via Steam protocol (steam://connect/...). Launches CS2 if not running, or connects immediately if already open."
+                  className="min-h-[44px] flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-lime-600 hover:from-emerald-500 hover:to-lime-500 text-white font-cyber text-xs tracking-wider font-bold rounded-lg shadow-[0_0_15px_rgba(57,255,20,0.3)] transition-all cursor-pointer touch-manipulation"
+                  title={`Connect directly to ${server.name} (${server.host}:${server.port}) via Steam Game Server protocol. Launches CS2 if closed, or connects immediately if open.`}
                 >
                   <Play className="w-3.5 h-3.5 fill-current" />
                   <span>CONNECT VIA STEAM</span>
@@ -1016,7 +1043,7 @@ export const ServerRadarPreview: React.FC = () => {
 
                 <button
                   onClick={() => handleToggleAutoJoin(server)}
-                  className={`px-2.5 py-2 border rounded-lg text-xs font-code transition-colors cursor-pointer flex items-center gap-1 flex-shrink-0 ${
+                  className={`min-h-[44px] px-2.5 py-2 border rounded-lg text-xs font-code transition-colors cursor-pointer flex items-center gap-1 flex-shrink-0 touch-manipulation ${
                     autoJoinServerId === server.id
                       ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse'
                       : 'bg-slate-900 hover:bg-emerald-950/80 border-slate-700 hover:border-emerald-500 text-slate-300 hover:text-emerald-300'
@@ -1036,16 +1063,16 @@ export const ServerRadarPreview: React.FC = () => {
                       setActiveModalServer(server);
                       setModalSearch('');
                     }}
-                    className="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-400 text-slate-300 hover:text-white rounded-lg text-xs font-code flex items-center gap-1 transition-colors cursor-pointer flex-shrink-0"
-                    title="View real-time player list"
+                    className="min-h-[44px] px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-400 text-slate-300 hover:text-white rounded-lg text-xs font-code flex items-center gap-1 transition-colors cursor-pointer flex-shrink-0 touch-manipulation"
+                    title={`View real-time player list, scores, and connection times for ${server.name}`}
                   >
                     <Users className="w-3.5 h-3.5 text-cyan-400" />
                     <span className="hidden sm:inline">PLAYERS</span>
                   </button>
                 ) : (
                   <div
-                    className="px-2.5 py-2 bg-slate-950 border border-slate-800/80 rounded-lg text-[10px] font-code text-slate-400 flex items-center gap-1 flex-shrink-0"
-                    title="Player names query blocked by community privacy policy"
+                    className="min-h-[44px] px-2.5 py-2 bg-slate-950 border border-slate-800/80 rounded-lg text-[10px] font-code text-slate-400 flex items-center gap-1 flex-shrink-0"
+                    title="Player names query blocked by server community anti-DDoS privacy policy"
                   >
                     <Shield className="w-3 h-3 text-slate-400" />
                     <span className="hidden sm:inline">SHIELDED</span>
@@ -1055,8 +1082,8 @@ export const ServerRadarPreview: React.FC = () => {
                 {/* Copy IP Button */}
                 <button
                   onClick={() => handleCopy(server)}
-                  className="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-lime-400 text-slate-300 hover:text-white rounded-lg text-xs font-code flex items-center gap-1 transition-colors cursor-pointer flex-shrink-0"
-                  title="Copy console command: connect IP:PORT"
+                  className="min-h-[44px] px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-lime-400 text-slate-300 hover:text-white rounded-lg text-xs font-code flex items-center gap-1 transition-colors cursor-pointer flex-shrink-0 touch-manipulation"
+                  title={`Copy in-game console command: connect ${server.host}:${server.port}`}
                 >
                   {isCopied ? (
                     <>
@@ -1141,8 +1168,8 @@ export const ServerRadarPreview: React.FC = () => {
             </div>
 
             {/* Players Table */}
-            <div className="flex-1 overflow-y-auto border border-slate-800/80 rounded-xl bg-slate-900/50">
-              <table className="w-full text-left text-xs font-code">
+            <div className="flex-1 overflow-y-auto overflow-x-auto border border-slate-800/80 rounded-xl bg-slate-900/50">
+              <table className="w-full min-w-[480px] text-left text-xs font-code">
                 <thead className="bg-slate-900 border-b border-slate-800 text-slate-400 sticky top-0">
                   <tr>
                     <th className="py-2.5 px-3 w-12 text-center text-slate-500">#</th>
@@ -1432,6 +1459,22 @@ export const ServerRadarPreview: React.FC = () => {
                       Cancel
                     </button>
                   </div>
+                  {/* Fallback in-game console command if Steam protocol is blocked or not installed */}
+                  <div className="pt-3 border-t border-slate-800/80 mt-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] font-code text-slate-400">
+                    <span className="text-slate-400">Steam didn't open or not installed? Connect via console:</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`connect ${connectModalServer.host}:${connectModalServer.port}`);
+                        setCopiedId(connectModalServer.id);
+                        setTimeout(() => setCopiedId(null), 2000);
+                      }}
+                      title={`Copy in-game console command: connect ${connectModalServer.host}:${connectModalServer.port}`}
+                      className="min-h-[36px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 flex items-center gap-1.5 cursor-pointer transition-colors touch-manipulation"
+                    >
+                      {copiedId === connectModalServer.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedId === connectModalServer.id ? 'Copied Command!' : `connect ${connectModalServer.host}:${connectModalServer.port}`}</span>
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -1446,6 +1489,20 @@ export const ServerRadarPreview: React.FC = () => {
                   <p className="text-xs font-tech text-slate-300">
                     Dispatched <code className="text-lime-300">steam://connect/{connectModalServer.host}:{connectModalServer.port}</code>. Enjoy your match on {connectModalServer.name}!
                   </p>
+                  <div className="pt-2 flex justify-center">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`connect ${connectModalServer.host}:${connectModalServer.port}`);
+                        setCopiedId(connectModalServer.id);
+                        setTimeout(() => setCopiedId(null), 2000);
+                      }}
+                      title="Copy in-game console command"
+                      className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-700 text-xs font-code flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {copiedId === connectModalServer.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedId === connectModalServer.id ? 'Copied Console Command!' : `Copy: connect ${connectModalServer.host}:${connectModalServer.port}`}</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
