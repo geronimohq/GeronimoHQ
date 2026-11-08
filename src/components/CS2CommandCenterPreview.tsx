@@ -257,6 +257,9 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <span className="text-[11px] font-code text-slate-400">
             Portable &bull; ~33 MB &bull; No installation required
           </span>
+          <span className="text-[10px] font-code text-amber-300/90 max-w-xs text-left md:text-right">
+            🛡️ Unsigned community .exe: If Windows SmartScreen prompts, click &ldquo;More info&rdquo; &rarr; &ldquo;Run anyway&rdquo;.
+          </span>
         </div>
       </div>
 

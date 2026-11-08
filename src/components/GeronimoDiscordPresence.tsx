@@ -42,8 +42,10 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
   const [isRetrying, setIsRetrying] = useState(false);
 
   const mountTimeRef = useRef<number>(Date.now());
+  const consecutiveStandbyFailuresRef = useRef<number>(0);
+  const nextTimerRef = useRef<number | null>(null);
 
-  // Fetch telemetry & presence with 15s standby timeout and continuous 5s background retry
+  // Fetch telemetry & presence with 15s standby timeout, visibility-pause, and standby exponential backoff (5s -> 15s -> 30s -> 60s)
   useEffect(() => {
     if (propTelemetry) setInternalTelemetry(propTelemetry);
     if (propPresence) {
@@ -52,7 +54,16 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
       return;
     }
 
+    let isCancelled = false;
+
+    const scheduleNextPoll = (delayMs: number) => {
+      if (isCancelled || document.hidden) return;
+      if (nextTimerRef.current) clearTimeout(nextTimerRef.current);
+      nextTimerRef.current = window.setTimeout(load, delayMs);
+    };
+
     const load = async () => {
+      if (isCancelled || document.hidden) return;
       try {
         const data = await fetchLiveTelemetry();
         if (data) {
@@ -63,6 +74,8 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             setInternalPresence(data.geronimo_presence);
             setConnectionStatus('connected');
             setIsRetrying(false);
+            consecutiveStandbyFailuresRef.current = 0;
+            scheduleNextPoll(5000);
             return;
           }
         }
@@ -70,32 +83,56 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
         if (Date.now() - mountTimeRef.current >= 15000) {
           setConnectionStatus('standby');
           setIsRetrying(false);
+          consecutiveStandbyFailuresRef.current += 1;
+          const fails = consecutiveStandbyFailuresRef.current;
+          const backoff = fails === 1 ? 5000 : fails === 2 ? 15000 : fails === 3 ? 30000 : 60000;
+          scheduleNextPoll(backoff);
+        } else {
+          scheduleNextPoll(5000);
         }
       } catch {
         if (Date.now() - mountTimeRef.current >= 15000) {
           setConnectionStatus('standby');
           setIsRetrying(false);
+          consecutiveStandbyFailuresRef.current += 1;
+          const fails = consecutiveStandbyFailuresRef.current;
+          const backoff = fails === 1 ? 5000 : fails === 2 ? 15000 : fails === 3 ? 30000 : 60000;
+          scheduleNextPoll(backoff);
+        } else {
+          scheduleNextPoll(5000);
         }
       }
     };
 
-    // Immediate initial load
-    load();
+    // Immediate initial load if visible
+    if (!document.hidden) {
+      load();
+    }
 
     // 1-second timeout watchdog to flip to 'standby' exactly at 15s mark
     const watchdogTimer = setInterval(() => {
-      if (connectionStatus === 'connecting' && Date.now() - mountTimeRef.current >= 15000) {
+      if (!isCancelled && connectionStatus === 'connecting' && Date.now() - mountTimeRef.current >= 15000) {
         setConnectionStatus('standby');
         setIsRetrying(false);
       }
     }, 1000);
 
-    // Continuous 5s background retry loop
-    const retryInterval = setInterval(load, 5000);
+    // Visibility change handler: pause polling when tab is hidden, resume immediately when tab is visible
+    const handleVisibility = () => {
+      if (document.hidden) {
+        if (nextTimerRef.current) clearTimeout(nextTimerRef.current);
+      } else {
+        load();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
+      isCancelled = true;
+      if (nextTimerRef.current) clearTimeout(nextTimerRef.current);
       clearInterval(watchdogTimer);
-      clearInterval(retryInterval);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [propTelemetry, propPresence, connectionStatus]);
 
@@ -104,6 +141,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
     setIsRetrying(true);
     setConnectionStatus('connecting');
     mountTimeRef.current = Date.now();
+    consecutiveStandbyFailuresRef.current = 0;
     fetchLiveTelemetry()
       .then((data) => {
         if (data?.geronimo_presence) {

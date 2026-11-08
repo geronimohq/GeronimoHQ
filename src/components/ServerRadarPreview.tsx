@@ -147,6 +147,13 @@ export const ServerRadarPreview: React.FC = () => {
   };
 
   const handleToggleAutoJoin = (server: ZEServer) => {
+    // Check if on a mobile phone (phones cannot launch PC CS2 via steam:// URI)
+    const isMobileDevice = typeof navigator !== 'undefined' && (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 640);
+    if (isMobileDevice) {
+      alert(`📱 Mobile Notice:\n\nAutomated Steam slot-sniping requires a desktop Windows PC with Counter-Strike 2 installed.\n\nOn mobile, please tap "CONNECT" to copy the server IP (${server.host}:${server.port}) and connect from your gaming PC console.`);
+      return;
+    }
+
     if (autoJoinServerId === server.id) {
       setAutoJoinServerId(null);
       setAutoJoinStatus(null);
@@ -410,7 +417,7 @@ export const ServerRadarPreview: React.FC = () => {
             <div>
               <div className="font-bold text-amber-300">{autoJoinStatus}</div>
               <div className="text-[11px] text-amber-200/90 mt-1 font-sans flex items-center gap-1.5">
-                <span className="font-bold text-yellow-300">⚠️ IMPORTANT:</span> Keep this browser tab open to allow the background slot sniper to watch live telemetry and auto-connect when a slot opens!
+                <span className="font-bold text-yellow-300">⚠️ IMPORTANT:</span> Keep this browser tab visible to allow the slot sniper to watch live telemetry and auto-connect when a slot opens (background tabs may be throttled by browsers)!
               </div>
             </div>
           </div>
@@ -680,7 +687,7 @@ export const ServerRadarPreview: React.FC = () => {
                   ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse shadow-[0_0_15px_rgba(251,191,36,0.4)]'
                   : 'bg-slate-900/90 hover:bg-emerald-950/60 border-slate-700 hover:border-emerald-500/70 text-slate-300 hover:text-emerald-300'
               }`}
-              title="Auto Join Slot Watcher:&#10;• If CS2 is OPEN: Connects you directly to the server the instant a slot opens!&#10;• If CS2 is CLOSED: Steam protocol only opens CS2 to Main Menu (will not join directly). Launch CS2 first, then arm Auto Join!&#10;• Pro-Tip: For 100% automated in-game console sniping that bypasses Steam, use the CS2 Command Center desktop app."
+              title="Auto Join Slot Watcher:&#10;• If CS2 is OPEN: Connects you directly to the server once player count drops below threshold.&#10;• If CS2 is CLOSED: Steam protocol only opens CS2 to Main Menu (will not join directly). Launch CS2 first, then arm Auto Join!&#10;• Pro-Tip: For 100% automated in-game console sniping that bypasses Steam, use the CS2 Command Center desktop app."
             >
               <Target className={`w-3.5 h-3.5 ${autoJoinServerId === gflServer.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
               <span>
@@ -1048,7 +1055,7 @@ export const ServerRadarPreview: React.FC = () => {
                       ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse'
                       : 'bg-slate-900 hover:bg-emerald-950/80 border-slate-700 hover:border-emerald-500 text-slate-300 hover:text-emerald-300'
                   }`}
-                  title={`Auto Join Slot Watcher (Target: ${commSlotPriority === 'normal' ? '≤61 Players' : commSlotPriority === 'supporter' ? '≤62 Players' : '≤63 Players'}):&#10;• If CS2 is OPEN: Connects you directly into the server the moment a slot opens!&#10;• If CS2 is CLOSED: Steam protocol only opens CS2 to Main Menu (will not join directly). Launch CS2 first, then arm Auto Join!&#10;• Pro-Tip: For 100% automated in-game console sniping that bypasses Steam, use the CS2 Command Center desktop app.`}
+                  title={`Auto Join Slot Watcher (Target: ${commSlotPriority === 'normal' ? '≤61 Players' : commSlotPriority === 'supporter' ? '≤62 Players' : '≤63 Players'}):&#10;• If CS2 is OPEN: Connects you directly into the server once player count drops below threshold.&#10;• If CS2 is CLOSED: Steam protocol only opens CS2 to Main Menu (will not join directly). Launch CS2 first, then arm Auto Join!&#10;• Pro-Tip: For 100% automated in-game console sniping that bypasses Steam, use the CS2 Command Center desktop app.`}
                 >
                   <Target className={`w-3 h-3 ${autoJoinServerId === server.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
                   <span className="hidden sm:inline">

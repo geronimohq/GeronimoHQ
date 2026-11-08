@@ -296,14 +296,32 @@ export const DownloadRamSection: React.FC = () => {
   }, [laserGameActive, isTabHidden]);
 
   // Keyboard navigation for laser game (Space/Up = Jump, Down/Ctrl = Crouch)
+  // Strictly active ONLY while laserGameActive is true, and ignores keystrokes when focused in inputs/textareas
   useEffect(() => {
     if (!laserGameActive) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Never hijack keystrokes if the user is typing in any form input, textarea, or search box
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable ||
+          target.getAttribute('role') === 'textbox')
+      ) {
+        return;
+      }
+
       if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
         e.preventDefault();
         triggerPose('jump');
-      } else if (e.code === 'ArrowDown' || e.code === 'KeyS' || e.code === 'ControlLeft' || e.code === 'ControlRight') {
+      } else if (
+        e.code === 'ArrowDown' ||
+        e.code === 'KeyS' ||
+        e.code === 'ControlLeft' ||
+        e.code === 'ControlRight'
+      ) {
         e.preventDefault();
         triggerPose('crouch');
       }

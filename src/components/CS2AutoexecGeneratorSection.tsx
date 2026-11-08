@@ -219,13 +219,15 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
         </div>
 
         {/* File Installation Location Helper */}
-        <div className="mb-6 p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-code text-slate-300">
-          <div className="flex items-start sm:items-center gap-2 min-w-0">
-            <span className="text-amber-400 font-bold flex-shrink-0">📁 CFG DIRECTORY:</span>
-            <span className="text-slate-300 truncate">
-              Place downloaded <code className="text-cyan-300 font-bold">autoexec.cfg</code> in:
-              <code className="text-lime-300 select-all ml-1 hidden md:inline">steamapps/common/Counter-Strike Global Offensive/game/csgo/cfg/</code>
-            </span>
+        <div className="mb-6 p-4 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs font-code text-slate-300">
+          <div className="space-y-1.5 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-amber-400 font-bold flex-shrink-0">📁 DEFAULT CFG DIRECTORY:</span>
+              <code className="text-lime-300 select-all font-bold">C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\cfg\</code>
+            </div>
+            <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
+              *Note: Your drive letter or Steam library folder may differ (e.g. <code className="text-cyan-300">H:\SteamLibrary\...</code>). To locate your exact folder in Steam: right-click Counter-Strike 2 &rarr; Manage &rarr; Browse local files &rarr; open <code className="text-cyan-300">game/csgo/cfg/</code>.
+            </p>
           </div>
           <button
             onClick={() => {
@@ -233,11 +235,11 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
               setCopiedPath(true);
               setTimeout(() => setCopiedPath(false), 2000);
             }}
-            title="Copy exact Windows CS2 cfg installation directory path to clipboard"
-            className="min-h-[40px] px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer flex-shrink-0 transition-colors touch-manipulation"
+            title="Copy default CS2 cfg folder path to clipboard (adjust drive letter if installed on another drive)"
+            className="min-h-[44px] px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer flex-shrink-0 transition-colors touch-manipulation"
           >
             {copiedPath ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copiedPath ? 'Copied Full Path!' : 'Copy Windows Path'}</span>
+            <span>{copiedPath ? 'Copied Folder Path!' : 'Copy Default Folder Path'}</span>
           </button>
         </div>
 
@@ -250,7 +252,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
             </div>
 
             <label 
-              title="Set low laser-jump viewmodel (viewmodel_fov 68, viewmodel_offset_x 2.0, viewmodel_offset_y 2.0, viewmodel_offset_z -2.0) for maximum bottom-screen visibility"
+              title="Sets weapon viewmodel_fov 68 and offsets gun model (X:2.0, Y:2.0, Z:-2.0) down and right for maximum screen visibility. Note: Player camera FOV is locked by CS2 engine at 90."
               className="flex items-start gap-2.5 text-xs font-tech text-slate-200 cursor-pointer select-none"
             >
               <input
@@ -260,8 +262,8 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                 className="mt-0.5 w-4 h-4 accent-cyan-400 rounded cursor-pointer"
               />
               <div>
-                <span className="font-bold text-white">ZE Laser-Jump Low Viewmodel (FOV 68, X:+2, Y:+2, Z:-2)</span>
-                <p className="text-[11px] text-slate-400">Lowers your gun model out of the center screen so you can clearly see crouch &amp; ankle lasers.</p>
+                <span className="font-bold text-white">ZE Laser-Jump Low Viewmodel (viewmodel_fov 68, X:+2, Y:+2, Z:-2)</span>
+                <p className="text-[11px] text-slate-400">Lowers and pushes gun model to the corner so you can see crouch &amp; ankle lasers. (Note: Controls weapon model; camera eye FOV is locked at 90 by Valve).</p>
               </div>
             </label>
 
