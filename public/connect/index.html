@@ -187,24 +187,44 @@
 
   <script>
     (function() {
+      var DEFAULT_TARGET = '74.91.124.21:27015';
       var params = new URLSearchParams(window.location.search);
-      var rawIp = params.get('ip') || params.get('server') || params.get('host') || window.location.hash.replace('#', '') || '74.91.124.21:27015';
-      // Sanitize IP address/port
-      var targetIp = rawIp.replace(/[^0-9a-zA-Z\.\:\-]/g, '').trim();
-      if (!targetIp) targetIp = '74.91.124.21:27015';
+      var rawIp = (params.get('ip') || params.get('server') || params.get('host') || window.location.hash.replace('#', '') || DEFAULT_TARGET).trim();
 
       var domainMap = {
         'rsscs2.kr': '14.5.33.30:27015',
         'rsscs2.kr:27015': '14.5.33.30:27015'
       };
-      if (domainMap[targetIp]) {
-        targetIp = domainMap[targetIp];
+      if (domainMap[rawIp]) {
+        rawIp = domainMap[rawIp];
       }
 
-      document.getElementById('ip-text').textContent = targetIp;
-      var steamUri = 'steam://connect/' + targetIp;
+      // Strict Host:Port validation (IPv4 or FQDN hostname with valid port 1-65535)
+      var HOST_PORT_REGEX = /^(([0-9]{1,3}\.){3}[0-9]{1,3}|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}):([0-9]{1,5})$/;
+      var HOST_ONLY_REGEX = /^(([0-9]{1,3}\.){3}[0-9]{1,3}|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$/;
+
+      var targetIp = DEFAULT_TARGET;
+      if (HOST_PORT_REGEX.test(rawIp)) {
+        var parts = rawIp.split(':');
+        var portNum = parseInt(parts[1], 10);
+        if (portNum >= 1 && portNum <= 65535) {
+          targetIp = rawIp;
+        }
+      } else if (HOST_ONLY_REGEX.test(rawIp)) {
+        targetIp = rawIp + ':27015';
+      }
+
+      // Zero innerHTML: strict textContent display
+      var ipTextEl = document.getElementById('ip-text');
+      if (ipTextEl) {
+        ipTextEl.textContent = targetIp;
+      }
+
+      var steamUri = 'steam://connect/' + encodeURIComponent(targetIp);
       var linkEl = document.getElementById('connect-link');
-      linkEl.href = steamUri;
+      if (linkEl) {
+        linkEl.href = steamUri;
+      }
 
       // Automatically launch Steam protocol
       try {
@@ -224,10 +244,12 @@
           document.body.removeChild(ta);
         }
         var btn = document.getElementById('copy-btn');
-        btn.textContent = '✓ Copied to Clipboard (`connect ' + targetIp + '`)';
-        setTimeout(function() {
-          btn.textContent = '📋 Copy Console Command (`connect IP`)';
-        }, 2200);
+        if (btn) {
+          btn.textContent = '✓ Copied to Clipboard (`connect ' + targetIp + '`)';
+          setTimeout(function() {
+            btn.textContent = '📋 Copy Console Command (`connect IP`)';
+          }, 2200);
+        }
       };
     })();
   </script>
