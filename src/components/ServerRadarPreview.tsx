@@ -12,6 +12,8 @@ import {
   type PlayerEntry 
 } from '../utils/serverQuery';
 import { ServerGeoDemographics } from './ServerGeoDemographics';
+import { ServerLeaderboardSpotlight } from './ServerLeaderboardSpotlight';
+import { getMapTierAndMapper } from '../data/zeMapTiers';
 import { 
   Play, 
   Copy, 
@@ -323,6 +325,7 @@ export const ServerRadarPreview: React.FC = () => {
   const gflMapStart = getMapStartTime('gfl', gflMap, gflLive?.map_start_time);
   const gflMapElapsed = Math.max(0, nowSec - gflMapStart);
   const gflRegionalPing = getEstimatedRegionalPing(gflServer.region);
+  const gflMapTier = useMemo(() => getMapTierAndMapper(gflMap), [gflMap]);
 
   const gflTotalPlayers = useMemo(() => {
     if (!gflLive?.players) return 62;
@@ -553,12 +556,27 @@ export const ServerRadarPreview: React.FC = () => {
               {/* Map Information & Telemetry Stats */}
               <div className="flex flex-col gap-2 flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 text-xs font-code">
-                  <div className="flex items-center gap-1.5 text-slate-300">
+                  <div className="flex items-center gap-1.5 text-slate-300 flex-wrap">
                     <MapPin className="w-3.5 h-3.5 text-fuchsia-400 flex-shrink-0" />
                     <span className="text-slate-400">Map:</span>
                     <strong className="text-sm font-bold text-fuchsia-300 truncate max-w-[200px]">
                       {gflMap}
                     </strong>
+                    {/* Map Difficulty Tier Badge */}
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-code font-bold border ${gflMapTier.colorClass}`} title={`Difficulty: ${gflMapTier.tierLabel}`}>
+                      {gflMapTier.badge}
+                    </span>
+                  </div>
+
+                  {/* Mapper Attribution */}
+                  <div className="text-[11px] font-code text-slate-400 flex items-center gap-1 bg-slate-950/80 px-2 py-0.5 rounded border border-slate-800">
+                    <span>🔨 by:</span>
+                    <strong className="text-amber-300 font-semibold">{gflMapTier.mapper}</strong>
+                    {gflMapTier.isHallOfFameMapper && (
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-500/50 font-bold" title="Legendary Mapper (Hall of Fame)">
+                        👑 Hall of Fame
+                      </span>
+                    )}
                   </div>
 
                   <span className="text-cyan-300 font-code text-xs font-bold bg-cyan-950/90 px-2 py-0.5 rounded-md border border-cyan-500/40 flex items-center gap-1 shadow-[0_0_10px_rgba(0,240,255,0.25)]">
@@ -755,6 +773,11 @@ export const ServerRadarPreview: React.FC = () => {
       </div>
 
       {/* ==================================================================== */}
+      {/* COMMUNITY LEADERBOARD SPOTLIGHT (MONTHLY MVPS & RECORD CLEARS)       */}
+      {/* ==================================================================== */}
+      <ServerLeaderboardSpotlight />
+
+      {/* ==================================================================== */}
       {/* SIMPLIFIED PRIMARY TABS: GLOBAL (6) vs PLANET CHINA (35)             */}
       {/* ==================================================================== */}
       <div className="flex flex-col gap-3 mb-6">
@@ -927,6 +950,7 @@ export const ServerRadarPreview: React.FC = () => {
           const regionalPing = getEstimatedRegionalPing(server.region);
           const currPlayersNum = currentPlayers ? parseInt(currentPlayers.split('/')[0], 10) : 0;
           const serverPlayerNames = liveInfo?.players_list?.map((p) => p.name) || [];
+          const commMapTier = getMapTierAndMapper(currentMap);
 
           return (
             <div
@@ -1014,12 +1038,19 @@ export const ServerRadarPreview: React.FC = () => {
                       />
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <div className="flex items-center gap-1 text-[11px] text-slate-400">
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-400 flex-wrap">
                         <MapPin className="w-3 h-3 text-fuchsia-400 flex-shrink-0" />
                         <span>Map:</span>
-                        <strong className="text-fuchsia-300 font-bold truncate max-w-[120px] sm:max-w-[150px]">
+                        <strong className="text-fuchsia-300 font-bold truncate max-w-[110px] sm:max-w-[130px]">
                           {currentMap || 'ze_escape'}
                         </strong>
+                        {/* Map Difficulty Tier Badge */}
+                        <span className={`px-1.5 py-0.2 rounded text-[9px] font-code font-bold border ${commMapTier.colorClass}`} title={`Difficulty: ${commMapTier.tierLabel}`}>
+                          {commMapTier.badge}
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-code text-slate-400 truncate max-w-[160px] flex items-center gap-1">
+                        <span>🔨 {commMapTier.mapper}</span>
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-cyan-300 text-[10px] font-bold bg-cyan-950/80 px-1.5 py-0.2 rounded border border-cyan-500/30 flex items-center gap-0.5">
