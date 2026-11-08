@@ -265,17 +265,24 @@ LOCAL_HEARTBEAT = {
 
 @app.get("/api/presence/heartbeat")
 @app.post("/api/presence/heartbeat")
-def presence_heartbeat(is_cs2_running: bool = False, in_menu: bool = True, game: str = "Counter-Strike 2"):
+def presence_heartbeat(
+    is_cs2_running: bool = False,
+    is_steam_running: bool = False,
+    in_menu: bool = True,
+    game: str = "Counter-Strike 2"
+):
     """Accepts real-time presence heartbeat from local CS2 Command Center desktop app."""
     global LOCAL_HEARTBEAT
+    now = time.time()
+    is_online = bool(is_cs2_running or is_steam_running)
     LOCAL_HEARTBEAT = {
-        "timestamp": time.time(),
-        "is_online": True,
+        "timestamp": now,
+        "is_online": is_online,
         "is_cs2": bool(is_cs2_running),
         "in_menu": bool(in_menu),
         "game": game if is_cs2_running else None
     }
-    return {"status": "ok", "received": True, "valid_seconds": 25}
+    return {"status": "ok", "received": True, "is_online": is_online, "valid_seconds": 25}
 
 def query_steam_profile_cached():
     now = time.time()
@@ -388,6 +395,19 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
                 "server_id": None,
                 "server_name": None,
                 "map": "Idle",
+                "players": "N/A",
+                "connect_url": None,
+                "player_duration": 0
+            }
+        else:
+            return {
+                "online": False,
+                "in_game": False,
+                "state": "offline",
+                "game": "Offline",
+                "server_id": None,
+                "server_name": None,
+                "map": "Offline",
                 "players": "N/A",
                 "connect_url": None,
                 "player_duration": 0
