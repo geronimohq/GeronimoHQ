@@ -96,14 +96,6 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
       );
     }
 
-    // CS2 Native Jumpthrow notice
-    lines.push(
-      '// --- CS2 NATIVE SUB-TICK JUMPTHROW ---',
-      '// In CS2, release attack while jumping. The sub-tick engine provides built-in jumpthrow timing.',
-      '// Multi-action movement/shooting binds are ignored by default since the Aug 19, 2024 update; Valve kicks detected input automation on official servers.',
-      ''
-    );
-
     if (radarZoomBind) {
       const rk = (radarZoomKey || 'v').trim();
       lines.push(
@@ -138,6 +130,27 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
       );
     }
 
+    const duckK = (duckKey || 'F7').trim();
+    const muteK = (muteKey || 'F8').trim();
+    const radarK = (radarZoomKey || 'v').trim();
+
+    lines.push(
+      '// ============================================================================',
+      '// HOW TO REVERT ALL SETTINGS & BINDS TO DEFAULTS:',
+      '// If you ever wish to remove these customizations, run in CS2 console:',
+      `// unbind "${duckK}"`,
+      `// unbind "${muteK}"`,
+      `// unbind "${radarK}"`,
+      '// volume 1.0',
+      '// voice_modenable 1',
+      '// cl_radar_scale 0.70',
+      '// cl_radar_always_centered 1',
+      '// hud_scaling 1.0',
+      '// viewmodel_fov 60; viewmodel_offset_x 1; viewmodel_offset_y 1; viewmodel_offset_z -1',
+      '// r_drawtracers_firstperson 1',
+      '// ============================================================================',
+      ''
+    );
     lines.push('echo "[GeronimoHQ] CS2 & ZE Autoexec Loaded Successfully!"');
     return lines.join('\n');
   }, [
@@ -422,14 +435,14 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
               <div>
-                <label className="block text-[11px] font-code text-slate-400 mb-1">HUD COLOR THEME:</label>
+                <label className="block text-[11px] font-code text-slate-400 mb-1">HUD COLOR THEME (Unverified In-Game Presets):</label>
                 <select
                   value={hudColor}
                   onChange={(e) => setHudColor(e.target.value)}
                   title="Choose custom CS2 HUD color theme index (cl_hud_color 0-12)"
                   className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs font-code text-cyan-300"
                 >
-                  <option value="3">3 — Light Blue (Popular Pro Default)</option>
+                  <option value="3">3 — Blue / Light Blue (Popular Pro Default, unverified)</option>
                   <option value="10">10 — Aqua / Cyan (Cyberpunk)</option>
                   <option value="9">9 — Emerald Green</option>
                   <option value="8">8 — Vibrant Yellow</option>
@@ -464,6 +477,9 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
           {/* Right Column: Live Config Preview + Launch Options Helper (6 Cols) */}
           <div className="lg:col-span-6 flex flex-col justify-between bg-slate-950/95 border border-slate-800 rounded-xl p-4">
             <div>
+              <div className="text-[11px] font-code text-amber-300/90 bg-amber-950/40 p-2.5 rounded-lg border border-amber-500/30 mb-3">
+                ⚠️ <strong>Backup Note:</strong> Back up your CS2 user config folder (<code className="text-white">Steam/userdata/&lt;id&gt;/730/local/cfg</code>) before applying an autoexec. Custom binds ({duckKey}, {muteKey}, {radarZoomKey}) override actions currently assigned to those keys.
+              </div>
               <div className="flex items-center justify-between text-xs font-code text-slate-400 mb-2">
                 <span className="flex items-center gap-1.5 text-lime-300 font-bold">
                   <Terminal className="w-4 h-4 text-lime-400" />
