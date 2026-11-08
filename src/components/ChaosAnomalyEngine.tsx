@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Dices, Trophy, AlertTriangle, ShieldAlert, Radio, Sparkles } from 'lucide-react';
 import { safeConfetti, isReducedMotionPreferred } from '../utils/motion';
 
@@ -297,8 +297,12 @@ export const ChaosAnomalyEngine: React.FC = () => {
     { title: 'MPO Slayer Champion', desc: 'Banished multiplane overlay stutter from Windows forever.', icon: '⚔️' },
   ];
 
-  // 50 Distinct RNG Anomaly Keys
+  // Persistent Anti-Repetition Ring Buffer (guarantees zero duplicates for 40+ clicks!)
+  const recentHistoryRef = useRef<string[]>([]);
+
+  // 100 Distinct High-RNG Anomaly Keys
   const CHAOS_POOL = [
+    // Original 50
     'barrel_roll', 'earthquake', 'rainbow_rave', 'bsod_scare', 'pepe_banana_swarm',
     'confetti_nuke', 'airhorn', 'inverted_dimension', 'negev', 'glitch',
     'flashbang', 'vaporwave_crt', 'matrix_code_rain', 'zero_gravity', 'deep_fried_meme',
@@ -308,7 +312,19 @@ export const ChaosAnomalyEngine: React.FC = () => {
     'c4_countdown', 'case_unboxing', 'banana_overdrive', 'stretched_res', 'wide_pepe_walk',
     'fake_lag_spike', 'dialup_handshake', 'hacker_terminal', 'dvd_screensaver', 'dubstep_bass_drop',
     'crowd_cheer', 'sv_cheats_god', 'phoon_bhop', 'achievement_jackpot', 'ram_injection',
-    'subtick_rewind', 'airdrop_crate', 'gaben_summer_sale', 'laser_dance_party', 'super_nova_warp'
+    'subtick_rewind', 'airdrop_crate', 'gaben_summer_sale', 'laser_dance_party', 'super_nova_warp',
+
+    // 50 NEW Hilarious Meme / CS2 / ZE Anomalies
+    'gaben_vac_ban', 'spinning_chicken', 'silver_awp_whiff', 'kick_vote_admin', 'butterfly_inspect_spam',
+    'bomb_planted_b', 'subtick_wall_excuse', 'p250_sand_dune', 'gold_knife_unboxed', 'conga_pepe_march',
+    'banana_hotline_call', 'rage_keyboard_smash', 'dollar_store_mic', 'mom_pulled_router', 'juan_deag_triple',
+    'smoke_ninja_defuse', 'drop_me_avp', 'ze_laser_survivor', 'ze_door_hugger', 'ze_boss_ragdoll',
+    'ze_spawn_room_ultima', 'ze_mother_zombie', 'cs2_water_puddle', 'cpu_nitrogen_cooling', 'grandma_zeus_clutch',
+    'zeus_zap_1000v', 'headshot_dink_fountain', 'potato_pc_graphics', 'frog_bass_cannon', 'windows_update_troll',
+    'cloud_ram_10tb', 'webcam_desk_slam', 'c4_chicken_bomber', 'stretched_wide_boy', 'subwoofer_shaker',
+    'aimbot_report_toast', 'team_flash_blind', 'bounce_nade_fail', 'potassium_turbine', 'pepe_matrix_dodge',
+    't_pose_agent', 'teleport_999_ping', 'case_wheel_tick', 'shroud_flick_shot', 's1mple_fake_awp',
+    'karrigan_clap_hype', 'monesy_pixel_smoke', 'donk_screaming_hype', 'rush_b_no_stop', 'geronimo_gold_vip'
   ];
 
   const triggerRandomChaos = () => {
@@ -317,7 +333,20 @@ export const ChaosAnomalyEngine: React.FC = () => {
       setTimeout(() => setToastBanner(null), 3200);
       return;
     }
-    const chosen = CHAOS_POOL[Math.floor(Math.random() * CHAOS_POOL.length)];
+
+    // High-Variety Anti-Repetition Filter: Filter out recently played anomalies
+    let available = CHAOS_POOL.filter((key) => !recentHistoryRef.current.includes(key));
+    if (available.length < 15) {
+      // Recycle the oldest entries so pool stays fresh
+      recentHistoryRef.current = recentHistoryRef.current.slice(-20);
+      available = CHAOS_POOL.filter((key) => !recentHistoryRef.current.includes(key));
+    }
+
+    const chosen = available[Math.floor(Math.random() * available.length)];
+    recentHistoryRef.current.push(chosen);
+    if (recentHistoryRef.current.length > 45) {
+      recentHistoryRef.current.shift();
+    }
 
     if (chosen === 'barrel_roll') {
       playChaosSynth('rave');
@@ -603,6 +632,266 @@ export const ChaosAnomalyEngine: React.FC = () => {
       setRainbowRave(true);
       setToastBanner('🪩 DISCO FEVER // STAYIN ALIVE IN ZOMBIE ESCAPE!');
       setTimeout(() => { setRainbowRave(false); setToastBanner(null); }, 3200);
+    } else if (chosen === 'gaben_vac_ban') {
+      playChaosSynth('siren');
+      setLagSpike(true);
+      setToastBanner('🚨 VAC BANNED BY GABEN // Error: Too much swag detected! (0 bans on record, you are clean!)');
+      setTimeout(() => { setLagSpike(false); setToastBanner(null); }, 3800);
+    } else if (chosen === 'spinning_chicken') {
+      playChaosSynth('rave');
+      const chickens = Array.from({ length: 45 }, (_, i) => ({
+        id: i,
+        left: Math.random() * 95,
+        emoji: '🐔',
+        duration: 1.6 + Math.random() * 1.8
+      }));
+      setFallingItems(chickens);
+      setToastBanner('🐔 DEFUSE CHICKEN BRIGADE // Level 99 Boss Chicken spinning with defuse kit!');
+      setTimeout(() => { setFallingItems([]); setToastBanner(null); }, 3800);
+    } else if (chosen === 'silver_awp_whiff') {
+      playChaosSynth('ding');
+      setHitmarkers([{ id: 1, x: 50, y: 50 }]);
+      setToastBanner('🎯 0.001mm SILVER AWP WHIFF // Crosshair was directly on his nose! DESK SLAMMED!');
+      setTimeout(() => { setHitmarkers([]); setToastBanner(null); }, 3000);
+    } else if (chosen === 'kick_vote_admin') {
+      playChaosSynth('cheer');
+      setToastBanner('🗳️ VOTE TO KICK: GERONIMO // [■■■■] 4/4 Votes Passed! Vote Cancelled: You own the server!');
+      safeConfetti({ particleCount: 70, spread: 75 });
+      setTimeout(() => setToastBanner(null), 3500);
+    } else if (chosen === 'butterfly_inspect_spam') {
+      playChaosSynth('coin');
+      setToastBanner('🔪 F + R BUTTERFLY KNIFE SPAM // Spinning Doppler Phase 2 at 120 FPS!');
+      safeConfetti({ particleCount: 50, colors: ['#a855f7', '#ec4899', '#3b82f6'] });
+      setTimeout(() => setToastBanner(null), 3200);
+    } else if (chosen === 'bomb_planted_b') {
+      playChaosSynth('heartbeat');
+      setC4Modal(true);
+      setToastBanner('💣 "THE BOMB HAS BEEN PLANTED AT B!" // 40 seconds to defuse!');
+      setTimeout(() => { setC4Modal(false); setToastBanner(null); }, 3800);
+    } else if (chosen === 'subtick_wall_excuse') {
+      playChaosSynth('ding');
+      setSubtickJitter(true);
+      setToastBanner('🐛 "I WAS LITERALLY BEHIND COVER!" // Valve sub-tick official excuse registered!');
+      setTimeout(() => { setSubtickJitter(false); setToastBanner(null); }, 3000);
+    } else if (chosen === 'p250_sand_dune') {
+      playChaosSynth('coin');
+      const items = Array.from({ length: 30 }, (_, i) => ({
+        id: i,
+        left: Math.random() * 95,
+        emoji: '📦',
+        duration: 2.0
+      }));
+      setFallingItems(items);
+      setToastBanner('📦 MIL-SPEC BLUE TIER DROP // P250 | Sand Dune (Battle-Scarred, Float: 0.998)!');
+      setTimeout(() => { setFallingItems([]); setToastBanner(null); }, 3500);
+    } else if (chosen === 'gold_knife_unboxed') {
+      playChaosSynth('achievement');
+      setCaseModal(true);
+      safeConfetti({ particleCount: 120, spread: 100, origin: { y: 0.5 }, colors: ['#ffd700', '#f59e0b', '#ffffff'] });
+      setTimeout(() => setCaseModal(false), 4000);
+    } else if (chosen === 'conga_pepe_march') {
+      playChaosSynth('rave');
+      const pepes = Array.from({ length: 40 }, (_, i) => ({
+        id: i,
+        left: Math.random() * 95,
+        emoji: '🐸',
+        duration: 1.8 + Math.random() * 2.0
+      }));
+      setFallingItems(pepes);
+      setRainbowRave(true);
+      setToastBanner('🕺 40-PEPE CONGA LINE MARCH // Vibing straight through B Apartments!');
+      setTimeout(() => { setFallingItems([]); setRainbowRave(false); setToastBanner(null); }, 4000);
+    } else if (chosen === 'banana_hotline_call') {
+      playChaosSynth('dialup');
+      setToastBanner('📞 BANANA HOTLINE CONNECTED // "Please hold for Commander Peel! Ring Ring!" 🍌');
+      safeConfetti({ particleCount: 60, colors: ['#facc15', '#ffffff'] });
+      setTimeout(() => setToastBanner(null), 3500);
+    } else if (chosen === 'rage_keyboard_smash') {
+      playChaosSynth('gun');
+      setEarthquake(true);
+      setToastBanner('⌨️ RAGE QUIT KEYBOARD SMASH // asdfjkl;qwerty! WHO THREW THAT FLASH?!');
+      setTimeout(() => { setEarthquake(false); setToastBanner(null); }, 2500);
+    } else if (chosen === 'dollar_store_mic') {
+      playChaosSynth('bsod');
+      setToastBanner('🎙️ $2 GAS STATION MIC // "HELLO MEN CAN YOU HEAR ME BZZZZZZZT"');
+      setTimeout(() => setToastBanner(null), 3200);
+    } else if (chosen === 'mom_pulled_router') {
+      playChaosSynth('bsod');
+      setLagSpike(true);
+      setToastBanner('🔌 MOM UNPLUGGED THE ROUTER // Ping: 9999ms, Auto-Disconnecting in 25s!');
+      setTimeout(() => { setLagSpike(false); setToastBanner(null); }, 3000);
+    } else if (chosen === 'juan_deag_triple') {
+      playChaosSynth('ding');
+      const deags = Array.from({ length: 3 }, (_, i) => ({ id: i, x: 30 + i * 20, y: 40 }));
+      setHitmarkers(deags);
+      setToastBanner('💥 JUAN DEAG TRIPLE 1-TAP // DINK! DINK! DINK! Pure 1.6 deagle glory!');
+      setTimeout(() => { setHitmarkers([]); setToastBanner(null); }, 3000);
+    } else if (chosen === 'smoke_ninja_defuse') {
+      playChaosSynth('cheer');
+      setSmokeScreen(true);
+      setToastBanner('🥷 0.01s NINJA DEFUSE // Snuck into the smoke... Bomb has been defused!');
+      safeConfetti({ particleCount: 75, spread: 80 });
+      setTimeout(() => { setSmokeScreen(false); setToastBanner(null); }, 3500);
+    } else if (chosen === 'drop_me_avp') {
+      playChaosSynth('gun');
+      setToastBanner('🔫 "DROP ME AVP MEN))" // Teammate bought Negev and dropped you a Decoy grenade!');
+      setTimeout(() => setToastBanner(null), 3200);
+    } else if (chosen === 'ze_laser_survivor') {
+      playChaosSynth('laser');
+      setLaserDance(true);
+      setToastBanner('⚡ ZERO-MISTAKE LASER DODGE // Survived 12 stacked jumping lasers on 2 HP!');
+      setTimeout(() => { setLaserDance(false); setToastBanner(null); }, 3500);
+    } else if (chosen === 'ze_door_hugger') {
+      playChaosSynth('coin');
+      setToastBanner('🚪 CERTIFIED DOOR HUGGER // Reached the bunker door 50 seconds before the squad!');
+      setTimeout(() => setToastBanner(null), 3200);
+    } else if (chosen === 'ze_boss_ragdoll') {
+      playChaosSynth('earthquake');
+      setEarthquake(true);
+      setToastBanner('💀 ZE BOSS RAGDOLL SLAM // The Boss swung his arm and launched 40 humans into the skybox!');
+      setTimeout(() => { setEarthquake(false); setToastBanner(null); }, 3000);
+    } else if (chosen === 'ze_spawn_room_ultima') {
+      playChaosSynth('flash');
+      setFlashbang(true);
+      setToastBanner('✨ ACCIDENTAL ULTIMA IN SPAWN // Someone fat-fingered Ultima on Stage 1!');
+      setTimeout(() => { setFlashbang(false); setToastBanner(null); }, 2800);
+    } else if (chosen === 'ze_mother_zombie') {
+      playChaosSynth('siren');
+      setToastBanner('🧟 PATIENT ZERO // "You are the Mother Zombie! Infect all 63 humans!" 🩸');
+      setTimeout(() => setToastBanner(null), 3500);
+    } else if (chosen === 'cs2_water_puddle') {
+      playChaosSynth('ding');
+      setToastBanner('🌊 4K WATER RIPPLE PHYSICS // Lost 200 FPS admiring Ancient water reflections!');
+      setTimeout(() => setToastBanner(null), 3200);
+    } else if (chosen === 'cpu_nitrogen_cooling') {
+      playChaosSynth('achievement');
+      setToastBanner('🚀 LIQUID NITROGEN OVERCLOCK // Core Temp: -196°C, CS2 Running at 999 FPS!');
+      setTimeout(() => setToastBanner(null), 3200);
+    } else if (chosen === 'grandma_zeus_clutch') {
+      playChaosSynth('coin');
+      setToastBanner('👵 GRANDMA IS CLUTCHING // "Don\'t worry grandson, grandma has the Zeus x27!"');
+      safeConfetti({ particleCount: 60 });
+      setTimeout(() => setToastBanner(null), 3500);
+    } else if (chosen === 'zeus_zap_1000v') {
+      playChaosSynth('laser');
+      setToastBanner('⚡ BZZZZZZT! 1000V ZEUS ZAP // Eco round taser kill in vents!');
+      setTimeout(() => setToastBanner(null), 3000);
+    } else if (chosen === 'headshot_dink_fountain') {
+      playChaosSynth('ding');
+      const dinks = Array.from({ length: 8 }, (_, i) => ({ id: i, x: Math.random() * 80 + 10, y: Math.random() * 80 + 10 }));
+      setHitmarkers(dinks);
+      setToastBanner('🎯 DINK DINK DINK // Shower of golden CS2 helmet sparks erupting!');
+      setTimeout(() => { setHitmarkers([]); setToastBanner(null); }, 3000);
+    } else if (chosen === 'potato_pc_graphics') {
+      playChaosSynth('coin');
+      setPixelMode(true);
+      setToastBanner('🥔 POTATO PC 144p RES // Textures: Very Low, Shader: Cardboard, FPS: 300!');
+      setTimeout(() => { setPixelMode(false); setToastBanner(null); }, 3200);
+    } else if (chosen === 'frog_bass_cannon') {
+      playChaosSynth('subbass');
+      setEarthquake(true);
+      setToastBanner('🐸 PEPE DUBSTEP BASS CANNON // WUB-WUB-WUB-WUB-RIBBIIT!');
+      setTimeout(() => { setEarthquake(false); setToastBanner(null); }, 2800);
+    } else if (chosen === 'windows_update_troll') {
+      playChaosSynth('bsod');
+      setToastBanner('💻 WINDOWS UPDATE AT 15-14 // "Your PC will restart in 3... 2... 1..." (Just kidding!)');
+      setTimeout(() => setToastBanner(null), 3500);
+    } else if (chosen === 'cloud_ram_10tb') {
+      playChaosSynth('coin');
+      setToastBanner('💾 10,000 GB CLOUD RAM DOWNLOADED // DDR6 Quantum Memory installed in BIOS!');
+      setTimeout(() => setToastBanner(null), 3200);
+    } else if (chosen === 'webcam_desk_slam') {
+      playChaosSynth('earthquake');
+      setEarthquake(true);
+      setToastBanner('💥 DESK SLAM 9000 // Desk shook so hard the monitor rotated 45 degrees!');
+      setTimeout(() => { setEarthquake(false); setToastBanner(null); }, 2600);
+    } else if (chosen === 'c4_chicken_bomber') {
+      playChaosSynth('siren');
+      const chicks = Array.from({ length: 30 }, (_, i) => ({ id: i, left: Math.random() * 95, emoji: '🐔', duration: 1.8 }));
+      setFallingItems(chicks);
+      setToastBanner('🐔 C4 BOMB SQUAD CHICKEN // The chickens are planting at A Site!');
+      setTimeout(() => { setFallingItems([]); setToastBanner(null); }, 3500);
+    } else if (chosen === 'stretched_wide_boy') {
+      playChaosSynth('rave');
+      setWidePepe(true);
+      setToastBanner('🚶 21:9 WIDE PRO RES // Extra wide player hitboxes loaded!');
+      setTimeout(() => { setWidePepe(false); setToastBanner(null); }, 3200);
+    } else if (chosen === 'subwoofer_shaker') {
+      playChaosSynth('subbass');
+      setEarthquake(true);
+      setToastBanner('🔊 15Hz INFRASOUND TEST // Rattling your room\'s window glass!');
+      setTimeout(() => { setEarthquake(false); setToastBanner(null); }, 2500);
+    } else if (chosen === 'aimbot_report_toast') {
+      playChaosSynth('ding');
+      setToastBanner('🚨 "NICE SPINBOT BRO" // 9 griefing reports submitted to Valve Overwatch!');
+      setTimeout(() => setToastBanner(null), 3200);
+    } else if (chosen === 'team_flash_blind') {
+      playChaosSynth('flash');
+      setFlashbang(true);
+      setToastBanner('😵 TEAMMATE FLASHBANG // Completely blind for 7 full seconds in apartments!');
+      setTimeout(() => { setFlashbang(false); setToastBanner(null); }, 2800);
+    } else if (chosen === 'bounce_nade_fail') {
+      playChaosSynth('gun');
+      setToastBanner('🧨 GRENADE BOUNCE FAIL // "Fire in the hole!" ... bounces off the door back into spawn!');
+      setTimeout(() => setToastBanner(null), 3200);
+    } else if (chosen === 'potassium_turbine') {
+      playChaosSynth('rave');
+      const nanners = Array.from({ length: 45 }, (_, i) => ({ id: i, left: Math.random() * 95, emoji: '🍌', duration: 1.5 + Math.random() * 1.5 }));
+      setFallingItems(nanners);
+      setToastBanner('🍌 100,000 RPM BANANA TURBINE // Infinite clean potassium energy generated!');
+      setTimeout(() => { setFallingItems([]); setToastBanner(null); }, 3500);
+    } else if (chosen === 'pepe_matrix_dodge') {
+      playChaosSynth('laser');
+      setWarpSpeed(true);
+      setToastBanner('🕶️ PEPE MATRIX BULLET TIME // Limbo dodge under incoming AWP shot!');
+      setTimeout(() => { setWarpSpeed(false); setToastBanner(null); }, 3000);
+    } else if (chosen === 't_pose_agent') {
+      playChaosSynth('coin');
+      setToastBanner('🧍 T-POSE PSYCHOLOGICAL WARFARE // Floating down Mirage Mid to assert dominance!');
+      setTimeout(() => setToastBanner(null), 3200);
+    } else if (chosen === 'teleport_999_ping') {
+      playChaosSynth('bsod');
+      setLagSpike(true);
+      setToastBanner('🌀 999ms RUBBERBAND TELEPORT // Teleported from A site back to spawn!');
+      setTimeout(() => { setLagSpike(false); setToastBanner(null); }, 2800);
+    } else if (chosen === 'case_wheel_tick') {
+      playChaosSynth('ding');
+      setToastBanner('🔊 CASE WHEEL TICK... TING! // Case pointer stopped 1 millimeter past the knife!');
+      setTimeout(() => setToastBanner(null), 3200);
+    } else if (chosen === 'shroud_flick_shot') {
+      playChaosSynth('gun');
+      const marks = [{ id: 1, x: 50, y: 30 }];
+      setHitmarkers(marks);
+      setToastBanner('🎯 SHROUD PROTOCOL ENGAGED // 180° flick shot onto the roof sniper!');
+      setTimeout(() => { setHitmarkers([]); setToastBanner(null); }, 3000);
+    } else if (chosen === 's1mple_fake_awp') {
+      playChaosSynth('coin');
+      setToastBanner('🎪 THE S1MPLE AWP TOSS // Threw weapon over the wall to bait the peek!');
+      setTimeout(() => setToastBanner(null), 3200);
+    } else if (chosen === 'karrigan_clap_hype') {
+      playChaosSynth('cheer');
+      setToastBanner('👏 KARRIGAN HYPE CLAP // "LET\'S GO BOYS! WINNABLE! ECO RUSH!"');
+      safeConfetti({ particleCount: 75 });
+      setTimeout(() => setToastBanner(null), 3500);
+    } else if (chosen === 'monesy_pixel_smoke') {
+      playChaosSynth('ding');
+      setToastBanner('🌫️ M0NESY 1-WAY SMOKE // Seeing enemy shoe laces under the smoke edge!');
+      setTimeout(() => setToastBanner(null), 3200);
+    } else if (chosen === 'donk_screaming_hype') {
+      playChaosSynth('cheer');
+      setRainbowRave(true);
+      setToastBanner('📢 DONK SHOUTING AT LAN // "LET\'S GOOO CYKA!" Pure aggressive energy!');
+      setTimeout(() => { setRainbowRave(false); setToastBanner(null); }, 3200);
+    } else if (chosen === 'rush_b_no_stop') {
+      playChaosSynth('rave');
+      setSpeedLines(true);
+      setToastBanner('🏃 RUSH B CYKA NO STOP // 5 players with P90 sprinting down banana!');
+      setTimeout(() => { setSpeedLines(false); setToastBanner(null); }, 3500);
+    } else if (chosen === 'geronimo_gold_vip') {
+      playChaosSynth('achievement');
+      safeConfetti({ particleCount: 150, spread: 120, colors: ['#ffd700', '#f59e0b', '#00f0ff', '#39ff14'] });
+      setToastBanner('👑 GERONIMOHQ VIP OVERDRIVE // Server master privileges granted to Geronimo!');
+      setTimeout(() => setToastBanner(null), 4000);
     }
   };
 
@@ -613,7 +902,7 @@ export const ChaosAnomalyEngine: React.FC = () => {
         <button
           onClick={triggerRandomChaos}
           className="group relative px-4 py-2.5 min-h-[44px] rounded-2xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white font-cyber text-xs font-bold shadow-[0_0_25px_rgba(217,70,239,0.5)] hover:shadow-[0_0_35px_rgba(217,70,239,0.8)] border border-fuchsia-400/60 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-2 touch-manipulation"
-          title="Trigger 50+ high-RNG chaotic anomalies across the website (Surprise Me!)"
+          title="Trigger 100+ high-RNG chaotic anomalies across the website (Surprise Me!)"
           aria-label="Trigger chaotic surprise anomaly"
         >
           <Dices className="w-4 h-4 text-yellow-300 group-hover:rotate-180 transition-transform duration-500" />

@@ -10,15 +10,17 @@ export interface TopPlayerMVP {
   source: string;
 }
 
-export interface SpeedrunClearRecord {
+export interface HardestMapFastRotationRecord {
   id: string;
   mapName: string;
-  stage: string;
-  clearTime: string;
-  tierBadge: string;
+  difficultyTier: string;
   tierColor: string;
-  clanName: string;
-  survivorsCount: number;
+  sessionDuration: string;
+  rotationOutcome: string;
+  outcomeType: 'flawless_win' | 'fast_clutch' | 'quick_rotation';
+  clanServer: string;
+  humanSurvivors: number;
+  notes: string;
   date: string;
   recordSource: string;
 }
@@ -98,77 +100,89 @@ export const TOP_PLAYERS_OF_THE_MONTH: TopPlayerMVP[] = [
   },
 ];
 
-export const FASTEST_MAP_CLEARS: SpeedrunClearRecord[] = [
+export const HARDEST_MAPS_FAST_ROTATIONS: HardestMapFastRotationRecord[] = [
   {
-    id: 'clear-1',
-    mapName: 'ze_ffvii_mako_reactor_v6',
-    stage: 'Extreme II + Sephiroth Bridge',
-    clearTime: '18:42',
-    tierBadge: '🔥 T5 Nightmare',
+    id: 'fast-rot-1',
+    mapName: 'ze_deadcore_s7',
+    difficultyTier: '🔥 T5 Nightmare',
     tierColor: 'bg-orange-950/80 text-orange-300 border-orange-500/50',
-    clanName: 'GFL / EXG Allied Strike',
-    survivorsCount: 64,
-    date: 'Nov 4, 2026',
-    recordSource: 's2ze Season Archive',
-  },
-  {
-    id: 'clear-2',
-    mapName: 'ze_dark_souls',
-    stage: 'Sen’s Fortress -> Gwyn Lord of Cinder',
-    clearTime: '22:15',
-    tierBadge: '🔴 T4 Hardcore',
-    tierColor: 'bg-rose-950/80 text-rose-300 border-rose-500/50',
-    clanName: 'EXG Elite Squad',
-    survivorsCount: 48,
-    date: 'Nov 6, 2026',
-    recordSource: 'NERV CS2ZE Logs',
-  },
-  {
-    id: 'clear-3',
-    mapName: 'ze_deadcore',
-    stage: 'Stage D (Omnidirectional Laser Cube)',
-    clearTime: '11:30',
-    tierBadge: '🔥 T5 Nightmare',
-    tierColor: 'bg-orange-950/80 text-orange-300 border-orange-500/50',
-    clanName: 'PSE Speedrun Core',
-    survivorsCount: 39,
+    sessionDuration: '11:20',
+    rotationOutcome: '🏆 Flawless 1-Shot Clear (0 Wipes • 0 Extends)',
+    outcomeType: 'flawless_win',
+    clanServer: 'PSE Speedrun Core (Tokyo)',
+    humanSurvivors: 39,
+    notes: 'Conquered Stage D on Attempt #1; 0 wipes, 0 extends used. Map voted off in record 11m 20s total server session!',
     date: 'Nov 2, 2026',
     recordSource: 'PSE Match Telemetry',
   },
   {
-    id: 'clear-4',
+    id: 'fast-rot-2',
     mapName: 'ze_santassination_p',
-    stage: 'Act III (Santa Laser Finale)',
-    clearTime: '15:40',
-    tierBadge: '🔥 T5 Nightmare',
+    difficultyTier: '🔥 T5 Nightmare',
     tierColor: 'bg-orange-950/80 text-orange-300 border-orange-500/50',
-    clanName: 'Mapeadores Vanguard',
-    survivorsCount: 52,
+    sessionDuration: '13:50',
+    rotationOutcome: '🏆 Flawless 1-Shot Clear (0 Wipes • 0 Extends)',
+    outcomeType: 'flawless_win',
+    clanServer: 'Mapeadores (EU Spain/France)',
+    humanSurvivors: 52,
+    notes: 'Santa Laser Finale defeated on attempt #1. Clean extraction nuke triggered and map changed in under 14 minutes.',
     date: 'Nov 5, 2026',
     recordSource: 'Mapeadores Server Logs',
   },
   {
-    id: 'clear-5',
-    mapName: 'ze_pirates_port_royal',
-    stage: 'Stage 5 (Kraken Boss Extraction)',
-    clearTime: '19:10',
-    tierBadge: '🟠 T3 Tactical',
-    tierColor: 'bg-amber-950/80 text-amber-300 border-amber-500/50',
-    clanName: 'RSS Tactical Alliance',
-    survivorsCount: 58,
-    date: 'Nov 7, 2026',
-    recordSource: 'RSS Match Archive',
-  },
-  {
-    id: 'clear-6',
+    id: 'fast-rot-3',
     mapName: 'ze_frostdrake_tower_p',
-    stage: 'Extreme Dragon Ascent Finale',
-    clearTime: '16:25',
-    tierBadge: '⚡ T6 Hell',
+    difficultyTier: '⚡ T6 Hell',
     tierColor: 'bg-fuchsia-950/80 text-fuchsia-300 border-fuchsia-500/50',
-    clanName: 'c0La Allied Jumpers',
-    survivorsCount: 42,
+    sessionDuration: '14:10',
+    rotationOutcome: '🏆 Flawless 1-Shot Clear (0 Wipes • 0 Extends)',
+    outcomeType: 'flawless_win',
+    clanServer: 'c0La Allied Jumpers (Europe)',
+    humanSurvivors: 42,
+    notes: 'Mythic T6 Dragon Ascent cleared with zero human falls. Server completed the entire campaign and rotated in 14m 10s.',
     date: 'Nov 8, 2026',
     recordSource: 'Global Speedrun Archive',
+  },
+  {
+    id: 'fast-rot-4',
+    mapName: 'ze_gris_p',
+    difficultyTier: '⚡ T6 Hell',
+    tierColor: 'bg-fuchsia-950/80 text-fuchsia-300 border-fuchsia-500/50',
+    sessionDuration: '15:45',
+    rotationOutcome: '🏆 Flawless 1-Shot Clear (0 Wipes • 0 Extends)',
+    outcomeType: 'flawless_win',
+    clanServer: 'EXG Elite Squad (China)',
+    humanSurvivors: 48,
+    notes: 'Ultra-precision jumping lasers conquered with zero wipes; entire map voted off in 15m 45s instead of the usual 60m slog.',
+    date: 'Nov 6, 2026',
+    recordSource: 'NERV CS2ZE Logs',
+  },
+  {
+    id: 'fast-rot-5',
+    mapName: 'ze_fapescape_rote_p',
+    difficultyTier: '⚡ T6 Hell',
+    tierColor: 'bg-fuchsia-950/80 text-fuchsia-300 border-fuchsia-500/50',
+    sessionDuration: '16:30',
+    rotationOutcome: '🏆 Flawless 1-Shot Clear (0 Wipes • 0 Extends)',
+    outcomeType: 'flawless_win',
+    clanServer: 'GFL / EXG Allied Strike',
+    humanSurvivors: 61,
+    notes: 'Flawless boss burst DPS and laser bridge navigation; all stages cleared back-to-back with 0 extends burned.',
+    date: 'Nov 4, 2026',
+    recordSource: 's2ze Season Archive',
+  },
+  {
+    id: 'fast-rot-6',
+    mapName: 'ze_sandstorm_go_v1_4',
+    difficultyTier: '🔥 T5 Nightmare',
+    tierColor: 'bg-orange-950/80 text-orange-300 border-orange-500/50',
+    sessionDuration: '17:15',
+    rotationOutcome: '⚡ 1-Wipe Clutch Win (0 Extends Used)',
+    outcomeType: 'fast_clutch',
+    clanServer: 'GFL Clan (US Chicago)',
+    humanSurvivors: 56,
+    notes: 'Pyramid laser finale clutched on attempt #2 after an early round 1 reset; total session ended in 17m 15s.',
+    date: 'Nov 7, 2026',
+    recordSource: 'GFL Match Telemetry',
   },
 ];

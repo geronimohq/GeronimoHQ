@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { 
   TOP_PLAYERS_OF_THE_MONTH, 
-  FASTEST_MAP_CLEARS, 
+  HARDEST_MAPS_FAST_ROTATIONS, 
   ZE_SEASON_INFO 
 } from '../data/zeLeaderboard';
 
@@ -68,10 +68,10 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
                     ? 'bg-amber-500 text-slate-950 shadow-[0_0_10px_rgba(251,191,36,0.4)]'
                     : 'text-slate-400 hover:text-white'
                 }`}
-                title="View world-record fastest map escape clear times from round start to final extraction"
+                title="View hardest Tier 5 & Tier 6 maps that ended and rotated fast in record session elapsed time"
               >
                 <Timer className="w-3.5 h-3.5" />
-                <span>Speedruns</span>
+                <span>Hardest Maps Ended Fast</span>
               </button>
             </div>
           )}
@@ -155,59 +155,64 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
               </div>
             </div>
           ) : (
-            /* TAB 2: FASTEST MAP SPEEDRUN CLEARS */
+            /* TAB 2: HARDEST MAPS THAT ENDED FAST (RECORD MINIMAL ROTATIONS) */
             <div>
               {/* Context Explanation Banner */}
               <div className="mb-4 p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-xs font-tech text-emerald-200/90 flex items-start gap-2.5">
                 <Info className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
                 <div className="leading-relaxed">
-                  <strong className="text-emerald-300 font-bold">What is a ZE Speedrun?</strong> In Zombie Escape, a speedrun represents the <strong className="text-white">fastest recorded human extraction time</strong> from the moment the round spawns to the final boss defeat &amp; nuke detonation without wiping. A shorter time means the team cleared door triggers with zero stalling, melted boss HP instantly, and survived the final laser bridge!
+                  <strong className="text-emerald-300 font-bold">Hardest Maps That Ended Fast:</strong> In CS2 Zombie Escape, ultra-hard Tier 5 &amp; Tier 6 maps normally trap servers for 60+ minutes with multiple wipes and burned extends. These community records spotlight god-tier squads that conquered the hardest maps in record minimal elapsed session time (11&ndash;17 mins) with zero round wipes, immediately triggering the map change!
                 </div>
               </div>
 
               <div className="flex items-center justify-between text-xs font-code text-slate-400 mb-3 px-1">
-                <span>OFFICIAL RECORD MAP SPEEDRUNS (COMMUNITY LASER & ESCAPE FINISHES)</span>
+                <span>HARDEST MAPS CLEARED FASTEST (RECORD ZERO-WIPE MAP ROTATIONS)</span>
                 <span className="hidden sm:inline text-amber-300/80">Season 2026-11 Records</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {FASTEST_MAP_CLEARS.map((c) => (
+                {HARDEST_MAPS_FAST_ROTATIONS.map((c) => (
                   <div
                     key={c.id}
                     className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col justify-between group shadow-sm"
-                    title={`Record Map Speedrun: ${c.mapName}\n• Stage: ${c.stage}\n• Clear Time: ${c.clearTime} (from round spawn to extraction nuke)\n• Survivors: ${c.survivorsCount} humans escaped\n• Clan: ${c.clanName}\n• Verified Source: ${c.recordSource}`}
+                    title={`Record Fast Map Rotation: ${c.mapName}\n• Difficulty: ${c.difficultyTier}\n• Total Session Duration: ${c.sessionDuration} before map vote\n• Outcome: ${c.rotationOutcome}\n• Clan / Server: ${c.clanServer}\n• Survivors: ${c.humanSurvivors} humans\n• Notes: ${c.notes}\n• Verified Source: ${c.recordSource}`}
                   >
                     <div>
-                      {/* Map Title & Clear Time */}
+                      {/* Map Title & Fast Session Duration */}
                       <div className="flex items-start justify-between gap-2 mb-1.5">
                         <div className="min-w-0">
                           <h4 className="font-cyber font-bold text-white text-sm group-hover:text-amber-300 transition-colors truncate">
                             {c.mapName}
                           </h4>
-                          <div className="text-[11px] font-code text-slate-400 truncate">
-                            {c.stage}
+                          <div className="text-[11px] font-code text-emerald-300/90 truncate font-semibold">
+                            {c.rotationOutcome}
                           </div>
                         </div>
 
-                        {/* Speedrun Time Pill with Explanatory Tooltip */}
+                        {/* Fast Rotation Time Pill with Explanatory Tooltip */}
                         <div 
                           className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 font-code font-bold text-xs shadow-[0_0_10px_rgba(16,185,129,0.25)] flex-shrink-0 cursor-help"
-                          title="Record Clear Time: Total elapsed time from round spawn to final extraction & nuke detonation"
+                          title="Record Minimal Session Duration: Total elapsed server time from map start to final conquest & map change"
                         >
                           <Timer className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-                          <span>{c.clearTime}</span>
+                          <span>{c.sessionDuration}</span>
                         </div>
                       </div>
 
                       {/* Tier Badge & Clan */}
                       <div className="flex items-center gap-2 flex-wrap mb-1.5">
                         <span className={`text-[10px] font-code px-2 py-0.5 rounded border font-bold ${c.tierColor}`}>
-                          {c.tierBadge}
+                          {c.difficultyTier}
                         </span>
                         <span className="text-[10px] font-code text-slate-400">
-                          by <strong className="text-slate-300">{c.clanName}</strong>
+                          on <strong className="text-slate-300">{c.clanServer}</strong>
                         </span>
                       </div>
+
+                      {/* Tactical Notes */}
+                      <p className="text-[11px] font-tech text-slate-300 leading-snug mb-2 line-clamp-2">
+                        {c.notes}
+                      </p>
 
                       {/* Source tag */}
                       <div className="text-[9px] font-code text-slate-500 mb-2 flex items-center gap-1">
@@ -220,7 +225,7 @@ export const ServerLeaderboardSpotlight: React.FC = () => {
                     <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[11px] font-code text-slate-400">
                       <div className="flex items-center gap-1 text-slate-300" title="Total human survivors who successfully escaped the final extraction without getting infected">
                         <Users className="w-3 h-3 text-cyan-400" />
-                        <span>{c.survivorsCount} Survived</span>
+                        <span>{c.humanSurvivors} Survived</span>
                       </div>
                       <span className="text-slate-500">{c.date}</span>
                     </div>

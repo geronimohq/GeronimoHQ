@@ -2,42 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { safeConfetti } from '../utils/motion';
 import { PhoneCall, Volume2, VolumeX, ExternalLink, Activity, Sparkles } from 'lucide-react';
 
-declare global {
-  interface Window {
-    YT?: {
-      Player: new (
-        element: HTMLElement | string,
-        options: {
-          videoId: string;
-          playerVars?: Record<string, number | string>;
-          events?: {
-            onReady?: (event: { target: YTPlayerInstance }) => void;
-            onStateChange?: (event: { data: number; target: YTPlayerInstance }) => void;
-          };
-        }
-      ) => YTPlayerInstance;
-      PlayerState?: {
-        ENDED: number;
-        PLAYING: number;
-        PAUSED: number;
-      };
-    };
-    onYouTubeIframeAPIReady?: () => void;
-  }
-}
-
-interface YTPlayerInstance {
-  playVideo: () => void;
-  pauseVideo: () => void;
-  stopVideo: () => void;
-  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
-  mute: () => void;
-  unMute: () => void;
-  setVolume: (volume: number) => void;
-  getPlayerState: () => number;
-  destroy: () => void;
-}
-
 interface DancingBananaCharacterProps {
   label: string;
   subLabel: string;
@@ -276,10 +240,8 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
   onMasterVolumeChange,
 }) => {
   const [isMusicOn, setIsMusicOn] = useState<boolean>(true);
-  const playerContainerRef = useRef<HTMLDivElement | null>(null);
-  const playerRef = useRef<YTPlayerInstance | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const completedLoopsRef = useRef<number>(0);
-  const ytActivelyPlayingRef = useRef<boolean>(false);
   const targetLoopsRef = useRef<number>(targetLoops);
   const onCompleteRef = useRef<() => void>(onAllLoopsCompleted);
 
@@ -299,34 +261,48 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
     onCompleteRef.current = onAllLoopsCompleted;
   }, [onAllLoopsCompleted]);
 
-  // Reactive listener to masterVolume and isMasterMuted changes
+  // Reactive listener to masterVolume and isMasterMuted changes - guarantees 100% volume parity
   useEffect(() => {
-    if (playerRef.current) {
-      try {
-        if (isMasterMuted || masterVolume === 0) {
-          playerRef.current.mute();
-          playerRef.current.setVolume(0);
-        } else {
-          playerRef.current.unMute();
-          playerRef.current.setVolume(masterVolume);
-        }
-      } catch {
-        // ignore
-      }
+    if (videoRef.current) {
+      videoRef.current.muted = isMasterMuted || masterVolume === 0;
+      videoRef.current.volume = Math.max(0, Math.min(1, masterVolume / 100));
     }
   }, [masterVolume, isMasterMuted]);
 
-  // Automatically wake up and resume audio if user switches back to the tab from other applications
+  // Synchronous native playback controller
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isMusicOn) {
+      video.muted = isMasterMutedRef.current || masterVolumeRef.current === 0;
+      video.volume = Math.max(0, Math.min(1, masterVolumeRef.current / 100));
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // If browser policy requires user interaction, resume on first click
+          const resumeOnGesture = () => {
+            if (videoRef.current && isMusicOn) {
+              videoRef.current.play().catch(() => {});
+            }
+            window.removeEventListener('click', resumeOnGesture);
+            window.removeEventListener('keydown', resumeOnGesture);
+          };
+          window.addEventListener('click', resumeOnGesture, { once: true });
+          window.addEventListener('keydown', resumeOnGesture, { once: true });
+        });
+      }
+    } else {
+      video.pause();
+    }
+  }, [isMusicOn]);
+
+  // Handle visibility & focus resumption - native HTML5 media does not get throttled like cross-origin YouTube iframes
   useEffect(() => {
     const handleResumeOnFocus = () => {
-      if (playerRef.current && isMusicOn && !isMasterMutedRef.current) {
-        try {
-          const st = playerRef.current.getPlayerState();
-          if (st !== 1) { // 1 = PLAYING
-            playerRef.current.playVideo();
-          }
-        } catch {
-          // ignore
+      if (videoRef.current && isMusicOn && !isMasterMutedRef.current) {
+        if (videoRef.current.paused) {
+          videoRef.current.play().catch(() => {});
         }
       }
     };
@@ -345,194 +321,17 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
     };
   }, [isMusicOn]);
 
-  // Mount & control the YouTube IFrame API player for seamless looping and exact end-of-loop theme transition
-  useEffect(() => {
-    if (!isMusicOn) {
-      if (playerRef.current) {
-        try {
-          playerRef.current.stopVideo();
-          playerRef.current.destroy();
-        } catch {
-          // ignore
-        }
-        playerRef.current = null;
-      }
-      ytActivelyPlayingRef.current = false;
-      return;
-    }
-
-    let isCancelled = false;
-
-    const createPlayer = () => {
-      if (isCancelled || !playerContainerRef.current || !window.YT || !window.YT.Player) return;
-
-      // Clean previous instance if any
-      if (playerRef.current) {
-        try {
-          playerRef.current.destroy();
-        } catch {
-          // ignore
-        }
-        playerRef.current = null;
-      }
-
-      const iframe = document.createElement('iframe');
-      const originParam = encodeURIComponent(window.location.origin);
-      const isMutedParam = isMasterMutedRef.current || masterVolumeRef.current === 0 ? '1' : '0';
-      iframe.src = `https://www.youtube.com/embed/j5C6X9vOEkU?autoplay=1&mute=${isMutedParam}&rel=0&playsinline=1&enablejsapi=1&origin=${originParam}`;
-      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
-      iframe.setAttribute('allowfullscreen', 'true');
-      iframe.className = 'w-full h-full border-0';
-
-      playerContainerRef.current.innerHTML = '';
-      playerContainerRef.current.appendChild(iframe);
-
-      const unlockEvents = ['pointerdown', 'mousedown', 'keydown', 'touchstart', 'click'];
-
-      const unlockPlay = () => {
-        if (isCancelled || !playerRef.current) return;
-        try {
-          if (isMasterMutedRef.current || masterVolumeRef.current === 0) {
-            playerRef.current.mute();
-            playerRef.current.setVolume(0);
-          } else {
-            playerRef.current.unMute();
-            playerRef.current.setVolume(masterVolumeRef.current);
-          }
-          const st = playerRef.current.getPlayerState();
-          if (st !== 1) {
-            playerRef.current.playVideo();
-          }
-        } catch {
-          // ignore
-        }
-        // Run once on initial user gesture to unlock browser audio, then remove immediately
-        unlockEvents.forEach((evt) => {
-          window.removeEventListener(evt, unlockPlay, { capture: true });
-        });
-      };
-
-      // Only listen for audio unlock if user has NOT muted
-      if (!isMasterMutedRef.current) {
-        unlockEvents.forEach((evt) => {
-          window.addEventListener(evt, unlockPlay, { capture: true, passive: true });
-        });
-      }
-
-      playerRef.current = new window.YT.Player(iframe, {
-        videoId: 'j5C6X9vOEkU',
-        events: {
-          onReady: (event) => {
-            if (isCancelled) return;
-            try {
-              if (isMasterMutedRef.current || masterVolumeRef.current === 0) {
-                event.target.mute();
-                event.target.setVolume(0);
-              } else {
-                event.target.unMute();
-                event.target.setVolume(masterVolumeRef.current);
-              }
-              event.target.playVideo();
-            } catch {
-              // ignore
-            }
-          },
-          onStateChange: (event) => {
-            if (isCancelled) return;
-            // 1 = PLAYING
-            if (event.data === 1) {
-              ytActivelyPlayingRef.current = true;
-              try {
-                if (isMasterMutedRef.current || masterVolumeRef.current === 0) {
-                  event.target.mute();
-                  event.target.setVolume(0);
-                } else {
-                  event.target.unMute();
-                  event.target.setVolume(masterVolumeRef.current);
-                }
-              } catch {
-                // ignore
-              }
-            }
-            // 0 = ENDED (Banana Phone song finished 1 complete play of 3m 16s!)
-            if (event.data === 0) {
-              completedLoopsRef.current += 1;
-              // 1 complete song finished -> switch to Pepe theme!
-              try {
-                event.target.stopVideo();
-              } catch {
-                // ignore
-              }
-              onCompleteRef.current();
-            }
-          },
-        },
-      });
-    };
-
-    if (window.YT && window.YT.Player) {
-      createPlayer();
+  const handleVideoEnded = () => {
+    completedLoopsRef.current += 1;
+    if (completedLoopsRef.current >= targetLoopsRef.current) {
+      onCompleteRef.current();
     } else {
-      const existingScript = document.getElementById('yt-iframe-api-script');
-      if (!existingScript) {
-        const tag = document.createElement('script');
-        tag.id = 'yt-iframe-api-script';
-        tag.src = 'https://www.youtube.com/iframe_api';
-        document.head.appendChild(tag);
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play().catch(() => {});
       }
-      const prevCallback = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = () => {
-        if (prevCallback) prevCallback();
-        createPlayer();
-      };
-      // Poll briefly in case script already loaded
-      const checkTimer = window.setInterval(() => {
-        if (window.YT && window.YT.Player) {
-          clearInterval(checkTimer);
-          createPlayer();
-        }
-      }, 250);
-      return () => {
-        isCancelled = true;
-        clearInterval(checkTimer);
-        if (playerRef.current) {
-          try {
-            playerRef.current.stopVideo();
-            playerRef.current.destroy();
-          } catch {
-            // ignore
-          }
-          playerRef.current = null;
-        }
-      };
     }
-
-    return () => {
-      isCancelled = true;
-      if (playerRef.current) {
-        try {
-          playerRef.current.stopVideo();
-          playerRef.current.destroy();
-        } catch {
-          // ignore
-        }
-        playerRef.current = null;
-      }
-    };
-  }, [isMusicOn]);
-
-  // Fallback timer ONLY if the user turned off the Banana Phone music or if YT autoplay was blocked by browser
-  // (Never interrupts if the YouTube song is actively playing, so the song always finishes its loop first!)
-  useEffect(() => {
-    const songDurationMs = 147_000; // Raffi Banana Phone (j5C6X9vOEkU) is 2:27 (147s)
-    const fallbackTimer = window.setTimeout(() => {
-      if (!ytActivelyPlayingRef.current || !isMusicOn) {
-        onCompleteRef.current();
-      }
-    }, targetLoops * songDurationMs + 3000);
-
-    return () => clearTimeout(fallbackTimer);
-  }, [targetLoops, isMusicOn]);
+  };
 
   const bananaYoutubeUrl = 'https://www.youtube.com/watch?v=j5C6X9vOEkU&list=RDj5C6X9vOEkU&start_radio=1';
 
@@ -659,31 +458,26 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
           />
         </div>
 
-        {/* Embedded Banana Phone YouTube Music Player (Loops automatically via YT API) */}
+        {/* Embedded Banana Phone Native HTML5 Media Player (Instant offline/local playback) */}
         {isMusicOn && (
           <div className="relative z-20 w-full max-w-xl mt-2 mb-6 rounded-xl border border-yellow-400/50 bg-black/90 p-2.5 shadow-[0_0_30px_rgba(250,204,21,0.3)]">
             <div className="flex items-center justify-between text-[11px] font-code text-yellow-300 mb-1.5 px-1">
               <span className="flex items-center gap-1.5 font-bold">
                 <PhoneCall className="w-3.5 h-3.5 text-yellow-400" />
-                NOW PLAYING (AUTO-LOOP): RAFFI — BANANA PHONE
+                NOW PLAYING: RAFFI — BANANA PHONE
               </span>
               <span className="text-[10px] text-amber-300/80">
-                AUTO-LOOPING ACTIVE
+                OFFLINE NATIVE AUDIO/VIDEO
               </span>
             </div>
-            <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-yellow-500/30 bg-black">
-              <div
-                ref={playerContainerRef}
-                className="w-full h-full pointer-events-none select-none [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:pointer-events-none"
-              />
-              {/* Invisible non-clickable protective shield: prevents accidental pauses or opening external YouTube links */}
-              <div
-                className="absolute inset-0 z-10 cursor-default"
-                title="Raffi — Banana Phone (Holo-Player)"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                }}
+            <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-yellow-500/30 bg-black flex items-center justify-center">
+              <video
+                ref={videoRef}
+                src="/media/banana_phone.mp4"
+                playsInline
+                autoPlay
+                className="w-full h-full object-contain pointer-events-none select-none"
+                onEnded={handleVideoEnded}
               />
             </div>
           </div>
