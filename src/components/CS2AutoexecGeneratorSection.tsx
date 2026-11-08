@@ -11,7 +11,6 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
   const [radarHudScaling, setRadarHudScaling] = useState(true);
   const [radarZoomBind, setRadarZoomBind] = useState(true);
   const [radarZoomKey, setRadarZoomKey] = useState('v');
-  const [nullMovement, setNullMovement] = useState(false);
   const [maxSubtickRates, setMaxSubtickRates] = useState(true);
   const [crispAudioEq, setCrispAudioEq] = useState(true);
   const [smartTelemetryHud, setSmartTelemetryHud] = useState(true);
@@ -101,7 +100,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
     lines.push(
       '// --- CS2 NATIVE SUB-TICK JUMPTHROW ---',
       '// In CS2, release attack while jumping. The sub-tick engine provides built-in jumpthrow timing.',
-      '// Multi-action movement+attack scripts are omitted to avoid input violation kicks post-August 2024 update.',
+      '// Multi-action movement/shooting binds are ignored by default since the Aug 19, 2024 update; Valve kicks detected input automation on official servers.',
       ''
     );
 
@@ -127,21 +126,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
       );
     }
 
-    if (nullMovement) {
-      lines.push(
-        '// --- NULL-CANCELLING STRAFE MOVEMENT BINDS (A / D) ---',
-        '// Notice: Input automation / null-cancelling binds may trigger automated kicks on official Valve servers.',
-        '// Use on community servers that permit input scripts.',
-        '// Undo binds if needed: bind "a" "+moveleft"; bind "d" "+moveright"',
-        'alias "+ze_left" "+moveleft; -moveright"',
-        'alias "-ze_left" "-moveleft"',
-        'alias "+ze_right" "+moveright; -moveleft"',
-        'alias "-ze_right" "-moveright"',
-        'bind "a" "+ze_left"',
-        'bind "d" "+ze_right"',
-        ''
-      );
-    }
+
 
     if (smartTelemetryHud) {
       lines.push(
@@ -165,7 +150,6 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
     radarHudScaling,
     radarZoomBind,
     radarZoomKey,
-    nullMovement,
     maxSubtickRates,
     crispAudioEq,
     smartTelemetryHud,
@@ -386,18 +370,6 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-              <label 
-                title="Null-cancelling strafe binds (A/D). WARNING: Triggers automated kick on official Valve matchmaking servers (Premier/Comp/Casual)! Only use if your community server allows it."
-                className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
-              >
-                <input
-                  type="checkbox"
-                  checked={nullMovement}
-                  onChange={(e) => setNullMovement(e.target.checked)}
-                  className="w-4 h-4 accent-amber-400 rounded cursor-pointer"
-                />
-                <span className="text-amber-300/90">⚠️ Null Binds (Community ZE Only)</span>
-              </label>
               <label 
                 title="Sets rate 786432 and cl_net_buffer_ticks 0 for minimal interpolation buffer delay. Note: buffer ticks 0 may cause hitching on unstable connections; increase to 1 or 2 if experiencing stutter."
                 className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
