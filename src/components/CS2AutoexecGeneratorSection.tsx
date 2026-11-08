@@ -29,15 +29,21 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
       '// ============================================================================',
       '',
       `fps_max "${sanitizedFps}"`,
-      '// HUD Color index: 0-12 (presets unverified in-game)',
-      `cl_hud_color "${hudColor}"`,
       '',
     ];
+
+    if (hudColor && hudColor !== 'none') {
+      lines.push(
+        '// HUD Color index: 0-12 (presets unverified in-game)',
+        `cl_hud_color "${hudColor}"`,
+        ''
+      );
+    }
 
     if (maxSubtickRates) {
       lines.push(
         '// --- NETWORK RATES & BUFFER TICKS ---',
-        'rate "786432"',
+        'rate "786432" // (CS2 engine default - typical, check yours)',
         'cl_net_buffer_ticks "0"',
         ''
       );
@@ -137,18 +143,34 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
 
     lines.push(
       '// ============================================================================',
-      '// HOW TO REVERT ALL SETTINGS & BINDS TO DEFAULTS:',
-      '// If you ever wish to remove these customizations, run in CS2 console:',
+      '// HOW TO REVERT ALL SETTINGS & BINDS TO DEFAULTS (COMPLETE REVERT / UNDO GUIDE):',
+      '// Restart CS2 to clear memory-resident aliases (ze_duck_toggle, etc.).',
+      '// Note: unverified defaults are labeled (typical, check yours).',
+      '//',
+      '// --- REVERT CUSTOM BINDS ---',
       `// unbind "${duckK}"`,
       `// unbind "${muteK}"`,
       `// unbind "${radarK}"`,
-      '// volume 1.0',
-      '// voice_modenable 1',
-      '// cl_radar_scale 0.70',
-      '// cl_radar_always_centered 1',
-      '// hud_scaling 1.0',
-      '// viewmodel_fov 60; viewmodel_offset_x 1; viewmodel_offset_y 1; viewmodel_offset_z -1',
-      '// r_drawtracers_firstperson 1',
+      '//',
+      '// --- REVERT ENGINE CVARS & HUD SETTINGS ---',
+      '// fps_max 0 // (typical default: 0 or 400, check yours)',
+      '// cl_hud_color 0 // (typical default: 0 - Team Color, check yours)',
+      '// rate 786432 // (CS2 engine default, check yours)',
+      '// cl_net_buffer_ticks 0 // (or 1 on unstable connections - typical, check yours)',
+      '// viewmodel_presetpos 1 // (restores CS2 default viewmodel)',
+      '// r_drawtracers_firstperson 1 // (typical default: 1, check yours)',
+      '// snd_headphone_eq 0 // (typical default: 0 - Natural, check yours)',
+      '// snd_spatialize_lerp 0.0 // (typical default: 0.0, check yours)',
+      '// snd_steamaudio_enable_perspective_correction 0 // (typical default: 0, check yours)',
+      '// snd_mute_losefocus 1 // (typical default: 1, check yours)',
+      '// volume 1.0 // (typical default, check yours)',
+      '// voice_modenable 1 // (typical default: 1, check yours)',
+      '// cl_radar_scale 0.70 // (typical default: 0.70, check yours)',
+      '// cl_radar_always_centered 1 // (typical default: 1, check yours)',
+      '// hud_scaling 1.0 // (typical default: 1.0, check yours)',
+      '// cl_hud_telemetry_frametime_show 0 // (typical default: 0, check yours)',
+      '// cl_hud_telemetry_ping_show 0 // (typical default: 0, check yours)',
+      '// cl_hud_telemetry_net_misdelivery_show 0 // (typical default: 0, check yours)',
       '// ============================================================================',
       ''
     );
@@ -443,7 +465,8 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                   title="Choose custom CS2 HUD color theme index (cl_hud_color 0-12)"
                   className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs font-code text-cyan-300"
                 >
-                  <option value="3">3 — Blue / Light Blue (Popular Pro Default, unverified)</option>
+                  <option value="none">No Change (Keep Current CS2 HUD Color)</option>
+                  <option value="3">3 — Blue / Light Blue (unverified)</option>
                   <option value="10">10 — Aqua / Cyan (Cyberpunk)</option>
                   <option value="9">9 — Emerald Green</option>
                   <option value="8">8 — Vibrant Yellow</option>
@@ -479,7 +502,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
           <div className="lg:col-span-6 flex flex-col justify-between bg-slate-950/95 border border-slate-800 rounded-xl p-4">
             <div>
               <div className="text-[11px] font-code text-amber-300/90 bg-amber-950/40 p-2.5 rounded-lg border border-amber-500/30 mb-3">
-                ⚠️ <strong>Backup Note:</strong> Back up your CS2 user config folder (<code className="text-white">Steam/userdata/&lt;id&gt;/730/local/cfg</code>) before applying an autoexec. Custom binds ({duckKey}, {muteKey}, {radarZoomKey}) override actions currently assigned to those keys.
+                ⚠️ <strong>Backup Note:</strong> Back up your CS2 user config folder (<code className="text-white">Steam/userdata/&lt;id&gt;/730/local/cfg</code>) and note your current values first before applying an autoexec. Custom binds ({duckKey}, {muteKey}, {radarZoomKey}) override actions currently assigned to those keys. Restart CS2 to clear memory-resident aliases.
               </div>
               <div className="flex items-center justify-between text-xs font-code text-slate-400 mb-2">
                 <span className="flex items-center gap-1.5 text-lime-300 font-bold">

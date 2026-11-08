@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { safeConfetti } from '../utils/motion';
+import { safeConfetti, isReducedMotionPreferred } from '../utils/motion';
 
 interface RoamingMemeGremlinProps {
   theme: 'pepe' | 'banana';
@@ -47,7 +47,7 @@ export const RoamingMemeGremlin: React.FC<RoamingMemeGremlinProps> = ({ theme, e
 
   // Autonomous roaming loop when not interrupting
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || isReducedMotionPreferred()) return;
 
     const roamInterval = window.setInterval(() => {
       if (isInterrupting) return;
@@ -68,7 +68,7 @@ export const RoamingMemeGremlin: React.FC<RoamingMemeGremlinProps> = ({ theme, e
 
   // Listen for user hovering interactive buttons to playfully interrupt them for ~3 seconds
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || isReducedMotionPreferred()) return;
 
     const handleMouseOver = (e: MouseEvent) => {
       if (isInterrupting) return;

@@ -112,12 +112,12 @@ export const CS2CommandCenterPreview: React.FC = () => {
       shortTag: 'DIRECT NETWORK',
       badge: 'SILENT UDP + 10S COOLDOWN',
       icon: <Target className="w-5 h-5 text-lime-400" />,
-      summary: 'Monitors server player counts via low-overhead UDP A2S queries at 0.25s while full. When a slot opens, it automates the in-game console connect with a 10-second cooldown to prevent spam.',
+      summary: 'Monitors server player counts via low-overhead UDP A2S queries about four times a second while full. When a slot opens, it uses the console when CS2 is in front and otherwise opens a Steam connect link, with a 10-second cooldown.',
       details: [
         'True Silent Sniping: Watches server player count via lightweight UDP packets outside the game engine—preventing CS2 memory heap & SDR session leaks.',
-        'Responsive 0.25s Player Count Detection: Checks 4 times per second for rapid slot detection.',
+        'Responsive Detection: Checks player counts about four times a second for rapid slot detection.',
         'Zero Console & Clipboard Spam while waiting (avoids Windows Clipboard History buildup).',
-        'Automated In-Engine Console Connect & 10s Button Cooldown as soon as a slot opens.',
+        'Uses console when CS2 is in front, otherwise opens Steam connect link, with 10s cooldown.',
         'GFL Priority Slot Tiers (Normal ≤ 61, Mapper/Supporter ≤ 62, VIP ≤ 63) with snug pixel-measured dropdown UI.'
       ],
       parameters: [
@@ -125,7 +125,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
         { name: 'Slot Detection Trigger', value: 'Console Connect', desc: 'Sends console connect when slot opens' },
         { name: 'Auto-Stop Cooldown', value: '10s Timer on Button', desc: 'Prevents duplicate spam & allows clean retry' }
       ],
-      proTip: 'CS2 must be open. Set your slot priority (Normal ≤ 61, Supporter ≤ 62, VIP ≤ 63) and activate Slot Sniper—it queries server telemetry via background UDP and executes the console connect command when a spot opens.',
+      proTip: 'Set your slot priority (Normal ≤ 61, Supporter ≤ 62, VIP ≤ 63) and activate Slot Sniper—it queries server telemetry via background UDP about four times a second, using the console when CS2 is in front and otherwise opening a Steam connect link.',
       vacSafe: true
     },
     {
