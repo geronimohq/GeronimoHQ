@@ -612,7 +612,9 @@ export const BananaHeroStage: React.FC<BananaHeroStageProps> = ({
             href={bananaYoutubeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3 py-1.5 text-xs font-code rounded-lg bg-slate-900/90 text-amber-300 border border-amber-500/40 hover:border-yellow-400 flex items-center gap-1.5 transition-all"
+            title="Open official Banana Phone music video on YouTube in a new tab"
+            aria-label="Open YouTube Banana Phone Mix"
+            className="px-3.5 py-2 min-h-[44px] text-xs font-code rounded-lg bg-slate-900/90 text-amber-300 border border-amber-500/40 hover:border-yellow-400 flex items-center gap-1.5 transition-all touch-manipulation"
           >
             <PhoneCall className="w-3.5 h-3.5 text-yellow-400 animate-bounce" />
             <span>YOUTUBE MIX ↗</span>

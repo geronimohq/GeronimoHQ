@@ -605,8 +605,9 @@ export const ChaosAnomalyEngine: React.FC = () => {
       <div className="fixed bottom-6 right-6 z-40">
         <button
           onClick={triggerRandomChaos}
-          className="group relative px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white font-cyber text-xs font-bold shadow-[0_0_25px_rgba(217,70,239,0.5)] hover:shadow-[0_0_35px_rgba(217,70,239,0.8)] border border-fuchsia-400/60 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-2"
+          className="group relative px-4 py-2.5 min-h-[44px] rounded-2xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white font-cyber text-xs font-bold shadow-[0_0_25px_rgba(217,70,239,0.5)] hover:shadow-[0_0_35px_rgba(217,70,239,0.8)] border border-fuchsia-400/60 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-2 touch-manipulation"
           title="Trigger 50+ high-RNG chaotic anomalies across the website (Surprise Me!)"
+          aria-label="Trigger chaotic surprise anomaly"
         >
           <Dices className="w-4 h-4 text-yellow-300 group-hover:rotate-180 transition-transform duration-500" />
           <span className="hidden sm:inline tracking-wider">🎲 SURPRISE ME (CHAOS)</span>
@@ -632,11 +633,13 @@ export const ChaosAnomalyEngine: React.FC = () => {
       {/* 2. EARTHQUAKE */}
       {earthquake && (
         <style dangerouslySetInnerHTML={{ __html: `
-          body { animation: earthquakeShake 0.12s infinite alternate !important; }
-          @keyframes earthquakeShake {
-            0% { transform: translate(3px, 2px) rotate(0.4deg); }
-            50% { transform: translate(-3px, -2px) rotate(-0.4deg); }
-            100% { transform: translate(2px, -3px) rotate(0.2deg); }
+          @media (prefers-reduced-motion: no-preference) {
+            body { animation: earthquakeShake 0.12s infinite alternate !important; }
+            @keyframes earthquakeShake {
+              0% { transform: translate(3px, 2px) rotate(0.4deg); }
+              50% { transform: translate(-3px, -2px) rotate(-0.4deg); }
+              100% { transform: translate(2px, -3px) rotate(0.2deg); }
+            }
           }
         ` }} />
       )}
@@ -644,8 +647,10 @@ export const ChaosAnomalyEngine: React.FC = () => {
       {/* 3. RAINBOW RAVE */}
       {rainbowRave && (
         <style dangerouslySetInnerHTML={{ __html: `
-          body { animation: rainbowHue 0.6s infinite linear !important; }
-          @keyframes rainbowHue { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+          @media (prefers-reduced-motion: no-preference) {
+            body { animation: rainbowHue 0.6s infinite linear !important; }
+            @keyframes rainbowHue { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+          }
         ` }} />
       )}
 
@@ -711,8 +716,10 @@ export const ChaosAnomalyEngine: React.FC = () => {
       {/* 13. ZERO GRAVITY */}
       {zeroGrav && (
         <style dangerouslySetInnerHTML={{ __html: `
-          body { animation: zeroGravFloat 2s infinite ease-in-out alternate !important; }
-          @keyframes zeroGravFloat { 0% { transform: translateY(0px); } 100% { transform: translateY(-20px); } }
+          @media (prefers-reduced-motion: no-preference) {
+            body { animation: zeroGravFloat 2s infinite ease-in-out alternate !important; }
+            @keyframes zeroGravFloat { 0% { transform: translateY(0px); } 100% { transform: translateY(-20px); } }
+          }
         ` }} />
       )}
 
@@ -937,8 +944,10 @@ export const ChaosAnomalyEngine: React.FC = () => {
       {/* 32. SUB-TICK JITTER */}
       {subtickJitter && (
         <style dangerouslySetInnerHTML={{ __html: `
-          body { animation: subtickShake 0.08s 4 ease-in-out !important; }
-          @keyframes subtickShake { 0% { transform: translateX(4px); } 100% { transform: translateX(-4px); } }
+          @media (prefers-reduced-motion: no-preference) {
+            body { animation: subtickShake 0.08s 4 ease-in-out !important; }
+            @keyframes subtickShake { 0% { transform: translateX(4px); } 100% { transform: translateX(-4px); } }
+          }
         ` }} />
       )}
 

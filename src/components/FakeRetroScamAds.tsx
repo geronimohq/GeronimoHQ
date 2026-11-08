@@ -610,10 +610,13 @@ export const FakeRetroScamAds: React.FC = () => {
     <>
       {/* LEFT RETRO FLOATING SCAM BANNER (Desktop Gutters) */}
       <div className="hidden xl:flex fixed left-3 top-1/2 -translate-y-1/2 z-30 flex-col items-center group">
+        <div className="text-[9px] font-mono font-bold text-amber-300 bg-black/90 px-2 py-0.5 rounded-t border border-amber-400/50 uppercase tracking-widest shadow select-none">
+          PARODY MEME // NO REAL PRIZE
+        </div>
         <div 
           onClick={() => openModalWithAd(leftAd)}
-          className={`relative w-44 p-2.5 bg-gradient-to-b ${leftAd.gradient} rounded-lg border-2 border-dashed ${leftAd.borderColor} ${leftAd.shadow} cursor-pointer hover:scale-105 active:scale-95 transition-all text-center select-none animate-pulse`}
-          title={`Click to claim your guaranteed ${leftAd.prizeName}!`}
+          className={`relative w-44 p-2.5 bg-gradient-to-b ${leftAd.gradient} rounded-b-lg border-2 border-dashed ${leftAd.borderColor} ${leftAd.shadow} cursor-pointer hover:scale-105 active:scale-95 transition-all text-center select-none animate-pulse`}
+          title={`Click to open parody meme claim wizard for ${leftAd.prizeName} (Satirical joke - zero real files or prizes)`}
         >
           {/* Quick RNG Reroll Pill */}
           <button
@@ -644,10 +647,13 @@ export const FakeRetroScamAds: React.FC = () => {
 
       {/* RIGHT RETRO FLOATING SCAM BANNER (Desktop Gutters) */}
       <div className="hidden xl:flex fixed right-3 top-1/2 -translate-y-1/2 z-30 flex-col items-center group">
+        <div className="text-[9px] font-mono font-bold text-cyan-300 bg-black/90 px-2 py-0.5 rounded-t border border-cyan-400/50 uppercase tracking-widest shadow select-none">
+          PARODY MEME // NO REAL PRIZE
+        </div>
         <div 
           onClick={() => openModalWithAd(rightAd)}
-          className={`relative w-44 p-2.5 bg-gradient-to-b ${rightAd.gradient} rounded-lg border-2 border-dashed ${rightAd.borderColor} ${rightAd.shadow} cursor-pointer hover:scale-105 active:scale-95 transition-all text-center select-none animate-pulse`}
-          title={`Click to claim your guaranteed ${rightAd.prizeName}!`}
+          className={`relative w-44 p-2.5 bg-gradient-to-b ${rightAd.gradient} rounded-b-lg border-2 border-dashed ${rightAd.borderColor} ${rightAd.shadow} cursor-pointer hover:scale-105 active:scale-95 transition-all text-center select-none animate-pulse`}
+          title={`Click to open parody meme claim wizard for ${rightAd.prizeName} (Satirical joke - zero real files or prizes)`}
         >
           {/* Quick RNG Reroll Pill */}
           <button
@@ -685,7 +691,7 @@ export const FakeRetroScamAds: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Gift className="w-4 h-4 text-yellow-300 animate-spin" />
                 <span className="font-bold text-xs tracking-wider">
-                  OFFICIAL CLAIM WIZARD // PRIZE DISPATCHER v4.20
+                  OFFICIAL CLAIM WIZARD // PARODY DISPATCHER (0 REAL BYTES)
                 </span>
               </div>
               <button 

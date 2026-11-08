@@ -30,6 +30,10 @@
       backdrop-filter: blur(12px);
       position: relative;
     }
+    .container.error-state {
+      border-color: rgba(239, 68, 68, 0.5);
+      box-shadow: 0 0 40px rgba(239, 68, 68, 0.2);
+    }
     .badge {
       display: inline-flex;
       align-items: center;
@@ -45,6 +49,11 @@
       border-radius: 9999px;
       margin-bottom: 20px;
     }
+    .badge.error-badge {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #f87171;
+    }
     .pulse-dot {
       width: 7px;
       height: 7px;
@@ -52,6 +61,11 @@
       border-radius: 50%;
       box-shadow: 0 0 8px #00ffcc;
       animation: pulse 1.8s infinite;
+    }
+    .pulse-dot.error-dot {
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+      animation: none;
     }
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
@@ -81,6 +95,10 @@
       justify-content: center;
       gap: 8px;
     }
+    .ip-box.ip-box-error {
+      border-color: rgba(239, 68, 68, 0.6);
+      background: rgba(127, 29, 29, 0.15);
+    }
     .ip-box span.label {
       color: #94a3b8;
       font-size: 11px;
@@ -93,6 +111,10 @@
       font-size: 17px;
       font-weight: 700;
       letter-spacing: 0.04em;
+    }
+    .ip-box span.ip.ip-error {
+      color: #f87171;
+      font-size: 15px;
     }
     .actions {
       display: flex;
@@ -155,17 +177,17 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="badge">
-      <span class="pulse-dot"></span>
-      Steam Connect Protocol
+  <div id="main-container" class="container">
+    <div id="badge-el" class="badge">
+      <span id="dot-el" class="pulse-dot"></span>
+      <span id="badge-text">Steam Connect Protocol</span>
     </div>
-    <h1>Connecting to CS2 Server</h1>
-    <p class="sub">Launching Counter-Strike 2 via Steam protocol...</p>
+    <h1 id="title-el">Connecting to CS2 Server</h1>
+    <p id="sub-el" class="sub">Launching Counter-Strike 2 via Steam protocol...</p>
     
-    <div class="ip-box">
-      <span class="label">Target:</span>
-      <span id="ip-text" class="ip">74.91.124.21:27015</span>
+    <div id="ip-box-el" class="ip-box">
+      <span id="target-label" class="label">Target:</span>
+      <span id="ip-text" class="ip">Verifying address...</span>
     </div>
 
     <div class="actions">
@@ -188,25 +210,89 @@
   <script>
     (function() {
       var params = new URLSearchParams(window.location.search);
-      var rawIp = params.get('ip') || params.get('server') || params.get('host') || window.location.hash.replace('#', '') || '74.91.124.21:27015';
-      // Sanitize IP address/port
-      var targetIp = rawIp.replace(/[^0-9a-zA-Z\.\:\-]/g, '').trim();
-      if (!targetIp) targetIp = '74.91.124.21:27015';
+      var rawIp = (params.get('ip') || params.get('server') || params.get('host') || window.location.hash.replace('#', '') || '').trim();
 
       var domainMap = {
         'rsscs2.kr': '14.5.33.30:27015',
         'rsscs2.kr:27015': '14.5.33.30:27015'
       };
-      if (domainMap[targetIp]) {
-        targetIp = domainMap[targetIp];
+
+      if (rawIp && Object.prototype.hasOwnProperty.call(domainMap, rawIp)) {
+        rawIp = domainMap[rawIp];
       }
 
-      document.getElementById('ip-text').textContent = targetIp;
-      var steamUri = 'steam://connect/' + targetIp;
-      var linkEl = document.getElementById('connect-link');
-      linkEl.href = steamUri;
+      function validateTarget(input) {
+        if (!input || typeof input !== 'string') {
+          return { valid: false, error: 'Invalid server address' };
+        }
+        var cleaned = input.trim();
+        if (!cleaned) {
+          return { valid: false, error: 'Invalid server address' };
+        }
 
-      // Automatically launch Steam protocol
+        var IPV4_PATTERN = '(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}';
+        var FQDN_PATTERN = '[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\\.[a-zA-Z]{2,}';
+
+        var HOST_WITH_PORT_REGEX = new RegExp('^(' + IPV4_PATTERN + '|' + FQDN_PATTERN + '):(\\d+)$');
+        var HOST_ONLY_REGEX = new RegExp('^(' + IPV4_PATTERN + '|' + FQDN_PATTERN + ')$');
+
+        var matchWithPort = cleaned.match(HOST_WITH_PORT_REGEX);
+        if (matchWithPort) {
+          var host = matchWithPort[1];
+          var port = parseInt(matchWithPort[2], 10);
+          if (port >= 1 && port <= 65535) {
+            return { valid: true, target: host + ':' + port };
+          } else {
+            return { valid: false, error: 'Invalid server address (port must be 1-65535)' };
+          }
+        }
+
+        var matchHostOnly = cleaned.match(HOST_ONLY_REGEX);
+        if (matchHostOnly) {
+          var hostOnly = matchHostOnly[1];
+          return { valid: true, target: hostOnly + ':27015' };
+        }
+
+        return { valid: false, error: 'Invalid server address' };
+      }
+
+      var validation = validateTarget(rawIp);
+
+      var ipTextEl = document.getElementById('ip-text');
+      var titleEl = document.getElementById('title-el');
+      var subEl = document.getElementById('sub-el');
+      var connectLinkEl = document.getElementById('connect-link');
+      var copyBtnEl = document.getElementById('copy-btn');
+      var containerEl = document.getElementById('main-container');
+      var badgeEl = document.getElementById('badge-el');
+      var dotEl = document.getElementById('dot-el');
+      var badgeTextEl = document.getElementById('badge-text');
+      var ipBoxEl = document.getElementById('ip-box-el');
+
+      if (!validation.valid) {
+        // Render Error State: Zero Steam Launch, No Fallback to Default
+        containerEl.className = 'container error-state';
+        badgeEl.className = 'badge error-badge';
+        dotEl.className = 'pulse-dot error-dot';
+        badgeTextEl.textContent = 'Connection Blocked';
+        titleEl.textContent = 'Invalid Server Address';
+        subEl.textContent = 'The specified server target is invalid or malformed. Launching Counter-Strike 2 has been blocked for your safety.';
+        ipBoxEl.className = 'ip-box ip-box-error';
+        ipTextEl.className = 'ip ip-error';
+        ipTextEl.textContent = 'Invalid server address';
+
+        connectLinkEl.style.display = 'none';
+        copyBtnEl.style.display = 'none';
+        return;
+      }
+
+      // Valid State: Show Target, Build Steam Link Without encodeURIComponent, and Connect
+      var targetIp = validation.target;
+      ipTextEl.textContent = targetIp;
+
+      var steamUri = 'steam://connect/' + targetIp;
+      connectLinkEl.href = steamUri;
+
       try {
         window.location.href = steamUri;
       } catch (e) {}
@@ -224,10 +310,12 @@
           document.body.removeChild(ta);
         }
         var btn = document.getElementById('copy-btn');
-        btn.textContent = '✓ Copied to Clipboard (`connect ' + targetIp + '`)';
-        setTimeout(function() {
-          btn.textContent = '📋 Copy Console Command (`connect IP`)';
-        }, 2200);
+        if (btn) {
+          btn.textContent = '✓ Copied to Clipboard (`connect ' + targetIp + '`)';
+          setTimeout(function() {
+            btn.textContent = '📋 Copy Console Command (`connect IP`)';
+          }, 2200);
+        }
       };
     })();
   </script>

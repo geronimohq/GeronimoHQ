@@ -41,13 +41,13 @@ export const DeployHudFooter: React.FC = () => {
               </div>
               <p className="text-slate-300 leading-tight">
                 Sector 7G, Mako Reactor Core #1, Midgar Upper Plate <br />
-                <span className="text-slate-500">(Sub-Basement 07, Cyber Bunker, GeronimoHQ)</span>
+                <span className="text-slate-400">(Sub-Basement 07, Cyber Bunker, GeronimoHQ)</span>
               </p>
               <div className="text-amber-300 font-bold pt-1 flex items-center gap-1">
                 <span>📞 BANANA HOTLINE:</span>
                 <span className="text-amber-200">1-800-RAM-DOWNLOAD (Ext. 6090-TI)</span>
               </div>
-              <div className="text-[10px] text-slate-500">
+              <div className="text-[10px] text-slate-400">
                 Alt Relay: +1 (420) 69-PEPE-HQ &bull; Toll-Free 24/7 Meme Dispatch
               </div>
             </div>
@@ -95,7 +95,7 @@ export const DeployHudFooter: React.FC = () => {
               </div>
             </div>
 
-            <div className="text-[10px] font-code text-slate-500 flex items-center gap-1">
+            <div className="text-[10px] font-code text-slate-400 flex items-center gap-1">
               <ShieldCheck className="w-3 h-3 text-emerald-400" />
               Protected relay &bull; Direct inbox routing
             </div>
@@ -151,21 +151,21 @@ export const DeployHudFooter: React.FC = () => {
         </div>
 
         {/* Bottom Clean Copyright Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-code text-slate-500">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-code text-slate-400">
           <div className="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-cyan-400" />
               <span>GERONIMO HQ &copy; {new Date().getFullYear()} // ALL SYSTEMS NOMINAL</span>
             </div>
             <span className="hidden sm:inline text-slate-700">&bull;</span>
-            <span className="text-[11px] text-slate-500">
+            <span className="text-[11px] text-slate-400">
               Zero RAM Refunds &bull; 100% Downloaded RAM Certified &bull; All Rights Reserved By The Meme Syndicate
             </span>
           </div>
           <div className="flex items-center gap-4 text-[11px]">
             <span className="text-slate-400">CYBERPUNK HUD</span>
-            <span>PROD BUILD</span>
-            <span className="text-cyan-400">v1.1.0-LIVE</span>
+            <span className="text-slate-300">PROD BUILD</span>
+            <span className="text-cyan-400 font-bold">v1.1.0-LIVE</span>
           </div>
         </div>
 
