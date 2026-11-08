@@ -262,7 +262,7 @@ export const App: React.FC = () => {
         </div>
 
         {/* Down Indicator */}
-        <div className="flex flex-col items-center my-3 text-slate-500 hover:text-cyan-400 transition-colors">
+        <div className="flex flex-col items-center my-3 text-slate-400 hover:text-cyan-400 transition-colors">
           <span className="text-[10px] font-code tracking-widest uppercase mb-1">
             SCROLL FOR DOWNLOAD MORE RAM, ZE SERVER RADAR, CFG STUDIO &amp; CS2 APP
           </span>

@@ -1545,7 +1545,7 @@ export const ServerRadarPreview: React.FC = () => {
                 Browser-based reflex and crouch jump trainer for surviving high, low, and diagonal ending lasers.
               </p>
             </div>
-            <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] font-code text-slate-500 flex items-center justify-between">
+            <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] font-code text-slate-400 flex items-center justify-between">
               <span>trainer.cybo.dev</span>
               <span className="text-rose-400 font-bold">by cybo</span>
             </div>
@@ -1570,7 +1570,7 @@ export const ServerRadarPreview: React.FC = () => {
                 Interactive real-time 3D viewport for inspecting complete CS2 Zombie Escape map topologies, triggers, and routes.
               </p>
             </div>
-            <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] font-code text-slate-500 flex items-center justify-between">
+            <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] font-code text-slate-400 flex items-center justify-between">
               <span>maps.cybo.dev</span>
               <span className="text-cyan-400 font-bold">by cybo</span>
             </div>
@@ -1595,7 +1595,7 @@ export const ServerRadarPreview: React.FC = () => {
                 Zero-install web tool to explore, unpack, and edit Valve Pak (.vpk) game assets, sound cues, and materials in browser.
               </p>
             </div>
-            <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] font-code text-slate-500 flex items-center justify-between">
+            <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] font-code text-slate-400 flex items-center justify-between">
               <span>vpkeditor.xyz</span>
               <span className="text-emerald-400 font-bold">by слизь (slime)</span>
             </div>
@@ -1620,7 +1620,7 @@ export const ServerRadarPreview: React.FC = () => {
                 Live match scoring, player activity heatmaps, map soundtrack links, and global community nomination history.
               </p>
             </div>
-            <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] font-code text-slate-500 flex items-center justify-between">
+            <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] font-code text-slate-400 flex items-center justify-between">
               <span>zegraph.xyz</span>
               <span className="text-purple-400 font-bold">by queeniemella</span>
             </div>
