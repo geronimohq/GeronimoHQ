@@ -152,7 +152,7 @@ export const App: React.FC = () => {
 
   return (
     <div
-      className={`relative min-h-screen text-slate-100 flex flex-col font-tech transition-colors duration-1000 selection:bg-fuchsia-500 selection:text-white w-full max-w-full overflow-x-clip ${
+      className={`relative min-h-screen text-slate-100 flex flex-col font-tech transition-colors duration-1000 selection:bg-fuchsia-500 selection:text-white ${
         theme === 'banana' ? 'bg-[#090701]' : 'bg-[#05070d]'
       }`}
     >
@@ -171,8 +171,6 @@ export const App: React.FC = () => {
         gremlinEnabled={gremlinEnabled}
         onToggleGremlin={() => setGremlinEnabled((prev) => !prev)}
       />
-      {/* Fixed Navbar Spacer to ensure hero content never clips underneath */}
-      <div className="h-16 md:h-18 w-full flex-shrink-0 pointer-events-none" aria-hidden="true" />
 
       {/* Smooth Theme Transition Toast Notification */}
       {transitionBanner && (

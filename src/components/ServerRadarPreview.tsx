@@ -182,8 +182,6 @@ export const ServerRadarPreview: React.FC = () => {
     if (curr <= targetThreshold) {
       // Slot open right now! Connect via Steam Game Server immediately
       dispatchSteamProtocol(`steam://connect/${server.host}:${server.port}`);
-      setSlotWatcherStatus(`⚡ Slot open on ${server.name} (${curr}/${max} ≤ ${targetThreshold})! Connecting via Steam protocol...`);
-      setTimeout(() => setSlotWatcherStatus(null), 4000);
       return;
     }
 
@@ -241,9 +239,8 @@ export const ServerRadarPreview: React.FC = () => {
         } catch {
           // ignore
         }
-        setSlotWatcherStatus(`🎯 Slot open detected on ${targetServer.name} (${curr}/${max} ≤ ${targetThreshold})! Connecting via Steam protocol...`);
         setSlotWatcherServerId(null);
-        setTimeout(() => setSlotWatcherStatus(null), 6000);
+        setSlotWatcherStatus(null);
       }
     }
   }, [telemetry, slotWatcherServerId, gflSlotPriority, commSlotPriority]);
@@ -714,7 +711,7 @@ export const ServerRadarPreview: React.FC = () => {
                   ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse shadow-[0_0_15px_rgba(251,191,36,0.4)]'
                   : 'bg-slate-900/90 hover:bg-emerald-950/60 border-slate-700 hover:border-emerald-500/70 text-slate-300 hover:text-emerald-300'
               }`}
-              title="Slot Watcher:&#10;• Monitors live server telemetry in real-time.&#10;• When player count drops below threshold, alerts you and presents a one-click Connect button (no auto-launch popup).&#10;• For automated in-game console sniping, use the CS2 Command Center desktop companion."
+              title={`Auto Join (${gflSlotPriority === 'normal' ? '≤61 Normal' : gflSlotPriority === 'supporter' ? '≤62 Supporter' : '≤63 VIP'}):\n• If CS2 is OPEN: Connects you directly into the server the moment a slot opens!\n• If CS2 is CLOSED: Steam protocol only opens CS2 to Main Menu (will not join directly). Launch CS2 first, then arm Auto Join!\n• Pro-Tip: For 100% automated in-game console sniping that bypasses Steam, use the CS2 Command Center desktop app.`}
             >
               <Target className={`w-3.5 h-3.5 ${slotWatcherServerId === gflServer.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
               <span>
@@ -1083,11 +1080,11 @@ export const ServerRadarPreview: React.FC = () => {
                       ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse'
                       : 'bg-slate-900 hover:bg-emerald-950/80 border-slate-700 hover:border-emerald-500 text-slate-300 hover:text-emerald-300'
                   }`}
-                  title={`Slot Watcher (Target: ${commSlotPriority === 'normal' ? '≤61 Players' : commSlotPriority === 'supporter' ? '≤62 Players' : '≤63 Players'}):&#10;• Alerts you and presents an instant Connect button when a slot opens.`}
+                  title={`Auto Join (Target: ${commSlotPriority === 'normal' ? '≤61 Players' : commSlotPriority === 'supporter' ? '≤62 Players' : '≤63 Players'}):\n• If CS2 is OPEN: Connects you directly into the server the moment a slot opens!\n• If CS2 is CLOSED: Steam protocol only opens CS2 to Main Menu (will not join directly). Launch CS2 first, then arm Auto Join!\n• Pro-Tip: For 100% automated in-game console sniping that bypasses Steam, use the CS2 Command Center desktop app.`}
                 >
                   <Target className={`w-3 h-3 ${slotWatcherServerId === server.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
                   <span className="hidden sm:inline">
-                    {slotWatcherServerId === server.id ? 'ACTIVE' : `AUTO JOIN (${commSlotPriority === 'normal' ? '≤61' : commSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
+                    {slotWatcherServerId === server.id ? 'ACTIVE (CANCEL)' : `AUTO JOIN (${commSlotPriority === 'normal' ? '≤61' : commSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
                   </span>
                 </button>
 

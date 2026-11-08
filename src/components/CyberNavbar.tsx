@@ -75,7 +75,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 w-full backdrop-blur-xl transition-colors duration-700 px-4 py-2.5 border-b ${
+      className={`sticky top-0 z-50 w-full backdrop-blur-xl transition-colors duration-700 px-4 py-2.5 border-b ${
         theme === 'banana'
           ? 'bg-[#0c0902]/90 border-yellow-500/35'
           : 'bg-[#060810]/85 border-cyan-500/20'
