@@ -179,6 +179,16 @@ export const RetroGridCanvas: React.FC<RetroGridCanvasProps> = ({
       animationFrameId = requestAnimationFrame(render);
     };
 
+    const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      // Draw static cyber grid once without starting animation frame loop
+      render();
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('mousemove', handleMouseMove);
+      };
+    }
+
     render();
 
     return () => {

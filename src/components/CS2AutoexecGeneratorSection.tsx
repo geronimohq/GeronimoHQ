@@ -8,6 +8,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
   const [duckKey, setDuckKey] = useState('F7');
   const [voiceMuteBind, setVoiceMuteBind] = useState(true);
   const [muteKey, setMuteKey] = useState('F8');
+  const [radarHudScaling, setRadarHudScaling] = useState(true);
   const [radarZoomBind, setRadarZoomBind] = useState(true);
   const [radarZoomKey, setRadarZoomKey] = useState('v');
   const [nullMovement, setNullMovement] = useState(false);
@@ -25,20 +26,17 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
     const lines: string[] = [
       '// ============================================================================',
       '// GERONIMOHQ.COM // CS2 & ZOMBIE ESCAPE PRO AUTOEXEC.CFG',
-      '// 100% VAC-Safe Engine CVars • Place in: steamapps/common/Counter-Strike Global Offensive/game/csgo/cfg/',
+      '// Engine CVars & Settings • Place in: steamapps/common/Counter-Strike Global Offensive/game/csgo/cfg/',
       '// ============================================================================',
       '',
       `fps_max "${sanitizedFps}"`,
       `cl_hud_color "${hudColor}"`,
-      'hud_scaling "0.90"',
-      'cl_radar_always_centered "0"',
-      'cl_radar_scale "0.40"',
       '',
     ];
 
     if (maxSubtickRates) {
       lines.push(
-        '// --- CS2 SUB-TICK & 64-PLAYER ZE NETWORK RATES (CS2 ENGINE VERIFIED) ---',
+        '// --- NETWORK RATES & BUFFER TICKS ---',
         'rate "786432"',
         'cl_net_buffer_ticks "0"',
         ''
@@ -47,7 +45,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
 
     if (zeLowViewmodel) {
       lines.push(
-        '// --- ZE LASER-JUMP LOW VIEWMODEL (MAXIMUM BOTTOM-SCREEN VISIBILITY) ---',
+        '// --- ZE LASER-JUMP LOW VIEWMODEL (IMPROVED BOTTOM-SCREEN VISIBILITY) ---',
         'viewmodel_fov "68"',
         'viewmodel_offset_x "2.0"',
         'viewmodel_offset_y "2.0"',
@@ -90,7 +88,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
     if (voiceMuteBind) {
       const m = (muteKey || 'F8').trim();
       lines.push(
-        '// --- PANIC VOICE CHAT MUTE TOGGLE (CS2 ENGINE VERIFIED) ---',
+        '// --- PANIC VOICE CHAT MUTE TOGGLE ---',
         'alias "ze_voice_off" "voice_modenable 0; alias ze_voice_toggle ze_voice_on; echo [ZE] Voice Chat Muted (0)"',
         'alias "ze_voice_on" "voice_modenable 1; alias ze_voice_toggle ze_voice_off; echo [ZE] Voice Chat Restored (1)"',
         'alias "ze_voice_toggle" "ze_voice_off"',
@@ -99,12 +97,11 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
       );
     }
 
-    // CS2 Native Jumpthrow notice (prevents multi-action alias kicks post-August 2024 update)
+    // CS2 Native Jumpthrow notice
     lines.push(
-      '// --- CS2 NATIVE SUB-TICK JUMPTHROW (NO MULTI-ACTION SCRIPT NEEDED) ---',
-      '// In CS2, hold attack (+attack), press jump (+jump), and release anywhere on jump ascent.',
-      '// The sub-tick engine executes a 100% consistent throw natively (player audibly grunts).',
-      '// Multi-action movement+attack binds trigger automated kicks on official Valve servers.',
+      '// --- CS2 NATIVE SUB-TICK JUMPTHROW ---',
+      '// In CS2, release attack while jumping. The sub-tick engine provides built-in jumpthrow timing.',
+      '// Multi-action movement+attack scripts are omitted to avoid input violation kicks post-August 2024 update.',
       ''
     );
 
@@ -120,15 +117,26 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
       );
     }
 
+    if (radarHudScaling) {
+      lines.push(
+        '// --- RADAR & HUD SCALING DEFAULTS ---',
+        'hud_scaling "0.90"',
+        'cl_radar_always_centered "0"',
+        'cl_radar_scale "0.40"',
+        ''
+      );
+    }
+
     if (nullMovement) {
       lines.push(
         '// --- NULL-CANCELLING STRAFE MOVEMENT BINDS (A / D) ---',
-        '// WARNING: Valve strictly kicks for null binds / Snap Tap on official matchmaking servers!',
-        '// Use this only on community servers that explicitly permit input automation.',
-        'alias "+ze_left" "+left; -right"',
-        'alias "-ze_left" "-left"',
-        'alias "+ze_right" "+right; -left"',
-        'alias "-ze_right" "-right"',
+        '// Notice: Input automation / null-cancelling binds may trigger automated kicks on official Valve servers.',
+        '// Use on community servers that permit input scripts.',
+        '// Undo binds if needed: bind "a" "+moveleft"; bind "d" "+moveright"',
+        'alias "+ze_left" "+moveleft; -moveright"',
+        'alias "-ze_left" "-moveleft"',
+        'alias "+ze_right" "+moveright; -moveleft"',
+        'alias "-ze_right" "-moveright"',
         'bind "a" "+ze_left"',
         'bind "d" "+ze_right"',
         ''
@@ -145,7 +153,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
       );
     }
 
-    lines.push('host_writeconfig', 'echo "[GeronimoHQ] CS2 & ZE Autoexec Loaded Successfully!"');
+    lines.push('echo "[GeronimoHQ] CS2 & ZE Autoexec Loaded Successfully!"');
     return lines.join('\n');
   }, [
     zeLowViewmodel,
@@ -154,6 +162,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
     duckKey,
     voiceMuteBind,
     muteKey,
+    radarHudScaling,
     radarZoomBind,
     radarZoomKey,
     nullMovement,
@@ -302,7 +311,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
 
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950/80 border border-slate-800/90 rounded-lg p-2.5">
               <label 
-                title="Toggle boss audio ducking between 22% (ducked) and 85% (normal) during loud ZE boss lasers"
+                title="Toggles between ducked volume (0.22) and standard volume (0.85). Note: overrides active volume setting when key is pressed."
                 className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input
@@ -328,7 +337,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
 
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950/80 border border-slate-800/90 rounded-lg p-2.5">
               <label 
-                title="Panic voice chat mute keybind (voice_modenable_toggle)"
+                title="Toggles voice chat between muted (voice_modenable 0) and enabled (voice_modenable 1)"
                 className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input
@@ -390,7 +399,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                 <span className="text-amber-300/90">⚠️ Null Binds (Community ZE Only)</span>
               </label>
               <label 
-                title="Sets CS2 maximum bandwidth rate (rate 786432, standard engine ceiling) and buffer ticks to 0 for minimal interpolation buffer delay"
+                title="Sets rate 786432 and cl_net_buffer_ticks 0 for minimal interpolation buffer delay. Note: buffer ticks 0 may cause hitching on unstable connections; increase to 1 or 2 if experiencing stutter."
                 className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input
@@ -402,7 +411,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                 <span>🌐 Network Rates & Buffer Ticks</span>
               </label>
               <label 
-                title="Sets CS2 Headphone EQ profile to Crisp (snd_headphone_eq 1; profiles: 0=Natural, 1=Crisp, 2=Smooth) with 3D perspective correction"
+                title="Sets snd_headphone_eq 1 (unverified in-game preset) with 3D perspective correction and keeps game audio audible when alt-tabbed (snd_mute_losefocus 0). Profiles: 0=Natural, 1=Crisp, 2=Smooth."
                 className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input
@@ -411,7 +420,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                   onChange={(e) => setCrispAudioEq(e.target.checked)}
                   className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
                 />
-                <span>🎧 Crisp Headphone Audio EQ (Preset 1)</span>
+                <span>🎧 Headphone Audio EQ & Background Sound (Preset 1, unverified)</span>
               </label>
               <label 
                 title="Show built-in CS2 frametime, ping, and network jitter HUD only when latency spikes occur"
@@ -424,6 +433,18 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                   className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
                 />
                 <span>📊 Smart Telemetry HUD</span>
+              </label>
+              <label 
+                title="Applies recommended radar & HUD scale settings (hud_scaling 0.90, uncentered radar, radar scale 0.40)"
+                className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
+              >
+                <input
+                  type="checkbox"
+                  checked={radarHudScaling}
+                  onChange={(e) => setRadarHudScaling(e.target.checked)}
+                  className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
+                />
+                <span>🗺️ Radar & HUD Scale Defaults (0.40, uncentered)</span>
               </label>
             </div>
 
