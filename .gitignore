@@ -32,3 +32,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Local Backups & Desktop App
+backups/
+desktop-app/config.json
+desktop-app/build/
+desktop-app/dist/
+desktop-app/**/__pycache__/
+
+
