@@ -8,13 +8,13 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
   const [duckKey, setDuckKey] = useState('F7');
   const [voiceMuteBind, setVoiceMuteBind] = useState(true);
   const [muteKey, setMuteKey] = useState('F8');
-  const [jumpthrowBind, setJumpthrowBind] = useState(true);
-  const [jumpthrowKey, setJumpthrowKey] = useState('v');
+  const [radarZoomBind, setRadarZoomBind] = useState(true);
+  const [radarZoomKey, setRadarZoomKey] = useState('v');
   const [nullMovement, setNullMovement] = useState(false);
   const [maxSubtickRates, setMaxSubtickRates] = useState(true);
   const [crispAudioEq, setCrispAudioEq] = useState(true);
   const [smartTelemetryHud, setSmartTelemetryHud] = useState(true);
-  const [hudColor, setHudColor] = useState('11');
+  const [hudColor, setHudColor] = useState('3');
   const [fpsMax, setFpsMax] = useState('0');
   const [copiedCfg, setCopiedCfg] = useState(false);
   const [copiedLaunch, setCopiedLaunch] = useState(false);
@@ -96,14 +96,23 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
       );
     }
 
-    if (jumpthrowBind) {
-      const jk = (jumpthrowKey || 'v').trim();
+    // CS2 Native Jumpthrow notice (prevents multi-action alias kicks post-August 2024 update)
+    lines.push(
+      '// --- CS2 NATIVE SUB-TICK JUMPTHROW (NO MULTI-ACTION SCRIPT NEEDED) ---',
+      '// In CS2, hold attack (+attack), press jump (+jump), and release anywhere on jump ascent.',
+      '// The sub-tick engine executes a 100% consistent throw natively (player audibly grunts).',
+      '// Multi-action movement+attack binds trigger automated kicks on official Valve servers.',
+      ''
+    );
+
+    if (radarZoomBind) {
+      const rk = (radarZoomKey || 'v').trim();
       lines.push(
-        '// --- SUB-TICK CONSISTENT JUMPTHROW ALIAS ---',
-        'alias "+ze_jt" "+jump"',
-        'alias "+ze_ta" "-attack; -attack2"',
-        'alias "-ze_jt" "-jump"',
-        `bind "${jk}" "+ze_jt; +ze_ta"`,
+        '// --- RADAR ZOOM TOGGLE (0.40 WIDE vs 0.80 CLOSE-UP) ---',
+        'alias "ze_radar_toggle" "ze_radar_zoom_in"',
+        'alias "ze_radar_zoom_in" "cl_radar_scale 0.80; alias ze_radar_toggle ze_radar_zoom_out; echo [ZE] Radar Zoom: Close-Up (0.80)"',
+        'alias "ze_radar_zoom_out" "cl_radar_scale 0.40; alias ze_radar_toggle ze_radar_zoom_in; echo [ZE] Radar Zoom: Overview (0.40)"',
+        `bind "${rk}" "ze_radar_toggle"`,
         ''
       );
     }
@@ -111,6 +120,8 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
     if (nullMovement) {
       lines.push(
         '// --- NULL-CANCELLING STRAFE MOVEMENT BINDS (A / D) ---',
+        '// WARNING: Valve strictly kicks for null binds / Snap Tap on official matchmaking servers!',
+        '// Use this only on community servers that explicitly permit input automation.',
         'alias "+ze_left" "+left; -right"',
         'alias "-ze_left" "-left"',
         'alias "+ze_right" "+right; -left"',
@@ -140,8 +151,8 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
     duckKey,
     voiceMuteBind,
     muteKey,
-    jumpthrowBind,
-    jumpthrowKey,
+    radarZoomBind,
+    radarZoomKey,
     nullMovement,
     maxSubtickRates,
     crispAudioEq,
@@ -339,41 +350,41 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
 
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950/80 border border-slate-800/90 rounded-lg p-2.5">
               <label 
-                title="Sub-tick jumpthrow alias bind for consistent grenade release timing"
+                title="Single-key toggle to zoom CS2 radar between 0.40 (map overview) and 0.80 (close-up radar) - 100% Valve Safe"
                 className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input
                   type="checkbox"
-                  checked={jumpthrowBind}
-                  onChange={(e) => setJumpthrowBind(e.target.checked)}
-                  className="w-4 h-4 accent-lime-400 rounded cursor-pointer"
+                  checked={radarZoomBind}
+                  onChange={(e) => setRadarZoomBind(e.target.checked)}
+                  className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
                 />
-                <span className="font-bold text-white">🎯 Sub-Tick Jumpthrow Alias Keybind</span>
+                <span className="font-bold text-white">🔭 Radar Zoom In/Out Toggle Keybind</span>
               </label>
               <div className="flex items-center gap-1.5 text-xs font-code">
                 <span className="text-slate-400">Key:</span>
                 <input
                   type="text"
-                  value={jumpthrowKey}
-                  onChange={(e) => setJumpthrowKey(e.target.value)}
-                  title="Keyboard key for jumpthrow bind (e.g. v, mouse5)"
-                  className="w-12 px-2 py-0.5 rounded bg-slate-900 border border-lime-500/50 text-lime-300 text-center font-bold"
+                  value={radarZoomKey}
+                  onChange={(e) => setRadarZoomKey(e.target.value)}
+                  title="Keyboard key for radar zoom toggle (e.g. v, c, mouse4)"
+                  className="w-12 px-2 py-0.5 rounded bg-slate-900 border border-cyan-500/50 text-cyan-300 text-center font-bold"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
               <label 
-                title="Null-cancelling strafe binds (A/D) ensuring opposite strafe key immediately cancels prior input (Check individual community server rules regarding null binds)"
+                title="Null-cancelling strafe binds (A/D). WARNING: Triggers automated kick on official Valve matchmaking servers (Premier/Comp/Casual)! Only use if your community server allows it."
                 className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input
                   type="checkbox"
                   checked={nullMovement}
                   onChange={(e) => setNullMovement(e.target.checked)}
-                  className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
+                  className="w-4 h-4 accent-amber-400 rounded cursor-pointer"
                 />
-                <span>⚡ Null-Movement Binds (A/D)</span>
+                <span className="text-amber-300/90">⚠️ Null Binds (Community ZE Only)</span>
               </label>
               <label 
                 title="Maximize CS2 network packet rates (rate 786432, cl_net_buffer_ticks 0) for sub-tick packet optimization & minimal buffering delay"
@@ -422,12 +433,19 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                   title="Choose custom CS2 HUD color theme index (cl_hud_color 0-12)"
                   className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs font-code text-cyan-300"
                 >
-                  <option value="11">11 — Light Blue (Pro Default)</option>
-                  <option value="9">9 — Aqua Cyan</option>
-                  <option value="5">5 — Neon Purple</option>
-                  <option value="8">8 — Safe Emerald Green</option>
+                  <option value="3">3 — Light Blue (Popular Pro Default)</option>
+                  <option value="10">10 — Aqua / Cyan (Cyberpunk)</option>
+                  <option value="9">9 — Emerald Green</option>
+                  <option value="8">8 — Vibrant Yellow</option>
+                  <option value="7">7 — Bright Orange</option>
                   <option value="6">6 — Crimson Red</option>
-                  <option value="4">4 — Bright Banana Yellow</option>
+                  <option value="5">5 — Neon Purple</option>
+                  <option value="11">11 — Hot Pink</option>
+                  <option value="4">4 — Dark Blue</option>
+                  <option value="1">1 — Soft White</option>
+                  <option value="2">2 — Bright White</option>
+                  <option value="12">12 — Light Yellow</option>
+                  <option value="0">0 — Team Color (Dynamic)</option>
                 </select>
               </div>
               <div>
