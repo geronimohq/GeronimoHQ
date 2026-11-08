@@ -716,7 +716,7 @@ export const ServerRadarPreview: React.FC = () => {
               <div className="flex items-center gap-2 pl-6 text-[11px] text-fuchsia-300 font-code bg-fuchsia-950/40 p-2 rounded-lg border border-fuchsia-500/30">
                 <Target className="w-3.5 h-3.5 text-fuchsia-400 flex-shrink-0" />
                 <span>
-                  <strong>Pro-Tip:</strong> The <a href="#cs2-command" className="underline text-fuchsia-300 hover:text-white font-bold">CS2 Command Center desktop app</a> includes a <strong>True In-Engine Slot Sniper</strong> that monitors player count via 0.25s UDP, issuing direct console joins when CS2 is active or prompting a Steam connect link as soon as it detects an open slot.
+                  <strong>Pro-Tip:</strong> The <a href="#cs2-command" className="underline text-fuchsia-300 hover:text-white font-bold">CS2 Command Center desktop app</a> includes a <strong>Slot Sniper</strong> that queries server player counts via background UDP (0.25s interval), notifying you and automating console connection when a slot opens.
                 </span>
               </div>
             </div>

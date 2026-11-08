@@ -29,6 +29,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
       '// ============================================================================',
       '',
       `fps_max "${sanitizedFps}"`,
+      '// HUD Color index: 0-12 (presets unverified in-game)',
       `cl_hud_color "${hudColor}"`,
       '',
     ];

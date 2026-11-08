@@ -108,11 +108,11 @@ export const CS2CommandCenterPreview: React.FC = () => {
     },
     {
       id: 'sniper',
-      name: 'True Silent Slot Sniper (0 RAM Stacking)',
+      name: 'Silent Slot Watcher & Sniper',
       shortTag: 'DIRECT NETWORK',
       badge: 'SILENT UDP + 10S COOLDOWN',
       icon: <Target className="w-5 h-5 text-lime-400" />,
-      summary: 'Monitors server player counts via low-latency UDP A2S queries at 0.25s while full—consuming 0 CS2 RAM, 0 SDR network sessions, and 0 clipboard usage. As soon as a slot opens, it executes the in-game console connect automatically with a 10-second cooldown to prevent spam.',
+      summary: 'Monitors server player counts via low-overhead UDP A2S queries at 0.25s while full. When a slot opens, it automates the in-game console connect with a 10-second cooldown to prevent spam.',
       details: [
         'True Silent Sniping: Watches server player count via lightweight UDP packets outside the game engine—preventing CS2 memory heap & SDR session leaks.',
         'Responsive 0.25s Player Count Detection: Checks 4 times per second for rapid slot detection.',
@@ -122,10 +122,10 @@ export const CS2CommandCenterPreview: React.FC = () => {
       ],
       parameters: [
         { name: 'Waiting Mode', value: 'Silent UDP A2S (0.25s)', desc: 'Zero CS2 RAM & Zero SDR leaks' },
-        { name: 'Slot Detection Trigger', value: 'Auto Console Connect', desc: 'Fires in-game connect when slot opens' },
+        { name: 'Slot Detection Trigger', value: 'Console Connect', desc: 'Sends console connect when slot opens' },
         { name: 'Auto-Stop Cooldown', value: '10s Timer on Button', desc: 'Prevents duplicate spam & allows clean retry' }
       ],
-      proTip: 'CS2 must be open. Set your slot priority (Normal ≤ 61, Supporter ≤ 62, VIP ≤ 63) and click Slot Sniper—it watches silently via UDP without touching CS2 memory, and connects via console when a spot opens!',
+      proTip: 'CS2 must be open. Set your slot priority (Normal ≤ 61, Supporter ≤ 62, VIP ≤ 63) and activate Slot Sniper—it queries server telemetry via background UDP and executes the console connect command when a spot opens.',
       vacSafe: true
     },
     {
