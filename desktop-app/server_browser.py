@@ -17,7 +17,7 @@ import threading
 import datetime
 import urllib.request
 import urllib.parse
-from typing import Dict, List, Any, Optional, Callable
+from typing import Dict, List, Any, Optional, Callable, Tuple
 import core_logic
 
 DEFAULT_SERVERS = [   {   'discord': 'https://discord.gg/gflze',
@@ -71,7 +71,7 @@ DEFAULT_SERVERS = [   {   'discord': 'https://discord.gg/gflze',
         'region': 'Eastern Europe (Moscow, RU)',
         'website': 'https://net4all.ru'}]
 
-CHINA_CLUSTERS = [   {   'description': '16 Active Zombie Escape & PVE Nodes (Verified via bbs.darkrp.cn)',
+CHINA_CLUSTERS = [   {   'description': '16 Active Zombie Escape & PVE Nodes (source: bbs.darkrp.cn)',
         'id': 'exg',
         'name': 'EXG 社区 (EXG · 16 Nodes)',
         'region': 'Hong Kong / BGP Multi-Line',
@@ -92,7 +92,7 @@ CHINA_CLUSTERS = [   {   'description': '16 Active Zombie Escape & PVE Nodes (Ve
                        {'host': '202.189.5.227', 'id': 'exg_18', 'name': 'EXG ZE 装备 #18', 'port': 27002},
                        {'host': '202.189.5.236', 'id': 'exg_14', 'name': 'EXG ZE 装备 #14', 'port': 27001}],
         'tag': 'EXG ZE'},
-    {   'description': '6 Active Zombie Escape Nodes (Verified via bbs.fyscs.com)',
+    {   'description': '6 Active Zombie Escape Nodes (source: bbs.fyscs.com)',
         'id': 'fys',
         'name': '风云社 (FyS · 6 Nodes)',
         'region': 'Mainland China / BGP Multi-Line',
@@ -103,7 +103,7 @@ CHINA_CLUSTERS = [   {   'description': '16 Active Zombie Escape & PVE Nodes (Ve
                        {'host': '110.42.9.138', 'id': 'fys_5', 'name': '【風雲】 僵尸逃跑 05#', 'port': 27055},
                        {'host': '110.42.9.138', 'id': 'fys_4', 'name': '【風雲】 僵尸逃跑 04#', 'port': 27045}],
         'tag': 'FyS ZE'},
-    {   'description': '6 Active Zombie Escape Nodes (Verified via cs.moeub.cn)',
+    {   'description': '6 Active Zombie Escape Nodes (source: cs.moeub.cn)',
         'id': 'ub',
         'name': '萌UB (MoeUB · 6 Nodes)',
         'region': 'Mainland China / BGP Multi-Line',
@@ -114,7 +114,7 @@ CHINA_CLUSTERS = [   {   'description': '16 Active Zombie Escape & PVE Nodes (Ve
                        {'host': '110.42.9.195', 'id': 'ub_12', 'name': 'UB社区 CS2 僵尸逃跑 #12', 'port': 27121},
                        {'host': '110.42.9.195', 'id': 'ub_13', 'name': 'UB社区 CS2 僵尸逃跑 #13', 'port': 27131}],
         'tag': 'UB ZE'},
-    {   'description': '5 Active Zombie Escape Nodes (Verified via bbs.zombieden.cn)',
+    {   'description': '5 Active Zombie Escape Nodes (source: bbs.zombieden.cn)',
         'id': 'zl',
         'name': '僵尸乐园 (ZL · 5 Nodes)',
         'region': 'Mainland China / BGP Multi-Line',
@@ -124,7 +124,7 @@ CHINA_CLUSTERS = [   {   'description': '16 Active Zombie Escape & PVE Nodes (Ve
                        {'host': '110.42.9.149', 'id': 'zl_4', 'name': '【僵尸乐园】 CS2 ZE #4', 'port': 27015},
                        {'host': '110.42.9.149', 'id': 'zl_5', 'name': '【僵尸乐园】 CS2 ZE #5', 'port': 27016}],
         'tag': 'ZL ZE'},
-    {   'description': '2 Active Zombie Escape Nodes (Verified via 93x.net)',
+    {   'description': '2 Active Zombie Escape Nodes (source: 93x.net)',
         'id': '93x',
         'name': '93X 社区 (93X · 2 Nodes)',
         'region': 'Mainland China / BGP Multi-Line',
@@ -388,31 +388,110 @@ def _get_s2ze_map_meta(clean_map: str):
         return _S2ZE_CACHE_MAPS[stripped]
     return None
 
-def get_server_demographics_text(region_name: str, total_players: int) -> str:
-    """
-    Returns formatted real-time geographic demographics string matching GeronimoHQ web format:
-    e.g. '🌐 GEO: 🇫🇷 FR 44% • 🇩🇪 DE 14% • 🇪🇸 ES 12%' or '🌐 GEO: IDLE (0 PLAYERS)'.
+def get_server_demographics_text(region_name: str, total_players: int, geo: Optional[Dict[str, Any]] = None) -> str:
+    """AUDIT P2-#5: honest GEO line.
+
+    Before: one fixed country split per region (e.g. a constant US/CA/MX split), the same every time,
+    not based on any player data. Now:
+      - 0 players            -> "server empty"
+      - measured data (geo)  -> continent split from ZEGraph, labelled as an estimate with
+                                its sample size (players whose country is known / total)
+      - no data              -> "no measured data" (we do not invent percentages)
+    Only aggregate counts are used; no individual player is ever shown.
     """
     if total_players <= 0:
-        return '🌐 GEO: IDLE (0 PLAYERS)'
-    
-    reg = (region_name or '').lower()
-    if 'chicago' in reg or 'north america' in reg or 'us' in reg:
-        return '🌐 GEO: 🇺🇸 US 54% • 🇨🇦 CA 26% • 🇲🇽 MX 11% • 🇧🇷 BR 7%'
-    elif 'france' in reg or 'mapeadores' in reg:
-        return '🌐 GEO: 🇫🇷 FR 44% • 🇩🇪 DE 14% • 🇪🇸 ES 12% • 🇬🇧 GB 8%'
-    elif 'spain' in reg or 'cola' in reg:
-        return '🌐 GEO: 🇪🇸 ES 38% • 🇫🇷 FR 21% • 🇷🇺 RU 15% • 🇩🇪 DE 11%'
-    elif 'tokyo' in reg or 'japan' in reg or 'possession' in reg:
-        return '🌐 GEO: 🇯🇵 JP 62% • 🇰🇷 KR 18% • 🇹🇼 TW 12% • 🇺🇸 US 5%'
-    elif 'seoul' in reg or 'korea' in reg or 'rss' in reg:
-        return '🌐 GEO: 🇰🇷 KR 72% • 🇯🇵 JP 15% • 🇷🇺 RU 8% • 🇨🇳 CN 5%'
-    elif 'moscow' in reg or 'russia' in reg or 'net4all' in reg:
-        return '🌐 GEO: 🇷🇺 RU 68% • 🇧🇾 BY 14% • 🇰🇿 KZ 10% • 🇺🇦 UA 6%'
-    elif 'china' in reg or 'hong kong' in reg or 'exg' in reg or 'fys' in reg or 'ub' in reg or 'zl' in reg or '93x' in reg:
-        return '🌐 GEO: 🇨🇳 CN 88% • 🇭🇰 HK 8% • 🇹🇼 TW 4%'
+        return "🌐 GEO: server empty"
+    if geo and geo.get("ok") and geo.get("sample", 0) > 0:
+        parts = [f"{name} {pct}%" for name, pct in geo["top"][:3]]
+        age = geo.get("age_s", 0)
+        age_txt = f" · {int(age // 60)} min old" if age >= 120 else ""
+        return f"🌐 GEO (estimate, {geo['sample']} of {geo['total']} players): " + " · ".join(parts) + age_txt
+    return "🌐 GEO: no measured data for this server"
+
+
+_CONTINENT_SHORT = {"North America": "N. America", "South America": "S. America"}
+_GEO_CACHE: Dict[str, Any] = {"at": 0.0, "data": None}
+GEO_CACHE_S = 300
+_GFL_CONTINENTS_URL = "https://zegraph.xyz/data/api/radars/65bdad6379cefd7ebcecce5c/live_statistics/continents"
+
+
+def parse_zegraph_continents(payload: Any) -> Optional[Dict[str, Any]]:
+    """ZEGraph continent stats -> {"sample", "total", "top": [(name, pct), ...]}.
+    sample = players with a known country (contain_countries); percentages use it."""
+    data = (payload or {}).get("data") if isinstance(payload, dict) else None
+    if not isinstance(data, dict):
+        return None
+    conts = [c for c in (data.get("continents") or []) if isinstance(c, dict) and int(c.get("count") or 0) > 0]
+    sample = int(data.get("contain_countries") or sum(int(c["count"]) for c in conts))
+    total = int(data.get("total_count") or sample)
+    if sample <= 0 or not conts:
+        return {"ok": True, "sample": 0, "total": total, "top": []}
+    top = sorted(((_CONTINENT_SHORT.get(c.get("name"), c.get("name") or "Other"),
+                   round(100 * int(c["count"]) / sample)) for c in conts), key=lambda x: -x[1])
+    return {"ok": True, "sample": sample, "total": total, "top": top}
+
+
+def fetch_gfl_continents(timeout: float = 4.0, now: Optional[float] = None) -> Optional[Dict[str, Any]]:
+    """Same source as the website's geo radar (ZEGraph live continents for GFL).
+    Cached 5 min; if offline, returns the last good value with its age; else None."""
+    now = time.time() if now is None else now
+    cached = _GEO_CACHE.get("data")
+    if cached and now - _GEO_CACHE["at"] < GEO_CACHE_S:
+        return dict(cached, age_s=now - _GEO_CACHE["at"])
+    try:
+        req = urllib.request.Request(_GFL_CONTINENTS_URL, headers={"User-Agent": "CS2CommandCenter/1.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            parsed = parse_zegraph_continents(json.loads(resp.read(65536).decode("utf-8", "replace")))
+        if parsed:
+            _GEO_CACHE.update(at=now, data=parsed)
+            return dict(parsed, age_s=0.0)
+    except Exception:
+        pass
+    if cached:
+        return dict(cached, age_s=now - _GEO_CACHE["at"])  # offline fallback: last known, with age
+    return None
+
+
+# AUDIT P2-#2/#5: the app reads the SAME backend the website uses, with a cache and an
+# offline fallback (direct A2S of the catalog). Read-only GET; sends no user data.
+BACKEND_SERVERS_URL = "https://geronimohq-telemetry.onrender.com/api/servers"
+TOTALS_CACHE_S = 60
+_TOTALS_CACHE: Dict[str, Any] = {"at": 0.0, "totals": None, "source": None}
+
+
+def fetch_backend_servers(timeout: float = 6.0) -> Optional[Dict[str, Any]]:
+    try:
+        req = urllib.request.Request(BACKEND_SERVERS_URL, headers={"User-Agent": "CS2CommandCenter/1.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            if resp.status != 200:
+                return None
+            data = json.loads(resp.read(4 * 1024 * 1024).decode("utf-8", "replace"))
+        return data if isinstance(data, dict) and isinstance(data.get("servers"), dict) else None
+    except Exception:
+        return None
+
+
+def get_shared_totals(now: Optional[float] = None, fetch_backend=None, query_direct=None) -> Dict[str, Any]:
+    """Totals for the Dashboard card AND the ZE Game Servers pills (one function).
+    Order: fresh cache (60 s) -> backend /api/servers -> direct A2S of the catalog."""
+    now = time.time() if now is None else now
+    if _TOTALS_CACHE["totals"] and now - _TOTALS_CACHE["at"] < TOTALS_CACHE_S:
+        return dict(_TOTALS_CACHE["totals"], source=_TOTALS_CACHE["source"])
+    fetch_backend = fetch_backend or fetch_backend_servers
+    query_direct = query_direct or query_catalog_rows
+    payload = fetch_backend()
+    if payload:
+        t = payload.get("totals")
+        if not isinstance(t, dict) or "humans" not in t:
+            # Older backend without `totals`: apply the same rule to its rows.
+            t = compute_player_totals(totals_rows_from_api(payload, received_at=now), now=now)
+        source = "backend"
     else:
-        return '🌐 GEO: 🌐 INTL 65% • 🇪🇺 EU 25% • 🇺🇸 US 10%'
+        t = compute_player_totals(query_direct(), now=now)
+        source = "direct"
+    t = {k: v for k, v in t.items() if k != "rows"}
+    _TOTALS_CACHE.update(at=now, totals=t, source=source)
+    return dict(t, source=source)
 
 def get_or_download_map_thumbnail(map_name: str, callback: Optional[Callable[[str, str], None]] = None) -> Optional[str]:
     """
@@ -1127,8 +1206,137 @@ class ServerSlotSniper:
             "target_host": self.target_host,
             "target_port": self.target_port,
             "target_name": self.target_name,
+            "target_max_players": self.target_max_players,
+            "last_fired_time": self.last_fired_time,
             "status_text": self.last_status
         }
+
+
+# --------------------------------------------------------------------------- #
+# AUDIT P2-#2: ONE definition of "players online". Kept byte-identical with
+# backend/api.py:compute_player_totals (a test checks both give the same result).
+#   players = HUMANS only (A2S "players" byte includes bots, so humans = players - bots)
+#   counted only for servers that answered within TOTALS_MAX_AGE_S seconds
+#   each (ip, port) counted once (aliases like rsscs2.kr:27015 == 14.5.33.30:27015)
+# --------------------------------------------------------------------------- #
+TOTALS_MAX_AGE_S = 90
+
+
+def compute_player_totals(rows, now=None, max_age_s=TOTALS_MAX_AGE_S):
+    """rows: iterable of dicts with keys: id, host, port, ip (optional), online,
+    curr_players, bots (optional), max_players, sampled_at (unix time, optional).
+    Returns dict: humans, bots, online_servers, total_servers, stale_servers,
+    bots_unknown_servers, duplicates_dropped, rows (per-server table)."""
+    now = time.time() if now is None else float(now)
+    seen = set()
+    out_rows = []
+    humans = bots_total = online = stale = bots_unknown = dupes = 0
+    for r in rows:
+        key = (str(r.get("ip") or r.get("host") or "").lower(), int(r.get("port") or 0))
+        if key in seen:
+            dupes += 1
+            continue
+        seen.add(key)
+        sampled = r.get("sampled_at")
+        fresh = sampled is None or (now - float(sampled)) <= max_age_s
+        is_online = bool(r.get("online")) and fresh
+        curr = int(r.get("curr_players") or 0)
+        b = r.get("bots")
+        if b is None:
+            b_val, b_known = 0, False
+        else:
+            b_val, b_known = max(0, int(b)), True
+        h = max(0, curr - b_val) if is_online else 0
+        if bool(r.get("online")) and not fresh:
+            stale += 1
+        if is_online:
+            online += 1
+            humans += h
+            bots_total += b_val
+            if not b_known:
+                bots_unknown += 1
+        out_rows.append({"id": r.get("id"), "host": r.get("host"), "port": r.get("port"),
+                         "online": is_online, "humans": h, "bots": b_val if is_online else 0,
+                         "bots_known": b_known, "max_players": int(r.get("max_players") or 0),
+                         "stale": bool(r.get("online")) and not fresh})
+    return {"humans": humans, "bots": bots_total, "online_servers": online,
+            "total_servers": len(out_rows), "stale_servers": stale,
+            "bots_unknown_servers": bots_unknown, "duplicates_dropped": dupes,
+            "max_age_s": max_age_s, "rows": out_rows}
+
+
+def totals_rows_from_api(payload, received_at=None):
+    """Rows for compute_player_totals from a backend /api/servers payload. Uses the
+    payload's own timestamp as the sample time (a stale cache is NOT 'online now')."""
+    servers = (payload or {}).get("servers") or {}
+    ts = payload.get("timestamp") if isinstance(payload, dict) else None
+    rows = []
+    for sid, s in servers.items():
+        rows.append({"id": sid, "host": s.get("host"), "port": s.get("port"), "online": s.get("online"),
+                     "curr_players": s.get("curr_players", 0), "bots": s.get("bots"),
+                     "max_players": s.get("max_players", 0),
+                     "sampled_at": ts if ts is not None else received_at})
+    return rows
+
+
+def catalog_servers():
+    """The fixed catalog used for totals (same 41 entries as backend/api.py SERVERS).
+    User-added custom servers are not part of the shared total."""
+    out = [dict(s) for s in DEFAULT_SERVERS]
+    for c in CHINA_CLUSTERS:
+        out.extend(dict(s) for s in c["servers"])
+    return out
+
+
+def query_catalog_rows(timeout: float = 1.2, workers: int = 16):
+    """Direct A2S_INFO to every catalog server (UDP, read-only). Rows for compute_player_totals."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _one(s):
+        try:
+            ip = socket.gethostbyname(s["host"])
+        except Exception:
+            ip = s["host"]
+        info = query_server_info(s["host"], s["port"], timeout=timeout)
+        return {"id": s["id"], "host": s["host"], "ip": ip, "port": s["port"], "online": info.get("online"),
+                "curr_players": info.get("curr_players", 0), "bots": info.get("bots") if info.get("online") else None,
+                "max_players": info.get("max_players", 0), "map": info.get("map"), "sampled_at": time.time()}
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        return list(pool.map(_one, catalog_servers()))
+
+
+def format_totals(t):
+    """Short display strings shared by the Dashboard card and the ZE Game Servers pills."""
+    if not t or not t.get("total_servers"):
+        return "— players in-game", "— servers online"
+    extra = " (bots unknown)" if t.get("bots_unknown_servers") else ""
+    return (f"{t['humans']} players in-game{extra}",
+            f"{t['online_servers']} / {t['total_servers']} servers online")
+
+
+SNIPER_TRIGGERED_SECONDS = 3
+SNIPER_COOLDOWN_SECONDS = 10
+
+
+def sniper_status_bar(status: Dict[str, Any], now: Optional[float] = None) -> Tuple[str, str]:
+    """AUDIT P2-#3: (text, state) for the bottom status bar, from the sniper's REAL state.
+    state is one of: idle | armed | triggered | cooldown."""
+    now = time.time() if now is None else now
+    fired = float(status.get("last_fired_time") or 0)
+    since = now - fired if fired else None
+    if status.get("is_active"):
+        name = (status.get("target_name") or "").strip() or f"{status.get('target_host')}:{status.get('target_port')}"
+        if len(name) > 28:
+            name = name[:27] + "…"
+        lim = status.get("target_max_players")
+        thr = f" (join at ≤ {lim})" if lim else " (join at first free slot)"
+        return f"● SLOT SNIPER: ARMED — {name}{thr}", "armed"
+    if since is not None and 0 <= since < SNIPER_TRIGGERED_SECONDS:
+        return "● SLOT SNIPER: TRIGGERED — connecting", "triggered"
+    if since is not None and 0 <= since < SNIPER_COOLDOWN_SECONDS:
+        return f"● SLOT SNIPER: COOLDOWN ({int(SNIPER_COOLDOWN_SECONDS - since + 0.999)}s)", "cooldown"
+    return "● SLOT SNIPER: IDLE", "idle"
 
 _global_sniper = ServerSlotSniper()
 

@@ -25,7 +25,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
     const sanitizedFps = Math.max(0, Math.min(999, parseInt(fpsMax || '0', 10) || 0));
     const lines: string[] = [
       '// ============================================================================',
-      '// GERONIMOHQ.COM // CS2 & ZOMBIE ESCAPE PRO AUTOEXEC.CFG',
+      '// GERONIMOHQ.COM // CS2 & ZOMBIE ESCAPE AUTOEXEC.CFG (hobby project, not affiliated with Valve)',
       '// Engine CVars & Settings • Place in: steamapps/common/Counter-Strike Global Offensive/game/csgo/cfg/',
       '// ============================================================================',
       '',
@@ -164,9 +164,14 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
     const muteK = (muteKey || 'F8').trim();
     const radarK = (radarZoomKey || 'v').trim();
 
-    lines.push(
+    // AUDIT P2-#9: the undo guide now sits in the file HEADER (it was at the very bottom).
+    const undoLines: string[] = [];
+    undoLines.push(
       '// ============================================================================',
-      '// HOW TO REVERT ALL SETTINGS & BINDS TO DEFAULTS (COMPLETE REVERT / UNDO GUIDE):',
+      '// HOW TO UNDO (read before you use this file):',
+      '// 1) Delete this autoexec.cfg (or the lines you added from it).',
+      '// 2) CS2 remembers most of these values after a restart, so also type the',
+      '//    commands below in the CS2 console. Defaults are common values - check yours.',
       '// Restart CS2 to clear memory-resident aliases (ze_duck_toggle, etc.).',
       '// Note: unverified defaults are labeled (typical, check yours).',
       '//',
@@ -202,8 +207,29 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
       '// ============================================================================',
       ''
     );
-    lines.push('echo "[GeronimoHQ] CS2 & ZE Autoexec Loaded Successfully!"');
-    return lines.join('\n');
+
+    // AUDIT P2-#9: each console variable appears once. Before, options repeated the same
+    // cvar with different values (rate 1000000 then 786432, snd_headphone_eq 0 then 1,
+    // fps_max twice ...). CS2 applies the LAST one, so keeping only the last keeps the
+    // same result without contradictions in the file.
+    const NOT_CVARS = new Set(['alias', 'bind', 'unbind', 'echo', 'exec']);
+    const cvarOf = (l: string): string | null => {
+      const m = /^([A-Za-z_][A-Za-z0-9_]*)\s/.exec(l);
+      return m && !NOT_CVARS.has(m[1].toLowerCase()) ? m[1].toLowerCase() : null;
+    };
+    const lastIndex = new Map<string, number>();
+    lines.forEach((l, i) => {
+      const c = cvarOf(l);
+      if (c) lastIndex.set(c, i);
+    });
+    const body = lines.filter((l, i) => {
+      const c = cvarOf(l);
+      return !c || lastIndex.get(c) === i;
+    });
+    const header = body.splice(0, 4);
+    const out = [...header, ...undoLines, ...body];
+    out.push('echo "[GeronimoHQ] autoexec.cfg loaded"');
+    return out.join('\n');
   }, [
     zeLowViewmodel,
     disableTracers,
@@ -258,7 +284,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
               </span>
               <span className="px-2 py-0.5 text-[10px] font-code rounded bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 flex items-center gap-1 font-bold">
                 <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                100% VAC-SAFE CVARS
+                CONSOLE SETTINGS ONLY
               </span>
             </div>
             <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-2.5">

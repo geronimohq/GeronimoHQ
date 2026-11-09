@@ -117,10 +117,10 @@ class ComprehensiveApplicationAudit(unittest.TestCase):
         self.assertEqual(len(cards), 2, "Expected exactly 2 cards: Why MPO card and MPO Hardware card")
 
     # -------------------------------------------------------------
-    # 5. AUTOEXEC & BINDS SAFETY GUARANTEE
+    # 5. AUTOEXEC & BINDS: USER LINES PRESERVED
     # -------------------------------------------------------------
     def test_05_autoexec_preview_and_safe_append(self):
-        """Audit autoexec preview, bind preservation guarantee, and restoration logic."""
+        """Audit autoexec preview, bind preservation, and restoration logic."""
         print("\n[AUDIT 05] Autoexec & Binds Safety...")
         self.root._select_nav("AUTOEXEC")
         self.assertTrue(hasattr(self.root, "txt_box"))

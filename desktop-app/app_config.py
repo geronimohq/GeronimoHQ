@@ -38,6 +38,47 @@ DEFAULT_CONFIG = {
     "gfl_sniper_tier": "mapper"
 }
 
+# AUDIT P2-#6: every user-facing setting in the Settings dialog, with its default.
+# One list used by Save, Reset and the round-trip test, so a setting can no longer be
+# shown in the dialog but left out of the save (that was the "check for updates" bug).
+SETTINGS_DEFAULTS: Dict[str, Any] = {
+    "start_with_windows": False,
+    "start_minimized": False,
+    "minimize_to_tray_on_close": True,
+    "open_on_page": "Dashboard",
+    "sniper_sound_enabled": True,
+    "sniper_sound_volume": 100,
+    "server_refresh_speed": "Normal (5s)",
+    "discord_presence_share": True,
+    "check_updates_on_startup": True,
+}
+
+
+def apply_settings(cfg: Dict[str, Any], values: Dict[str, Any]) -> Dict[str, Any]:
+    """Copies known settings from `values` into `cfg` (unknown keys are ignored)."""
+    for key, default in SETTINGS_DEFAULTS.items():
+        if key in values:
+            val = values[key]
+            if isinstance(default, bool):
+                val = bool(val)
+            elif isinstance(default, int):
+                try:
+                    val = max(0, min(100, int(round(float(val)))))
+                except (TypeError, ValueError):
+                    val = default
+            cfg[key] = val
+    return cfg
+
+
+def reset_settings(cfg: Dict[str, Any]) -> Dict[str, Any]:
+    """Restores Settings-dialog defaults IN PLACE, keeping everything else
+    (presence_secret, discord_client_id, timestamps, sniper targets...).
+    The old reset replaced the whole dict and silently deleted those keys."""
+    for key, default in SETTINGS_DEFAULTS.items():
+        cfg[key] = default
+    return cfg
+
+
 def load_config() -> Dict[str, Any]:
     cfg = dict(DEFAULT_CONFIG)
     if os.path.exists(CONFIG_FILE):

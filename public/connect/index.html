@@ -250,7 +250,7 @@
 
     <!-- Security Warning for Unverified External Servers -->
     <div id="warning-box" class="warning-box">
-      ⚠️ <strong>Unverified Server Target:</strong> This address is not in the GeronimoHQ verified server directory. Auto-launch is disabled. Confirm you trust this host before connecting.
+      ⚠️ <strong>Server not in the GeronimoHQ list:</strong> This address is not one of the listed servers. Auto-launch is disabled. Confirm you trust this host before connecting.
     </div>
 
     <!-- 3-Second Auto-Launch Countdown for Catalog Servers -->
@@ -382,10 +382,10 @@
         containerEl.className = 'container unverified-state';
         badgeEl.className = 'badge unverified-badge';
         dotEl.className = 'pulse-dot unverified-dot';
-        badgeTextEl.textContent = 'Unverified External Server';
+        badgeTextEl.textContent = 'Not in the server list';
         ipBoxEl.className = 'ip-box ip-box-unverified';
         titleEl.textContent = 'External Community Server';
-        subEl.textContent = 'Target host:port is not in the verified live server catalog. Auto-launch is disabled. Confirm you trust this host before connecting.';
+        subEl.textContent = 'This host:port is not in the GeronimoHQ server list. Auto-launch is disabled. Confirm you trust this host before connecting.';
         warningBoxEl.style.display = 'block';
         countdownBarEl.style.display = 'none';
       }
@@ -394,7 +394,7 @@
         containerEl.className = 'container';
         badgeEl.className = 'badge';
         dotEl.className = 'pulse-dot';
-        badgeTextEl.textContent = 'Verified Catalog Server';
+        badgeTextEl.textContent = 'Listed server';
         warningBoxEl.style.display = 'none';
         countdownBarEl.style.display = 'flex';
         var remainingSeconds = 3;

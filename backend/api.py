@@ -735,6 +735,57 @@ def fetch_gfl_intel(gfl_map: str):
     GFL_INTEL_CACHE["timestamp"] = now
     return match_data, musics_data
 
+# --------------------------------------------------------------------------- #
+# AUDIT P2-#2: ONE definition of "players online". This block is a byte-identical
+# copy of desktop-app/server_browser.py (test_phase2_bugs checks it). Humans only,
+# servers that answered within TOTALS_MAX_AGE_S, each (ip, port) once.
+# --------------------------------------------------------------------------- #
+TOTALS_MAX_AGE_S = 90
+
+
+def compute_player_totals(rows, now=None, max_age_s=TOTALS_MAX_AGE_S):
+    """rows: iterable of dicts with keys: id, host, port, ip (optional), online,
+    curr_players, bots (optional), max_players, sampled_at (unix time, optional).
+    Returns dict: humans, bots, online_servers, total_servers, stale_servers,
+    bots_unknown_servers, duplicates_dropped, rows (per-server table)."""
+    now = time.time() if now is None else float(now)
+    seen = set()
+    out_rows = []
+    humans = bots_total = online = stale = bots_unknown = dupes = 0
+    for r in rows:
+        key = (str(r.get("ip") or r.get("host") or "").lower(), int(r.get("port") or 0))
+        if key in seen:
+            dupes += 1
+            continue
+        seen.add(key)
+        sampled = r.get("sampled_at")
+        fresh = sampled is None or (now - float(sampled)) <= max_age_s
+        is_online = bool(r.get("online")) and fresh
+        curr = int(r.get("curr_players") or 0)
+        b = r.get("bots")
+        if b is None:
+            b_val, b_known = 0, False
+        else:
+            b_val, b_known = max(0, int(b)), True
+        h = max(0, curr - b_val) if is_online else 0
+        if bool(r.get("online")) and not fresh:
+            stale += 1
+        if is_online:
+            online += 1
+            humans += h
+            bots_total += b_val
+            if not b_known:
+                bots_unknown += 1
+        out_rows.append({"id": r.get("id"), "host": r.get("host"), "port": r.get("port"),
+                         "online": is_online, "humans": h, "bots": b_val if is_online else 0,
+                         "bots_known": b_known, "max_players": int(r.get("max_players") or 0),
+                         "stale": bool(r.get("online")) and not fresh})
+    return {"humans": humans, "bots": bots_total, "online_servers": online,
+            "total_servers": len(out_rows), "stale_servers": stale,
+            "bots_unknown_servers": bots_unknown, "duplicates_dropped": dupes,
+            "max_age_s": max_age_s, "rows": out_rows}
+
+
 def fetch_all_telemetry() -> Dict[str, Any]:
     futures = [THREAD_POOL.submit(fetch_single_server, s) for s in SERVERS]
     server_results = {}
@@ -749,11 +800,20 @@ def fetch_all_telemetry() -> Dict[str, Any]:
     gfl_map = server_results.get("gfl", {}).get("map", "")
     match_now, map_musics = fetch_gfl_intel(gfl_map)
 
+    sampled_at = time.time()
+    totals = compute_player_totals(
+        [{"id": r["id"], "host": r["host"], "port": r["port"], "online": r["online"],
+          "curr_players": r["curr_players"], "bots": r.get("bots"), "max_players": r["max_players"],
+          "sampled_at": sampled_at} for r in server_results.values()],
+        now=sampled_at)
+    totals.pop("rows", None)
+
     return {
         "timestamp": int(time.time()),
         "iso_time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "total_servers": len(SERVERS),
-        "online_servers": sum(1 for r in server_results.values() if r["online"]),
+        "online_servers": totals["online_servers"],
+        "totals": totals,  # AUDIT P2-#2: the ONE total the website and app display
         "geronimo_presence": geronimo_status,
         "gfl_match_now": match_now,
         "gfl_map_musics": map_musics,

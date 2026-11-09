@@ -33,6 +33,15 @@ PERF_HEADER = "// ============================================================\n
 
 PERF_BLOCK = """// ============================================================
 // [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS]
+// Added by CS2 Command Center (hobby project, not affiliated with Valve).
+// UNDO: 1) delete everything from this header to the END line below,
+//          or use Restore in the app;
+//       2) CS2 remembers some values after a restart, so also type these
+//          in the CS2 console (common defaults - check your own):
+//          fps_max 400; engine_low_latency_sleep_after_client_tick 0;
+//          rate 786432; snd_headphone_eq 0;
+//          cl_allow_animated_avatars 1; cl_hud_telemetry_frametime_show 0;
+//          cl_hud_telemetry_ping_show 0; cl_hud_telemetry_net_misdelivery_show 0
 // ============================================================
 fps_max 0                                   // Uncaps max FPS for lowest input latency
 engine_low_latency_sleep_after_client_tick true  // Synchronizes engine ticks to reduce frame stutter
@@ -49,7 +58,37 @@ cl_hud_telemetry_net_misdelivery_show "2"   // Real-time packet loss / choke not
 cl_ragdoll_workaround_threshold "0"
 
 echo "[CS2 FPS Optimizer] Performance tweaks & custom binds loaded successfully!"
+// [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS END]
 """
+
+PERF_TITLE = "[CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS]"
+PERF_END = "// [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS END]"
+_PERF_OLD_LAST_LINE = 'echo "[CS2 FPS Optimizer] Performance tweaks'
+
+
+def split_perf_block(content: str) -> Tuple[str, str, str]:
+    """AUDIT P2-#9: (before, block, after) for the app's performance block.
+    Before this fix, install/restore kept only the text BEFORE the block and silently
+    deleted everything after it (for example a ZE Studio block added later)."""
+    t = content.find(PERF_TITLE)
+    if t == -1:
+        return content, "", ""
+    line_start = content.rfind("\n", 0, t) + 1
+    prev = content.rfind("\n", 0, max(0, line_start - 1)) + 1
+    if content[prev:line_start].startswith("// ======"):
+        line_start = prev  # include the "// ====" line above the title
+    e = content.find(PERF_END, t)
+    if e != -1:
+        e = content.find("\n", e)
+        e = len(content) if e == -1 else e + 1
+    else:
+        e = content.find(_PERF_OLD_LAST_LINE, t)  # blocks written by older versions
+        if e != -1:
+            e = content.find("\n", e)
+            e = len(content) if e == -1 else e + 1
+        else:
+            e = len(content)  # unknown shape: same as before (block runs to the end)
+    return content[:line_start], content[line_start:e], content[e:]
 
 def is_admin() -> bool:
     try:
@@ -350,18 +389,14 @@ def install_autoexec(cfg_dir: str) -> Tuple[bool, List[str]]:
         except Exception as e:
             logs.append(f"[WARN] Notice reading existing autoexec: {e}")
 
-    if "[CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS]" in existing_content:
-        idx = existing_content.find("// ============================================================\n// [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS]")
-        if idx != -1:
-            base_content = existing_content[:idx].rstrip()
-        else:
-            base_content = existing_content.split("[CS2 FPS OPTIMIZER")[0].rstrip()
-    else:
-        base_content = existing_content.rstrip()
-
-    if base_content:
-        new_content = base_content + "\n\n" + PERF_BLOCK
-        logs.append("[PRESERVED] Preserved all of your custom binds, aliases, and viewmodel settings.")
+    before, block, after = split_perf_block(existing_content)
+    if block:
+        # Replace our block where it is; keep everything before AND after it.
+        new_content = before + PERF_BLOCK + (("\n" + after.lstrip("\n")) if after.strip() else "")
+        logs.append("[PRESERVED] Replaced only the app's performance block; your other lines were kept.")
+    elif existing_content.strip():
+        new_content = existing_content.rstrip() + "\n\n" + PERF_BLOCK
+        logs.append("[PRESERVED] Your existing lines were kept; the performance block was added at the end.")
     else:
         new_content = PERF_BLOCK
 
@@ -373,6 +408,58 @@ def install_autoexec(cfg_dir: str) -> Tuple[bool, List[str]]:
     except Exception as e:
         logs.append(f"[ERROR] Failed to save autoexec: {e}")
         return False, logs
+
+# AUDIT P2-#1: every marker this app writes into autoexec.cfg. The Dashboard used to
+# look for "// --- CS2 COMMAND CENTER" and "GERONIMOHQ", which this app never writes,
+# so it said "not edited by this app" even right after the app edited the file.
+APP_AUTOEXEC_MARKERS = (
+    "[CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS]",          # install_autoexec / PERF_BLOCK
+    "[CS2 COMMAND CENTER: ZE VISUAL, HUD",               # apply_ze_visual_and_hud_customizer
+    "GERONIMOHQ",                                        # website generator header
+)
+
+
+def file_sha256(path: str) -> Optional[str]:
+    import hashlib
+    try:
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(65536), b""):
+                h.update(chunk)
+        return h.hexdigest()
+    except Exception:
+        return None
+
+
+def get_autoexec_status(cfg_dir: Optional[str], app_save_record: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Reads autoexec.cfg from disk NOW and says plainly what the app knows about it.
+
+    state: "no_cfg_dir" | "missing" | "unreadable" | "app_block" | "app_saved" | "user"
+    app_save_record: {"path", "sha256", "time"} stored when the in-app editor saved the
+    file; "app_saved" is only reported while the file still has exactly that content.
+    """
+    if not cfg_dir:
+        return {"state": "no_cfg_dir", "path": None, "text": "Autoexec: CS2 cfg folder not found"}
+    path = os.path.join(cfg_dir, "autoexec.cfg")
+    if not os.path.isfile(path):
+        short = f"...{cfg_dir[-18:]}\\autoexec.cfg" if len(cfg_dir) > 22 else "cfg\\autoexec.cfg"
+        return {"state": "missing", "path": path, "text": f"Autoexec: not found at {short}"}
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read()
+    except Exception:
+        return {"state": "unreadable", "path": path, "text": "Autoexec: found (could not be read)"}
+    if any(m in content for m in APP_AUTOEXEC_MARKERS):
+        return {"state": "app_block", "path": path,
+                "text": "Autoexec: found (includes settings written by this app)"}
+    rec = app_save_record or {}
+    if rec.get("sha256") and os.path.normcase(str(rec.get("path", ""))) == os.path.normcase(path) \
+            and rec.get("sha256") == file_sha256(path):
+        when = rec.get("time") or ""
+        return {"state": "app_saved", "path": path,
+                "text": f"Autoexec: found (last saved in this app{(' at ' + when) if when else ''})"}
+    return {"state": "user", "path": path, "text": "Autoexec: found (no section written by this app)"}
+
 
 def restore_autoexec_backup(cfg_dir: str) -> Tuple[bool, List[str]]:
     logs = []
@@ -394,9 +481,9 @@ def restore_autoexec_backup(cfg_dir: str) -> Tuple[bool, List[str]]:
             try:
                 with open(autoexec_file, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read()
-                if "[CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS]" in content:
-                    idx = content.find("// ============================================================\n// [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS]")
-                    cleaned = content[:idx].rstrip() if idx != -1 else ""
+                if PERF_TITLE in content:
+                    before, _block, after = split_perf_block(content)
+                    cleaned = (before.rstrip() + ("\n\n" + after.lstrip("\n") if after.strip() else "")).strip("\n")
                     with open(autoexec_file, "w", encoding="utf-8") as f:
                         f.write(cleaned + "\n")
                     logs.append("[REVERTED] Removed performance block from autoexec.cfg while leaving your binds intact.")
@@ -611,7 +698,7 @@ def is_cs2_running() -> bool:
 
 def boost_cs2_process() -> Tuple[bool, str]:
     """Elevates CS2 process priority using minimal native Win32 handles (PROCESS_SET_INFORMATION).
-    Zero RAM working-set purging to guarantee 100% browser, Discord, and game stability."""
+    Does not purge RAM working sets (that can make browsers, Discord and games stutter)."""
     try:
         cs2_pids = get_cs2_pids()
         if not cs2_pids:
@@ -1044,6 +1131,21 @@ def get_active_network_interface() -> Dict[str, Any]:
 
     return info
 
+def dns_status_bar(current_dns: Optional[str]) -> Tuple[str, str]:
+    """AUDIT P2-#3: status-bar text from the adapter's REAL DNS (was hard-coded "ACTIVE").
+    state: unknown | provider | automatic | custom"""
+    cur = (current_dns or "").strip()
+    if not cur:
+        return "● DNS: checking…", "unknown"
+    for p in DNS_PROVIDERS:
+        if cur.startswith(p["name"]):
+            return f"● DNS: {p['name']}", "provider"
+    if cur.lower().startswith("automatic"):
+        return "● DNS: automatic (router / ISP)", "automatic"
+    m = re.search(r"\[([^\]]+)\]", cur)
+    return f"● DNS: custom ({m.group(1).split(',')[0].strip() if m else cur})", "custom"
+
+
 def _measure_single_dns_latency(ip: str, samples: int = 3) -> Tuple[float, float]:
     """Measures real UDP DNS resolution latency (port 53 query for api.steampowered.com)
     with TCP port 53 fallback. Returns (avg_ms, jitter_ms)."""
@@ -1399,7 +1501,7 @@ def repair_corrupted_workshop_addons(addons: List[Dict[str, Any]]) -> Dict[str, 
 # ==============================================================================
 
 def apply_ze_visual_and_hud_customizer(cfg_dir: str, opts: Dict[str, Any]) -> Dict[str, Any]:
-    """Injects 100% VAC-safe ZE Visual Clutter, Viewmodel, HUD Color & Boss Audio Ducking binds into autoexec.cfg."""
+    """Adds (or replaces) the app's marked ZE viewmodel / HUD colour / audio-toggle block in autoexec.cfg."""
     logs: List[str] = []
     if not cfg_dir or not os.path.isdir(cfg_dir):
         return {
@@ -1430,6 +1532,12 @@ def apply_ze_visual_and_hud_customizer(cfg_dir: str, opts: Dict[str, Any]) -> Di
 
     block_lines = [
         "// === [CS2 COMMAND CENTER: ZE VISUAL, HUD & AUDIO DUCKING STUDIO START] ===",
+        "// Added by CS2 Command Center (hobby project, not affiliated with Valve).",
+        "// UNDO: delete everything from START to END, then type in the CS2 console",
+        f"//       (common defaults - check your own): unbind {duck_key}; unbind {mute_key};",
+        "//       volume 1; snd_musicvolume 0.5; voice_modenable 1; viewmodel_presetpos 1;",
+        "//       cl_hud_color 0; cl_hud_telemetry_frametime_show 0; cl_hud_telemetry_ping_show 0;",
+        "//       cl_hud_telemetry_net_misdelivery_show 0",
     ]
     if vm_lines:
         block_lines.extend([
@@ -1452,7 +1560,9 @@ def apply_ze_visual_and_hud_customizer(cfg_dir: str, opts: Dict[str, Any]) -> Di
         'alias "ze_focus_Key" "ze_focus_toggle"',
         f'bind "{duck_key}" "ze_focus_Key"',
         f'bind "{mute_key}" "voice_modenable_toggle"',
-        'host_writeconfig',
+        # AUDIT P2-#9: host_writeconfig removed. It saved ALL current settings and binds into
+        # CS2's own config on every game start, so the binds stayed even after this block was
+        # deleted (undo did not work). CS2 already saves settings on exit.
         "// === [CS2 COMMAND CENTER: ZE VISUAL, HUD & AUDIO DUCKING STUDIO END] ===",
     ])
     block_text = "\n".join(block_lines) + "\n"

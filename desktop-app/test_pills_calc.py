@@ -1,6 +1,6 @@
 """
 Automated Test: Shared Player & Node Counts Parity
-Verifies that the ZE toolbar pills (PLAYERS IN-GAME, NODES ONLINE) and
+Verifies that the ZE toolbar pills (PLAYERS IN-GAME, SERVERS ONLINE) and
 Dashboard ZE card share identical calculation routines.
 """
 
@@ -38,7 +38,7 @@ class TestPillsCalc(unittest.TestCase):
 
         # Verify initial text patterns
         self.assertIn("PLAYERS IN-GAME", self.root.lbl_srv_players.cget("text"))
-        self.assertIn("NODES ONLINE", self.root.lbl_srv_nodes.cget("text"))
+        self.assertIn("SERVERS ONLINE", self.root.lbl_srv_nodes.cget("text"))
         self.assertIn("players in-game", self.root.dash_ze_players_lbl.cget("text"))
         self.assertIn("servers online", self.root.dash_ze_nodes_lbl.cget("text"))
 

@@ -13,6 +13,7 @@ import {
 } from '../utils/serverQuery';
 import { ServerGeoDemographics } from './ServerGeoDemographics';
 import { getMapTierAndMapper } from '../data/zeMapTiers';
+import { getDisplayTotals } from '../utils/playerTotals';
 import { 
   Play, 
   Copy, 
@@ -247,15 +248,9 @@ export const ServerRadarPreview: React.FC = () => {
     }
   }, [telemetry, slotWatcherServerId, gflSlotPriority, commSlotPriority]);
 
-  // Total live players across all queried servers
-  const totalOnlinePlayers = useMemo(() => {
-    if (!telemetry?.servers) return 0;
-    return Object.values(telemetry.servers).reduce((acc, s) => {
-      if (!s?.online || !s?.players) return acc;
-      const curr = parseInt(s.players.split('/')[0], 10);
-      return acc + (isNaN(curr) ? 0 : curr);
-    }, 0);
-  }, [telemetry]);
+  // AUDIT P2-#2: one shared rule (humans only, fresh servers only, no double counting).
+  // Uses the backend's `totals` when present, else the same rule in utils/playerTotals.ts.
+  const liveTotals = useMemo(() => getDisplayTotals(telemetry, Date.now()), [telemetry]);
 
   const handlePlayerSort = (field: PlayerSortField) => {
     if (playerSortField === field) {
@@ -432,19 +427,26 @@ export const ServerRadarPreview: React.FC = () => {
 
         {/* Global Live Stats */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {totalOnlinePlayers > 0 && (
-            <div className="flex items-center gap-2 bg-slate-950/80 border border-emerald-500/40 px-3.5 py-2 rounded-xl text-xs font-code text-slate-300 shadow-md">
+          {liveTotals && (
+            <div
+              className="flex items-center gap-2 bg-slate-950/80 border border-emerald-500/40 px-3.5 py-2 rounded-xl text-xs font-code text-slate-300 shadow-md"
+              title="Human players only (bots not counted), on servers that answered in the last 90 seconds."
+            >
               <Users className="w-3.5 h-3.5 text-emerald-400" />
               <span>
-                <strong className="text-emerald-300">{totalOnlinePlayers}</strong> PLAYERS IN-GAME
+                <strong className="text-emerald-300">{liveTotals.humans}</strong> PLAYERS IN-GAME
+                {liveTotals.bots_unknown_servers > 0 && <span className="text-slate-500"> (bots unknown)</span>}
               </span>
             </div>
           )}
 
           <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3.5 py-2 rounded-xl text-xs font-code text-slate-300 shadow-md">
-            <Radio className="w-3.5 h-3.5 text-lime-400 animate-pulse" />
+            <Radio className={`w-3.5 h-3.5 text-lime-400 ${liveTotals && !liveTotals.isSnapshot ? 'animate-pulse' : ''}`} />
             <span>
-              <strong className="text-lime-300">{telemetry?.online_servers ?? 33}</strong> / {ZE_SERVERS.length} NODES ONLINE
+              <strong className="text-lime-300">{liveTotals ? liveTotals.online_servers : '–'}</strong> / {liveTotals ? liveTotals.total_servers : '–'} SERVERS ONLINE
+              {liveTotals?.isSnapshot && (
+                <span className="text-slate-500"> · as of {Math.round(liveTotals.ageSeconds / 60)} min ago</span>
+              )}
             </span>
           </div>
         </div>
@@ -873,7 +875,7 @@ export const ServerRadarPreview: React.FC = () => {
             </span>
             <button
               onClick={() => setSelectedChinaFilter('all')}
-              title={`Show all ${chinaServers.length} verified Chinese Zombie Escape servers across all clusters`}
+              title={`Show all ${chinaServers.length} listed Chinese Zombie Escape servers across all clusters`}
               className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'all'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
@@ -1107,7 +1109,7 @@ export const ServerRadarPreview: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 6. Dedicated Lower Row: Geographic Demographics Radar HUD (Zero Overlap Guaranteed) */}
+                {/* 6. Dedicated Lower Row: Geographic Demographics Radar HUD (no overlap with the row above) */}
                 <div className="w-full mb-3">
                   <ServerGeoDemographics
                     serverRegion={server.region}

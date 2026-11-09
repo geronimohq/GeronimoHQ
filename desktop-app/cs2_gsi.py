@@ -1,6 +1,6 @@
 """
 CS2 Game State Integration (GSI) Listener for CS2 Command Center
-100% VAC-Safe: Valve's official built-in Game State Integration HTTP protocol.
+Uses Valve's built-in Game State Integration (CS2 posts JSON to this local listener).
 Automatically receives real-time map, mode, and activity events directly from cs2.exe.
 """
 

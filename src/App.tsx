@@ -196,7 +196,7 @@ export const App: React.FC = () => {
                     <span>TACTICAL PEPE &amp; BANANA PHONE CYBER-DECK // SYS.CORE</span>
                   </span>
                   <span className={`tier-5-badge ${theme === "banana" ? "bg-[#FFE135]/15 text-[#FFE135] border border-[#FFE135]/40" : "bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40"}`}>
-                    ● UPLINK VERIFIED
+                    ● UPLINK ONLINE
                   </span>
                 </div>
 
@@ -210,7 +210,7 @@ export const App: React.FC = () => {
                 </div>
 
                 <p className="tier-4-body max-w-2xl">
-                  Unified retro-cyberpunk command deck for <strong className={theme === "banana" ? "text-[#FFE135]" : "text-[#E48716]"}>geronimohq.com</strong>. Blending interactive Pepe &amp; Rotary Banana Phone holo-chambers, live CS2 Zombie Escape satellite telemetry, VAC-safe Config Studio, and the standalone <strong className={theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"}>CS2 Command Center</strong> desktop utility.
+                  Unified retro-cyberpunk command deck for <strong className={theme === "banana" ? "text-[#FFE135]" : "text-[#E48716]"}>geronimohq.com</strong>. Blending interactive Pepe &amp; Rotary Banana Phone holo-chambers, live CS2 Zombie Escape server telemetry, a Config Studio, and the standalone <strong className={theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"}>CS2 Command Center</strong> desktop utility.
                 </p>
               </div>
 
@@ -255,9 +255,9 @@ export const App: React.FC = () => {
                   </div>
 
                   <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#070B09] border border-[#1E2E26]">
-                    <span className="tier-4-body">VAC Safety Protocol</span>
+                    <span className="tier-4-body">Game memory access</span>
                     <span className={`tier-5-badge ${theme === "banana" ? "bg-[#FFE135]/15 text-[#FFE135] border border-[#FFE135]/40" : "bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40"}`}>
-                      <ShieldCheck className="w-3 h-3" /> 100% VERIFIED
+                      <ShieldCheck className="w-3 h-3" /> NONE
                     </span>
                   </div>
                 </div>
