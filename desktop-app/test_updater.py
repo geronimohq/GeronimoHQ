@@ -271,4 +271,8 @@ class TestUpdaterEngine(unittest.TestCase):
             server.server_close()
 
 if __name__ == "__main__":
-    unittest.main()
+    # AUDIT: the app starts non-daemon threads, so a plain unittest.main() hung after
+    # the tests finished. Exit with the real pass/fail code instead.
+    _res = unittest.main(exit=False)
+    sys.stdout.flush(); sys.stderr.flush()
+    os._exit(0 if _res.result.wasSuccessful() else 1)

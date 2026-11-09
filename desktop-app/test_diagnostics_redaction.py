@@ -51,4 +51,8 @@ class TestDiagnosticsRedaction(unittest.TestCase):
         self.assertIn("CPU:", diag)
 
 if __name__ == "__main__":
-    unittest.main()
+    # AUDIT: the app starts non-daemon threads (tray, GSI), so a plain unittest.main()
+    # can hang after the tests finish. Exit with the real pass/fail code instead.
+    _res = unittest.main(exit=False)
+    sys.stdout.flush(); sys.stderr.flush()
+    os._exit(0 if _res.result.wasSuccessful() else 1)

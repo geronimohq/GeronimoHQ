@@ -30,7 +30,11 @@ class ComprehensiveApplicationAudit(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.root.exit_application()
+            # AUDIT: exit_application() ends with os._exit(0), which killed the test run
+            # before unittest printed its result (failures were invisible, exit code 0).
+            from unittest import mock
+            with mock.patch.object(app.os, "_exit", lambda code=0: None):
+                cls.root.exit_application()
         except Exception:
             pass
         print("\n" + "="*70)
