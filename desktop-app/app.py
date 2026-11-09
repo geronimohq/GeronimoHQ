@@ -5484,7 +5484,7 @@ class CS2TruePanoramaApp(tk.Tk):
             self._ze_totals = t
         pl, sv = server_browser.format_totals(getattr(self, "_ze_totals", None))
         src = (getattr(self, "_ze_totals", None) or {}).get("source")
-        for attr, txt in (("dash_ze_players_lbl", pl), ("dash_ze_nodes_lbl", sv + (" (direct query)" if src == "direct" else "")),
+        for attr, txt in (("dash_ze_players_lbl", pl), ("dash_ze_nodes_lbl", sv + (" (direct query)" if src == "direct" and (getattr(self, "_ze_totals", None) or {}).get("online_servers") else "")),
                           ("lbl_srv_players", "👥 " + pl.upper()), ("lbl_srv_nodes", "📡 " + sv.upper())):
             w = getattr(self, attr, None)
             try:

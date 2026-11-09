@@ -795,7 +795,7 @@ export const ServerRadarPreview: React.FC = () => {
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
           
           {/* Clean 2-Tab Navigation (Strictly One-Liner) */}
-          <div className="flex items-center gap-1.5 bg-slate-950/90 p-1 rounded-xl border border-slate-800 backdrop-blur-md flex-shrink-0">
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-950/90 p-1 rounded-xl border border-slate-800 backdrop-blur-md flex-shrink-0">
             {/* Global Servers Tab */}
             <button
               onClick={() => setSelectedTab('global')}
@@ -949,7 +949,7 @@ export const ServerRadarPreview: React.FC = () => {
       {/* ==================================================================== */}
       {/* SERVER GRID                                                          */}
       {/* ==================================================================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 [&>*]:min-w-0">
         {filteredServers.map((server) => {
           const isCopied = copiedId === server.id;
           const liveInfo = telemetry?.servers?.[server.id];
@@ -986,7 +986,7 @@ export const ServerRadarPreview: React.FC = () => {
                       </span>
                     )}
                     <span className="tier-5-badge bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40">
-                      128T
+                      64T
                     </span>
                   </div>
 
@@ -1121,7 +1121,7 @@ export const ServerRadarPreview: React.FC = () => {
               </div>
 
               {/* 7. Uniform Action Buttons Bar (34px, 44px mobile touch) */}
-              <div className="pt-3 border-t border-[#1E2E26] flex items-center gap-2">
+              <div className="pt-3 border-t border-[#1E2E26] flex flex-wrap items-center gap-2">
                 {/* 1-Click Steam Connect */}
                 <button
                   onClick={() => handleOpenConnect(server, false)}

@@ -93,7 +93,6 @@
   padding: 2px 7px !important;
   border-radius: 5px;
   line-height: 1.25;
-  display: inline-flex;
   align-items: center;
   gap: 4px;
 }
@@ -191,7 +190,6 @@
   padding: 6px 12px;
   font-family: var(--font-code);
   font-size: 11px;
-  display: inline-flex;
   align-items: center;
   gap: 8px;
 }
@@ -526,4 +524,12 @@
 }
 .skip-link:focus {
   top: 12px;
+}
+
+/* AUDIT P3 (mobile layout): these display values were unlayered, so they beat Tailwind's
+   responsive utilities and `hidden sm:inline-flex` never hid the badge / HUD pills on phones
+   (part of a horizontal scroll at 390 px). In the components layer, utilities win. */
+@layer components {
+  .tier-5-badge { display: inline-flex; }
+  .hud-data-pill { display: inline-flex; }
 }

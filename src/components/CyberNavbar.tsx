@@ -188,7 +188,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
                   ● ONLINE
                 </span>
               </div>
-              <div className="text-[10px] font-code tracking-widest uppercase text-[#94A39E] flex items-center gap-1">
+              <div className="text-[10px] font-code tracking-widest uppercase text-[#94A39E] hidden min-[420px]:flex items-center gap-1">
                 <span>CYBER-DECK OS</span>
                 <span className={isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}>//</span>
                 <span className={isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}>{isBanana ? 'ROTARY.HOTLINE' : 'PEPE.MATRIX'}</span>

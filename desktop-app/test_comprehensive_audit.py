@@ -9,6 +9,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _test_isolation  # noqa: E402,F401  (AUDIT: temp config, no registry; must come before app)
 import app
 import core_logic
 import hardware_info
@@ -312,6 +313,128 @@ class ComprehensiveApplicationAudit(unittest.TestCase):
                 max_allowed_padding = int(16 * dpi_scale) + 2
                 self.assertLessEqual(padding, max_allowed_padding, f"{name} excessive dead gap at {scale_name}: padding={padding}px > {max_allowed_padding}px")
         print("  -> All 5 comboboxes verified snug (padding >= 0px and <= 16px across 100%, 125%, 150% DPI).")
+
+
+# =========================================================================== #
+# AUDIT Phase 3: error states. All network is mocked (no A2S, backend or zegraph
+# calls), nothing launches Steam/CS2/Discord, and paths are dummy temp folders.
+# =========================================================================== #
+import shutil
+import tempfile
+
+_OFFLINE = {"online": False, "status": "Timed Out", "map": "-", "players": "-/-", "curr_players": 0,
+            "max_players": 0, "ping": "N/A", "error": "Timeout"}
+
+
+def _no_network():
+    return [patch.object(server_browser, "query_server_info", return_value=dict(_OFFLINE)),
+            patch.object(server_browser, "query_server_players", return_value={"online": False, "players": []}),
+            patch.object(server_browser.urllib.request, "urlopen", side_effect=OSError("no internet")),
+            patch.object(app.messagebox, "showinfo"), patch.object(app.messagebox, "showwarning"),
+            patch.object(app.messagebox, "showerror"), patch.object(app.messagebox, "askyesno", return_value=False)]
+
+
+class ErrorStatesAudit(unittest.TestCase):
+    """CS2/Steam not installed, Discord closed, no internet, Steam library on another drive."""
+
+    def _app(self, paths):
+        self.patches = _no_network() + [patch.object(core_logic, "find_cs2_paths", return_value=paths)]
+        for p in self.patches:
+            p.start()
+        self.errors = []
+        r = app.CS2TruePanoramaApp()
+        r.withdraw()
+        r.report_callback_exception = lambda e, v, tb: self.errors.append(f"{e.__name__}: {v}")
+        return r
+
+    def _close(self, r):
+        try:
+            with patch.object(app.os, "_exit", lambda code=0: None):
+                r.exit_application()
+        finally:
+            for p in reversed(self.patches):
+                p.stop()
+
+    def test_cs2_and_steam_not_installed_every_page_opens(self):
+        none = {"steam_path": None, "cs2_dir": None, "cs2_exe": None, "cfg_dir": None, "autoexec_cfg": None}
+        r = self._app(none)
+        try:
+            for key in list(r.nav_items.keys()):
+                r._select_nav(key)
+                end = time.time() + 0.3
+                while time.time() < end:
+                    r.update(); time.sleep(0.02)
+            r._select_nav("DASHBOARD"); r.update_idletasks()
+            self.assertIn("not found", r.lbl_dash_autoexec_status.cget("text"))
+            self.assertEqual(self.errors, [], "\n".join(self.errors))
+            print("  -> CS2/Steam not installed: all pages open, 0 Tk errors, Dashboard says 'not found'.")
+        finally:
+            self._close(r)
+
+    def test_no_internet_totals_say_unavailable(self):
+        none = {"steam_path": None, "cs2_dir": None, "cs2_exe": None, "cfg_dir": None, "autoexec_cfg": None}
+        r = self._app(none)
+        try:
+            server_browser._TOTALS_CACHE.update(at=0, totals=None, source=None)
+            t = server_browser.get_shared_totals()          # backend + direct both fail (mocked)
+            self.assertEqual(t["source"], "direct")
+            r._select_nav("DASHBOARD"); r.update_idletasks()
+            r._apply_ze_totals(t)
+            self.assertIn("no connection", r.dash_ze_players_lbl.cget("text"))
+            self.assertEqual(r.dash_ze_nodes_lbl.cget("text"), "server data unavailable")
+            server_browser._GEO_CACHE.update(at=0.0, data=None)
+            self.assertIsNone(server_browser.fetch_gfl_continents(now=10**10))  # no cache, offline
+            server_browser._TOTALS_CACHE.update(at=0, totals=None, source=None)
+            print("  -> No internet: totals show 'no connection' (not '0 players'), geo returns no data.")
+        finally:
+            self._close(r)
+
+    def test_discord_closed(self):
+        none = {"steam_path": None, "cs2_dir": None, "cs2_exe": None, "cfg_dir": None, "autoexec_cfg": None}
+        r = self._app(none)
+        try:
+            r._select_nav("DISCORD"); r.update_idletasks()
+            r.config["discord_rpc_enabled"] = True
+
+            class _Sync:
+                def __init__(self, target=None, daemon=None, **k): self.t = target
+                def start(self): self.t()
+
+            with patch.object(core_logic, "is_cs2_running", return_value=True), \
+                    patch.object(r.discord_rpc, "connect", return_value=False), \
+                    patch.object(r.discord_rpc, "connected", False), \
+                    patch.object(app.threading, "Thread", _Sync):
+                r._refresh_discord_presence(silent=True)
+                end = time.time() + 1
+                while time.time() < end:
+                    r.update(); time.sleep(0.02)
+            self.assertIn("Discord Desktop Not Detected", r.discord_status_lbl.cget("text"))
+            self.assertFalse(r.preview_active.winfo_ismapped())
+            print("  -> Discord closed: status says 'Discord Desktop Not Detected', preview shows nothing sent.")
+        finally:
+            self._close(r)
+
+    def test_steam_library_on_another_drive(self):
+        tmp = tempfile.mkdtemp(prefix="steamlib_")
+        try:
+            steam = os.path.join(tmp, "Steam")
+            other = os.path.join(tmp, "OtherDrive", "SteamLibrary")
+            cs2 = os.path.join(other, "steamapps", "common", "Counter-Strike Global Offensive")
+            os.makedirs(os.path.join(steam, "steamapps"))
+            os.makedirs(os.path.join(cs2, "game", "bin", "win64"))
+            os.makedirs(os.path.join(cs2, "game", "csgo", "cfg"))
+            open(os.path.join(cs2, "game", "bin", "win64", "cs2.exe"), "wb").close()
+            vdf_other = other.replace("\\", "\\\\")
+            with open(os.path.join(steam, "steamapps", "libraryfolders.vdf"), "w", encoding="utf-8") as f:
+                f.write('"libraryfolders"\n{\n "0"\n {\n  "path"  "%s"\n }\n "1"\n {\n  "path"  "%s"\n }\n}\n'
+                        % (steam.replace("\\", "\\\\"), vdf_other))
+            with patch.object(core_logic, "find_steam_path", return_value=steam):
+                res = core_logic.find_cs2_paths()
+            self.assertEqual(os.path.normcase(res["cs2_dir"]), os.path.normcase(cs2))
+            self.assertTrue(res["cfg_dir"].endswith(os.path.join("csgo", "cfg")))
+            print("  -> Steam library on another drive (libraryfolders.vdf): CS2 and cfg folder found.")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
 
 
 if __name__ == "__main__":

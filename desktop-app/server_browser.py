@@ -1310,6 +1310,10 @@ def format_totals(t):
     """Short display strings shared by the Dashboard card and the ZE Game Servers pills."""
     if not t or not t.get("total_servers"):
         return "— players in-game", "— servers online"
+    if t.get("source") == "direct" and not t.get("online_servers"):
+        # AUDIT P3: backend unreachable AND no server answered = most likely no internet.
+        # Do not show "0 players / 0 online" as if the servers were empty.
+        return "— players (no connection)", "server data unavailable"
     extra = " (bots unknown)" if t.get("bots_unknown_servers") else ""
     return (f"{t['humans']} players in-game{extra}",
             f"{t['online_servers']} / {t['total_servers']} servers online")
