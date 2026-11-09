@@ -2,8 +2,8 @@
   "version": "1.5.0",
   "build_date": "2026-11-09",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "8838D977540675246550125631629F92D1217BF55DD6EDE4EE873C989B58A0F0",
-  "size": 36909411,
+  "sha256": "AEC0502A34299F19CEC6723E2D981A3D70E8278873F3345D8EF9B4EE1BF5C913",
+  "size": 36908530,
   "notes": "CS2 Command Center v1.5.0 update with improved performance, updater, and fixes.",
-  "signature": "647890252063c8a5ca007a151bb07c4f41547ab9e7f4d56a2aa765206c47ed1d34245e1ef81b246352e68a3b2a778fd410a7eb860233e263b4f5195a1d250b06"
+  "signature": "4d32a41a33b6a90e0a053df9606bb87ab016fb2eff77170baf3392cb76c60d08a6f7931200ceacd8660885cc2f82c587d7fbab8f58f3b323abf8e9eff85bf908"
 }

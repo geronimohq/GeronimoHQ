@@ -140,12 +140,12 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div data-theme={theme} className={`relative min-h-screen text-white flex flex-col font-tech ${theme === "banana" ? "bg-[#070B09] selection:bg-[#FFE135] selection:text-[#070B09]" : "bg-[#060B07] selection:bg-[#E48716] selection:text-[#06120A]"}`}>
+    <div data-theme={theme} className={`relative min-h-screen text-white flex flex-col font-tech ${theme === "banana" ? "bg-[#070B09] selection:bg-[#FFE135] selection:text-[#070B09]" : "bg-[#060B07] selection:bg-[#2ECC71] selection:text-[#070B09]"}`}>
 
       {/* 3D Wireframe Retro-Futuristic Background Grid (Tactical Pepe Green & Cyber Banana Yellow) */}
       <RetroGridCanvas
-        glowColor={theme === 'banana' ? '#FFE135' : '#E48716'}
-        gridColor={theme === 'banana' ? '#FACC15' : '#3E8E2F'}
+        glowColor={theme === 'banana' ? '#FFE135' : '#2ECC71'}
+        gridColor={theme === 'banana' ? '#FACC15' : '#27AE60'}
       />
 
       {/* Interactive Roaming Pepe / Banana Character */}
@@ -160,7 +160,7 @@ export const App: React.FC = () => {
 
       {/* Smooth Theme Transition Toast Notification */}
       {transitionBanner && (
-        <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl border ${theme === "banana" ? "border-[#FFE135] bg-[#0E1512]/95 text-[#FFE135] shadow-[0_0_25px_rgba(255,225,53,0.5)]" : "border-[#E48716] bg-[#0B130C]/95 text-[#E48716] shadow-[0_0_25px_rgba(108,194,74,0.5)]"} font-cyber text-xs font-bold animate-bounce`}>
+        <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl border ${theme === "banana" ? "border-[#FFE135] bg-[#0E1512]/95 text-[#FFE135] shadow-[0_0_25px_rgba(255,225,53,0.5)]" : "border-[#2ECC71] bg-[#07130A]/95 text-[#2ECC71] shadow-[0_0_25px_rgba(46,204,113,0.5)]"} font-cyber text-xs font-bold animate-bounce`}>
           {transitionBanner}
         </div>
       )}
@@ -177,7 +177,7 @@ export const App: React.FC = () => {
               {/* Subtle Tactical Frog / Rotary SVG Watermark */}
               <svg
                 viewBox="0 0 120 120"
-                className={`absolute -right-6 -bottom-6 w-40 h-40 opacity-[0.04] pointer-events-none ${theme === "banana" ? "text-[#FFE135]" : "text-[#E48716]"}`}
+                className={`absolute -right-6 -bottom-6 w-40 h-40 opacity-[0.04] pointer-events-none ${theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"}`}
                 fill="currentColor"
               >
                 <circle cx="60" cy="60" r="50" stroke="currentColor" strokeWidth="4" fill="none" strokeDasharray="8 6" />
@@ -189,25 +189,25 @@ export const App: React.FC = () => {
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                   <span className="tier-2-header flex items-center gap-1.5">
-                    <Radio className={`w-3.5 h-3.5 ${theme === "banana" ? "text-[#FFE135]" : "text-[#E48716]"}`} />
+                    <Radio className={`w-3.5 h-3.5 ${theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"}`} />
                     <span>TACTICAL PEPE &amp; BANANA PHONE CYBER-DECK // SYS.CORE</span>
                   </span>
-                  <span className="tier-5-badge bg-[#E48716]/15 text-[#E48716] border border-[#E48716]/40">
+                  <span className={`tier-5-badge ${theme === "banana" ? "bg-[#FFE135]/15 text-[#FFE135] border border-[#FFE135]/40" : "bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40"}`}>
                     ● UPLINK VERIFIED
                   </span>
                 </div>
 
                 <div className="flex flex-wrap items-baseline gap-3 mb-2">
                   <h1 className="tier-1-title">
-                    GERONIMO<span className={theme === "banana" ? "text-[#FFE135]" : "text-[#E48716]"}>HQ</span> COMMAND SUITE
+                    GERONIMO<span className={theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"}>HQ</span> COMMAND SUITE
                   </h1>
-                  <span className="text-xs font-code text-[#E48716]">
+                  <span className={`text-xs font-code ${theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"}`}>
                     [geronimohq.com]
                   </span>
                 </div>
 
                 <p className="tier-4-body max-w-2xl">
-                  Unified retro-cyberpunk command deck for <strong className={theme === "banana" ? "text-[#FFE135]" : "text-[#E48716]"}>geronimohq.com</strong>. Blending interactive Pepe &amp; Rotary Banana Phone holo-chambers, live CS2 Zombie Escape satellite telemetry, VAC-safe Config Studio, and the standalone <strong className="text-[#E48716]">CS2 Command Center</strong> desktop utility.
+                  Unified retro-cyberpunk command deck for <strong className={theme === "banana" ? "text-[#FFE135]" : "text-[#E48716]"}>geronimohq.com</strong>. Blending interactive Pepe &amp; Rotary Banana Phone holo-chambers, live CS2 Zombie Escape satellite telemetry, VAC-safe Config Studio, and the standalone <strong className={theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"}>CS2 Command Center</strong> desktop utility.
                 </p>
               </div>
 
@@ -228,10 +228,10 @@ export const App: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between gap-2 mb-3">
                   <span className="tier-2-header-pepe flex items-center gap-1.5">
-                    <PhoneCall className={`w-3.5 h-3.5 ${theme === "banana" ? "text-[#FFE135]" : "text-[#E48716]"}`} />
+                    <PhoneCall className={`w-3.5 h-3.5 ${theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"}`} />
                     <span>ROTARY SIGNAL &amp; AUDIO</span>
                   </span>
-                  <span className={`tier-5-badge ${theme === "banana" ? "bg-[#FFE135]/15 text-[#FFE135] border border-[#FFE135]/40" : "bg-[#E48716]/15 text-[#E48716] border border-[#E48716]/40"}`}>
+                  <span className={`tier-5-badge ${theme === "banana" ? "bg-[#FFE135]/15 text-[#FFE135] border border-[#FFE135]/40" : "bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40"}`}>
                     3:16 CYCLE
                   </span>
                 </div>
@@ -239,21 +239,21 @@ export const App: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#070B09] border border-[#1E2E26]">
                     <span className="tier-4-body">Active Holo-Deck</span>
-                    <span className={`tier-3-label ${theme === "banana" ? "text-[#FFE135]" : "text-[#E48716]"}`}>
+                    <span className={`tier-3-label ${theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"}`}>
                       {theme === 'banana' ? '🍌 Banana Hotline' : '🐸 Pepe Matrix'}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#070B09] border border-[#1E2E26]">
                     <span className="tier-4-body">Audio Synchronization</span>
-                    <span className="tier-5-badge bg-[#E48716]/15 text-[#E48716] border border-[#E48716]/40">
+                    <span className={`tier-5-badge ${theme === "banana" ? "bg-[#FFE135]/15 text-[#FFE135] border border-[#FFE135]/40" : "bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40"}`}>
                       {isMasterMuted ? 'MUTED' : `ACTIVE (${masterVolume}%)`}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#070B09] border border-[#1E2E26]">
                     <span className="tier-4-body">VAC Safety Protocol</span>
-                    <span className="tier-5-badge bg-[#E48716]/15 text-[#E48716] border border-[#E48716]/40">
+                    <span className={`tier-5-badge ${theme === "banana" ? "bg-[#FFE135]/15 text-[#FFE135] border border-[#FFE135]/40" : "bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40"}`}>
                       <ShieldCheck className="w-3 h-3" /> 100% VERIFIED
                     </span>
                   </div>
@@ -262,7 +262,7 @@ export const App: React.FC = () => {
 
               <div className="mt-3 pt-2.5 border-t border-[#1E2E26] flex items-center justify-between text-[11px] font-code text-[#94A39E]">
                 <span>FREQ: 128-TICK SUB-SYNC</span>
-                <span className={`${theme === "banana" ? "text-[#FFE135]" : "text-[#E48716]"} font-bold`}>STATUS: OPTIMAL</span>
+                <span className={`${theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"} font-bold`}>STATUS: OPTIMAL</span>
               </div>
             </div>
 
@@ -295,7 +295,7 @@ export const App: React.FC = () => {
           <span className="text-[11px] font-code tracking-widest uppercase mb-1">
             SCROLL FOR BENTO MODULES: RAM DOWNLOADER, ZE SERVER RADAR, CFG STUDIO &amp; DESKTOP SUITE
           </span>
-          <ChevronDown className={`w-4 h-4 animate-bounce ${theme === "banana" ? "text-[#FFE135]" : "text-[#E48716]"}`} />
+          <ChevronDown className={`w-4 h-4 animate-bounce ${theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"}`} />
         </div>
 
         {/* MEME MODULE: DOWNLOAD MORE RAM (16GB - 128GB Interactive UI + ZE Laser Mini-Game) */}
@@ -307,7 +307,7 @@ export const App: React.FC = () => {
         {/* MODULE 2: INTERACTIVE WEB CS2 AUTOEXEC & ZE BINDS GENERATOR (#cfg-studio) */}
         <CS2AutoexecGeneratorSection />
 
-        {/* MODULE 3: CS2 COMMAND CENTER DESKTOP SUITE (1-Click App Download v1.4.0) */}
+        {/* MODULE 3: CS2 COMMAND CENTER DESKTOP SUITE (1-Click App Download v1.5.0) */}
         <CS2CommandCenterPreview />
 
       </main>

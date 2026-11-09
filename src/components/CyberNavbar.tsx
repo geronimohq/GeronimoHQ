@@ -40,10 +40,12 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
   gremlinEnabled,
   onToggleGremlin,
 }) => {
+  const isBanana = theme === 'banana';
   const [timeStr, setTimeStr] = useState<string>('');
   const [ping, setPing] = useState<number>(12);
   const [activeSection, setActiveSection] = useState<string>('hero-stage');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+
   useEffect(() => {
     const updateNavHeight = () => {
       const nav = document.querySelector('header');
@@ -55,7 +57,6 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
     window.addEventListener('resize', updateNavHeight);
     return () => window.removeEventListener('resize', updateNavHeight);
   }, []);
-
 
   // Digital Cyber Clock & Low-Latency Network Ping Simulation
   useEffect(() => {
@@ -130,27 +131,27 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             onClick={(e) => handleNavClick(e, 'hero-stage')}
             className="flex items-center gap-2.5 group flex-shrink-0"
           >
-            <div className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-[#0E1512] border border-[#FFE135]/70 shadow-[0_0_14px_rgba(255,225,53,0.25)] group-hover:border-[#FFE135] transition-all">
+            <div className={`relative flex items-center justify-center w-9 h-9 rounded-lg bg-[#0E1512] border ${isBanana ? 'border-[#FFE135]/70 shadow-[0_0_14px_rgba(255,225,53,0.25)] group-hover:border-[#FFE135]' : 'border-[#2ECC71]/70 shadow-[0_0_14px_rgba(46,204,113,0.25)] group-hover:border-[#2ECC71]'} transition-all`}>
               {/* Subtle Vector Motif: Tactical Pepe / Rotary Banana Badge */}
-              <span className="font-cyber font-black text-base text-[#FFE135]">
+              <span className={`font-cyber font-black text-base ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`}>
                 {theme === 'banana' ? '🍌' : '🐸'}
               </span>
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#E48716] border border-[#070B09] animate-pulse" />
+              <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ${isBanana ? 'bg-[#FFE135]' : 'bg-[#2ECC71]'} border border-[#070B09] animate-pulse`} />
             </div>
 
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-cyber font-bold tracking-wider text-white text-[16px]">
-                  GERONIMO<span className="text-[#FFE135]">HQ</span>
+                  GERONIMO<span className={isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}>HQ</span>
                 </span>
-                <span className="hidden sm:inline-flex tier-5-badge bg-[#E48716]/15 text-[#E48716] border border-[#E48716]/50">
+                <span className={`hidden sm:inline-flex tier-5-badge ${isBanana ? 'bg-[#FFE135]/15 text-[#FFE135] border border-[#FFE135]/50' : 'bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/50'}`}>
                   ● ONLINE
                 </span>
               </div>
               <div className="text-[10px] font-code tracking-widest uppercase text-[#94A39E] flex items-center gap-1">
                 <span>CYBER-DECK OS</span>
-                <span className="text-[#FFE135]">//</span>
-                <span className="text-[#E48716]">{theme === 'banana' ? 'ROTARY.HOTLINE' : 'PEPE.MATRIX'}</span>
+                <span className={isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}>//</span>
+                <span className={isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}>{isBanana ? 'ROTARY.HOTLINE' : 'PEPE.MATRIX'}</span>
               </div>
             </div>
           </a>
@@ -170,11 +171,11 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
                   onClick={(e) => handleNavClick(e, item.id)}
                   className={`h-[30px] px-2.5 rounded-lg text-[11px] font-cyber tracking-wider transition-all flex items-center gap-1.5 flex-shrink-0 ${
                     isActive
-                      ? 'bg-[#FFE135] text-[#070B09] font-bold shadow-[0_0_14px_rgba(255,225,53,0.45)]'
+                      ? (isBanana ? 'bg-[#FFE135] text-[#070B09] font-bold shadow-[0_0_14px_rgba(255,225,53,0.45)]' : 'bg-[#2ECC71] text-[#070B09] font-bold shadow-[0_0_14px_rgba(46,204,113,0.45)]')
                       : 'text-[#94A39E] hover:text-white hover:bg-[#14201B]'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#070B09]' : 'text-[#E48716]'}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#070B09]' : (isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]')}`} />
                   <span>{item.label}</span>
                 </a>
               );
@@ -186,7 +187,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             <a
               href="#download-ram"
               onClick={(e) => handleNavClick(e, 'download-ram')}
-              className="btn-cyber-34 btn-banana-cta"
+              className={`btn-cyber-34 ${isBanana ? 'btn-banana-cta' : 'btn-pepe-cta'}`}
             >
               <Cpu className="w-3.5 h-3.5" />
               <span>RAM</span>
@@ -195,7 +196,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label={mobileMenuOpen ? 'Close Navigation Menu' : 'Open Navigation Menu'}
               aria-expanded={mobileMenuOpen}
-              className="min-h-[34px] min-w-[34px] p-2 rounded-lg bg-[#0E1512] border border-[#1E2E26] text-[#FFE135] hover:border-[#FFE135] flex items-center justify-center transition-colors cursor-pointer"
+              className={`min-h-[34px] min-w-[34px] p-2 rounded-lg bg-[#0E1512] border border-[#1E2E26] ${isBanana ? 'text-[#FFE135] hover:border-[#FFE135]' : 'text-[#2ECC71] hover:border-[#2ECC71]'} flex items-center justify-center transition-colors cursor-pointer`}
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
@@ -218,11 +219,11 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
                   onClick={(e) => handleNavClick(e, item.id)}
                   className={`min-h-[44px] px-3 rounded-lg text-xs font-cyber tracking-wider flex items-center gap-2.5 transition-all ${
                     isActive
-                      ? 'bg-[#FFE135] text-[#070B09] font-bold shadow-[0_0_12px_rgba(255,225,53,0.4)]'
+                      ? (isBanana ? 'bg-[#FFE135] text-[#070B09] font-bold shadow-[0_0_12px_rgba(255,225,53,0.4)]' : 'bg-[#2ECC71] text-[#070B09] font-bold shadow-[0_0_12px_rgba(46,204,113,0.4)]')
                       : 'text-[#94A39E] hover:text-white hover:bg-[#121C18]'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#070B09]' : 'text-[#E48716]'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#070B09]' : (isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]')}`} />
                   <span>{item.label}</span>
                 </a>
               );
@@ -235,16 +236,16 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           {/* Pill 1: Active Theme Signal */}
           <div
             data-gremlin-ignore="true"
-            className="hud-data-pill justify-between border-[#FFE135]/40 text-[#FFE135]"
+            className={`hud-data-pill justify-between ${isBanana ? 'border-[#FFE135]/40 text-[#FFE135]' : 'border-[#2ECC71]/40 text-[#2ECC71]'}`}
             title="Active Cyber-Deck Theme Signal (Read-Only Indicator)"
           >
             <span className="flex items-center gap-1.5 truncate">
-              <PhoneCall className="w-3.5 h-3.5 text-[#FFE135] flex-shrink-0" />
+              <PhoneCall className={`w-3.5 h-3.5 flex-shrink-0 ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`} />
               <span className="font-bold truncate">
-                {theme === 'banana' ? 'MODE: BANANA PHONE' : 'MODE: PEPE HOLO'}
+                {isBanana ? 'MODE: BANANA PHONE' : 'MODE: PEPE HOLO'}
               </span>
             </span>
-            <span className="w-2 h-2 rounded-full bg-[#FFE135] animate-ping flex-shrink-0" />
+            <span className={`w-2 h-2 rounded-full animate-ping flex-shrink-0 ${isBanana ? 'bg-[#FFE135]' : 'bg-[#2ECC71]'}`} />
           </div>
 
           {/* Pill 2: Interactive Roaming Agent Toggle */}
@@ -253,7 +254,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             data-gremlin-ignore="true"
             className={`hud-data-pill justify-between cursor-pointer transition-all ${
               gremlinEnabled
-                ? 'border-[#E48716]/60 text-[#E48716] bg-[#0E1512] hover:bg-[#2A1B0E]'
+                ? (isBanana ? 'border-[#FFE135]/60 text-[#FFE135] bg-[#0E1512] hover:bg-[#2A260E]' : 'border-[#2ECC71]/60 text-[#2ECC71] bg-[#0E1512] hover:bg-[#122A1E]')
                 : 'border-[#1E2E26] text-[#94A39E] bg-[#0E1512] hover:text-white'
             }`}
             title="Toggle the roaming interactive Pepe / Banana character"
@@ -264,28 +265,28 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
                 {gremlinEnabled ? 'ROAMER: ACTIVE' : 'ROAMER: STANDBY'}
               </span>
             </span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${gremlinEnabled ? 'bg-[#E48716]/20 text-[#E48716]' : 'bg-black/40 text-[#94A39E]'}`}>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${gremlinEnabled ? (isBanana ? 'bg-[#FFE135]/20 text-[#FFE135]' : 'bg-[#2ECC71]/20 text-[#2ECC71]') : 'bg-black/40 text-[#94A39E]'}`}>
               {gremlinEnabled ? 'ON' : 'OFF'}
             </span>
           </button>
 
-          {/* Pill 3: Live ZE Cluster Status (Per Spec: Web shows presence state and server status only) */}
+          {/* Pill 3: Live ZE Cluster Status */}
           <div className="hidden sm:flex hud-data-pill justify-between text-[#94A39E]" title="Global Zombie Escape Server Clusters Online">
             <span className="flex items-center gap-1.5 truncate">
               <Wifi className="w-3.5 h-3.5 text-[#00F0FF] flex-shrink-0" />
               <span className="truncate">SERVERS: <strong className="text-white">6 CLUSTERS</strong></span>
             </span>
-            <span className="text-[#E48716] font-bold">ONLINE</span>
+            <span className={`font-bold ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`}>ONLINE</span>
           </div>
 
           {/* Pill 4: Real-Time Clock & Low-Latency Uplink */}
           <div className="hidden sm:flex hud-data-pill justify-between text-[#94A39E]">
             <span className="flex items-center gap-1.5">
-              <Activity className="w-3.5 h-3.5 text-[#E48716] flex-shrink-0" />
-              <strong className="text-[#FFE135]">{timeStr || '18:00:00'}</strong>
+              <Activity className={`w-3.5 h-3.5 flex-shrink-0 ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`} />
+              <strong className={isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}>{timeStr || '18:00:00'}</strong>
             </span>
-            <span className="text-[#E48716] flex items-center gap-1 font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#E48716] inline-block animate-pulse" />
+            <span className={`flex items-center gap-1 font-bold ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full inline-block animate-pulse ${isBanana ? 'bg-[#FFE135]' : 'bg-[#2ECC71]'}`} />
               {ping}ms
             </span>
           </div>

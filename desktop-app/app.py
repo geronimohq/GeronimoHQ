@@ -152,12 +152,12 @@ BG_BORDER = theme.COLOR_BORDER
 BG_CONSOLE = theme.COLOR_BG
 FG_WHITE = theme.COLOR_TEXT
 FG_MUTED = theme.COLOR_MUTED
-ACCENT_ORANGE = theme.COLOR_PRIMARY       # Dark Slate Primary Green (#43A857)
-ACCENT_ORANGE_HOVER = theme.COLOR_PRIMARY_HOVER # Hover (#52BC67)
-ACCENT_GREEN = theme.COLOR_PRIMARY        # Dark Slate Primary Green (#43A857)
+ACCENT_ORANGE = theme.COLOR_PRIMARY       # Tactical Amber-Orange (#E48716)
+ACCENT_ORANGE_HOVER = theme.COLOR_PRIMARY_HOVER # Hover (#F09527)
+ACCENT_GREEN = theme.COLOR_PRIMARY        # Tactical Amber-Orange (#E48716)
 ACCENT_CYAN = theme.COLOR_INFO            # Info / Cyan (#38BDF8)
 ACCENT_RED = theme.COLOR_DANGER           # Danger (#F26D6D)
-ACCENT_AMBER = theme.COLOR_PRIMARY        # Primary Green (#43A857)
+ACCENT_AMBER = theme.COLOR_PRIMARY        # Tactical Amber-Orange (#E48716)
 
 def play_calm_tone(kind="info"):
     """Plays a gentle, soothing, non-intrusive Windows studio notification chime."""

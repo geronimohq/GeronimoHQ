@@ -979,7 +979,7 @@ export const ServerRadarPreview: React.FC = () => {
                         <Sparkles className="w-3 h-3 text-[#FFE135]" /> FEATURED
                       </span>
                     )}
-                    <span className="tier-5-badge bg-[#E48716]/15 text-[#E48716] border border-[#E48716]/40">
+                    <span className="tier-5-badge bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40">
                       128T
                     </span>
                   </div>
@@ -1026,7 +1026,7 @@ export const ServerRadarPreview: React.FC = () => {
                 </div>
 
                 {/* 4. Prominent Map Showcase Banner (150% Larger Thumbnail!) */}
-                <div className="relative w-full h-36 sm:h-44 rounded-xl overflow-hidden border border-[#1E2E26] bg-[#070B09] shadow-inner mb-3 group-hover:border-[#E48716]/50 transition-colors">
+                <div className="relative w-full h-36 sm:h-44 rounded-xl overflow-hidden border border-[#1E2E26] bg-[#070B09] shadow-inner mb-3 group-hover:border-[#2ECC71]/50 transition-colors">
                   <img 
                     src={getMapThumbnailUrl(currentMap)} 
                     alt={currentMap} 
@@ -1093,8 +1093,8 @@ export const ServerRadarPreview: React.FC = () => {
                   {/* Telemetry Pills (Players & Ping) */}
                   <div className="flex items-center gap-1.5">
                     <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#121C18] border border-[#1E2E26] text-xs font-code">
-                      <Users className="w-3 h-3 text-[#E48716]" />
-                      <span className="text-[#E48716] font-bold">{currentPlayers || (isOnline ? 'Online' : 'Offline')}</span>
+                      <Users className="w-3 h-3 text-[#2ECC71]" />
+                      <span className="text-[#2ECC71] font-bold">{currentPlayers || (isOnline ? 'Online' : 'Offline')}</span>
                     </div>
                     <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#121C18] border border-[#1E2E26] text-[11px] font-code text-[#00F0FF]" title={`Estimated route latency: ${regionalPing.userLocation} ➔ ${regionalPing.serverLocation}`}>
                       <Radio className="w-3 h-3 text-[#00F0FF]" />
@@ -1136,7 +1136,7 @@ export const ServerRadarPreview: React.FC = () => {
                   }`}
                   title={`Auto Join (Target: ${commSlotPriority === 'normal' ? '≤61 Players' : commSlotPriority === 'supporter' ? '≤62 Players' : '≤63 Players'})\n• Connects automatically when a slot opens.`}
                 >
-                  <Target className={`w-3.5 h-3.5 ${slotWatcherServerId === server.id ? 'text-[#FFE135] animate-spin' : 'text-[#E48716]'}`} />
+                  <Target className={`w-3.5 h-3.5 ${slotWatcherServerId === server.id ? 'text-[#FFE135] animate-spin' : 'text-[#2ECC71]'}`} />
                   <span className="hidden sm:inline">
                     {slotWatcherServerId === server.id ? 'CANCEL' : `AUTO JOIN (${commSlotPriority === 'normal' ? '≤61' : commSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
                   </span>
@@ -1173,8 +1173,8 @@ export const ServerRadarPreview: React.FC = () => {
                 >
                   {isCopied ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-[#E48716]" />
-                      <span className="text-[#E48716] font-bold hidden sm:inline">COPIED</span>
+                      <Check className="w-3.5 h-3.5 text-[#2ECC71]" />
+                      <span className="text-[#2ECC71] font-bold hidden sm:inline">COPIED</span>
                     </>
                   ) : (
                     <>
