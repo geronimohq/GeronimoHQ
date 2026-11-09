@@ -19,8 +19,8 @@ Assumption logged: `node_modules/` was not copied (it is re-created exactly by `
 |---|---|
 | 0 Recon | DONE |
 | 1 Security | DONE + committed (`4e28b66`, `570b7e3`, `8dddc8d`, `370779d`). Windows tests all pass. Only owner action left: deploy (OWNER_STEPS A) |
-| 2 Known bugs | NEXT |
-| 3 Functional | pending |
+| 2 Known bugs | DONE: 9/9 handled (8 fixed, #8 already fixed + confirmed). 36/36 new tests pass; 35 of them fail on the old code. See `audit/FINDINGS_PHASE2.md` |
+| 3 Functional | NEXT |
 | 4 Performance | pending |
 | 5 Wording/a11y | pending |
 | 6 Share-readiness | pending |
@@ -122,8 +122,25 @@ Pre-check: branch `final-audit`; `dist/CS2_Command_Center.exe` SHA-256 still `AE
 - `oxlint`: 0 errors, a few React-hook warnings in ServerRadarPreview.tsx (Phase 3/4).
 - B-10 and W-12 (Phase 1 "not tested") are now **closed** [TESTED].
 
+**Phase 2 (owner's 9 known bugs)** — details in `audit/FINDINGS_PHASE2.md`:
+- New test file `desktop-app/test_phase2_bugs.py`: 36/36 pass [TESTED: `audit/evidence_phase2_tests.txt`];
+  on the original code 35 fail (only the bug 8 check passes). Owner's real config untouched (hash checked).
+- Root causes in one line each: #1 wrong markers + never refreshed · #2 app totals were fixed text, website
+  counted bots · #3 status bar was fixed text (DNS too) · #4 preview drawn from placeholders · #5 app GEO was a
+  fixed string · #6 save skipped the key (and Reset deleted the presence token) · #7 claims (2 were false) ·
+  #8 already fixed (browser-tested) · #9 `host_writeconfig`, no undo, duplicate cvars, and a data-loss bug
+  (re-apply deleted the ZE block).
+- Totals evidence (same minute, 1 backend request): app showed 646 / 34 of 41; real = 219 humans + 8 bots,
+  28 / 41 [TESTED: `audit/evidence_phase2_totals.md`].
+- Shared rule `compute_player_totals` in app, backend, CI script (identical, test-checked) and TS twin.
+- Backend requests used: 10 of 30 (+1 compare script, +1 app end-to-end check).
+- Full suite after Phase 2: all 20 test files pass (one old assertion updated: "NODES ONLINE" → "SERVERS ONLINE").
+- `npx tsc -b` 0 errors; build to `scratch/dist` OK; `dist/CS2_Command_Center.exe` hash unchanged.
+- Owner items added: decision P2-D1 (website geo model), hand tests (D), in-game checklist (E).
+- Not tested: real Discord client, CS2 in-game commands, the frozen exe (no exe rebuilt in Phase 2).
+
 ## Next
-1. Phase 2 (known bugs 1-9).
+1. Phase 3 (functional), starting with the P3-01..P3-06 items found in Phase 2.
 
 ## Handover Point (session 1):
 - Current Branch: `final-audit`
