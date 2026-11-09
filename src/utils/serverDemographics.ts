@@ -66,7 +66,7 @@ function getCountryPingRange(countryCode: string, serverRegion: string): string 
   const reg = (serverRegion || '').toLowerCase();
   const isNA = reg.includes('us') || reg.includes('chicago') || reg.includes('north america') || reg === 'na';
   const isEU = reg.includes('france') || reg.includes('fr') || reg.includes('spain') || reg.includes('es') || reg.includes('eu');
-  const isAsia = reg.includes('japan') || reg.includes('tokyo') || reg.includes('jp') || reg.includes('korea') || reg.includes('kr') || reg.includes('china') || reg.includes('cn');
+  const isAsia = reg.includes('japan') || reg.includes('tokyo') || reg.includes('jp') || reg.includes('korea') || reg.includes('kr') || reg.includes('china') || reg.includes('cn') || reg.includes('hong kong');
   const isCIS = reg.includes('russia') || reg.includes('ru') || reg.includes('net4all') || reg.includes('cis');
 
   if (isNA) {
@@ -281,7 +281,7 @@ export function getServerDemographics(
   const reg = (serverRegion || '').toLowerCase();
   const isNA = reg.includes('us') || reg.includes('chicago') || reg.includes('north america') || reg === 'na';
   const isEU = reg.includes('france') || reg.includes('fr') || reg.includes('spain') || reg.includes('es') || reg.includes('eu');
-  const isAsia = reg.includes('japan') || reg.includes('tokyo') || reg.includes('jp') || reg.includes('korea') || reg.includes('kr') || reg.includes('china') || reg.includes('cn');
+  const isAsia = reg.includes('japan') || reg.includes('tokyo') || reg.includes('jp') || reg.includes('korea') || reg.includes('kr') || reg.includes('china') || reg.includes('cn') || reg.includes('hong kong'); // AUDIT: Chinese clusters are 'Hong Kong / BGP Multi-Line' (were estimated as RU/PL/DE)
 
   let diurnalWeights: Record<string, number>;
   if (isNA) {

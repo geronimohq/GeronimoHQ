@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getLastTelemetry, TELEMETRY_EVENT, type LiveTelemetryPayload } from '../utils/serverQuery';
+import { getDisplayTotals, type DisplayTotals } from '../utils/playerTotals';
 import { 
   Radio, 
   Cpu, 
@@ -43,6 +45,14 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
   const isBanana = theme === 'banana';
   const [timeStr, setTimeStr] = useState<string>('');
   const [activeSection, setActiveSection] = useState<string>('hero-stage');
+  // AUDIT: real server count (was the fixed text "6 CLUSTERS ... ONLINE"). Uses the data the
+  // server radar already loads; no extra backend requests.
+  const [serverTotals, setServerTotals] = useState<DisplayTotals | null>(() => getDisplayTotals(getLastTelemetry(), Date.now()));
+  useEffect(() => {
+    const onData = (e: Event) => setServerTotals(getDisplayTotals((e as CustomEvent<LiveTelemetryPayload>).detail, Date.now()));
+    window.addEventListener(TELEMETRY_EVENT, onData);
+    return () => window.removeEventListener(TELEMETRY_EVENT, onData);
+  }, []);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -321,12 +331,19 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           </button>
 
           {/* Pill 3: Live ZE Cluster Status */}
-          <div className="hidden sm:flex hud-data-pill justify-between text-[#94A39E]" title="Global Zombie Escape Server Clusters Online">
+          <div
+            className="hidden sm:flex hud-data-pill justify-between text-[#94A39E]"
+            title="Zombie Escape servers in the GeronimoHQ list that answered in the last 90 seconds"
+          >
             <span className="flex items-center gap-1.5 truncate">
               <Wifi className="w-3.5 h-3.5 text-[#00F0FF] flex-shrink-0" />
-              <span className="truncate">SERVERS: <strong className="text-white">6 CLUSTERS</strong></span>
+              <span className="truncate">
+                SERVERS: <strong className="text-white">{serverTotals ? `${serverTotals.online_servers} / ${serverTotals.total_servers}` : '–'}</strong>
+              </span>
             </span>
-            <span className={`font-bold ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`}>ONLINE</span>
+            <span className={`font-bold ${serverTotals && !serverTotals.isSnapshot ? (isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]') : 'text-[#94A39E]'}`}>
+              {serverTotals ? (serverTotals.isSnapshot ? 'SNAPSHOT' : 'ONLINE') : 'LOADING'}
+            </span>
           </div>
 
           {/* Pill 4: Real-Time Clock & Low-Latency Uplink */}

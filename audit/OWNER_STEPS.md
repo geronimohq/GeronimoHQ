@@ -30,6 +30,16 @@ Other people's copies of the app send nothing to your backend after the next exe
 (D-05). Old copies already out there get "401" from the new backend, so they can no longer
 change your card.
 
+## Status (2026-11-10, owner)
+
+- **A** done by the owner (backend deployed with the token).
+- **B** decided: D-07 normal-user startup (done), W-05 pinned Actions (done), B-11 keep player lists,
+  P2-D1 app geo radar uses the website's method (done), P6-10 GitHub Releases recommended (owner's
+  call during F), P9-01 / P6-08 licence and third-party content: still the owner's call.
+- **C** nothing to do.
+- **D, E, G** skipped by the owner: problems will be reported by the owner and friends.
+- **Next: F** (release). The exe must be rebuilt first: code changed after the last build.
+
 ## B. Decisions for you
 
 | ID | Question | My suggestion |

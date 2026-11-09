@@ -264,10 +264,28 @@ export function fetchLiveTelemetry(): Promise<LiveTelemetryPayload | null> {
   if (inFlightTelemetryPromise) {
     return inFlightTelemetryPromise;
   }
-  inFlightTelemetryPromise = executeFetchLiveTelemetry().finally(() => {
-    inFlightTelemetryPromise = null;
-  });
+  inFlightTelemetryPromise = executeFetchLiveTelemetry()
+    .then((data) => {
+      // AUDIT: share each result with other widgets (navbar) without extra requests.
+      if (data) {
+        lastTelemetry = data;
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent(TELEMETRY_EVENT, { detail: data }));
+        }
+      }
+      return data;
+    })
+    .finally(() => {
+      inFlightTelemetryPromise = null;
+    });
   return inFlightTelemetryPromise;
+}
+
+export const TELEMETRY_EVENT = 'geronimohq:telemetry';
+let lastTelemetry: LiveTelemetryPayload | null = null;
+/** Last telemetry any component loaded (null until the first load). */
+export function getLastTelemetry(): LiveTelemetryPayload | null {
+  return lastTelemetry;
 }
 
 /**

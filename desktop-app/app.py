@@ -203,6 +203,26 @@ def play_calm_tone(kind="info"):
             pass
     threading.Thread(target=_sound, daemon=True).start()
 
+def fit_combobox_width(combo, options, extra_chars=1):
+    """AUDIT: size a ttk.Combobox to its longest option (width is counted in '0'
+    characters, which are wider than most letters, so fixed widths left a gap)."""
+    try:
+        import tkinter.font as _tkfont
+        f = _tkfont.nametofont(str(combo.cget("font")) or "TkTextFont")
+    except Exception:
+        try:
+            import tkinter.font as _tkfont
+            f = _tkfont.nametofont("TkTextFont")
+        except Exception:
+            return
+    try:
+        zero = max(1, f.measure("0"))
+        longest = max(f.measure(str(o)) for o in options)
+        combo.configure(width=int(-(-longest // zero)) + extra_chars)
+    except Exception:
+        pass
+
+
 def bind_escape_to_close(win):
     """AUDIT P5 (keyboard): Esc closes a dialog the same way its [X] button does."""
     def _on_escape(_event=None):
@@ -215,6 +235,12 @@ def bind_escape_to_close(win):
         except Exception:
             pass
     win.bind("<Escape>", _on_escape)
+    # AUDIT P3: every dialog also gets any missing tooltips once its content exists.
+    for _ms in (300, 1500):
+        try:
+            win.after(_ms, lambda: win.winfo_exists() and fill_missing_tooltips(win))
+        except Exception:
+            pass
 
 
 class PanoramaTooltip:
@@ -321,8 +347,69 @@ class PanoramaTooltip:
 def add_tooltip(widget, text, delay_ms=800):
     """Convenience helper to attach a PanoramaTooltip to any Tk widget."""
     if widget and text:
+        try:
+            widget._audit_has_tooltip = True
+        except Exception:
+            pass
         return PanoramaTooltip(widget, text, delay_ms=delay_ms)
     return None
+
+# AUDIT P3 (gap vs PHASES_3_7.md "every button and tooltip, none missing"): factual tooltips
+# for clickables that were created without one. Keyed by the start of the widget's text.
+FALLBACK_TOOLTIPS = [
+    ("🧹 Run Maintenance Below", "Runs the ticked PC clean-up steps. You see the list and must confirm first; deleted files cannot be restored."),
+    ("🧹 Open PC Maintenance", "Opens the PC Maintenance page."),
+    ("🚀 Connect To Server", "Joins this server in CS2 (starts CS2 through Steam if it is not running)."),
+    ("🚀 Apply Custom DNS", "Sets the DNS addresses you typed on your active network adapter (needs Administrator). Undo: Restore ISP Default (DHCP)."),
+    ("🔄 Refresh Roster", "Asks the server again for its player list."),
+    ("🔄 Refresh", "Reads the drive list and free space again."),
+    ("🔄 Check now", "Checks geronimohq.com once for a newer version. Nothing is installed without your click."),
+    ("📋 Copy Title", "Copies the song title to the clipboard."),
+    ("💾 Save Server", "Saves this server to your list (%APPDATA%\\CS2CommandCenter\\custom_servers.json)."),
+    ("✓ ACTIVE", "Your network adapter uses this DNS provider right now."),
+    ("⚡ 1-Click Optimize", "Applies the ticked Engine Tweaks (autoexec block, Game DVR, fullscreen flag, power plan). Restore Defaults undoes them."),
+    ("▶️ Listen on YouTube", "Opens this song on YouTube in your browser."),
+    ("Use This DNS", "Sets this provider's DNS on your active network adapter (needs Administrator). Undo: Restore ISP Default (DHCP)."),
+    ("Close", "Closes this window."),
+    ("Clear", "Clears the activity log shown here. Nothing else is deleted."),
+    ("Cancel", "Closes this window without saving."),
+    (" Start CS2 Command Center with Windows", "Starts the app as a normal user when you log in (Windows Run key). Untick to remove it."),
+    (" Start minimized to System Tray", "When starting with Windows, start hidden in the system tray."),
+    (" Minimize to System Tray when", "When ticked, the [-] button hides the app in the system tray instead of the taskbar."),
+]
+ROW_TOOLTIP = "Click to select this row."
+
+
+def fill_missing_tooltips(root_widget):
+    """Attach FALLBACK_TOOLTIPS to clickables that have no tooltip yet (idempotent)."""
+    clickable = (tk.Button, tk.Checkbutton, tk.Radiobutton, ttk.Button, ttk.Checkbutton, ttk.Combobox)
+    stack = [root_widget]
+    while stack:
+        w = stack.pop()
+        try:
+            stack.extend(w.winfo_children())
+        except Exception:
+            continue
+        if getattr(w, "_audit_has_tooltip", False):
+            continue
+        try:
+            is_click = isinstance(w, clickable) or (str(w.cget("cursor")) == "hand2" and bool(w.bind("<Button-1>")))
+        except Exception:
+            is_click = False
+        if not is_click:
+            continue
+        try:
+            txt = str(w.cget("text"))
+        except Exception:
+            txt = ""
+        tip = next((t for k, t in FALLBACK_TOOLTIPS if txt.startswith(k)), None)
+        if tip is None and isinstance(w, tk.Radiobutton) and txt.strip():
+            tip = f"Select {txt.strip()}; then click Use This DNS to apply it."
+        if tip is None and isinstance(w, (tk.Label, tk.Frame)):
+            tip = ROW_TOOLTIP
+        if tip:
+            add_tooltip(w, tip)
+
 
 def get_desktop_workarea():
     """Returns (work_w, work_h) accounting for Windows taskbar via Win32 SPI_GETWORKAREA."""
@@ -609,9 +696,39 @@ class CS2TruePanoramaApp(tk.Tk):
         if not getattr(self, "_quitting", False):
             tk.Tk.after(self, 50, self._pump_ui_queue)
 
+    @staticmethod
+    def _install_thread_guards(app_ref):
+        """AUDIT P4/P3: the same protection for EVERY widget (dialogs call dlg.after() and
+        widget.winfo_exists() from worker threads too). Worker-thread after() calls are queued
+        to the app; winfo_exists() on a worker thread answers without calling Tcl (the queued
+        callback runs on the Tk thread, where the widget is checked for real)."""
+        if getattr(tk.Misc, "_audit_thread_guard", False):
+            tk.Misc._audit_app = app_ref
+            return
+        orig_after = tk.Misc.after
+        orig_exists = tk.Misc.winfo_exists
+
+        def after(self, ms, func=None, *args):
+            a = getattr(tk.Misc, "_audit_app", None)
+            if func is not None and a is not None and threading.current_thread() is not threading.main_thread():
+                a._ui_queue.put((ms, func, args))
+                return None
+            return orig_after(self, ms, func, *args)
+
+        def winfo_exists(self):
+            if threading.current_thread() is not threading.main_thread():
+                return 1
+            return orig_exists(self)
+
+        tk.Misc.after = after
+        tk.Misc.winfo_exists = winfo_exists
+        tk.Misc._audit_thread_guard = True
+        tk.Misc._audit_app = app_ref
+
     def __init__(self):
         super().__init__()
         self._ui_queue = _queue_mod.Queue()
+        CS2TruePanoramaApp._install_thread_guards(self)
         tk.Tk.after(self, 50, self._pump_ui_queue)
         # Immediately withdraw to prevent Windows from registering the default Tk feather icon on the taskbar
         self.withdraw()
@@ -686,6 +803,10 @@ class CS2TruePanoramaApp(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.exit_application)
         self.bind("<Unmap>", self._on_window_unmap)
         self.bind("<FocusIn>", self._on_app_focus_in, add="+")  # AUDIT P2-#1
+        # AUDIT P3: dialogs get missing tooltips when they appear (and again shortly after,
+        # for content that is filled in by a background query).
+        self.bind_class("Toplevel", "<Map>", lambda e: (fill_missing_tooltips(e.widget),
+                        e.widget.after(1500, lambda w=e.widget: w.winfo_exists() and fill_missing_tooltips(w))), add="+")
 
         # Configure Modern CS2 Panorama ttk Styles
         self.style = ttk.Style(self)
@@ -1162,6 +1283,7 @@ class CS2TruePanoramaApp(tk.Tk):
         self._add_nav_item("FAQ", "📖", "Help & FAQ Guide", self._build_page_faq,
                            tooltip="Knowledge base and troubleshooting guide for all optimizer tweaks and competitive settings.")
 
+        self.after(1000, lambda: fill_missing_tooltips(self))  # AUDIT P3: header, console, status bar
         # Start page (AUDIT P3-01: the "Open on start" setting was saved but ignored)
         self._select_nav(app_config.start_page_key(self.config, self.nav_items.keys()))
 
@@ -1368,6 +1490,8 @@ class CS2TruePanoramaApp(tk.Tk):
                 p.pack_forget()
 
         self.after_idle(self._sync_active_page_layout)
+        fill_missing_tooltips(self.pages.get(key, self))  # AUDIT P3: no clickable without a tooltip
+        self.after(600, lambda k=key: fill_missing_tooltips(self.pages.get(k, self)))  # late-built content
 
     def _bind_canvas_auto_width(self, canvas, c_window, scrollbar):
         """Throttles canvas itemconfig width adjustments during interactive window resizing to eliminate UI stutter."""
@@ -2074,6 +2198,12 @@ class CS2TruePanoramaApp(tk.Tk):
                 sub = tk.Label(card, text=f"CS2 Engine Tweaks ({opt_str}) and PC Maintenance ({maint_str}) have not been run recently. Stale shader caches and accumulated temporary files degrade frame pacing.",
                                font=("Segoe UI", 9), fg="#cbd5e1", bg="#201111", anchor="w")
                 sub.pack(fill="x", pady=(2, 0))
+        # AUDIT P3: the banner is rebuilt here, so give its buttons their tooltips again.
+        try:
+            for _host in (getattr(self, "pages", {}) or {}).values():
+                fill_missing_tooltips(_host)
+        except Exception:
+            pass
 
     def _create_tweak_row(self, parent, var, title, desc):
         row = tk.Frame(parent, bg=BG_CARD)
@@ -2202,6 +2332,7 @@ class CS2TruePanoramaApp(tk.Tk):
             ]
         )
         hud_combo.pack(side="left", padx=6)
+        add_tooltip(hud_combo, "Colour of the CS2 HUD (cl_hud_color) written into the ZE Studio block.")
 
         bind_row = tk.Frame(ze_hud_card, bg=BG_CARD_ROW)
         bind_row.pack(fill="x", pady=(4, 2))
@@ -2829,6 +2960,10 @@ class CS2TruePanoramaApp(tk.Tk):
             "VIP / Admin (≤ 63)"
         ]
         self.gfl_tier_combo = ttk.Combobox(tier_row, textvariable=self.gfl_tier_var, values=tier_opts, state="readonly", width=24)
+        # AUDIT: size to the CURRENT choice (sizing to the longest option left a gap after
+        # shorter ones like "Normal Player (<= 61)"); resized again when the choice changes.
+        fit_combobox_width(self.gfl_tier_combo, [self.gfl_tier_var.get() or tier_opts[0]])
+        self.gfl_tier_var.trace_add("write", lambda *a: fit_combobox_width(self.gfl_tier_combo, [self.gfl_tier_var.get()]))
         self.gfl_tier_combo.pack(side="left", padx=2)
         self.gfl_tier_combo.bind("<<ComboboxSelected>>", self._on_gfl_tier_changed)
         add_tooltip(self.gfl_tier_combo, "Set sniper target player threshold (e.g. ≤ 62 for Supporter/Mapper reserved slot).")
@@ -2976,6 +3111,8 @@ class CS2TruePanoramaApp(tk.Tk):
             "≤ 61 / 64 (3 Reserved)"
         ]
         self.comm_sniper_combo = ttk.Combobox(comm_sniper_box, textvariable=self.comm_sniper_target_var, values=comm_opts, state="readonly", width=20)
+        fit_combobox_width(self.comm_sniper_combo, [self.comm_sniper_target_var.get() or comm_opts[0]])  # AUDIT
+        self.comm_sniper_target_var.trace_add("write", lambda *a: fit_combobox_width(self.comm_sniper_combo, [self.comm_sniper_target_var.get()]))
         self.comm_sniper_combo.pack(side="left", padx=2)
         self.comm_sniper_combo.bind("<<ComboboxSelected>>", self._on_comm_sniper_target_changed)
         add_tooltip(self.comm_sniper_combo, "Set slot sniper threshold for community servers (e.g. ≤ 62 if server has 2 reserved slots).")
@@ -3029,6 +3166,7 @@ class CS2TruePanoramaApp(tk.Tk):
         self.china_combo.current(0)
         self.china_combo.pack(side="left", padx=8)
         self.china_combo.bind("<<ComboboxSelected>>", lambda e: self._on_china_cluster_changed())
+        add_tooltip(self.china_combo, "Choose which Chinese server group (cluster) to list and query.")
 
         self.cluster_desc_lbl = tk.Label(self.china_bar, text=self.china_clusters[0]["description"], font=("Segoe UI", 10, "italic"), fg=FG_MUTED, bg="#11151e")
         self.cluster_desc_lbl.pack(side="left", padx=4)
@@ -3252,7 +3390,10 @@ class CS2TruePanoramaApp(tk.Tk):
             # Row 3: Geo Radar Demographics
             r3 = tk.Frame(info_col, bg="#151a24")
             r3.pack(anchor="w", pady=(1, 0))
-            geo_init = server_browser.get_server_demographics_text(s.get("region", ""), max(0, int(c_curr or 0) - int(c_info.get("bots") or 0)) if cached.get("online") else 0)
+            geo_init = server_browser.get_server_demographics_text(
+                s.get("region") or self._region_for_server(s.get("id", "")),
+                max(0, int(c_curr or 0) - int(c_info.get("bots") or 0)) if cached.get("online") else 0,
+                names=server_browser.backend_player_names(s.get("id", "")))
             geo_lbl = tk.Label(r3, text=geo_init, font=("Segoe UI", -11), fg="#94a3b8", bg="#151a24")
             geo_lbl.pack(side="left")
 
@@ -4858,7 +4999,7 @@ class CS2TruePanoramaApp(tk.Tk):
             cid = self.config.get("discord_client_id", app_config.DEFAULT_DISCORD_CLIENT_ID).strip() or app_config.DEFAULT_DISCORD_CLIENT_ID
             self.discord_rpc.set_client_id(cid)
 
-            is_running = core_logic.is_cs2_running() or ((time.time() - getattr(self, "_last_gsi_packet_time", 0)) < 25.0)
+            is_running = core_logic.is_cs2_running() or self._gsi_is_fresh()  # AUDIT: was a 25 s GSI window (slow "CS2 closed")
             if not is_running:
                 self.discord_rpc.clear_activity()
                 self.discord_rpc.close()
@@ -5155,6 +5296,19 @@ class CS2TruePanoramaApp(tk.Tk):
                     self._last_gsi_log_time = now
                     self.log("[GSI] CS2 returned to Main Menu / Lobby.")
 
+    def _region_for_server(self, sid: str) -> str:
+        """Region text for the geo estimate; Chinese servers use their cluster's region
+        (same strings as the website's server list)."""
+        for c in getattr(self, "china_clusters", []) or []:
+            if any(x.get("id") == sid for x in c.get("servers", [])):
+                return c.get("region", "")
+        return ""
+
+    def _gsi_is_fresh(self, max_age_s: float = 5.0) -> bool:
+        """AUDIT: CS2 sends a GSI packet about every second while running (heartbeat 1.0),
+        so a packet older than a few seconds means the game is closed or GSI is off."""
+        return (time.time() - getattr(self, "_last_gsi_packet_time", 0)) < max_age_s
+
     def _scan_for_user_on_servers(self, user_persona: str):
         if not user_persona:
             return None
@@ -5261,7 +5415,7 @@ class CS2TruePanoramaApp(tk.Tk):
                         self.discord_rpc.close()
                     continue
 
-                is_running = core_logic.is_cs2_running() or ((time.time() - getattr(self, "_last_gsi_packet_time", 0)) < 25.0)
+                is_running = core_logic.is_cs2_running() or self._gsi_is_fresh()  # AUDIT: was a 25 s GSI window (slow "CS2 closed")
                 is_steam = core_logic.is_steam_running() or is_running
                 now_ts = time.time()
                 if now_ts - last_hb_time >= 8.0:
@@ -5330,8 +5484,12 @@ class CS2TruePanoramaApp(tk.Tk):
                 if self.active_tracked_server is not None:
                     cur_host, cur_port, cur_name = self.active_tracked_server
                     in_grace = (now - getattr(self, "active_tracked_since", 0)) < 30.0
+                    # AUDIT: when the game's own feed (GSI) is live and says "playing", trust it.
+                    # The roster name check (30 s grace + 3 misses = ~35-40 s) is only a fallback
+                    # for when GSI is silent; it also dropped players whose in-game name differs.
+                    gsi_confirms_playing = self._gsi_is_fresh() and gsi_act == "playing"
 
-                    if not in_grace and user_persona:
+                    if not in_grace and user_persona and not gsi_confirms_playing:
                         try:
                             res = self.server_browser.query_server_players(cur_host, cur_port, timeout=0.9)
                             if res.get("success"):
@@ -6583,7 +6741,10 @@ class CS2TruePanoramaApp(tk.Tk):
                         self.safe_after(0, lambda t=gfl_txt: self.gfl_status_text.set(t))
                         # AUDIT P2-#5: humans only + measured ZEGraph continents (same source as the website)
                         gfl_humans = max(0, int(curr_gfl_p or 0) - int(info.get("bots") or 0))
-                        gfl_geo = server_browser.get_server_demographics_text("Chicago, US", gfl_humans, server_browser.fetch_gfl_continents() if gfl_humans > 0 else None)
+                        gfl_geo = server_browser.get_server_demographics_text(
+                            "North America (Chicago, US)", gfl_humans,
+                            server_browser.fetch_gfl_continents() if gfl_humans > 0 else None,
+                            names=server_browser.backend_player_names("gfl"))
                         self.safe_after(0, lambda g=gfl_geo: self.gfl_geo_var.set(g))
                         self.server_query_cache["gfl"] = {"display": gfl_txt, "online": True, "map": gfl_map, "info": info}
                         self.server_query_cache["74.91.124.21_27015"] = self.server_query_cache["gfl"]
@@ -6659,7 +6820,10 @@ class CS2TruePanoramaApp(tk.Tk):
                                 self.safe_after(0, lambda w=w_dict["players_lbl"], p=p_str: w.config(text=f"👥 {p} Players"))
                             # Update geo radar demographics
                             if "geo_lbl" in w_dict:
-                                g_text = server_browser.get_server_demographics_text(s.get("region", ""), max(0, int(curr_p or 0) - int(info.get("bots") or 0)))
+                                g_text = server_browser.get_server_demographics_text(
+                                    s.get("region") or self._region_for_server(sid),
+                                    max(0, int(curr_p or 0) - int(info.get("bots") or 0)),
+                                    names=server_browser.backend_player_names(sid))
                                 self.safe_after(0, lambda w=w_dict["geo_lbl"], g=g_text: w.config(text=g))
                     else:
                         disp = "● Ready to Join"

@@ -422,22 +422,50 @@ class Bug2Totals(AppTestBase):
 
 # --------------------------------------------------------------------------- #5
 class Bug5Geo(unittest.TestCase):
+    """Owner request 2026-11-10: the app's GEO line uses the SAME method as the website
+    (geo_estimate.py = port of src/utils/serverDemographics.ts), labelled as an estimate."""
     SAMPLE = {"code": 0, "data": {"contain_countries": 37, "total_count": 64, "continents": [
         {"count": 15, "name": "Europe"}, {"count": 10, "name": "North America"}, {"count": 7, "name": "Asia"},
         {"count": 3, "name": "South America"}, {"count": 2, "name": "Africa"}]}}
+    CASES = [
+        ["North America (Chicago, US)", 62, ["[PH] Juan", "Nguyen Van A", "Иван", "김철수", "SomeGuy", "[US] Bob"], SAMPLE["data"]],
+        ["East Asia (Tokyo, JP)", 20, ["たなか", "player"], None],
+        ["Europe (France / Spain)", 39, ["[FR] Jean", "[DE] Max", "x"], None],
+        ["Eastern Europe (Moscow, RU)", 15, [], None],
+        ["Hong Kong / BGP Multi-Line", 30, ["张三"], None],
+    ]
 
-    def test_estimate_label_and_sample_size(self):
+    def test_same_numbers_as_the_website(self):
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("node not installed")
+        import geo_estimate
+        ts = os.path.join(ROOT, "src", "utils", "serverDemographics.ts").replace("\\", "/")
+        js = ("const m = await import('file:///" + ts + "');"
+              "const cases = JSON.parse(process.argv[1]);"
+              "console.log(JSON.stringify(cases.map(([r,n,nm,c]) => m.getServerDemographics(r,n,nm,c).countries.map(x => [x.code, x.percentage]))));")
+        out = subprocess.run([node, "--input-type=module", "-e", js, json.dumps(self.CASES)],
+                             capture_output=True, text=True, encoding="utf-8", timeout=60)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        web = json.loads(out.stdout.strip().splitlines()[-1])
+        app_ = [[[x["code"], x["percentage"]] for x in geo_estimate.estimate_countries(r, n, nm, c)] for r, n, nm, c in self.CASES]
+        self.assertEqual(app_, web)
+
+    def test_label_zero_players_and_gfl_alignment(self):
         g = server_browser.parse_zegraph_continents(self.SAMPLE)
-        txt = server_browser.get_server_demographics_text("Chicago, US", 64, dict(g, age_s=0))
-        self.assertIn("estimate, 37 of 64 players", txt)
-        self.assertIn("Europe 41%", txt)
+        txt = server_browser.get_server_demographics_text("North America (Chicago, US)", 64, g, names=["[PH] Juan"])
+        self.assertTrue(txt.startswith("🌐 GEO (estimate): "), txt)
+        self.assertEqual(server_browser.get_server_demographics_text("Europe (Spain)", 0), "🌐 GEO: server empty")
         print("\n[#5] GFL geo line:", txt)
 
-    def test_zero_players_and_no_data(self):
-        self.assertEqual(server_browser.get_server_demographics_text("Chicago, US", 0), "🌐 GEO: server empty")
-        self.assertIn("no measured data", server_browser.get_server_demographics_text("Europe (Spain)", 20))
+    def test_chinese_clusters_are_estimated_as_asia(self):
+        import geo_estimate
+        # 'Hong Kong / BGP Multi-Line' used to fall into the RU/PL/DE fallback model.
+        codes = {x["code"] for x in geo_estimate.estimate_countries("Hong Kong / BGP Multi-Line", 30, [], None)}
+        self.assertIn("CN", codes)
+        self.assertNotIn("PL", codes)
 
-    def test_no_invented_percentages_left(self):
+    def test_no_invented_fixed_percentages_left(self):
         with open(os.path.join(HERE, "server_browser.py"), encoding="utf-8") as fh:
             src = fh.read()
         for bad in ("US 54%", "FR 44%", "CN 88%", "INTL 65%"):
@@ -449,13 +477,11 @@ class Bug5Geo(unittest.TestCase):
             g = server_browser.fetch_gfl_continents(now=1000.0 + 900)
         self.assertEqual(g["sample"], 37)
         self.assertGreaterEqual(g["age_s"], 900)
-        self.assertIn("15 min old", server_browser.get_server_demographics_text("x", 5, g))
         server_browser._GEO_CACHE.update(at=0.0, data=None)
 
-    def test_geo_never_takes_player_names(self):
-        import inspect
-        sig = inspect.signature(server_browser.get_server_demographics_text)
-        self.assertEqual(list(sig.parameters), ["region_name", "total_players", "geo"])
+    def test_output_never_contains_player_names(self):
+        txt = server_browser.get_server_demographics_text("Europe (Spain)", 5, names=["[ES] SecretName123"])
+        self.assertNotIn("SecretName123", txt)
 
 
 # --------------------------------------------------------------------------- #7

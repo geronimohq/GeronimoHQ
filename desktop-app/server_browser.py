@@ -388,25 +388,24 @@ def _get_s2ze_map_meta(clean_map: str):
         return _S2ZE_CACHE_MAPS[stripped]
     return None
 
-def get_server_demographics_text(region_name: str, total_players: int, geo: Optional[Dict[str, Any]] = None) -> str:
-    """AUDIT P2-#5: honest GEO line.
-
-    Before: one fixed country split per region (e.g. a constant US/CA/MX split), the same every time,
-    not based on any player data. Now:
-      - 0 players            -> "server empty"
-      - measured data (geo)  -> continent split from ZEGraph, labelled as an estimate with
-                                its sample size (players whose country is known / total)
-      - no data              -> "no measured data" (we do not invent percentages)
-    Only aggregate counts are used; no individual player is ever shown.
-    """
+def get_server_demographics_text(region_name: str, total_players: int, geo: Optional[Dict[str, Any]] = None,
+                                 names: Optional[List[str]] = None, max_items: int = 4) -> str:
+    """GEO line, same method as geronimohq.com (owner request 2026-11-10): an ESTIMATE from
+    player-name signals + a time-of-day model per region, aligned to ZEGraph's measured
+    continents for GFL. See geo_estimate.py (a line-by-line port of serverDemographics.ts;
+    a test checks both give the same numbers). Only counts/names the servers already
+    publish are used; no player is shown."""
     if total_players <= 0:
         return "🌐 GEO: server empty"
-    if geo and geo.get("ok") and geo.get("sample", 0) > 0:
-        parts = [f"{name} {pct}%" for name, pct in geo["top"][:3]]
-        age = geo.get("age_s", 0)
-        age_txt = f" · {int(age // 60)} min old" if age >= 120 else ""
-        return f"🌐 GEO (estimate, {geo['sample']} of {geo['total']} players): " + " · ".join(parts) + age_txt
-    return "🌐 GEO: no measured data for this server"
+    import geo_estimate
+    raw = (geo or {}).get("raw") if isinstance(geo, dict) else None
+    items = geo_estimate.estimate_countries(region_name, total_players, names or [], raw)
+    if not items:
+        return "🌐 GEO: no estimate"
+    parts = [f"{it['code']} {it['percentage']}%" for it in items[:max_items]]
+    more = len(items) - max_items
+    tail = f" · +{more} more" if more > 0 else ""
+    return "🌐 GEO (estimate): " + " · ".join(parts) + tail
 
 
 _CONTINENT_SHORT = {"North America": "N. America", "South America": "S. America"}
@@ -425,10 +424,10 @@ def parse_zegraph_continents(payload: Any) -> Optional[Dict[str, Any]]:
     sample = int(data.get("contain_countries") or sum(int(c["count"]) for c in conts))
     total = int(data.get("total_count") or sample)
     if sample <= 0 or not conts:
-        return {"ok": True, "sample": 0, "total": total, "top": []}
+        return {"ok": True, "sample": 0, "total": total, "top": [], "raw": data}
     top = sorted(((_CONTINENT_SHORT.get(c.get("name"), c.get("name") or "Other"),
                    round(100 * int(c["count"]) / sample)) for c in conts), key=lambda x: -x[1])
-    return {"ok": True, "sample": sample, "total": total, "top": top}
+    return {"ok": True, "sample": sample, "total": total, "top": top, "raw": data}
 
 
 def fetch_gfl_continents(timeout: float = 4.0, now: Optional[float] = None) -> Optional[Dict[str, Any]]:
@@ -457,6 +456,17 @@ def fetch_gfl_continents(timeout: float = 4.0, now: Optional[float] = None) -> O
 BACKEND_SERVERS_URL = "https://geronimohq-telemetry.onrender.com/api/servers"
 TOTALS_CACHE_S = 60
 _TOTALS_CACHE: Dict[str, Any] = {"at": 0.0, "totals": None, "source": None}
+_LAST_BACKEND: Dict[str, Any] = {"at": 0.0, "payload": None}
+
+
+def backend_player_names(server_id: str, max_age_s: float = 600) -> List[str]:
+    """Player names for a server from the last backend /api/servers payload (the same
+    data the website uses for its geo radar). Empty if none or older than 10 min."""
+    p = _LAST_BACKEND.get("payload")
+    if not p or time.time() - _LAST_BACKEND.get("at", 0) > max_age_s:
+        return []
+    s = ((p.get("servers") or {}).get(server_id) or {})
+    return [str(x.get("name", "")) for x in (s.get("players_list") or []) if isinstance(x, dict)]
 
 
 def fetch_backend_servers(timeout: float = 6.0) -> Optional[Dict[str, Any]]:
@@ -481,6 +491,7 @@ def get_shared_totals(now: Optional[float] = None, fetch_backend=None, query_dir
     query_direct = query_direct or query_catalog_rows
     payload = fetch_backend()
     if payload:
+        _LAST_BACKEND["payload"], _LAST_BACKEND["at"] = payload, now
         t = payload.get("totals")
         if not isinstance(t, dict) or "humans" not in t:
             # Older backend without `totals`: apply the same rule to its rows.

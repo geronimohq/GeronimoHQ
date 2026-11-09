@@ -33,7 +33,7 @@ see the last row of the first table).
 | DNS servers of your network adapter (needs Administrator) | Windows network settings (`netsh`) | **Restore ISP Default (DHCP)** button. If you used a custom DNS before, write it down first; the button restores *automatic* DNS. |
 | Steam launch options for CS2 | Steam `localconfig.vdf` (Steam must be closed); original kept as `localconfig.vdf.backup` | Edit the launch options in Steam, or copy the `.backup` file back while Steam is closed. |
 | CS2 process priority (High) while it runs | Windows process priority | Resets when CS2 closes. |
-| "Start with Windows" | `HKCU\…\Run` and a Task Scheduler task `CS2CommandCenter_AutoStart` (runs with highest privileges) | Untick it in Settings. |
+| "Start with Windows" | `HKCU\…\Run` (starts as a normal user; an elevated task `CS2CommandCenter_AutoStart` from older versions is removed) | Untick it in Settings. |
 | Game State Integration file (written automatically when CS2 is found) | `…\game\csgo\cfg\gamestate_integration_cs2commandcenter.cfg` | Delete the file. CS2 then stops sending game state to `127.0.0.1:3000`. |
 
 **Cannot be undone (the app asks first):** PC Maintenance clean-up (temp files, Windows Update
