@@ -461,7 +461,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
 
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950/80 border border-slate-800/90 rounded-lg p-2.5">
               <label 
-                title="Single-key toggle to zoom CS2 radar between 0.40 (map overview) and 0.80 (close-up radar) - 100% Valve Safe"
+                title="Single-key toggle to zoom CS2 radar between 0.40 (map overview) and 0.80 (close-up radar) using standard console commands"
                 className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input

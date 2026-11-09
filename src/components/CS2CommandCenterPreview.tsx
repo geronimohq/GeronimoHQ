@@ -57,7 +57,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
         { name: 'Telemetry Bar', value: 'Real-time Win32 & UDP', desc: 'Reads game state (Valve GSI) and server info over UDP' },
         { name: 'Game process', value: 'No memory access', desc: 'Does not read or modify CS2 memory; no DLL injection' }
       ],
-      proTip: 'The new CyberDeck Command Console is designed for quick in-game alt-tab management and 100% offline portability.',
+      proTip: 'The new CyberDeck Command Console is designed for quick alt-tab use; most features work offline.',
       noMemoryAccess: true
     },
     {
@@ -177,7 +177,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
       details: [
         'NEW: Full DNS Freedom — Click any row or click "Use This DNS" on Cloudflare, Google, Quad9, OpenDNS, Level3, or AdGuard to apply your preferred resolver regardless of benchmark rank.',
         'NEW: Custom DNS IPv4 Input — Enter any custom Primary & Secondary IPv4 DNS servers and apply in 1 click.',
-        'Post-Session CS2 Frame-Time & Network Jitter Log Analyzer (100% passive console.log parser, zero DLL hooks).',
+        'Post-Session CS2 Frame-Time & Network Jitter Log Analyzer (reads console.log only; no game hooks).',
         'Parallel real-time UDP port 53 latency & jitter benchmark + 1-Click Restore to ISP Default (Automatic DHCP).'
       ],
       parameters: [
@@ -306,7 +306,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <strong className="font-cyber text-cyan-300 tracking-wide uppercase block mb-0.5">
             WHAT THIS OPTIMIZER & PC MAINTENANCE ACTUALLY DO (STABILITY vs. RAW FPS):
           </strong>
-          These tools are <strong className="text-white">not</strong> meant to magically inflate maximum FPS beyond your physical CPU/GPU hardware limits. Instead, they are engineered to improve <strong className="text-cyan-300">Frame-Time Consistency (1% Lows)</strong>, eliminate micro-stutters during 64-player Zombie Escape &amp; heavy smoke utility, resolve <strong className="text-cyan-300">Display / Alt-Tab freezes (MPO)</strong>, optimize <strong className="text-cyan-300">Sub-Tick &amp; Gaming DNS network responsiveness</strong>, and maintain peak SSD/OS storage health with <strong className="text-lime-300">100% system safety</strong> (zero risky RAM cleaners).
+          These tools are <strong className="text-white">not</strong> meant to magically inflate maximum FPS beyond your physical CPU/GPU hardware limits. Instead, they are engineered to improve <strong className="text-cyan-300">Frame-Time Consistency (1% Lows)</strong>, eliminate micro-stutters during 64-player Zombie Escape &amp; heavy smoke utility, resolve <strong className="text-cyan-300">Display / Alt-Tab freezes (MPO)</strong>, optimize <strong className="text-cyan-300">Sub-Tick &amp; Gaming DNS network responsiveness</strong>, and maintain peak SSD/OS storage health with <strong className="text-lime-300">an undo for each change</strong> (zero risky RAM cleaners).
         </div>
       </div>
 

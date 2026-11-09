@@ -37,7 +37,29 @@ class Wording(unittest.TestCase):
             self.assertNotIn(absent, src)
 
 
+class ClaimsSweep(unittest.TestCase):
+    """Superprompt Phase 5 word list: no unprovable '100% ...' claims left in UI text."""
+    def test_no_hundred_percent_claims(self):
+        pat = re.compile(r"100% (safe|healthy|read-only|automatic|passive|protected|intact|stable|reversible|"
+                         r"pre-configured|transparent|valve safe|offline|system safety|cleared|preserved|non-invasive|verified)"
+                         r"|never be banned|work 100%", re.I)
+        hits = []
+        for p in FEATURE_FILES + [("desktop-app", "server_browser.py"), ("desktop-app", "updater.py")]:
+            for n, line in enumerate(read(*p).splitlines(), 1):
+                if pat.search(line) and "AUDIT" not in line:
+                    hits.append(f"{'/'.join(p)}:{n}: {line.strip()[:80]}")
+        self.assertEqual(hits, [], "\n".join(hits))
+
+
 class Accessibility(unittest.TestCase):
+    def test_every_app_dialog_closes_with_escape(self):
+        src = read("desktop-app", "app.py")
+        dialogs = src.count("dlg = tk.Toplevel(self)")
+        self.assertEqual(src.count("bind_escape_to_close(dlg)"), dialogs)
+
+    def test_website_mobile_menu_closes_with_escape(self):
+        self.assertIn("e.key === 'Escape'", read("src", "components", "CyberNavbar.tsx"))
+
     def test_desktop_labels_use_readable_muted_colour(self):
         src = read("desktop-app", "app.py")
         self.assertNotRegex(src, r'tk\.(Label|Button)\([^)]*fg="#(64748b|4b5563)"')

@@ -719,7 +719,7 @@ def boost_cs2_process() -> Tuple[bool, str]:
                 pass
 
         if boosted_count > 0:
-            return True, f"Successfully elevated cs2.exe (PIDs: {boosted_count}) to HIGH CPU priority (100% Safe Mode)!"
+            return True, f"Successfully elevated cs2.exe (PIDs: {boosted_count}) to HIGH CPU priority (resets when CS2 closes)."
         else:
             return False, "cs2.exe found, but priority elevation was blocked by OS permissions. Try running as Administrator."
     except Exception as e:

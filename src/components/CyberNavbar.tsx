@@ -70,6 +70,16 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
 
   // AUDIT P3-03: removed a random 10-18 ms "ping" that was shown like a live measurement.
 
+  // AUDIT P5 (keyboard): Esc closes the mobile menu.
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileMenuOpen]);
+
   const isManualScrollingRef = useRef<boolean>(false);
   const scrollTimeoutRef = useRef<number | null>(null);
 

@@ -202,6 +202,20 @@ def play_calm_tone(kind="info"):
             pass
     threading.Thread(target=_sound, daemon=True).start()
 
+def bind_escape_to_close(win):
+    """AUDIT P5 (keyboard): Esc closes a dialog the same way its [X] button does."""
+    def _on_escape(_event=None):
+        try:
+            cmd = win.protocol("WM_DELETE_WINDOW")
+            if cmd:
+                win.tk.call(cmd)
+            else:
+                win.destroy()
+        except Exception:
+            pass
+    win.bind("<Escape>", _on_escape)
+
+
 class PanoramaTooltip:
     """
     CS2 Panorama styled hover tooltip.
@@ -1053,7 +1067,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
         admin_txt = "ADMIN PERMISSIONS" if self.admin_status else "STANDARD PERMISSIONS"
         admin_col = ACCENT_GREEN if self.admin_status else FG_MUTED
-        admin_tip = "Running with Administrator privileges (Full access for system maintenance, TRIM, and latency diagnostics)." if self.admin_status else "Running with Standard user permissions (Safe CS2 autoexec and engine tweaks work 100%)."
+        admin_tip = "Running with Administrator privileges (Full access for system maintenance, TRIM, and latency diagnostics)." if self.admin_status else "Running as a standard user (autoexec and engine tweaks do not need Administrator)."
         self._create_header_pill(head_right, admin_txt, admin_col, tooltip=admin_tip)
 
         cs2_found = bool(self.paths["cs2_exe"])
@@ -1825,13 +1839,13 @@ class CS2TruePanoramaApp(tk.Tk):
                 "These tools are NOT meant to magically inflate maximum FPS beyond your CPU/GPU hardware limits. "
                 "Instead, they eliminate OS bottlenecks to maximize Frame-Time Consistency (1% Lows), prevent micro-stutters "
                 "during 64-player Zombie Escape / smoke utility, fix Display/Alt-Tab freezes (MPO), change network rate settings & DNS "
-                "network responsiveness, and maintain peak SSD/OS health with 100% system safety."
+                "network responsiveness, and clean temporary files (each step can be undone or is a cache Windows rebuilds)."
             ),
             font=("Segoe UI", 9), fg="#cbd5e1", bg="#101826", justify="left", anchor="w", wraplength=760
         ).pack(anchor="w", fill="x", pady=(1, 0))
 
         tk.Label(content, text="ENGINE PERFORMANCE TWEAKS", font=("Segoe UI", -16, "bold"), fg=FG_WHITE, bg=BG_CARD).pack(anchor="w")
-        tk.Label(content, text="All modifications are 100% safe, non-destructive, and can be restored anytime.", font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(1, 6))
+        tk.Label(content, text="Each change has an undo: Restore Defaults, the autoexec backup, or the 'Restore ISP Default (DHCP)' button.", font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(1, 6))
 
         self._create_tweak_row(
             content,
@@ -2254,7 +2268,7 @@ class CS2TruePanoramaApp(tk.Tk):
                 "ZE Visual & Audio Binds Added to autoexec.cfg",
                 f"✅ Successfully injected into autoexec.cfg!\n\n"
                 f"{res.get('message')}\n\n"
-                f"• Viewmodel Low Laser Preset: {'ON (FOV 68, X:+2, Y:+2, Z:-2)' if opts['ze_laser_viewmodel'] else 'OFF (Personal Config Viewmodel 100% Preserved)'}\n"
+                f"• Viewmodel Low Laser Preset: {'ON (FOV 68, X:+2, Y:+2, Z:-2)' if opts['ze_laser_viewmodel'] else 'OFF (your own viewmodel settings are kept)'}\n"
                                 f"• HUD Color: {self.ze_hud_color_var.get()}\n"
                 f"• Boss Audio Ducking Key: [{duck_k}] (22% <-> 100%)  |  Panic Voice Mute Key: [{mute_k}]\n\n"
                 f"Look at the Live Autoexec.cfg File Preview box below — it has automatically updated and scrolled to the bottom showing your new [CS2 COMMAND CENTER: ZE VISUAL, HUD & AUDIO DUCKING STUDIO] block!"
@@ -2543,7 +2557,7 @@ class CS2TruePanoramaApp(tk.Tk):
             dns_card,
             text=(
                 "Click ANY DNS provider row below (or enter your own Custom DNS IPs) to choose whichever DNS you prefer, "
-                "or run the live benchmark to see which resolver has the lowest latency & jitter for your region. 100% reversible to ISP Default (DHCP)."
+                "or run the live benchmark to see which resolver has the lowest latency & jitter for your region. One click restores automatic DNS (DHCP)."
             ),
             font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD_ROW, justify="left", anchor="w", wraplength=880
         ).pack(anchor="w", fill="x", pady=(2, 6))
@@ -2655,7 +2669,7 @@ class CS2TruePanoramaApp(tk.Tk):
         l_top = tk.Frame(log_card, bg=BG_CARD_ROW)
         l_top.pack(fill="x")
         tk.Label(l_top, text="📊 Post-Session CS2 Frame-Time & Network Jitter Log Analyzer", font=("Segoe UI", 14, "bold"), fg=ACCENT_ORANGE, bg=BG_CARD_ROW).pack(side="left")
-        tk.Label(l_top, text="🛡️ 100% PASSIVE LOG PARSER (ZERO DLL HOOKS)", font=("Segoe UI", 14, "bold"), fg=ACCENT_GREEN, bg="#0d261d", padx=6, pady=1).pack(side="right")
+        tk.Label(l_top, text="🛡️ READS console.log ONLY (NO GAME HOOKS)", font=("Segoe UI", 14, "bold"), fg=ACCENT_GREEN, bg="#0d261d", padx=6, pady=1).pack(side="right")
 
         tk.Label(
             log_card,
@@ -2685,7 +2699,7 @@ class CS2TruePanoramaApp(tk.Tk):
         info_card.pack(fill="x", pady=4)
         self.boost_info_card = info_card
 
-        tk.Label(info_card, text="ℹ️ COMPLETE GUIDE: DNS PURPOSES, PROS & CONS, AND 100% SYSTEM SAFETY:", font=("Segoe UI", 14, "bold"), fg=ACCENT_ORANGE, bg="#11151e").pack(anchor="w", pady=(0, 6))
+        tk.Label(info_card, text="ℹ️ GUIDE: WHAT DNS CHANGES, PROS & CONS, AND HOW TO UNDO IT:", font=("Segoe UI", 14, "bold"), fg=ACCENT_ORANGE, bg="#11151e").pack(anchor="w", pady=(0, 6))
 
         explanations = [
             ("🌐 All Purposes of DNS (Gaming, Security, Privacy & Web Speed)",
@@ -2699,8 +2713,8 @@ class CS2TruePanoramaApp(tk.Tk):
              "• Does NOT lower raw in-game UDP ping once already connected: After your PC resolves a domain (or connects directly to a server IP like 74.91.124.21:27015), live game packets travel directly over UDP without querying DNS.\n"
              "• Unbenchmarked distant DNS can route to farther CDN mirrors: Picking a DNS server physically far from your region without benchmarking first can cause Steam/FastDL CDNs to pick a non-local download mirror. Always click '⚡ Benchmark All DNS Servers' first!\n"
              "• Hotel / School / Corporate Captive Portals: Public Wi-Fi login pages sometimes require the router's default local DNS. If a public Wi-Fi login page doesn't load, simply click '↺ Restore ISP Default (DHCP)'."),
-            ("🚫 Why We Strictly Avoid 'RAM Cleaners' & Prioritize 100% System Safety",
-             "Aggressive RAM cleaners (EmptyWorkingSet / Standby List purgers) forcibly evict active memory pages used by CS2, Discord, and browsers into slow disk pagefile.sys — causing Hard Page Fault stutters and random app/browser crashes. CS2 Command Center strictly avoids memory purging and instead uses safe Win32 HIGH_PRIORITY_CLASS thread scheduling so your system stays 100% stable.")
+            ("🚫 Why this app does not use 'RAM cleaners'",
+             "Aggressive RAM cleaners (EmptyWorkingSet / Standby List purgers) forcibly evict active memory pages used by CS2, Discord, and browsers into slow disk pagefile.sys — causing Hard Page Fault stutters and random app/browser crashes. CS2 Command Center strictly avoids memory purging and instead uses safe Win32 HIGH_PRIORITY_CLASS thread scheduling so other programs keep running normally.")
         ]
 
         self.boost_wrap_labels = []
@@ -3528,7 +3542,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
 
         tk.Label(maint_content, text="SAFE SYSTEM & STORAGE MAINTENANCE", font=("Segoe UI", -16, "bold"), fg=FG_WHITE, bg=BG_CARD).pack(anchor="w")
-        tk.Label(maint_content, text="100% safe PC hygiene: Free up storage, clear cache bloat, inspect drive health, and flush DNS.", font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(1, 8))
+        tk.Label(maint_content, text="PC clean-up: free up storage, clear cache bloat, inspect drive health, and flush DNS.", font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(1, 8))
 
         # Weekly Maintenance & Optimization Reminder Banner
         self.maint_weekly_banner_box = tk.Frame(maint_content, bg=BG_CARD)
@@ -3562,7 +3576,7 @@ class CS2TruePanoramaApp(tk.Tk):
             ab_left.pack(side="left", fill="x", expand=True)
 
             tk.Label(ab_left, text="🛡️  STANDARD USER MODE (SAFE HYGIENE ACTIVE)", font=("Segoe UI", 10, "bold"), fg="#60a5fa", bg="#131d2e").pack(anchor="w")
-            tk.Label(ab_left, text="Disk cleanups (Cache, Temp Files, Custom Maps, DNS Flush) work 100%. Deep Windows repairs (SSD TRIM, SFC, DISM) require Administrator privileges.",
+            tk.Label(ab_left, text="Disk clean-ups (cache, temp files, custom maps, DNS flush) work without Administrator. Deep Windows repairs (SSD TRIM, SFC, DISM) require Administrator privileges.",
                      font=("Segoe UI", 10), fg="#cbd5e1", bg="#131d2e").pack(anchor="w", pady=(1, 0))
 
             b_elev = tk.Button(admin_banner, text="⚡ Relaunch as Administrator", font=("Segoe UI", 10, "bold"), fg="#ffffff", bg="#2563eb",
@@ -3766,7 +3780,7 @@ class CS2TruePanoramaApp(tk.Tk):
         else:
             messagebox.showinfo(
                 "Workshop VPK Health Verifier",
-                f"{res.get('message')}\n\nAll Workshop .vpk binary headers (0x55aa1234) are 100% healthy!"
+                f"{res.get('message')}\n\nAll Workshop .vpk binary headers (0x55aa1234) passed the header check."
             )
 
     def repair_workshop_vpks_ui(self):
@@ -3777,7 +3791,7 @@ class CS2TruePanoramaApp(tk.Tk):
         addons = scan.get("addons", [])
         bad = [a for a in addons if a.get("status") != "Healthy"]
         if not bad:
-            messagebox.showinfo("Workshop VPK Repair", "All scanned Workshop VPK addons are already 100% healthy! Nothing to purge.")
+            messagebox.showinfo("Workshop VPK Repair", "No damaged Workshop VPK files were found. Nothing to remove.")
             return
         if not messagebox.askyesno(
             "Confirm Corrupted VPK Repair",
@@ -3976,9 +3990,9 @@ class CS2TruePanoramaApp(tk.Tk):
             "Only proceed with disabling MPO if you have ALREADY performed a clean DDU driver wipe and you STILL continue to experience Alt-Tab black screens, multi-monitor refresh rate desync, or Discord/browser checkerboard glitches.\n\n"
             "WHY THIS TAB IS IN CS2 COMMAND CENTER:\n"
             "Many CS2 players blame game updates, config files, or their hardware for these crashes and black screens. This dedicated "
-            "troubleshooter provides 100% transparent live diagnostics for AMD, NVIDIA, and Intel GPUs, explains the exact symptoms, "
+            "troubleshooter shows live, read-only diagnostics for AMD, NVIDIA, and Intel GPUs, explains the exact symptoms, "
             "and provides the registry commands to copy, with 1-click clipboard helpers.\n\n"
-            "🔒 100% READ-ONLY SAFETY: CS2 Command Center NEVER modifies your display driver or registry automatically. "
+            "🔒 READ-ONLY: CS2 Command Center does not modify your display driver or registry automatically. "
             "You have full visibility and control to decide whether disabling MPO is right for your PC setup."
         )
 
@@ -4244,7 +4258,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
         auto_badge = tk.Frame(col_left, bg="#0e2338", padx=8, pady=4, highlightbackground="#38bdf8", highlightthickness=1)
         auto_badge.pack(fill="x", pady=(4, 6))
-        tk.Label(auto_badge, text="⚡ 100% AUTOMATIC DETECTION ACTIVE", font=("Segoe UI", 10, "bold"), fg="#38bdf8", bg="#0e2338").pack(anchor="w")
+        tk.Label(auto_badge, text="⚡ AUTOMATIC DETECTION ON", font=("Segoe UI", 10, "bold"), fg="#38bdf8", bg="#0e2338").pack(anchor="w")
         tk.Label(auto_badge,
                  text="• CS2 Closed: nothing is sent to Discord.\n• CS2 Running: Automatically turns ON & tracks status.\n• In Server: Auto-detects map & players via Valve GSI.\n• Zero manual buttons or setup needed!",
                  font=("Segoe UI", 9), fg="#cbd5e1", bg="#0e2338", justify="left").pack(anchor="w", pady=(2, 0))
@@ -4505,7 +4519,7 @@ class CS2TruePanoramaApp(tk.Tk):
         _create_faq_card(
             "🌐", "NETWORK OPTIMIZATION, GAMING DNS PROS & CONS & PACKET LOSS", "NETWORK & DNS", ACCENT_CYAN,
             [
-                ("What are all the purposes of the Gaming DNS Optimizer, and is it 100% safe?",
+                ("What does the DNS Optimizer change, and how do I undo it?",
                  "DNS (Domain Name System) translates domain names into IP addresses. Besides speeding up domain lookups for Steam SDR relays, Workshop FastDL map servers, Discord voice channels, and web browsing, custom DNS resolvers serve multiple purposes:\n"
                  "• Reliability: Bypasses congested or malfunctioning default ISP DNS servers.\n"
                  "• Security (Quad9 9.9.9.9): Automatically blocks known malware, phishing, and spyware domains before they can load.\n"
@@ -4539,7 +4553,7 @@ class CS2TruePanoramaApp(tk.Tk):
                 ("Why is snd_mixahead set to 0.025 instead of the default 0.05?",
                  "The default Source 2 audio buffer (0.05) creates 50ms of audio latency between gunshots/footsteps and your speakers. Setting snd_mixahead to 0.025 cuts audio processing latency in half (25ms), allowing you to hear enemy footsteps, zombie screams, and grenade bounces a full frame earlier."),
                 ("Will applying autoexec overwrite my custom bindings or crosshair?",
-                 "No! If an existing autoexec.cfg is present, the app backs it up and non-destructively appends or updates only the competitive performance blocks, keeping your personal binds, crosshair, sensitivity, and custom aliases 100% intact.")
+                 "No! If an existing autoexec.cfg is present, the app backs it up and non-destructively appends or updates only the competitive performance blocks, keeping your personal binds, crosshair, sensitivity, and custom aliases in place (only the app's own marked block is added or replaced).")
             ]
         )
 
@@ -4599,7 +4613,7 @@ class CS2TruePanoramaApp(tk.Tk):
                 ("Why should I clean custom maps?",
                  "Custom Zombie Escape maps downloaded from community servers are stored as .vpk packages in csgo/maps/ and can range from 500MB to 2.5GB each. Over time, active ZE players accumulate 50GB to 150GB+ of stale map packages on their SSD. The cleaner lets you sort by file size or last played date, and safely delete obsolete or unpopular maps without touching base game files."),
                 ("What happens if I delete a map and later rejoin a server running that map?",
-                 "CS2 will automatically download the map fresh from the server's FastDL HTTP mirror before joining! You will never be banned, kicked, or encounter errors; deleting custom maps is 100% safe and reversible.")
+                 "CS2 will automatically download the map fresh from the server's FastDL HTTP mirror before joining! Deleting downloaded custom maps only removes files CS2 can download again; it does not affect your account.")
             ]
         )
 
@@ -4621,7 +4635,7 @@ class CS2TruePanoramaApp(tk.Tk):
                 ("Why is GPU MPO Diagnostics included in CS2 Command Center?",
                  "Multi-Plane Overlay (MPO) is one of the most common root causes of Alt-Tab black screens, display freezes, Discord/Chrome checkerboard glitches, and GPU driver crashes (such as AMD Driver Timeout or NVIDIA TDR) while playing CS2. CS2 Command Center provides this dedicated diagnostic tab so players can understand their MPO configuration, test for display issues, and access official AMD/NVIDIA resolution steps."),
                 ("Is the GPU MPO Diagnostics tab safe? Does it modify my registry automatically?",
-                 "The GPU MPO Diagnostics tab is strictly 100% READ-ONLY. It never makes registry edits and never alters your display driver automatically. It provides live hardware and registry inspection, clear technical explanations, and safe 1-click clipboard helpers for manual user review."),
+                 "The GPU MPO Diagnostics tab is read-only: it makes no registry edits and does not alter your display driver automatically. It provides live hardware and registry inspection, clear technical explanations, and safe 1-click clipboard helpers for manual user review."),
                 ("Should I disable Windows Multi-Plane Overlay (MPO)?",
                  "If your system runs smoothly with zero black screen flickers, driver timeouts, or dual-monitor stutter, keep MPO enabled (Windows default). If you suffer from 1-3 second Alt-Tab black screens, AMD driver timeouts, Discord checkerboard glitches, or G-Sync stutter with mixed refresh rates, disabling MPO via the registry is an officially verified, safe workaround."),
                 ("What should I do before disabling MPO? Should I use DDU or AMD Cleanup Utility?",
@@ -5182,8 +5196,8 @@ class CS2TruePanoramaApp(tk.Tk):
         threading.Thread(target=_req, daemon=True).start()
 
     def _start_presence_heartbeat(self):
-        """100% Automatic CS2 Lifecycle & Presence Manager.
-        - When CS2 is CLOSED: Discord presence is 100% CLEARED (Nothing shown).
+        """Automatic CS2 lifecycle & presence manager.
+        - When CS2 is CLOSED: Discord presence is cleared (nothing shown).
         - When CS2 is RUNNING: Automatically detects state, map, and server."""
         def _loop():
             was_running = False
@@ -6222,6 +6236,7 @@ class CS2TruePanoramaApp(tk.Tk):
             return
 
         dlg = tk.Toplevel(self)
+        bind_escape_to_close(dlg)  # AUDIT P5
         dlg.title(f"Soundtrack Intel - {clean}")
         dlg.minsize(680, 480)
         dlg.configure(bg="#070B09")
@@ -6672,6 +6687,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
     def open_add_server_dialog(self):
         dlg = tk.Toplevel(self)
+        bind_escape_to_close(dlg)  # AUDIT P5
         dlg.title("Add Custom Community Server")
         dlg.resizable(False, False)
         dlg.configure(bg=BG_WINDOW)
@@ -6774,6 +6790,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
     def open_players_dialog(self, host: str, port: int, server_name: str):
         dlg = tk.Toplevel(self)
+        bind_escape_to_close(dlg)  # AUDIT P5
         dlg.title(f"Active Players — {server_name}")
         dlg.minsize(600, 480)
         dlg.configure(bg="#070B09")
@@ -7011,6 +7028,7 @@ class CS2TruePanoramaApp(tk.Tk):
     def open_custom_map_cleaner_dialog(self):
         """Displays rich table of downloaded workshop maps with interactive column sorting, server pack detection, and dark mode."""
         dlg = tk.Toplevel(self)
+        bind_escape_to_close(dlg)  # AUDIT P5
         dlg.title("CS2 & Zombie Escape Custom Map Cleaner")
         dlg.configure(bg="#070B09")
         dlg.transient(self)
@@ -7140,7 +7158,7 @@ class CS2TruePanoramaApp(tk.Tk):
         btn_filter_dupe.pack(side="left")
 
         add_tooltip(btn_filter_all, "Show all custom community maps and server packages.")
-        add_tooltip(btn_filter_temp, "Show only temporary downloaded maps from servers you visited. 100% safe to delete.")
+        add_tooltip(btn_filter_temp, "Show only temporary maps downloaded from servers you visited. CS2 downloads them again if you rejoin.")
         add_tooltip(btn_filter_sub, "Show maps belonging to your subscribed Steam Workshop collections (e.g. GFL ZE Map Pack).")
         add_tooltip(btn_filter_assets, "Show essential community server content packs (player skins, zombie models, sounds) for GFL, Possession, cOLa, Mapeadores.")
         add_tooltip(btn_filter_dupe, "Show duplicate copies of maps across your library.")
@@ -7417,7 +7435,7 @@ class CS2TruePanoramaApp(tk.Tk):
         filter_actions.pack(fill="x", padx=10, pady=(0, 6))
 
         def select_temp_safe():
-            """One-click selects ALL temporary downloaded maps (leaving 100% of subscribed server pack maps and server assets untouched)."""
+            """One-click selects ALL temporary downloaded maps (subscribed server pack maps and server assets are left untouched)."""
             selected_ids.clear()
             for m in all_maps:
                 if not m.get("is_subscribed") and not m.get("is_server_asset") and not m.get("is_protected") and m.get("is_workshop"):
@@ -7541,7 +7559,7 @@ class CS2TruePanoramaApp(tk.Tk):
                     "Confirm Map Deletion",
                     f"Are you sure you want to delete {len(sel_items)} temporary custom map(s)?\n\n"
                     f"Reclaimed Space: {sel_gb:.2f} GB\n\n"
-                    "• Subscribed Server Map Pack maps are 100% protected and excluded.\n"
+                    "• Subscribed Server Map Pack maps are excluded.\n"
                     "• Official Valve competitive maps are protected.\n"
                     "• If you visit servers playing these maps in the future, CS2 will re-download them automatically."
                 )
@@ -7692,6 +7710,7 @@ class CS2TruePanoramaApp(tk.Tk):
     def open_settings_dialog(self):
         """Settings modal for Windows Startup, System Tray, Discord Rich Presence, and System Diagnostics."""
         dlg = tk.Toplevel(self)
+        bind_escape_to_close(dlg)  # AUDIT P5
         dlg.title("CS2 Command Center Settings")
         dlg.configure(bg=BG_WINDOW)
         dlg.transient(self)
@@ -7873,7 +7892,7 @@ class CS2TruePanoramaApp(tk.Tk):
         add_tooltip(cb_disc, "Shares active CS2 server and map details with local Discord client.")
 
         lbl_disc_desc = tk.Label(sec_priv,
-                 text="Discord Presence features automatic CS2 detection, real-time profile preview, and live map & player broadcaster. Universal setup is 100% pre-configured.",
+                 text="Discord Presence features automatic CS2 detection, real-time profile preview, and live map & player broadcaster. No setup needed: the app ships with its own Discord Application ID.",
                  font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD, justify="left", wraplength=480)
         lbl_disc_desc.pack(anchor="w", padx=4, pady=(0, 6))
         wrap_labels.append(lbl_disc_desc)
