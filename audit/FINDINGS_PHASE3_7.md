@@ -19,3 +19,15 @@ Tests: `desktop-app/test_phase3_functional.py` 10/10 [TESTED]. Full suite after 
 | P3-04 | Website geo country % is modelled. | Owner decision P2-D1. | Open (owner) |
 | P3-05 | App queries only the visible server sub-tab. | Totals no longer depend on it (Phase 2). | Info |
 | P3-06 | "sub-tick" wording for `rate` / `cl_net_buffer_ticks`. | Phase 5. | → Phase 5 |
+
+## Phase 4 — Performance
+
+| ID | Finding | Fix / result | Status |
+|---|---|---|---|
+| P4-01 | Website main JS was 1,006.7 kB (247.3 kB gzip). A source-map analysis showed **~400 kB came from `src/data/zeMapCatalog.json`** (1,608 maps with image URLs and addon ids) — only the mapper names are ever used. | Import a generated slim index `src/data/zeMapMappers.json` (61.7 kB, same keys/order; `scripts/build_map_mappers.py`). The full catalog stays as source data. | Fixed [TESTED: build] |
+| P4-02 | Three floating overlays (Chaos button, roaming gremlin, Discord card) were in the main bundle. | Lazy-loaded (`React.lazy`), each its own chunk. They hold no navbar anchors, so scroll/TRANSMISSION behaviour is unaffected. | Fixed [TESTED: build + browser load] |
+| — | **Result**: main JS **582.6 kB (162.2 kB gzip), −34 % gzip**; first page load in the browser = **240 kB transferred**, 46 requests, no media downloaded up front (audio/video load on demand). | | [TESTED] |
+| P4-03 | Map thumbnails try up to 4 places (self-hosted → zegraph ×3); every miss logs a 404 in the console. No image ends up broken. | Not changed (cosmetic console noise; changing the cascade risks missing thumbnails). | Low, open |
+| P4-04 | `FakeRetroScamAds.tsx` and `SecretGeronimoVault.tsx` (74 kB source) are not imported anywhere. Not in the bundle (tree-shaken). | Phase 6 decision (dead code). | Info |
+| P4-05 | Desktop app idle, in the tray, from source with a temp `APPDATA`: **0.39 % of one core over 60 s, 95 MB working set, 10 threads**; ~0.9 s CPU to start. | No change needed. Default server refresh on the ZE page is now 5 s (was 1 s), per the setting. | [TESTED] |
+| P4-06 | Backend: one full 41-server sweep ~3 s; cached 3.5 s; one sweep at a time (Phase 1 B-01). | No change. | [TESTED: evidence_phase2_totals.md] |

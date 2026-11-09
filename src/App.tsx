@@ -1,17 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { RetroGridCanvas } from './components/RetroGridCanvas';
 import { CyberNavbar, scrollToSectionById } from './components/CyberNavbar';
 import { PepeHeroStage } from './components/PepeHeroStage';
 import { BananaHeroStage } from './components/BananaHeroStage';
 import { DownloadRamSection } from './components/DownloadRamSection';
-import { RoamingMemeGremlin } from './components/RoamingMemeGremlin';
 import { ServerRadarPreview } from './components/ServerRadarPreview';
 import { CS2AutoexecGeneratorSection } from './components/CS2AutoexecGeneratorSection';
 import { CS2CommandCenterPreview } from './components/CS2CommandCenterPreview';
-import { GeronimoDiscordPresence } from './components/GeronimoDiscordPresence';
 import { DeployHudFooter } from './components/DeployHudFooter';
-import { ChaosAnomalyEngine } from './components/ChaosAnomalyEngine';
 import { ChevronDown, PhoneCall, Radio, ShieldCheck } from 'lucide-react';
+
+// AUDIT P4: floating overlays (no navbar anchors inside) load as separate chunks after the
+// first paint, so the main bundle the visitor waits for is smaller.
+const RoamingMemeGremlin = lazy(() => import('./components/RoamingMemeGremlin').then((m) => ({ default: m.RoamingMemeGremlin })));
+const GeronimoDiscordPresence = lazy(() => import('./components/GeronimoDiscordPresence').then((m) => ({ default: m.GeronimoDiscordPresence })));
+const ChaosAnomalyEngine = lazy(() => import('./components/ChaosAnomalyEngine').then((m) => ({ default: m.ChaosAnomalyEngine })));
 
 const pickRandomBananaLoops = (): number => {
   const choices = [2, 3, 4];
@@ -152,7 +155,9 @@ export const App: React.FC = () => {
       />
 
       {/* Interactive Roaming Pepe / Banana Character */}
-      <RoamingMemeGremlin theme={theme} enabled={gremlinEnabled} />
+      <Suspense fallback={null}>
+        <RoamingMemeGremlin theme={theme} enabled={gremlinEnabled} />
+      </Suspense>
 
       {/* Unified Top Command Dock & Telemetry Strip */}
       <CyberNavbar
@@ -316,9 +321,13 @@ export const App: React.FC = () => {
       </main>
 
       {/* Floating Geronimo Discord-Style Live Presence (Fixed Lower-Left) */}
-      <GeronimoDiscordPresence />
+      <Suspense fallback={null}>
+        <GeronimoDiscordPresence />
+      </Suspense>
       {/* Interactive Random Chaos Anomaly Protocol Button */}
-      <ChaosAnomalyEngine />
+      <Suspense fallback={null}>
+        <ChaosAnomalyEngine />
+      </Suspense>
       {/* Clean Transmission / Contact Terminal Footer */}
       <DeployHudFooter />
     </div>

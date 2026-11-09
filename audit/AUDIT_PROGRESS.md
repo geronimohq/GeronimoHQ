@@ -21,8 +21,8 @@ Assumption logged: `node_modules/` was not copied (it is re-created exactly by `
 | 1 Security | DONE + committed (`4e28b66`, `570b7e3`, `8dddc8d`, `370779d`). Windows tests all pass. Only owner action left: deploy (OWNER_STEPS A) |
 | 2 Known bugs | DONE: 9/9 handled (8 fixed, #8 already fixed + confirmed). 36/36 new tests pass; 35 of them fail on the old code. See `audit/FINDINGS_PHASE2.md` |
 | 3 Functional | DONE: 5 fixes (dead settings, invented map time, fake ping, GSI port clash, maintenance confirm). 10/10 tests; 21/21 files pass. `audit/FINDINGS_PHASE3_7.md` |
-| 4 Performance | NEXT |
-| 5 Wording/a11y | pending |
+| 4 Performance | DONE: website main JS −34 % gzip (unused 400 kB map catalog + lazy overlays); app idle 0.39 % CPU / 95 MB [TESTED] |
+| 5 Wording/a11y | NEXT |
 | 6 Share-readiness | pending |
 | 7 Build/hand-off | pending |
 
@@ -143,7 +143,7 @@ Pre-check: branch `final-audit`; `dist/CS2_Command_Center.exe` SHA-256 still `AE
 5 fixes, `desktop-app/test_phase3_functional.py` 10/10 [TESTED], every app page opens with 0 Tk errors.
 
 ## Next
-1. Phase 4 (performance): website bundle size, app idle CPU/memory.
+1. Phase 5 (wording + accessibility).
 
 ## Handover Point (session 1):
 - Current Branch: `final-audit`
