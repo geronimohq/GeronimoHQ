@@ -9,7 +9,9 @@ import json
 import time
 import socket
 import struct
+import re
 import urllib.request
+import urllib.parse
 import ssl
 from typing import Dict, Any, List
 
@@ -18,9 +20,8 @@ try:
 except ImportError:
     cffi_requests = None
 
+# AUDIT 1d-W3: keep certificate checks ON (the old code turned them off).
 SSL_CTX = ssl.create_default_context()
-SSL_CTX.check_hostname = False
-SSL_CTX.verify_mode = ssl.CERT_NONE
 
 ZEGRAPH_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -55,7 +56,11 @@ def fetch_gfl_intel(gfl_map: str):
             pass
 
     # 2. Musics
+    # AUDIT 1d-W3: map name comes from a game server reply -> allow-list + URL-encode.
     clean_map = gfl_map.strip() if gfl_map else ""
+    if not re.fullmatch(r"[A-Za-z0-9_.\-]{1,64}", clean_map):
+        clean_map = ""
+    clean_map = urllib.parse.quote(clean_map, safe="")
     if clean_map and clean_map != "-":
         if cffi_requests:
             try:

@@ -25,9 +25,12 @@ export const App: React.FC = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const ipParam = urlParams.get('connect') || urlParams.get('ip') || (window.location.pathname.startsWith('/connect') ? (urlParams.get('server') || '74.91.124.21:27015') : null);
       if (ipParam) {
-        const cleanIp = ipParam.replace(/[^0-9a-zA-Z.:-]/g, '').trim();
-        if (cleanIp) {
-          window.location.href = `steam://connect/${cleanIp}`;
+        const cleanIp = ipParam.replace(/[^0-9a-zA-Z.:-]/g, '').trim().slice(0, 120);
+        if (cleanIp && !window.location.pathname.startsWith('/connect')) {
+          // AUDIT 1d-W1: never launch Steam straight from the home page. Hand off to
+          // /connect/, which validates host:port, only auto-connects to catalog
+          // servers, and asks the visitor to click for anything else.
+          window.location.replace(`/connect/?ip=${encodeURIComponent(cleanIp)}`);
         }
       }
     } catch {}

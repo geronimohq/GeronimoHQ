@@ -994,7 +994,7 @@ export const ServerRadarPreview: React.FC = () => {
                       <a
                         href={server.discord}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="text-[11px] font-code text-[#94A39E] hover:text-[#00F0FF] flex items-center gap-1 transition-colors"
                       >
                         Discord <ExternalLink className="w-3 h-3" />
@@ -1004,7 +1004,7 @@ export const ServerRadarPreview: React.FC = () => {
                       <a
                         href={server.website}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="text-[11px] font-code text-[#94A39E] hover:text-[#FFE135] flex items-center gap-1 transition-colors"
                       >
                         Portal <ExternalLink className="w-3 h-3" />
