@@ -837,7 +837,84 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
     };
   }
 
-  // 4. Heuristic Fallbacks for Untiered Maps (User Workaround)
+  // 4. Legendary Series Prefix Heuristic Inference
+  const getInferredMapper = (c: string): { mapper: string; isHoF: boolean; tier?: MapDifficultyTier; tierLabel?: string; badge?: string; colorClass?: string } | null => {
+    if (c.includes('resident_evil') || c.includes('biohazard')) {
+      return { mapper: 'Kuroki / ViSral', isHoF: true, tier: 4, tierLabel: 'Hardcore', badge: '🔴 T4 Hardcore', colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]' };
+    }
+    if (c.includes('lotr') || c.includes('helms_deep') || c.includes('isengard') || c.includes('minas')) {
+      return { mapper: 'Hannibal [GER]', isHoF: true, tier: 4, tierLabel: 'Hardcore', badge: '🔴 T4 Hardcore', colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]' };
+    }
+    if (c.includes('ffvii') || c.includes('mako') || c.includes('cosmo')) {
+      return { mapper: 'Kaemon', isHoF: true, tier: 5, tierLabel: 'Nightmare', badge: '🔥 T5 Nightmare', colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]' };
+    }
+    if (c.includes('ffxii') || c.includes('westersand') || c.includes('feywood') || c.includes('paramina')) {
+      return { mapper: 'Slayer / Kaemon', isHoF: true, tier: 5, tierLabel: 'Nightmare', badge: '🔥 T5 Nightmare', colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]' };
+    }
+    if (c.includes('fapescape')) {
+      return { mapper: 'Kim', isHoF: true, tier: 6, tierLabel: 'Hell', badge: '⚡ T6 Hell', colorClass: 'bg-fuchsia-950/90 text-fuchsia-300 border-fuchsia-500/70 shadow-[0_0_12px_rgba(217,70,239,0.4)]' };
+    }
+    if (c.includes('frostdrake') || c.includes('santassination') || c.includes('postal')) {
+      return { mapper: 'Luffaren', isHoF: true, tier: 5, tierLabel: 'Nightmare', badge: '🔥 T5 Nightmare', colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]' };
+    }
+    if (c.includes('predator') || c.includes('timeshifter') || c.includes('devil_may_cry')) {
+      return { mapper: 'Airvulpes', isHoF: true, tier: 5, tierLabel: 'Nightmare', badge: '🔥 T5 Nightmare', colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]' };
+    }
+    if (c.includes('shroomforest') || c.includes('mountain_escape')) {
+      return { mapper: 'Moltard', isHoF: true, tier: 4, tierLabel: 'Hardcore', badge: '🔴 T4 Hardcore', colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]' };
+    }
+    if (c.includes('forestbunkers') || c.includes('por_island') || c.includes('overkill')) {
+      return { mapper: 'TaskuVaras / Moltard', isHoF: false, tier: 3, tierLabel: 'Tactical', badge: '🟠 T3 Tactical', colorClass: 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.25)]' };
+    }
+    if (c.includes('only_up') || c.includes('paradise')) {
+      return { mapper: 'Hax / Cyber', isHoF: false, tier: 2, tierLabel: 'Casual', badge: '🟡 T2 Casual', colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]' };
+    }
+    if (c.includes('obj_') || c.includes('crimson_azure')) {
+      return { mapper: 'Clown', isHoF: true, tier: 5, tierLabel: 'Nightmare', badge: '🔥 T5 Nightmare', colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]' };
+    }
+    if (c.includes('winter_warehouse') || c.includes('radio_building') || c.includes('zombierig')) {
+      return { mapper: 'Sween / Waffel', isHoF: true, tier: 3, tierLabel: 'Tactical', badge: '🟠 T3 Tactical', colorClass: 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.25)]' };
+    }
+    if (c.includes('schizo')) {
+      return { mapper: 'Platin / f0cker', isHoF: false, tier: 3, tierLabel: 'Tactical', badge: '🟠 T3 Tactical', colorClass: 'bg-amber-950/90 text-amber-300 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.25)]' };
+    }
+    if (c.includes('rainbow_factory')) {
+      return { mapper: 'Azel / Soft Serve', isHoF: false, tier: 2, tierLabel: 'Casual', badge: '🟡 T2 Casual', colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]' };
+    }
+    if (c.includes('diddle')) {
+      return { mapper: 'Ayano', isHoF: true, tier: 5, tierLabel: 'Nightmare', badge: '🔥 T5 Nightmare', colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]' };
+    }
+    if (c.includes('deadcore')) {
+      return { mapper: 'Airvulpes', isHoF: true, tier: 5, tierLabel: 'Nightmare', badge: '🔥 T5 Nightmare', colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]' };
+    }
+    if (c.includes('atix')) {
+      return { mapper: 'Nipper', isHoF: true, tier: 1, tierLabel: 'Warmup', badge: '🟢 T1 Warmup', colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]' };
+    }
+    if (c.startsWith('zm_') || c.includes('warmup') || c.includes('infection')) {
+      return { mapper: 'Nipper / Dave J.', isHoF: false, tier: 1, tierLabel: 'Warmup', badge: '🟢 T1 Warmup', colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]' };
+    }
+    if (c.includes('surf')) {
+      return { mapper: 'Community Surf', isHoF: false, tier: 2, tierLabel: 'Casual', badge: '🟡 T2 Surf', colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]' };
+    }
+    return null;
+  };
+
+  const inferred = getInferredMapper(clean) || getInferredMapper(stripped);
+  if (inferred) {
+    return {
+      mapKey: clean,
+      displayName: mapName,
+      tier: inferred.tier || 'untiered',
+      tierLabel: inferred.tierLabel || 'Untiered',
+      badge: inferred.badge || '⚪ UNTIERED',
+      colorClass: inferred.colorClass || 'bg-slate-900/90 text-slate-400 border-slate-700',
+      mapper: inferred.mapper,
+      isHallOfFameMapper: inferred.isHoF,
+      isUntiered: false,
+    };
+  }
+
+    // 4. Heuristic Fallbacks for Untiered Maps (User Workaround)
   if (clean.startsWith('zm_') || clean.includes('warmup') || clean.includes('infection')) {
     return {
       mapKey: clean,

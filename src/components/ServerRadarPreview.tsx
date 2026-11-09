@@ -571,36 +571,23 @@ export const ServerRadarPreview: React.FC = () => {
                   {/* Mapper Attribution */}
                   <div className="text-[11px] font-code text-slate-400 flex items-center gap-1.5 bg-slate-950/80 px-2 py-0.5 rounded border border-slate-800">
                     <span>🔨 by:</span>
-                    {gflMapTier.isUntiered ? (
+                    <div className="flex items-center gap-1">
+                      <strong className="text-amber-300 font-semibold">{gflMapTier.mapper}</strong>
+                      {gflMapTier.isHallOfFameMapper && (
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-500/50 font-bold" title="Legendary Mapper (Hall of Fame)">
+                          👑 Hall of Fame
+                        </span>
+                      )}
                       <a
                         href={`https://steamcommunity.com/workshop/browse/?appid=730&searchtext=${encodeURIComponent((gflMap || 'ze_escape').replace(/(_p|_v\d+.*)/, ''))}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-amber-300 hover:text-white underline font-bold flex items-center gap-1 transition-colors"
-                        title={`Find original mapper on Steam Workshop for ${gflMap || 'ze_escape'} ↗`}
+                        className="text-slate-500 hover:text-amber-300 ml-0.5 transition-colors"
+                        title={`Search ${gflMapTier.mapper}'s map on Steam Workshop ↗`}
                       >
-                        <span>Steam Workshop</span>
-                        <ExternalLink className="w-2.5 h-2.5 text-amber-400" />
+                        <ExternalLink className="w-2.5 h-2.5" />
                       </a>
-                    ) : (
-                      <div className="flex items-center gap-1">
-                        <strong className="text-amber-300 font-semibold">{gflMapTier.mapper}</strong>
-                        {gflMapTier.isHallOfFameMapper && (
-                          <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-500/50 font-bold" title="Legendary Mapper (Hall of Fame)">
-                            👑 Hall of Fame
-                          </span>
-                        )}
-                        <a
-                          href={`https://steamcommunity.com/workshop/browse/?appid=730&searchtext=${encodeURIComponent((gflMap || 'ze_escape').replace(/(_p|_v\d+.*)/, ''))}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-slate-500 hover:text-amber-300 ml-0.5 transition-colors"
-                          title={`Search ${gflMapTier.mapper}'s map on Steam Workshop ↗`}
-                        >
-                          <ExternalLink className="w-2.5 h-2.5" />
-                        </a>
-                      </div>
-                    )}
+                    </div>
                   </div>
 
                   <span className="text-cyan-300 font-code text-xs font-bold bg-cyan-950/90 px-2 py-0.5 rounded-md border border-cyan-500/40 flex items-center gap-1 shadow-[0_0_10px_rgba(0,240,255,0.25)]">
@@ -1095,36 +1082,23 @@ export const ServerRadarPreview: React.FC = () => {
                     {/* Dedicated Mapper Attribution Pill */}
                     <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code whitespace-nowrap shadow-sm">
                       <span className="text-slate-400">🔨 by:</span>
-                      {commMapTier.isUntiered ? (
+                      <div className="flex items-center gap-1">
+                        <strong className="text-amber-300 font-bold">{commMapTier.mapper}</strong>
+                        {commMapTier.isHallOfFameMapper && (
+                          <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-500/50 font-bold flex items-center gap-0.5" title="Legendary Mapper (Hall of Fame)">
+                            👑 HoF
+                          </span>
+                        )}
                         <a
                           href={`https://steamcommunity.com/workshop/browse/?appid=730&searchtext=${encodeURIComponent((currentMap || 'ze_escape').replace(/(_p|_v\d+.*)/, ''))}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-amber-300 hover:text-white underline font-bold flex items-center gap-1 transition-colors"
-                          title={`Find original mapper on Steam Workshop for ${currentMap || 'ze_escape'} ↗`}
+                          className="text-slate-500 hover:text-amber-300 ml-0.5 transition-colors"
+                          title={`Search ${commMapTier.mapper}'s map on Steam Workshop ↗`}
                         >
-                          <span>Steam Workshop</span>
-                          <ExternalLink className="w-2.5 h-2.5 text-amber-400" />
+                          <ExternalLink className="w-2.5 h-2.5" />
                         </a>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <strong className="text-amber-300 font-bold">{commMapTier.mapper}</strong>
-                          {commMapTier.isHallOfFameMapper && (
-                            <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-500/50 font-bold flex items-center gap-0.5" title="Legendary Mapper (Hall of Fame)">
-                              👑 HoF
-                            </span>
-                          )}
-                          <a
-                            href={`https://steamcommunity.com/workshop/browse/?appid=730&searchtext=${encodeURIComponent((currentMap || 'ze_escape').replace(/(_p|_v\d+.*)/, ''))}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-slate-500 hover:text-amber-300 ml-0.5 transition-colors"
-                            title={`Search ${commMapTier.mapper}'s map on Steam Workshop ↗`}
-                          >
-                            <ExternalLink className="w-2.5 h-2.5" />
-                          </a>
-                        </div>
-                      )}
+                      </div>
                     </div>
 
                   {/* Player Count */}

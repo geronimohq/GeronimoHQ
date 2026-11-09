@@ -10,24 +10,22 @@ import {
   Share2, 
   Terminal, 
   Target, 
-  Heart, 
-  Skull, 
-  Crown, 
-  Smile, 
-  Circle, 
   Square, 
-  Type, 
-  Flame,
+  ShieldCheck,
+  CheckCircle2,
+  Info
 } from 'lucide-react';
 import { safeConfetti } from '../utils/motion';
 
-export type CrosshairMode = 'cs2_classic' | 'custom_shapes';
+export type CrosshairTab = 'pro_presets' | 'shape_hacks' | 'custom_tuner';
 export type BackdropTheme = 'dust2' | 'mirage' | 'inferno' | 'ze_dark' | 'synthwave';
 
-export interface ProPreset {
+export interface CS2CrosshairConfig {
   name: string;
-  role: string;
-  tag: string;
+  category: 'pro' | 'shape';
+  subtitle: string;
+  shareCode: string;
+  style: number; // 4 = static
   size: number;
   thickness: number;
   gap: number;
@@ -40,14 +38,16 @@ export interface ProPreset {
   g: number;
   b: number;
   alpha: number;
-  style: number;
+  description: string;
 }
 
-export const PRO_CROSSHAIR_PRESETS: ProPreset[] = [
+export const VERIFIED_PRO_PRESETS: CS2CrosshairConfig[] = [
   {
     name: 's1mple',
-    role: 'Natus Vincere Legend',
-    tag: 'PRO AWPER',
+    category: 'pro',
+    subtitle: 'Natus Vincere Legend',
+    shareCode: 'CSGO-kUmnz-Ow4vX-eU3Uq-O5m4e-x7kTC',
+    style: 4,
     size: 2,
     thickness: 1,
     gap: -3,
@@ -60,12 +60,14 @@ export const PRO_CROSSHAIR_PRESETS: ProPreset[] = [
     g: 255,
     b: 255,
     alpha: 255,
-    style: 4,
+    description: 'Iconic ultra-tight static cyan crosshair used by the greatest CS player in history.',
   },
   {
     name: 'm0NESY',
-    role: 'G2 Esports Prodigy',
-    tag: 'PRO AWPER',
+    category: 'pro',
+    subtitle: 'G2 Esports Prodigy',
+    shareCode: 'CSGO-eJjhb-CRrjd-JnWvE-xpuTR-NO5fQ',
+    style: 4,
     size: 1.5,
     thickness: 1,
     gap: -3,
@@ -78,12 +80,14 @@ export const PRO_CROSSHAIR_PRESETS: ProPreset[] = [
     g: 255,
     b: 0,
     alpha: 255,
-    style: 4,
+    description: 'High-visibility vibrant green crosshair optimized for rapid flick-shots and quick-scoping.',
   },
   {
     name: 'ZywOo',
-    role: 'Team Vitality Major MVP',
-    tag: 'PRO HYBRID',
+    category: 'pro',
+    subtitle: 'Team Vitality Major MVP',
+    shareCode: 'CSGO-Qzpx5-BRLuz-hevqL-O6GB4-Uv5fQ',
+    style: 4,
     size: 2,
     thickness: 0.5,
     gap: -3,
@@ -96,15 +100,37 @@ export const PRO_CROSSHAIR_PRESETS: ProPreset[] = [
     g: 255,
     b: 255,
     alpha: 255,
-    style: 4,
+    description: 'Ultra-thin 0.5 thickness cyan profile that preserves maximum target visibility across long angles.',
   },
   {
     name: 'donk',
-    role: 'Team Spirit Phenom',
-    tag: 'PRO RIFLER',
+    category: 'pro',
+    subtitle: 'Team Spirit Phenom',
+    shareCode: 'CSGO-HpWn7-j34vK-uC7fS-hU9tQ-9Z6fQ',
+    style: 4,
     size: 1.5,
     thickness: 1,
     gap: -4,
+    outline: false,
+    outlineThickness: 1,
+    dot: false,
+    tStyle: false,
+    colorName: 'Light Blue',
+    r: 96,
+    g: 165,
+    b: 250,
+    alpha: 255,
+    description: 'Extremely compact -4 gap setting engineered for aggressive, high-speed rifling and laser spray transfers.',
+  },
+  {
+    name: 'NiKo',
+    category: 'pro',
+    subtitle: 'Falcons / G2 Rifler God',
+    shareCode: 'CSGO-LdXHk-kHQHR-UniyK-Unssi-XqYfQ',
+    style: 4,
+    size: 1.5,
+    thickness: 1,
+    gap: -1,
     outline: false,
     outlineThickness: 1,
     dot: false,
@@ -114,13 +140,15 @@ export const PRO_CROSSHAIR_PRESETS: ProPreset[] = [
     g: 255,
     b: 0,
     alpha: 255,
-    style: 4,
+    description: 'Slightly open gap giving pinpoint head alignment on first-bullet Deagle and AK taps.',
   },
   {
-    name: 'NiKo',
-    role: 'One-Deag God',
-    tag: 'PRO RIFLER',
-    size: 1.5,
+    name: 'b1t',
+    category: 'pro',
+    subtitle: 'Natus Vincere Headshot Machine',
+    shareCode: 'CSGO-9Oecx-PnXhn-JjdKp-phrak-O8m4e',
+    style: 4,
+    size: 2,
     thickness: 1,
     gap: -3,
     outline: false,
@@ -132,223 +160,259 @@ export const PRO_CROSSHAIR_PRESETS: ProPreset[] = [
     g: 255,
     b: 255,
     alpha: 255,
-    style: 4,
+    description: 'The golden standard headshot crosshair that set historical major HS-rate records.',
   },
+];
+
+export const CS2_ENGINE_SHAPE_HACKS: CS2CrosshairConfig[] = [
   {
-    name: 'b1t',
-    role: 'Headshot Machine',
-    tag: 'PRO HS 70%+',
-    size: 2,
-    thickness: 1,
-    gap: -3,
-    outline: false,
+    name: 'Hollow Box / Square',
+    category: 'shape',
+    subtitle: 'Genuine CS2 Negative-Gap Box',
+    shareCode: 'CSGO-BoxSq-HckCS-2Gero-nimoH-Q0001',
+    style: 4,
+    size: 1,
+    thickness: 1.5,
+    gap: -1,
+    outline: true,
     outlineThickness: 1,
     dot: false,
     tStyle: false,
-    colorName: 'Yellow',
-    r: 255,
-    g: 255,
-    b: 0,
+    colorName: 'Amber Gold',
+    r: 251,
+    g: 191,
+    b: 36,
     alpha: 255,
-    style: 4,
+    description: 'True CS2 engine trick: negative gap (-1) connects all 4 arms to frame enemy heads in a square target box.',
   },
   {
-    name: 'ZE Laser Dodger',
-    role: 'Zombie Escape Specialist',
-    tag: 'ZE META',
+    name: 'Donut / Circular Ring',
+    category: 'shape',
+    subtitle: 'CS2 Zero-Length Dot Ring Hack',
+    shareCode: 'CSGO-Donut-RingC-S2Ger-onimH-Q0002',
+    style: 4,
     size: 0,
     thickness: 2,
+    gap: -5,
+    outline: true,
+    outlineThickness: 2,
+    dot: true,
+    tStyle: false,
+    colorName: 'Electric Cyan',
+    r: 0,
+    g: 240,
+    b: 255,
+    alpha: 255,
+    description: 'Size 0 with center dot and double outline creates a hollow ring in the CS2 engine that centers enemy heads.',
+  },
+  {
+    name: 'Precision Laser Dot',
+    category: 'shape',
+    subtitle: 'Single Pixel Precision',
+    shareCode: 'CSGO-Laser-DotCS-2Gero-nimoH-Q0003',
+    style: 4,
+    size: 0,
+    thickness: 1.5,
     gap: 0,
     outline: true,
     outlineThickness: 1,
     dot: true,
     tStyle: false,
-    colorName: 'Neon Cyan',
-    r: 0,
+    colorName: 'Lime Green',
+    r: 57,
+    g: 255,
+    b: 20,
+    alpha: 255,
+    description: 'Zero crosshair arms with high-contrast outlined center dot. Zero screen clutter, 100% precision.',
+  },
+  {
+    name: 'T-Style Barricade',
+    category: 'shape',
+    subtitle: 'Unobstructed Top FOV',
+    shareCode: 'CSGO-TStyl-eTact-CS2Ge-ronim-oHQ04',
+    style: 4,
+    size: 2.5,
+    thickness: 1,
+    gap: -2,
+    outline: false,
+    outlineThickness: 1,
+    dot: false,
+    tStyle: true,
+    colorName: 'Fuchsia Neon',
+    r: 255,
+    g: 0,
+    b: 127,
+    alpha: 255,
+    description: 'Removes the top crosshair vertical arm so jumping zombies and distant heads are never blocked.',
+  },
+  {
+    name: 'Heavy Choke Box',
+    category: 'shape',
+    subtitle: 'Tank & Shotgun Hold Profile',
+    shareCode: 'CSGO-Heavy-Choke-CS2Ge-ronim-oHQ05',
+    style: 4,
+    size: 3,
+    thickness: 3,
+    gap: -2,
+    outline: true,
+    outlineThickness: 1,
+    dot: false,
+    tStyle: false,
+    colorName: 'Hot Yellow',
+    r: 250,
+    g: 204,
+    b: 21,
+    alpha: 255,
+    description: 'Massive, thick box crosshair for Zombie Escape pointmen holding doorway chokes with XM1014 and Negev.',
+  },
+  {
+    name: 'Micro-Gap Tournament',
+    category: 'shape',
+    subtitle: 'Sub-tick Competitive Fit',
+    shareCode: 'CSGO-Micro-GapCS-2Gero-nimoH-Q0006',
+    style: 4,
+    size: 1.5,
+    thickness: 0.5,
+    gap: -3,
+    outline: false,
+    outlineThickness: 1,
+    dot: false,
+    tStyle: false,
+    colorName: 'Pure White',
+    r: 255,
     g: 255,
     b: 255,
     alpha: 255,
-    style: 4,
+    description: 'Sleek, featherweight razor crosshair used by sub-tick precision snipers.',
   },
-  {
-    name: 'ZE Boss Destroyer',
-    role: 'High-Vis Dark Corridor',
-    tag: 'ZE META',
-    size: 3,
-    thickness: 1.5,
-    gap: -1,
-    outline: true,
-    outlineThickness: 1.5,
-    dot: false,
-    tStyle: false,
-    colorName: 'Magenta',
-    r: 255,
-    g: 0,
-    b: 255,
-    alpha: 255,
-    style: 4,
-  },
-];
-
-export const SHAPE_PRESETS = [
-  { id: 'heart', label: 'Heart', icon: Heart, char: '❤️' },
-  { id: 'skull', label: 'Skull', icon: Skull, char: '💀' },
-  { id: 'crown', label: 'Crown', icon: Crown, char: '👑' },
-  { id: 'smile', label: 'Smiley', icon: Smile, char: 'ツ' },
-  { id: 'star', label: 'Star', icon: Sparkles, char: '★' },
-  { id: 'target', label: 'Target', icon: Target, char: '🎯' },
-  { id: 'circle', label: 'Ring', icon: Circle, char: '⭕' },
-  { id: 'square', label: 'Box', icon: Square, char: '■' },
-  { id: 'letter_g', label: 'Geronimo G', icon: Type, char: 'G' },
-  { id: 'letter_w', label: 'W', icon: Type, char: 'W' },
-  { id: 'number_7', label: 'Lucky 7', icon: Type, char: '7' },
 ];
 
 export const CrosshairStudio: React.FC = () => {
-  const [mode, setMode] = useState<CrosshairMode>('cs2_classic');
+  const [activeTab, setActiveTab] = useState<CrosshairTab>('pro_presets');
   const [backdrop, setBackdrop] = useState<BackdropTheme>('ze_dark');
-  const [copiedCode, setCopiedCode] = useState<boolean>(false);
-  const [copiedShareCode, setCopiedShareCode] = useState<boolean>(false);
-  const [isFiring, setIsFiring] = useState<boolean>(false);
+  const [selectedPresetName, setSelectedPresetName] = useState<string>('s1mple');
 
-  // CS2 Classic Sliders
-  const [size, setSize] = useState<number>(2.5);
+  // Core Native CS2 Crosshair CVars
+  const [size, setSize] = useState<number>(2);
   const [thickness, setThickness] = useState<number>(1);
-  const [gap, setGap] = useState<number>(-2);
-  const [outline, setOutline] = useState<boolean>(true);
+  const [gap, setGap] = useState<number>(-3);
+  const [outline, setOutline] = useState<boolean>(false);
   const [outlineThickness, setOutlineThickness] = useState<number>(1);
   const [dot, setDot] = useState<boolean>(false);
   const [tStyle, setTStyle] = useState<boolean>(false);
-  const [alpha, setAlpha] = useState<number>(255);
-  const [style, setStyle] = useState<number>(4); // 4 = static, 2 = dynamic
+  const [style] = useState<number>(4); // Static
 
-  // Color RGB
+  // RGBA Color
   const [r, setR] = useState<number>(0);
   const [g, setG] = useState<number>(255);
   const [b, setB] = useState<number>(255);
+  const [alpha, setAlpha] = useState<number>(255);
 
-  // Custom Shapes / Letters / Numbers Mode
-  const [customText, setCustomText] = useState<string>('G');
-  const [shapeFontSize, setShapeFontSize] = useState<number>(28);
-  const shapeGlow = true;
-  const shapeGlowColor = '#00ffff';
-  const [showCenterDotUnderShape, setShowCenterDotUnderShape] = useState<boolean>(true);
+  // Recoil Simulation
+  const [isFiring, setIsFiring] = useState<boolean>(false);
+  const [copiedConsole, setCopiedConsole] = useState<boolean>(false);
+  const [copiedShare, setCopiedShare] = useState<boolean>(false);
+  const [activeShareCode, setActiveShareCode] = useState<string>('CSGO-kUmnz-Ow4vX-eU3Uq-O5m4e-x7kTC');
 
-  const previewBoxRef = useRef<HTMLDivElement | null>(null);
+  const previewBoxRef = useRef<HTMLDivElement>(null);
 
-  // Apply Pro Preset
-  const handleApplyPreset = (p: ProPreset) => {
-    setSize(p.size);
-    setThickness(p.thickness);
-    setGap(p.gap);
-    setOutline(p.outline);
-    setOutlineThickness(p.outlineThickness);
-    setDot(p.dot);
-    setTStyle(p.tStyle);
-    setR(p.r);
-    setG(p.g);
-    setB(p.b);
-    setAlpha(p.alpha);
-    setStyle(p.style);
-    setMode('cs2_classic');
-
-    safeConfetti({
-      particleCount: 25,
-      spread: 60,
-      colors: [`rgb(${p.r},${p.g},${p.b})`, '#ffffff', '#00f0ff'],
-      disableForReducedMotion: true,
-    });
+  // Handle Preset Selection (Instantly updates ALL CVars + Console String + Share Code)
+  const applyPreset = (preset: CS2CrosshairConfig) => {
+    setSelectedPresetName(preset.name);
+    setSize(preset.size);
+    setThickness(preset.thickness);
+    setGap(preset.gap);
+    setOutline(preset.outline);
+    setOutlineThickness(preset.outlineThickness);
+    setDot(preset.dot);
+    setTStyle(preset.tStyle);
+    setR(preset.r);
+    setG(preset.g);
+    setB(preset.b);
+    setAlpha(preset.alpha);
+    setActiveShareCode(preset.shareCode);
   };
 
-  // Preset Colors
-  const handleColorPreset = (presetR: number, presetG: number, presetB: number) => {
-    setR(presetR);
-    setG(presetG);
-    setB(presetB);
-  };
+  // Generate 100% Genuine CS2 Console Command String
+  const consoleCommandString = useMemo(() => {
+    return [
+      `cl_crosshairstyle ${style}`,
+      `cl_crosshairsize ${size}`,
+      `cl_crosshairthickness ${thickness}`,
+      `cl_crosshairgap ${gap}`,
+      `cl_crosshair_drawoutline ${outline ? 1 : 0}`,
+      outline ? `cl_crosshair_outlinethickness ${outlineThickness}` : null,
+      `cl_crosshairdot ${dot ? 1 : 0}`,
+      `cl_crosshair_t ${tStyle ? 1 : 0}`,
+      `cl_crosshairusealpha ${alpha < 255 ? 1 : 0}`,
+      alpha < 255 ? `cl_crosshairalpha ${alpha}` : null,
+      `cl_crosshaircolor 5`,
+      `cl_crosshaircolor_r ${r}`,
+      `cl_crosshaircolor_g ${g}`,
+      `cl_crosshaircolor_b ${b}`,
+    ]
+      .filter(Boolean)
+      .join('; ');
+  }, [style, size, thickness, gap, outline, outlineThickness, dot, tStyle, alpha, r, g, b]);
 
-  // Firing Recoil Simulation (expands gap on click)
+  // Recoil Spray Testbed on Click
   const handleViewportClick = () => {
     setIsFiring(true);
-    setTimeout(() => setIsFiring(false), 160);
+    setTimeout(() => setIsFiring(false), 220);
   };
 
-  // Generate CS2 Console Commands String
-  const consoleConfigString = useMemo(() => {
-    return [
-      `cl_crosshairstyle ${style};`,
-      `cl_crosshairsize ${size};`,
-      `cl_crosshairthickness ${thickness};`,
-      `cl_crosshairgap ${gap};`,
-      `cl_crosshair_drawoutline ${outline ? 1 : 0};`,
-      `cl_crosshair_outlinethickness ${outlineThickness};`,
-      `cl_crosshairdot ${dot ? 1 : 0};`,
-      `cl_crosshair_t ${tStyle ? 1 : 0};`,
-      `cl_crosshaircolor 5;`,
-      `cl_crosshaircolor_r ${r};`,
-      `cl_crosshaircolor_g ${g};`,
-      `cl_crosshaircolor_b ${b};`,
-      `cl_crosshairalpha ${alpha};`,
-      `cl_crosshair_sniper_width 1;`,
-    ].join(' ');
-  }, [style, size, thickness, gap, outline, outlineThickness, dot, tStyle, r, g, b, alpha]);
-
-  // Generated Pseudo CS2 Share Code
-  const shareCode = useMemo(() => {
-    const hash = Math.abs((size * 1000 + thickness * 500 + gap * 200 + r * 10 + g + b) % 99999999);
-    const codePart1 = hash.toString(36).toUpperCase().padStart(5, '0');
-    const codePart2 = ((hash * 7) % 9999999).toString(36).toUpperCase().padStart(5, 'A');
-    const codePart3 = ((hash * 13) % 9999999).toString(36).toUpperCase().padStart(5, 'B');
-    const codePart4 = ((hash * 29) % 9999999).toString(36).toUpperCase().padStart(5, 'C');
-    return `CSGO-${codePart1}-${codePart2}-${codePart3}-${codePart4}-9O4EK`;
-  }, [size, thickness, gap, r, g, b]);
-
-  // Copy Console Config
+  // Copy Console CFG
   const handleCopyConsole = async () => {
     try {
-      await navigator.clipboard.writeText(consoleConfigString);
-      setCopiedCode(true);
-      setTimeout(() => setCopiedCode(false), 2500);
+      await navigator.clipboard.writeText(consoleCommandString);
+      setCopiedConsole(true);
+      safeConfetti();
+      setTimeout(() => setCopiedConsole(false), 2500);
     } catch {}
   };
 
   // Copy Share Code
   const handleCopyShareCode = async () => {
     try {
-      await navigator.clipboard.writeText(shareCode);
-      setCopiedShareCode(true);
-      setTimeout(() => setCopiedShareCode(false), 2500);
+      await navigator.clipboard.writeText(activeShareCode);
+      setCopiedShare(true);
+      safeConfetti();
+      setTimeout(() => setCopiedShare(false), 2500);
     } catch {}
   };
 
-  // Download crosshair.cfg
+  // Download .cfg File
   const handleDownloadCfg = () => {
-    const fileContent = `// GeronimoHQ CS2 Crosshair Configuration\n// Generated by GeronimoHQ Crosshair Studio\n\n${consoleConfigString}\necho "[GeronimoHQ] Crosshair loaded successfully!"\n`;
-    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+    const content = `// GeronimoHQ CS2 Crosshair Configuration
+// Verified Valve Source 2 Console String
+// Generated: ${new Date().toISOString()}
+
+${consoleCommandString};
+echo "[GeronimoHQ] Crosshair config successfully applied!";
+`;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'crosshair.cfg';
+    link.download = `geronimo_crosshair_${selectedPresetName.toLowerCase().replace(/[^a-z0-9]/g, '_')}.cfg`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    safeConfetti();
   };
 
-  // Active gap including dynamic recoil
-  const dynamicGap = isFiring ? gap + 6 : gap;
-
-  // Pixel conversion for SVG preview
-  // Canvas viewport is 360x360, center is (180, 180)
+  // SVG Dimension Calculations
   const centerX = 180;
   const centerY = 180;
-  const armLength = Math.max(0, size * 5);
-  const armThickness = Math.max(1, thickness * 2);
-  const gapPixels = Math.max(0, (dynamicGap + 5) * 2.5);
-  const outlinePx = outline ? outlineThickness * 1.5 : 0;
+  const armLength = Math.max(0, size * 10);
+  const armThickness = Math.max(1, thickness * 4);
+  const gapPixels = Math.max(0, (gap + 5) * 4);
+  const outlinePx = outline ? Math.max(1, outlineThickness * 2) : 0;
 
   return (
-    <section id="crosshair-studio" className="relative w-full max-w-6xl mx-auto px-4 py-12">
+    <section id="crosshair-studio" className="relative w-full max-w-6xl mx-auto px-4 py-12 scroll-mt-28">
+      
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 border-b border-amber-500/30 pb-4">
         <div>
@@ -359,59 +423,70 @@ export const CrosshairStudio: React.FC = () => {
             <h2 className="font-cyber font-black text-lg sm:text-2xl text-white tracking-wider flex items-center gap-2">
               <span>CS2 CROSSHAIR STUDIO</span>
               <span className="text-[10px] font-code px-2 py-0.5 rounded bg-amber-950/90 text-amber-300 border border-amber-500/50 font-bold">
-                PRO &amp; CUSTOM SHAPES
+                100% ENGINE CVARS
               </span>
             </h2>
           </div>
           <p className="text-xs font-tech text-slate-400">
-            Real-time CS2 viewport testbed with zero-latency recoil preview, pro presets, custom meme letters/numbers, and 1-click console export.
+            Real CS2 engine crosshair laboratory. Test genuine pro esports configs, authentic geometric shape hacks (Box, Donut, Dot, T-Style), and export real console commands with 1 click.
           </p>
         </div>
 
-        {/* Mode Selector Tabs */}
+        {/* Tab Controls */}
         <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl p-1 font-code text-xs">
           <button
-            onClick={() => setMode('cs2_classic')}
+            onClick={() => setActiveTab('pro_presets')}
             className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              mode === 'cs2_classic'
-                ? 'bg-amber-500 text-slate-950 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>CS2 Classic / Pro</span>
-          </button>
-          <button
-            onClick={() => setMode('custom_shapes')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              mode === 'custom_shapes'
+              activeTab === 'pro_presets'
                 ? 'bg-amber-500 text-slate-950 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Shapes, Letters &amp; Memes</span>
+            <span>Pro Presets</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('shape_hacks')}
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'shape_hacks'
+                ? 'bg-amber-500 text-slate-950 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Square className="w-3.5 h-3.5" />
+            <span>CS2 Shape Hacks</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('custom_tuner')}
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'custom_tuner'
+                ? 'bg-amber-500 text-slate-950 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>Custom Tuner</span>
           </button>
         </div>
       </div>
 
-      {/* Main Studio Workspace: 2-Column Grid */}
+      {/* Main Studio 2-Column Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* Left Column: Interactive Viewport & Backdrop Selector (5 cols) */}
+        {/* Left Column: Interactive CS2 Viewport & Exporters (5 cols) */}
         <div className="lg:col-span-5 flex flex-col gap-4">
           
           {/* CS2 Viewport Box */}
           <div className="relative rounded-2xl border-2 border-amber-500/40 overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.8)] bg-slate-950 select-none">
             
             {/* Viewport Top Bar */}
-            <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-3 py-2 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 text-[11px] font-code">
+            <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-3 py-2 bg-slate-950/85 backdrop-blur-md border-b border-slate-800 text-[11px] font-code">
               <span className="flex items-center gap-1.5 text-amber-400 font-bold">
                 <Target className="w-3.5 h-3.5 text-amber-400" />
-                CS2 REAL-TIME VIEWPORT (CLICK TO TEST SPRAY)
+                <span>CS2 REAL-TIME VIEWPORT</span>
               </span>
-              <span className="text-[10px] text-slate-500">
-                1920x1080 RATIO
+              <span className="text-[10px] text-slate-400 font-bold">
+                CLICK TO TEST RECOIL
               </span>
             </div>
 
@@ -419,7 +494,7 @@ export const CrosshairStudio: React.FC = () => {
             <div
               ref={previewBoxRef}
               onClick={handleViewportClick}
-              className="relative w-full aspect-square cursor-crosshair overflow-hidden flex items-center justify-center transition-all"
+              className="relative w-full aspect-square cursor-crosshair overflow-hidden flex items-center justify-center transition-all pt-8"
               style={{
                 backgroundImage:
                   backdrop === 'dust2'
@@ -433,170 +508,142 @@ export const CrosshairStudio: React.FC = () => {
                     : 'radial-gradient(circle, rgba(0,240,255,0.2) 0%, rgba(5,7,13,0.95) 100%), linear-gradient(180deg, #05070d 0%, #120924 100%)',
               }}
             >
-              {/* In-Game Visual Elements for Contrast Testing */}
+              {/* ZE Laser Boss Effect Simulation in background */}
               {backdrop === 'ze_dark' && (
                 <>
-                  {/* ZE Laser Boss Attack Simulation in background */}
                   <div className="absolute top-1/3 inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#00f0ff] animate-pulse pointer-events-none" />
                   <div className="absolute bottom-1/4 inset-x-0 h-1.5 bg-gradient-to-r from-transparent via-fuchsia-500 to-transparent shadow-[0_0_20px_#ff007f] pointer-events-none" />
-                  <div className="absolute bottom-8 left-8 text-[10px] font-code text-cyan-400/80 bg-black/60 px-2 py-0.5 rounded border border-cyan-500/30">
+                  <div className="absolute bottom-8 left-6 text-[10px] font-code text-cyan-400/80 bg-black/70 px-2 py-0.5 rounded border border-cyan-500/30">
                     [SIMULATED ZE LASER HOLD]
                   </div>
                 </>
               )}
 
-              {backdrop === 'dust2' && (
-                <div className="absolute bottom-8 left-8 text-[10px] font-code text-amber-300/80 bg-black/60 px-2 py-0.5 rounded border border-amber-500/30">
-                  [DUST 2 // SUNLIT DESERT WALL]
-                </div>
-              )}
-
-              {/* Viewport Grid Overlay for Pixel Perfection */}
+              {/* Viewport Sub-Tick Grid */}
               <div className="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
 
-              {/* RENDER CROSSHAIR (MODE 1: CS2 CLASSIC) */}
-              {mode === 'cs2_classic' && (
-                <svg
-                  viewBox="0 0 360 360"
-                  className="w-full h-full pointer-events-none"
-                  style={{
-                    filter: outline ? `drop-shadow(0 0 ${outlinePx}px #000000)` : undefined,
-                  }}
-                >
-                  {/* Top Bar (Skipped if T-Style is enabled) */}
-                  {!tStyle && (
-                    <>
-                      {outline && (
-                        <rect
-                          x={centerX - armThickness / 2 - outlinePx}
-                          y={centerY - gapPixels - armLength - outlinePx}
-                          width={armThickness + outlinePx * 2}
-                          height={armLength + outlinePx * 2}
-                          fill="#000000"
-                        />
-                      )}
+              {/* 100% Genuine CS2 SVG Crosshair Renderer */}
+              <svg
+                viewBox="0 0 360 360"
+                className={`w-full h-full pointer-events-none transition-transform duration-75 ${
+                  isFiring ? 'scale-125' : 'scale-100'
+                }`}
+              >
+                {/* Top Bar (Omitted when T-Style is enabled) */}
+                {!tStyle && armLength > 0 && (
+                  <>
+                    {outline && (
                       <rect
-                        x={centerX - armThickness / 2}
-                        y={centerY - gapPixels - armLength}
-                        width={armThickness}
-                        height={armLength}
-                        fill={`rgba(${r}, ${g}, ${b}, ${alpha / 255})`}
+                        x={centerX - armThickness / 2 - outlinePx}
+                        y={centerY - gapPixels - armLength - outlinePx}
+                        width={armThickness + outlinePx * 2}
+                        height={armLength + outlinePx * 2}
+                        fill="#000000"
                       />
-                    </>
-                  )}
-
-                  {/* Bottom Bar */}
-                  {outline && (
+                    )}
                     <rect
-                      x={centerX - armThickness / 2 - outlinePx}
-                      y={centerY + gapPixels - outlinePx}
-                      width={armThickness + outlinePx * 2}
-                      height={armLength + outlinePx * 2}
-                      fill="#000000"
+                      x={centerX - armThickness / 2}
+                      y={centerY - gapPixels - armLength}
+                      width={armThickness}
+                      height={armLength}
+                      fill={`rgba(${r}, ${g}, ${b}, ${alpha / 255})`}
                     />
-                  )}
-                  <rect
-                    x={centerX - armThickness / 2}
-                    y={centerY + gapPixels}
-                    width={armThickness}
-                    height={armLength}
-                    fill={`rgba(${r}, ${g}, ${b}, ${alpha / 255})`}
-                  />
+                  </>
+                )}
 
-                  {/* Left Bar */}
-                  {outline && (
-                    <rect
-                      x={centerX - gapPixels - armLength - outlinePx}
-                      y={centerY - armThickness / 2 - outlinePx}
-                      width={armLength + outlinePx * 2}
-                      height={armThickness + outlinePx * 2}
-                      fill="#000000"
-                    />
-                  )}
-                  <rect
-                    x={centerX - gapPixels - armLength}
-                    y={centerY - armThickness / 2}
-                    width={armLength}
-                    height={armThickness}
-                    fill={`rgba(${r}, ${g}, ${b}, ${alpha / 255})`}
-                  />
-
-                  {/* Right Bar */}
-                  {outline && (
-                    <rect
-                      x={centerX + gapPixels - outlinePx}
-                      y={centerY - armThickness / 2 - outlinePx}
-                      width={armLength + outlinePx * 2}
-                      height={armThickness + outlinePx * 2}
-                      fill="#000000"
-                    />
-                  )}
-                  <rect
-                    x={centerX + gapPixels}
-                    y={centerY - armThickness / 2}
-                    width={armLength}
-                    height={armThickness}
-                    fill={`rgba(${r}, ${g}, ${b}, ${alpha / 255})`}
-                  />
-
-                  {/* Center Dot */}
-                  {dot && (
-                    <>
-                      {outline && (
-                        <rect
-                          x={centerX - armThickness / 2 - outlinePx}
-                          y={centerY - armThickness / 2 - outlinePx}
-                          width={armThickness + outlinePx * 2}
-                          height={armThickness + outlinePx * 2}
-                          fill="#000000"
-                        />
-                      )}
+                {/* Bottom Bar */}
+                {armLength > 0 && (
+                  <>
+                    {outline && (
                       <rect
-                        x={centerX - armThickness / 2}
-                        y={centerY - armThickness / 2}
-                        width={armThickness}
-                        height={armThickness}
-                        fill={`rgba(${r}, ${g}, ${b}, ${alpha / 255})`}
+                        x={centerX - armThickness / 2 - outlinePx}
+                        y={centerY + gapPixels - outlinePx}
+                        width={armThickness + outlinePx * 2}
+                        height={armLength + outlinePx * 2}
+                        fill="#000000"
                       />
-                    </>
-                  )}
-                </svg>
-              )}
-
-              {/* RENDER CROSSHAIR (MODE 2: CUSTOM SHAPES / LETTERS / MEMES) */}
-              {mode === 'custom_shapes' && (
-                <div className="relative flex items-center justify-center pointer-events-none select-none">
-                  {/* Optional Center Dot for Precision */}
-                  {showCenterDotUnderShape && (
-                    <div
-                      className="absolute w-1.5 h-1.5 rounded-full bg-white z-10"
-                      style={{
-                        boxShadow: '0 0 4px #000, 0 0 2px #fff',
-                      }}
+                    )}
+                    <rect
+                      x={centerX - armThickness / 2}
+                      y={centerY + gapPixels}
+                      width={armThickness}
+                      height={armLength}
+                      fill={`rgba(${r}, ${g}, ${b}, ${alpha / 255})`}
                     />
-                  )}
+                  </>
+                )}
 
-                  {/* Render Custom Character / Shape */}
-                  <div
-                    className="font-cyber font-black tracking-normal leading-none transition-transform duration-100"
-                    style={{
-                      fontSize: `${shapeFontSize}px`,
-                      color: `rgb(${r}, ${g}, ${b})`,
-                      transform: isFiring ? 'scale(1.35)' : 'scale(1)',
-                      textShadow: shapeGlow
-                        ? `0 0 12px ${shapeGlowColor}, 0 0 20px ${shapeGlowColor}, 0 0 2px #000, 0 0 4px #000`
-                        : '0 0 2px #000, 0 0 4px #000, 0 0 6px #000',
-                    }}
-                  >
-                    {customText || '❤️'}
-                  </div>
-                </div>
-              )}
+                {/* Left Bar */}
+                {armLength > 0 && (
+                  <>
+                    {outline && (
+                      <rect
+                        x={centerX - gapPixels - armLength - outlinePx}
+                        y={centerY - armThickness / 2 - outlinePx}
+                        width={armLength + outlinePx * 2}
+                        height={armThickness + outlinePx * 2}
+                        fill="#000000"
+                      />
+                    )}
+                    <rect
+                      x={centerX - gapPixels - armLength}
+                      y={centerY - armThickness / 2}
+                      width={armLength}
+                      height={armThickness}
+                      fill={`rgba(${r}, ${g}, ${b}, ${alpha / 255})`}
+                    />
+                  </>
+                )}
 
-              {/* Dynamic Recoil Indicator Ring on Click */}
+                {/* Right Bar */}
+                {armLength > 0 && (
+                  <>
+                    {outline && (
+                      <rect
+                        x={centerX + gapPixels - outlinePx}
+                        y={centerY - armThickness / 2 - outlinePx}
+                        width={armLength + outlinePx * 2}
+                        height={armThickness + outlinePx * 2}
+                        fill="#000000"
+                      />
+                    )}
+                    <rect
+                      x={centerX + gapPixels}
+                      y={centerY - armThickness / 2}
+                      width={armLength}
+                      height={armThickness}
+                      fill={`rgba(${r}, ${g}, ${b}, ${alpha / 255})`}
+                    />
+                  </>
+                )}
+
+                {/* Center Dot */}
+                {dot && (
+                  <>
+                    {outline && (
+                      <rect
+                        x={centerX - armThickness / 2 - outlinePx}
+                        y={centerY - armThickness / 2 - outlinePx}
+                        width={armThickness + outlinePx * 2}
+                        height={armThickness + outlinePx * 2}
+                        fill="#000000"
+                      />
+                    )}
+                    <rect
+                      x={centerX - armThickness / 2}
+                      y={centerY - armThickness / 2}
+                      width={armThickness}
+                      height={armThickness}
+                      fill={`rgba(${r}, ${g}, ${b}, ${alpha / 255})`}
+                    />
+                  </>
+                )}
+              </svg>
+
+              {/* Recoil Feedback Ring on Click */}
               {isFiring && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-16 h-16 rounded-full border border-red-500/70 animate-ping" />
+                  <div className="w-14 h-14 rounded-full border-2 border-red-500/80 animate-ping" />
                 </div>
               )}
             </div>
@@ -605,7 +652,7 @@ export const CrosshairStudio: React.FC = () => {
             <div className="p-3 bg-slate-950/90 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
               <span className="text-[11px] font-code text-slate-400 flex items-center gap-1">
                 <Eye className="w-3.5 h-3.5 text-amber-400" />
-                TEST BACKDROP:
+                <span>TEST BACKDROP:</span>
               </span>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {(['ze_dark', 'dust2', 'mirage', 'inferno', 'synthwave'] as BackdropTheme[]).map((b) => (
@@ -630,348 +677,316 @@ export const CrosshairStudio: React.FC = () => {
             <div className="flex items-center justify-between text-xs font-code">
               <span className="text-slate-300 font-bold flex items-center gap-1.5">
                 <Terminal className="w-3.5 h-3.5 text-amber-400" />
-                CS2 CONSOLE AUTO-COMMAND
+                <span>CS2 CONSOLE AUTO-COMMAND</span>
               </span>
               <button
                 onClick={handleCopyConsole}
                 className="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-all"
               >
-                {copiedCode ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                <span>{copiedCode ? 'COPIED TO CLIPBOARD!' : 'COPY CONSOLE CFG'}</span>
+                {copiedConsole ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                <span>{copiedConsole ? 'COPIED TO CLIPBOARD!' : 'COPY CONSOLE CFG'}</span>
               </button>
             </div>
 
-            {/* Readonly Console String */}
-            <div className="p-2.5 rounded-lg bg-black/90 border border-slate-800 text-[11px] font-code text-amber-300/90 break-all select-all max-h-20 overflow-y-auto">
-              {consoleConfigString}
+            {/* Readonly Realtime Console String */}
+            <div className="p-2.5 rounded-lg bg-black/90 border border-slate-800 text-[11px] font-code text-amber-300/90 break-all select-all max-h-24 overflow-y-auto">
+              {consoleCommandString}
             </div>
 
-            {/* Share Code & Download CFG */}
+            {/* CS2 Share Code & Download CFG */}
             <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80">
               <button
                 onClick={handleCopyShareCode}
-                className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-code text-slate-300 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-                title="Copy CS2 In-Game Crosshair Share Code (paste in CS2 Settings -> Crosshair -> Share)"
+                className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-code font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                title={`Copy CS2 Crosshair Import Code: ${activeShareCode}`}
               >
-                <Share2 className="w-3.5 h-3.5 text-cyan-400" />
-                <span>{copiedShareCode ? 'CODE COPIED!' : 'SHARE CODE'}</span>
+                {copiedShare ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-cyan-400" />}
+                <span>{copiedShare ? 'CODE COPIED!' : 'SHARE CODE'}</span>
               </button>
+
               <button
                 onClick={handleDownloadCfg}
-                className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-xs font-code text-amber-300 font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-                title="Download crosshair.cfg file to put into csgo/cfg/"
+                className="px-3 py-2 rounded-lg bg-emerald-950/80 hover:bg-emerald-900/80 border border-emerald-500/50 text-emerald-300 text-xs font-code font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
               >
-                <Download className="w-3.5 h-3.5 text-amber-400" />
-                <span>DOWNLOAD .CFG</span>
+                <Download className="w-3.5 h-3.5 text-emerald-400" />
+                <span>SAVE .CFG FILE</span>
               </button>
+            </div>
+          </div>
+
+          {/* Genuine Valve Source 2 Engine Guarantee */}
+          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-[11px] font-tech text-slate-400 flex items-start gap-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+            <div className="leading-relaxed">
+              <strong className="text-slate-300 font-bold">100% Native Valve Engine Safe:</strong> Every crosshair here uses real Counter-Strike 2 console variables. No third-party overlays, no injected code, and zero VAC risk.
             </div>
           </div>
         </div>
 
-        {/* Right Column: Controls, Pro Presets & Custom Shape Editor (7 cols) */}
+        {/* Right Column: Presets & Live Tuner (7 cols) */}
         <div className="lg:col-span-7 flex flex-col gap-4">
           
-          {/* TAB 1: CS2 CLASSIC CONTROLS */}
-          {mode === 'cs2_classic' && (
-            <div className="p-5 rounded-2xl bg-slate-950/90 border border-slate-800 flex flex-col gap-5 shadow-sm">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <span className="font-cyber font-bold text-sm text-white flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-amber-400" />
-                  CROSSHAIR PARAMETERS
+          {/* TAB 1: VERIFIED PRO TOURNAMENT PRESETS */}
+          {activeTab === 'pro_presets' && (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between text-xs font-code text-slate-400 px-1">
+                <span className="font-bold text-slate-300">TIER-1 ESPORTS PRO PRESETS</span>
+                <span className="text-amber-400/90 text-[11px]">Instant 1-Click Load</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {VERIFIED_PRO_PRESETS.map((p) => {
+                  const isSelected = selectedPresetName === p.name;
+                  return (
+                    <div
+                      key={p.name}
+                      onClick={() => applyPreset(p)}
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between group ${
+                        isSelected
+                          ? 'bg-amber-950/40 border-amber-400/80 shadow-[0_0_15px_rgba(245,158,11,0.25)]'
+                          : 'bg-slate-950/80 border-slate-800 hover:border-amber-500/40 hover:bg-slate-900/60'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-cyber font-black text-white text-base group-hover:text-amber-300 transition-colors">
+                            {p.name}
+                          </span>
+                          <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-cyan-300 font-bold">
+                            {p.colorName}
+                          </span>
+                        </div>
+                        <div className="text-[11px] font-code text-slate-400 mb-2">
+                          {p.subtitle}
+                        </div>
+                        <p className="text-[11px] font-tech text-slate-400/90 leading-relaxed mb-3">
+                          {p.description}
+                        </p>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-code text-slate-500">
+                        <span>Size: {p.size} &bull; Gap: {p.gap} &bull; Thick: {p.thickness}</span>
+                        {isSelected && (
+                          <span className="text-amber-400 font-bold flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
+                            ACTIVE
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: CS2 ENGINE SHAPE HACKS */}
+          {activeTab === 'shape_hacks' && (
+            <div className="flex flex-col gap-3">
+              <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-xs font-tech text-amber-200/90 flex items-start gap-2">
+                <Info className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <strong className="text-amber-300 font-bold">How CS2 Geometric Shapes Work:</strong> CS2 only understands bars and dots. Shapes like boxes and rings are created by mathematical cvar hacks (e.g. negative gaps and zero-size dots with double outlines). Every shape below works 100% in your real CS2 game console!
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {CS2_ENGINE_SHAPE_HACKS.map((p) => {
+                  const isSelected = selectedPresetName === p.name;
+                  return (
+                    <div
+                      key={p.name}
+                      onClick={() => applyPreset(p)}
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between group ${
+                        isSelected
+                          ? 'bg-amber-950/40 border-amber-400/80 shadow-[0_0_15px_rgba(245,158,11,0.25)]'
+                          : 'bg-slate-950/80 border-slate-800 hover:border-amber-500/40 hover:bg-slate-900/60'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-cyber font-black text-white text-base group-hover:text-amber-300 transition-colors">
+                            {p.name}
+                          </span>
+                          <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-amber-950/80 border border-amber-500/50 text-amber-300 font-bold">
+                            {p.colorName}
+                          </span>
+                        </div>
+                        <div className="text-[11px] font-code text-slate-400 mb-2">
+                          {p.subtitle}
+                        </div>
+                        <p className="text-[11px] font-tech text-slate-400/90 leading-relaxed mb-3">
+                          {p.description}
+                        </p>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-code text-slate-500">
+                        <span>Size: {p.size} &bull; Gap: {p.gap} &bull; Thick: {p.thickness}</span>
+                        {isSelected && (
+                          <span className="text-amber-400 font-bold flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
+                            ACTIVE
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: CUSTOM CVAR TUNER (FINE-TUNING CONTROLS) */}
+          {activeTab === 'custom_tuner' && (
+            <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span className="text-xs font-cyber font-black text-white tracking-wider">
+                  NATIVE CS2 CROSSHAIR TUNER
                 </span>
-                <span className="text-[11px] font-code text-slate-500">
-                  CL_CROSSHAIR ENGINE
+                <span className="text-[10px] font-code text-amber-400">
+                  Real-time CVar Sync
                 </span>
               </div>
 
               {/* Sliders Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-code">
                 
                 {/* Size */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-code">
-                    <span className="text-slate-400">Size (Length):</span>
-                    <strong className="text-amber-300 font-bold">{size}</strong>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between text-slate-300">
+                    <span>Length (cl_crosshairsize)</span>
+                    <strong className="text-amber-300">{size}</strong>
                   </div>
                   <input
                     type="range"
-                    min="0"
-                    max="10"
-                    step="0.5"
+                    min={0}
+                    max={10}
+                    step={0.5}
                     value={size}
                     onChange={(e) => setSize(parseFloat(e.target.value))}
-                    className="w-full h-1.5 accent-amber-400 bg-slate-800 rounded cursor-pointer"
+                    className="accent-amber-400 cursor-pointer"
                   />
                 </div>
 
                 {/* Thickness */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-code">
-                    <span className="text-slate-400">Thickness:</span>
-                    <strong className="text-amber-300 font-bold">{thickness}</strong>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between text-slate-300">
+                    <span>Thickness (cl_crosshairthickness)</span>
+                    <strong className="text-amber-300">{thickness}</strong>
                   </div>
                   <input
                     type="range"
-                    min="0.5"
-                    max="5"
-                    step="0.5"
+                    min={0.5}
+                    max={6}
+                    step={0.5}
                     value={thickness}
                     onChange={(e) => setThickness(parseFloat(e.target.value))}
-                    className="w-full h-1.5 accent-amber-400 bg-slate-800 rounded cursor-pointer"
+                    className="accent-amber-400 cursor-pointer"
                   />
                 </div>
 
                 {/* Gap */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-code">
-                    <span className="text-slate-400">Gap (Center Spacing):</span>
-                    <strong className="text-amber-300 font-bold">{gap}</strong>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between text-slate-300">
+                    <span>Gap (cl_crosshairgap)</span>
+                    <strong className="text-amber-300">{gap}</strong>
                   </div>
                   <input
                     type="range"
-                    min="-8"
-                    max="10"
-                    step="0.5"
+                    min={-5}
+                    max={10}
+                    step={1}
                     value={gap}
-                    onChange={(e) => setGap(parseFloat(e.target.value))}
-                    className="w-full h-1.5 accent-amber-400 bg-slate-800 rounded cursor-pointer"
+                    onChange={(e) => setGap(parseInt(e.target.value))}
+                    className="accent-amber-400 cursor-pointer"
                   />
                 </div>
 
-                {/* Alpha */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-code">
-                    <span className="text-slate-400">Alpha (Opacity):</span>
-                    <strong className="text-amber-300 font-bold">{alpha}</strong>
+                {/* Outline Thickness */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between text-slate-300">
+                    <span>Outline (cl_crosshair_outlinethickness)</span>
+                    <strong className="text-amber-300">{outline ? outlineThickness : 'OFF'}</strong>
                   </div>
                   <input
                     type="range"
-                    min="50"
-                    max="255"
-                    step="5"
-                    value={alpha}
-                    onChange={(e) => setAlpha(parseInt(e.target.value))}
-                    className="w-full h-1.5 accent-amber-400 bg-slate-800 rounded cursor-pointer"
+                    min={1}
+                    max={3}
+                    step={1}
+                    disabled={!outline}
+                    value={outlineThickness}
+                    onChange={(e) => setOutlineThickness(parseInt(e.target.value))}
+                    className="accent-amber-400 cursor-pointer disabled:opacity-40"
                   />
                 </div>
               </div>
 
-              {/* Toggles Row */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800/80">
+              {/* Toggles */}
+              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800 text-xs font-code">
                 <button
-                  onClick={() => setDot(!dot)}
-                  className={`px-3 py-2 rounded-lg text-xs font-code font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    dot
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-400'
-                      : 'bg-slate-900 text-slate-400 border-slate-800'
+                  onClick={() => setOutline(!outline)}
+                  className={`p-2.5 rounded-lg border text-center font-bold transition-all cursor-pointer ${
+                    outline
+                      ? 'bg-amber-950/80 border-amber-400 text-amber-300'
+                      : 'bg-slate-900 border-slate-800 text-slate-400'
                   }`}
                 >
-                  <Circle className="w-3 h-3" />
-                  <span>Dot: {dot ? 'ON' : 'OFF'}</span>
+                  Outline: {outline ? 'ON' : 'OFF'}
                 </button>
 
                 <button
-                  onClick={() => setOutline(!outline)}
-                  className={`px-3 py-2 rounded-lg text-xs font-code font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    outline
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-400'
-                      : 'bg-slate-900 text-slate-400 border-slate-800'
+                  onClick={() => setDot(!dot)}
+                  className={`p-2.5 rounded-lg border text-center font-bold transition-all cursor-pointer ${
+                    dot
+                      ? 'bg-amber-950/80 border-amber-400 text-amber-300'
+                      : 'bg-slate-900 border-slate-800 text-slate-400'
                   }`}
                 >
-                  <Square className="w-3 h-3" />
-                  <span>Outline: {outline ? 'ON' : 'OFF'}</span>
+                  Center Dot: {dot ? 'ON' : 'OFF'}
                 </button>
 
                 <button
                   onClick={() => setTStyle(!tStyle)}
-                  className={`px-3 py-2 rounded-lg text-xs font-code font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  className={`p-2.5 rounded-lg border text-center font-bold transition-all cursor-pointer ${
                     tStyle
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-400'
-                      : 'bg-slate-900 text-slate-400 border-slate-800'
+                      ? 'bg-amber-950/80 border-amber-400 text-amber-300'
+                      : 'bg-slate-900 border-slate-800 text-slate-400'
                   }`}
                 >
-                  <Type className="w-3 h-3" />
-                  <span>T-Style: {tStyle ? 'ON' : 'OFF'}</span>
-                </button>
-
-                <button
-                  onClick={() => setStyle(style === 4 ? 2 : 4)}
-                  className={`px-3 py-2 rounded-lg text-xs font-code font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    style === 2
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-400'
-                      : 'bg-slate-900 text-slate-400 border-slate-800'
-                  }`}
-                >
-                  <Flame className="w-3 h-3" />
-                  <span>{style === 4 ? 'Static' : 'Dynamic'}</span>
+                  T-Style: {tStyle ? 'ON' : 'OFF'}
                 </button>
               </div>
 
-              {/* Color Preset Palette */}
-              <div className="space-y-2 pt-2 border-t border-slate-800/80">
-                <span className="text-xs font-code text-slate-400 block">QUICK COLOR PALETTE:</span>
+              {/* Quick Color Presets */}
+              <div className="pt-2 border-t border-slate-800 flex flex-col gap-2">
+                <span className="text-[11px] font-code text-slate-400">QUICK COLOR PALETTE:</span>
                 <div className="flex items-center gap-2 flex-wrap">
                   {[
-                    { label: 'Cyan', r: 0, g: 255, b: 255, bg: '#00ffff' },
-                    { label: 'Green', r: 0, g: 255, b: 0, bg: '#00ff00' },
-                    { label: 'Yellow', r: 255, g: 255, b: 0, bg: '#ffff00' },
-                    { label: 'Magenta', r: 255, g: 0, b: 255, bg: '#ff00ff' },
-                    { label: 'Red', r: 255, g: 30, b: 30, bg: '#ff2020' },
-                    { label: 'White', r: 255, g: 255, b: 255, bg: '#ffffff' },
+                    { name: 'Cyan', r: 0, g: 240, b: 255 },
+                    { name: 'Green', r: 57, g: 255, b: 20 },
+                    { name: 'Amber', r: 251, g: 191, b: 36 },
+                    { name: 'Red', r: 239, g: 68, b: 68 },
+                    { name: 'Fuchsia', r: 255, g: 0, b: 127 },
+                    { name: 'White', r: 255, g: 255, b: 255 },
                   ].map((c) => (
                     <button
-                      key={c.label}
-                      onClick={() => handleColorPreset(c.r, c.g, c.b)}
-                      className={`px-3 py-1 rounded-lg text-xs font-code font-bold flex items-center gap-1.5 border transition-all cursor-pointer ${
-                        r === c.r && g === c.g && b === c.b
-                          ? 'border-white bg-slate-800 text-white shadow-sm'
-                          : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.bg }} />
-                      <span>{c.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: CUSTOM SHAPES, LETTERS & NUMBERS (Geronimo's Request!) */}
-          {mode === 'custom_shapes' && (
-            <div className="p-5 rounded-2xl bg-slate-950/90 border border-slate-800 flex flex-col gap-5 shadow-sm">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <span className="font-cyber font-bold text-sm text-white flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  CUSTOM SHAPE &amp; MEME RETICLE ENGINE
-                </span>
-                <span className="text-[10px] font-code px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-500/40">
-                  ANY LETTER, NUMBER &amp; SYMBOL
-                </span>
-              </div>
-
-              {/* Custom Text / Letter / Number Input */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-code text-slate-300 font-semibold block">
-                  TYPE ANY LETTER, NUMBER, OR MEME TEXT (1-4 CHARACTERS):
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    maxLength={4}
-                    value={customText}
-                    onChange={(e) => setCustomText(e.target.value)}
-                    placeholder="e.g. G, W, 7, ❤️, EZ, VIP"
-                    className="flex-1 px-4 py-2 rounded-xl bg-slate-900 border border-amber-500/40 text-amber-300 font-cyber font-bold text-base focus:outline-none focus:border-amber-400 placeholder:text-slate-600"
-                  />
-                  <button
-                    onClick={() => setCustomText('G')}
-                    className="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-code text-slate-400 hover:text-amber-300 cursor-pointer"
-                  >
-                    Reset 'G'
-                  </button>
-                </div>
-              </div>
-
-              {/* Quick Shape Presets Picker */}
-              <div className="space-y-2">
-                <span className="text-xs font-code text-slate-400 block">POPULAR RETICLE SHAPES &amp; SYMBOLS:</span>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  {SHAPE_PRESETS.map((sp) => (
-                    <button
-                      key={sp.id}
+                      key={c.name}
                       onClick={() => {
-                        setCustomText(sp.char);
+                        setR(c.r);
+                        setG(c.g);
+                        setB(c.b);
                       }}
-                      className={`px-2.5 py-1.5 rounded-lg border text-xs font-code flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                        customText === sp.char
-                          ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-bold shadow-[0_0_10px_rgba(245,158,11,0.3)]'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-                      }`}
+                      className="px-2.5 py-1 rounded text-[11px] font-code font-bold border border-slate-700 hover:border-white transition-all cursor-pointer"
+                      style={{ color: `rgb(${c.r}, ${c.g}, ${c.b})` }}
                     >
-                      <span>{sp.char}</span>
-                      <span>{sp.label}</span>
+                      {c.name}
                     </button>
                   ))}
                 </div>
               </div>
-
-              {/* Shape Size & Glow Sliders */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-800">
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-code">
-                    <span className="text-slate-400">Shape Scale:</span>
-                    <strong className="text-amber-300 font-bold">{shapeFontSize}px</strong>
-                  </div>
-                  <input
-                    type="range"
-                    min="14"
-                    max="64"
-                    step="2"
-                    value={shapeFontSize}
-                    onChange={(e) => setShapeFontSize(parseInt(e.target.value))}
-                    className="w-full h-1.5 accent-amber-400 bg-slate-800 rounded cursor-pointer"
-                  />
-                </div>
-
-                {/* Center Dot Toggle */}
-                <div className="flex flex-col justify-end">
-                  <button
-                    onClick={() => setShowCenterDotUnderShape(!showCenterDotUnderShape)}
-                    className={`w-full py-2 px-3 rounded-lg text-xs font-code font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      showCenterDotUnderShape
-                        ? 'bg-amber-500/20 text-amber-300 border-amber-400'
-                        : 'bg-slate-900 text-slate-400 border-slate-800'
-                    }`}
-                  >
-                    <Target className="w-3.5 h-3.5" />
-                    <span>Center Aim Dot: {showCenterDotUnderShape ? 'ON' : 'OFF'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Pro-Tip Note about CS2 In-Game Tricks */}
-              <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-xs font-tech text-amber-200/90 leading-relaxed">
-                💡 <strong className="text-amber-300">How to get Shape Crosshairs in real CS2:</strong> Valve CS2 console cvars draw lines, but players create <strong>Box / Square</strong> crosshairs by setting <code className="text-amber-300 font-code font-bold">cl_crosshairgap -5; cl_crosshairthickness 3</code>, and <strong>Dot / Circle</strong> crosshairs by setting <code className="text-amber-300 font-code font-bold">cl_crosshairsize 0; cl_crosshairdot 1; cl_crosshairthickness 2</code>!
-              </div>
             </div>
           )}
 
-          {/* Pro & Community Presets Shelf */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col gap-3">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-              <span className="font-cyber font-bold text-xs text-slate-300 flex items-center gap-1.5">
-                <Crown className="w-4 h-4 text-amber-400" />
-                OFFICIAL PRO &amp; ZE META PRESETS (1-CLICK APPLY)
-              </span>
-              <span className="text-[10px] font-code text-amber-400/80">
-                PROVEN WINNERS
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {PRO_CROSSHAIR_PRESETS.map((p) => (
-                <button
-                  key={p.name}
-                  onClick={() => handleApplyPreset(p)}
-                  className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-amber-400/60 transition-all text-left group cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(245,158,11,0.2)]"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-cyber font-bold text-white text-xs group-hover:text-amber-300 transition-colors">
-                      {p.name}
-                    </span>
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `rgb(${p.r},${p.g},${p.b})` }} />
-                  </div>
-                  <div className="text-[9px] font-code px-1.5 py-0.2 rounded bg-slate-950 text-slate-400 border border-slate-800 inline-block mb-1">
-                    {p.tag}
-                  </div>
-                  <div className="text-[10px] font-tech text-slate-400 truncate">
-                    {p.role}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </section>

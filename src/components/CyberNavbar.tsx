@@ -81,7 +81,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           : 'bg-[#060810]/85 border-cyan-500/20'
       }`}
     >
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
+      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
         
         {/* Brand & Terminal Identifier */}
         <a
@@ -128,7 +128,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
         </a>
 
         {/* Center Nav Anchors */}
-        <nav className="hidden lg:flex items-center gap-3.5 text-xs font-cyber tracking-wider text-slate-300">
+        <nav className="hidden lg:flex items-center gap-2 xl:gap-3 text-[11px] xl:text-xs font-cyber tracking-wider text-slate-300 pl-14 xl:pl-0">
           <a
             href="#hero-stage"
             onClick={(e) => handleNavClick(e, 'hero-stage')}
@@ -140,7 +140,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           <a
             href="#download-ram"
             onClick={(e) => handleNavClick(e, 'download-ram')}
-            className="px-2.5 py-1 rounded-lg bg-lime-950/80 border border-lime-400/60 text-lime-300 hover:bg-lime-900/80 shadow-[0_0_12px_rgba(57,255,20,0.3)] transition-all flex items-center gap-1.5 font-bold"
+            className="px-2 py-0.5 rounded-lg bg-lime-950/80 border border-lime-400/60 text-lime-300 hover:bg-lime-900/80 shadow-[0_0_12px_rgba(57,255,20,0.3)] transition-all flex items-center gap-1 font-bold"
           >
             <Cpu className="w-3.5 h-3.5 text-lime-400 animate-pulse" />
             DOWNLOAD RAM
