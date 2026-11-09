@@ -11,16 +11,16 @@
     "border_hover": "#364B60",
     "text_primary": "#E6EDF3",
     "text_muted": "#A3B3C0",
-    "primary_banana": "#E48716",
-    "text_on_banana": "#0A0E12",
-    "success_pepe": "#E48716",
+    "primary_banana": "#43A857",
+    "text_on_banana": "#04120A",
+    "success_pepe": "#43A857",
     "alert_magenta": "#F26D6D",
     "telemetry_cyan": "#38BDF8",
-    "focus_ring": "#E48716",
-    "primary": "#E48716",
-    "primary_hover": "#F09527",
-    "primary_pressed": "#C5720E",
-    "text_on_primary": "#0A0E12",
+    "focus_ring": "#43A857",
+    "primary": "#43A857",
+    "primary_hover": "#52BC67",
+    "primary_pressed": "#368F49",
+    "text_on_primary": "#04120A",
     "info": "#38BDF8",
     "success": "#4ADE80",
     "danger": "#F26D6D"
@@ -45,7 +45,7 @@
       "weight": "bold",
       "transform": "uppercase",
       "letter_spacing": "0.05em",
-      "color": "#E48716",
+      "color": "#43A857",
       "line_height": 1.35
     },
     "tier_3": {
@@ -78,7 +78,7 @@
       "weight": "bold",
       "transform": "uppercase",
       "letter_spacing": "0.05em",
-      "color": "#E48716",
+      "color": "#43A857",
       "line_height": 1.2
     }
   },

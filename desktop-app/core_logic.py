@@ -111,7 +111,8 @@ def find_cs2_paths() -> Dict[str, Optional[str]]:
         "steam_path": steam_path,
         "cs2_dir": None,
         "cs2_exe": None,
-        "cfg_dir": None
+        "cfg_dir": None,
+        "autoexec_cfg": None
     }
     
     library_folders = []
@@ -144,6 +145,17 @@ def find_cs2_paths() -> Dict[str, Optional[str]]:
             cfg_path = os.path.join(potential_cs2, "game", "csgo", "cfg")
             if os.path.exists(cfg_path):
                 result["cfg_dir"] = cfg_path
+                auto_file = os.path.join(cfg_path, "autoexec.cfg")
+                if os.path.exists(auto_file):
+                    result["autoexec_cfg"] = auto_file
+                else:
+                    try:
+                        for f_name in os.listdir(cfg_path):
+                            if f_name.lower() == "autoexec.cfg":
+                                result["autoexec_cfg"] = os.path.join(cfg_path, f_name)
+                                break
+                    except Exception:
+                        pass
             break
 
     return result
