@@ -154,6 +154,9 @@ export const App: React.FC = () => {
         gridColor={theme === 'banana' ? '#FACC15' : '#27AE60'}
       />
 
+      {/* AUDIT P5: keyboard users can jump past the navbar */}
+      <a href="#main-content" className="skip-link">Skip to content</a>
+
       {/* Interactive Roaming Pepe / Banana Character */}
       <Suspense fallback={null}>
         <RoamingMemeGremlin theme={theme} enabled={gremlinEnabled} />
@@ -174,7 +177,7 @@ export const App: React.FC = () => {
       )}
 
       {/* Main Content Area */}
-      <main className="relative z-10 flex-grow flex flex-col items-center">
+      <main id="main-content" tabIndex={-1} className="relative z-10 flex-grow flex flex-col items-center outline-none">
         
         {/* ASYMMETRIC BENTO-GRID COMMAND HEADER */}
         <div id="hero-stage" className="w-full max-w-6xl mx-auto pt-6 pb-2 px-4 scroll-mt-32">
@@ -269,7 +272,7 @@ export const App: React.FC = () => {
               </div>
 
               <div className="mt-3 pt-2.5 border-t border-[#1E2E26] flex items-center justify-between text-[11px] font-code text-[#94A39E]">
-                <span>FREQ: 128-TICK SUB-SYNC</span>
+                <span>TICK: 64 + SUB-TICK</span>
                 <span className={`${theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"} font-bold`}>STATUS: OPTIMAL</span>
               </div>
             </div>

@@ -48,7 +48,7 @@ engine_low_latency_sleep_after_client_tick true  // Synchronizes engine ticks to
 snd_mixahead "0.025"                        // Low audio buffer (0.025s) reduces sound delay & spikes
 snd_headphone_eq "0"                        // Disables headphone EQ DSP for lowest CPU overhead
 snd_spatialize_lerp "1"
-rate "1000000"                              // 1 Mbps max bandwidth
+rate "1000000"                              // max bytes/s (about 8 Mbps; CS2 may cap it lower)
 cl_net_buffer_ticks "0"                     // Minimum interpolation delay (fastest packet processing)
 cl_allow_animated_avatars "0"               // Disables animated Steam avatars (fixes scoreboard FPS drop)
 r_player_visibility_mode "1"                // Enhances enemy contrast

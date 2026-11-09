@@ -505,3 +505,25 @@
   }
 }
 
+
+/* AUDIT P5 (accessibility): visible keyboard focus everywhere, and a skip link. */
+:focus-visible {
+  outline: 2px solid #E48716;
+  outline-offset: 2px;
+}
+.skip-link {
+  position: fixed;
+  left: 12px;
+  top: -60px;
+  z-index: 100;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #070B09;
+  color: #ffffff;
+  border: 2px solid #E48716;
+  font-weight: 700;
+  transition: top 0.15s;
+}
+.skip-link:focus {
+  top: 12px;
+}

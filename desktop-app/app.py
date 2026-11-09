@@ -1074,7 +1074,7 @@ class CS2TruePanoramaApp(tk.Tk):
         self.sidebar.pack(side="left", fill="y")
         self.sidebar.pack_propagate(False)
 
-        tk.Label(self.sidebar, text="NAVIGATION", font=("Segoe UI", 10, "bold"), fg="#4b5563", bg=BG_SIDEBAR, padx=16, pady=10).pack(anchor="w")
+        tk.Label(self.sidebar, text="NAVIGATION", font=("Segoe UI", 10, "bold"), fg=FG_MUTED, bg=BG_SIDEBAR, padx=16, pady=10).pack(anchor="w")
 
         # RIGHT CONTENT AREA
         self.main_content = tk.Frame(body, bg=BG_WINDOW, padx=16, pady=12)
@@ -1101,7 +1101,7 @@ class CS2TruePanoramaApp(tk.Tk):
                            tooltip="Dedicated GPU Multi-Plane Overlay (MPO) troubleshooter: May help resolve Alt-Tab black screens, driver timeouts, and display stutter.")
 
         self._add_nav_item("AUTOEXEC", "📝", "Autoexec & Binds", self._build_page_autoexec,
-                           tooltip="Inject sub-tick network rates, competitive audio clarity, and autoexec performance binds.")
+                           tooltip="Adds the app's marked performance block (fps_max, network rate, audio buffer, HUD graphs) and ZE binds to autoexec.cfg.")
         self._add_nav_item("LAUNCH", "🚀", "Launch Options", self._build_page_launch,
                            tooltip="Optimal CS2 launch options tuned specifically for your CPU architecture and thread topology.")
         self._add_nav_item("BOOST", "⚡", "Live Booster & DNS", self._build_page_boost,
@@ -1183,9 +1183,9 @@ class CS2TruePanoramaApp(tk.Tk):
 
         head = tk.Frame(console_box, bg=BG_WINDOW)
         head.pack(fill="x", pady=(0, 2))
-        tk.Label(head, text="SYSTEM ACTIVITY LOGS", font=("Segoe UI", 14, "bold"), fg="#64748b", bg=BG_WINDOW).pack(side="left")
+        tk.Label(head, text="SYSTEM ACTIVITY LOGS", font=("Segoe UI", 14, "bold"), fg=FG_MUTED, bg=BG_WINDOW).pack(side="left")
 
-        tk.Button(head, text="Clear", font=("Segoe UI", 9), fg="#64748b", bg=BG_WINDOW,
+        tk.Button(head, text="Clear", font=("Segoe UI", 9), fg=FG_MUTED, bg=BG_WINDOW,
                   relief="flat", cursor="hand2", command=self.clear_logs).pack(side="right")
 
         self.console = tk.Text(console_box, height=4, bg=BG_CONSOLE, fg=ACCENT_CYAN,
@@ -1653,7 +1653,7 @@ class CS2TruePanoramaApp(tk.Tk):
         hero_left.pack(side="left", fill="both", expand=True)
 
         tk.Label(hero_left, text="TACTICAL PERFORMANCE ENGINE", font=("Segoe UI", 13, "bold"), fg=ACCENT_CYAN, bg="#11171D").pack(anchor="w")
-        tk.Label(hero_left, text="One-click tunes CS2 sub-tick rates, low-latency sleep, CPU power profile, and competitive audio binds.", font=("Segoe UI", 11), fg="#cbd5e1", bg="#11171D").pack(anchor="w", pady=(2, 6))
+        tk.Label(hero_left, text="One click: autoexec performance block, Windows power plan, Game DVR and fullscreen settings.", font=("Segoe UI", 11), fg="#cbd5e1", bg="#11171D").pack(anchor="w", pady=(2, 6))
 
         pills = tk.Frame(hero_left, bg="#11171D")
         pills.pack(anchor="w")
@@ -1824,7 +1824,7 @@ class CS2TruePanoramaApp(tk.Tk):
             text=(
                 "These tools are NOT meant to magically inflate maximum FPS beyond your CPU/GPU hardware limits. "
                 "Instead, they eliminate OS bottlenecks to maximize Frame-Time Consistency (1% Lows), prevent micro-stutters "
-                "during 64-player Zombie Escape / smoke utility, fix Display/Alt-Tab freezes (MPO), optimize sub-tick & DNS "
+                "during 64-player Zombie Escape / smoke utility, fix Display/Alt-Tab freezes (MPO), change network rate settings & DNS "
                 "network responsiveness, and maintain peak SSD/OS health with 100% system safety."
             ),
             font=("Segoe UI", 9), fg="#cbd5e1", bg="#101826", justify="left", anchor="w", wraplength=760
@@ -2062,10 +2062,10 @@ class CS2TruePanoramaApp(tk.Tk):
         btn_bar = tk.Frame(content, bg=BG_CARD)
         btn_bar.pack(anchor="w", fill="x", pady=(0, 4))
 
-        b_apply_cfg = tk.Button(btn_bar, text="📥 1. Apply Engine & Sub-Tick Autoexec Tweaks", font=("Segoe UI", 10, "bold"), fg="#ffffff", bg=ACCENT_GREEN,
+        b_apply_cfg = tk.Button(btn_bar, text="📥 1. Apply Engine Autoexec Tweaks", font=("Segoe UI", 10, "bold"), fg="#ffffff", bg=ACCENT_GREEN,
                   relief="flat", padx=12, pady=4, cursor="hand2", command=self.install_autoexec)
         b_apply_cfg.pack(side="left", padx=(0, 8))
-        add_tooltip(b_apply_cfg, "Appends core Source 2 engine FPS, sub-tick network rates, and low-latency audio buffer tweaks.")
+        add_tooltip(b_apply_cfg, "Adds or replaces the app's marked performance block in autoexec.cfg (fps_max, rate, cl_net_buffer_ticks, audio buffer, HUD graphs). Your other lines are kept.")
 
         b_rev_cfg = tk.Button(btn_bar, text="⏪ Revert Autoexec to Original", font=("Segoe UI", 10), fg="#cbd5e1", bg="#242b3b",
                   relief="flat", padx=12, pady=4, cursor="hand2", command=self.restore_autoexec)
@@ -2613,7 +2613,7 @@ class CS2TruePanoramaApp(tk.Tk):
             )
             use_btn.pack(side="right", padx=(6, 0))
 
-            res_lbl = tk.Label(rframe, text="Click row to select", font=("Consolas", 10, "bold"), fg="#64748b", bg=rframe["bg"], cursor="hand2")
+            res_lbl = tk.Label(rframe, text="Click row to select", font=("Consolas", 10, "bold"), fg=FG_MUTED, bg=rframe["bg"], cursor="hand2")
             res_lbl.pack(side="right", padx=4)
 
             for clickable in (rframe, ip_lbl, desc_lbl, res_lbl):
@@ -3139,7 +3139,7 @@ class CS2TruePanoramaApp(tk.Tk):
             thumb_frame.pack(side="left", padx=(0, 6))
             thumb_frame.pack_propagate(False)
 
-            thumb_lbl = tk.Label(thumb_frame, text="MAP", font=("Segoe UI", 6, "bold"), fg="#4b5563", bg="#0d1117", cursor="hand2")
+            thumb_lbl = tk.Label(thumb_frame, text="MAP", font=("Segoe UI", 6, "bold"), fg=FG_MUTED, bg="#0d1117", cursor="hand2")
             thumb_lbl.pack(fill="both", expand=True)
             thumb_lbl.bind("<Button-1>", lambda e, sid=sid: self.open_3d_map(self.server_query_cache.get(sid, {}).get("map", "")))
             add_tooltip(thumb_lbl, "Click to inspect active map in 3D (maps.cybo.dev)!")
@@ -4025,7 +4025,7 @@ class CS2TruePanoramaApp(tk.Tk):
             self.os_diag_wrap_labels.append((lbl_st, 50))
 
             # 2. Live System / Registry Inspection
-            tk.Label(status_box, text="LIVE SYSTEM / REGISTRY INSPECTION:", font=("Segoe UI", -12, "bold"), fg="#64748b", bg="#11141c", anchor="w").pack(anchor="w", pady=(8, 2))
+            tk.Label(status_box, text="LIVE SYSTEM / REGISTRY INSPECTION:", font=("Segoe UI", -12, "bold"), fg=FG_MUTED, bg="#11141c", anchor="w").pack(anchor="w", pady=(8, 2))
             lbl_insp = tk.Label(status_box, text=inspection_detail, font=("Segoe UI", 10), fg="#94a3b8", bg="#11141c", justify="left", anchor="w")
             lbl_insp.pack(anchor="w", pady=(1, 0), fill="x", expand=True)
             self.os_diag_wrap_labels.append((lbl_insp, 50))
@@ -4286,7 +4286,7 @@ class CS2TruePanoramaApp(tk.Tk):
         tk.Label(click_box, text="ℹ️ Why does clicking the card open CS2 Game Overview?", font=("Segoe UI", -14, "bold"), fg="#94a3b8", bg=BG_CARD_ROW).pack(anchor="w")
         tk.Label(click_box,
                  text="In Discord's desktop app, clicking any game activity card natively navigates to Discord's official CS2 Overview hub. Discord does not allow custom URLs on text lines.",
-                 font=("Segoe UI", 9), fg="#64748b", bg=BG_CARD_ROW, justify="left", wraplength=280, anchor="w").pack(anchor="w", fill="x")
+                 font=("Segoe UI", 9), fg=FG_MUTED, bg=BG_CARD_ROW, justify="left", wraplength=280, anchor="w").pack(anchor="w", fill="x")
 
         # Column Right: Live Discord Profile Preview
         col_right = tk.Frame(top_grid, bg="#1e1f22", padx=12, pady=10, highlightbackground="#2b2d31", highlightthickness=1)
@@ -4535,7 +4535,7 @@ class CS2TruePanoramaApp(tk.Tk):
             "📝", "AUTOEXEC & COMPETITIVE BINDS", "CONFIG & BINDS", ACCENT_ORANGE,
             [
                 ("What competitive settings are installed into autoexec.cfg?",
-                 "It configures optimal sub-tick network rates (rate 1000000, cl_interp 0.015625) for responsive hit registration, enables competitive audio clarity (crisp footstep frequencies), binds Jumpthrow (synchronized +jump and -attack), quick drop C4, and binds movement keys to instantly clear ragdolls and bullet impacts to remove visual clutter."),
+                 "It writes one marked block to autoexec.cfg: fps_max 0, engine_low_latency_sleep_after_client_tick, snd_mixahead 0.025, rate 1000000 (bytes per second; CS2 may cap it), cl_net_buffer_ticks 0, animated avatars off, and the frame-time / ping / packet-loss HUD graphs. It does not add jumpthrow, C4-drop or other gameplay binds."),
                 ("Why is snd_mixahead set to 0.025 instead of the default 0.05?",
                  "The default Source 2 audio buffer (0.05) creates 50ms of audio latency between gunshots/footsteps and your speakers. Setting snd_mixahead to 0.025 cuts audio processing latency in half (25ms), allowing you to hear enemy footsteps, zombie screams, and grenade bounces a full frame earlier."),
                 ("Will applying autoexec overwrite my custom bindings or crosshair?",

@@ -32,12 +32,12 @@ export const ServerGeoDemographics: React.FC<ServerGeoDemographicsProps> = ({
 
   if (totalPlayers <= 0) {
     return (
-      <div className={`rounded-xl border border-slate-800 bg-slate-950/75 p-3 font-code text-xs text-slate-500 flex items-center justify-between shadow-sm ${compact ? 'w-full' : 'w-full sm:w-[330px]'}`}>
+      <div className={`rounded-xl border border-slate-800 bg-slate-950/75 p-3 font-code text-xs text-slate-400 flex items-center justify-between shadow-sm ${compact ? 'w-full' : 'w-full sm:w-[330px]'}`}>
         <div className="flex items-center gap-2">
-          <Globe className="w-4 h-4 text-slate-600" />
+          <Globe className="w-4 h-4 text-slate-400" />
           <span className="font-bold tracking-wider">GEO RADAR</span>
         </div>
-        <span className="text-[11px] text-slate-600 font-semibold">IDLE (0 PLAYERS)</span>
+        <span className="text-[11px] text-slate-400 font-semibold">IDLE (0 PLAYERS)</span>
       </div>
     );
   }

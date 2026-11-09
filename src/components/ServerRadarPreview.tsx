@@ -414,7 +414,7 @@ export const ServerRadarPreview: React.FC = () => {
               LIVE RADAR
             </span>
             <span className="text-xs font-code text-slate-400">
-              COMMUNITY SERVERS // 128 TICK
+              COMMUNITY SERVERS // 64 TICK + SUB-TICK
             </span>
           </div>
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider">
@@ -435,7 +435,7 @@ export const ServerRadarPreview: React.FC = () => {
               <Users className="w-3.5 h-3.5 text-emerald-400" />
               <span>
                 <strong className="text-emerald-300">{liveTotals.humans}</strong> PLAYERS IN-GAME
-                {liveTotals.bots_unknown_servers > 0 && <span className="text-slate-500"> (bots unknown)</span>}
+                {liveTotals.bots_unknown_servers > 0 && <span className="text-slate-400"> (bots unknown)</span>}
               </span>
             </div>
           )}
@@ -445,7 +445,7 @@ export const ServerRadarPreview: React.FC = () => {
             <span>
               <strong className="text-lime-300">{liveTotals ? liveTotals.online_servers : '–'}</strong> / {liveTotals ? liveTotals.total_servers : '–'} SERVERS ONLINE
               {liveTotals?.isSnapshot && (
-                <span className="text-slate-500"> · as of {Math.round(liveTotals.ageSeconds / 60)} min ago</span>
+                <span className="text-slate-400"> · as of {Math.round(liveTotals.ageSeconds / 60)} min ago</span>
               )}
             </span>
           </div>
@@ -526,7 +526,7 @@ export const ServerRadarPreview: React.FC = () => {
               GLOBAL SERVER
             </span>
             <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold">
-              128 TICK
+              64 TICK
             </span>
           </div>
 
@@ -586,7 +586,7 @@ export const ServerRadarPreview: React.FC = () => {
                         href={`https://steamcommunity.com/workshop/browse/?appid=730&searchtext=${encodeURIComponent((gflMap || 'ze_escape').replace(/(_p|_v\d+.*)/, ''))}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-slate-500 hover:text-amber-300 ml-0.5 transition-colors"
+                        className="text-slate-400 hover:text-amber-300 ml-0.5 transition-colors"
                         title={`Search ${gflMapTier.mapper}'s map on Steam Workshop ↗`}
                       >
                         <ExternalLink className="w-2.5 h-2.5" />
@@ -642,7 +642,7 @@ export const ServerRadarPreview: React.FC = () => {
                 <span className="text-emerald-400 font-bold flex items-center gap-1">
                   🛡️ Humans: {telemetry?.gfl_match_now ? telemetry.gfl_match_now.human_score : 0}
                 </span>
-                <span className="text-slate-500">vs</span>
+                <span className="text-slate-400">vs</span>
                 <span className="text-rose-400 font-bold flex items-center gap-1">
                   🧟 Zombies: {telemetry?.gfl_match_now ? telemetry.gfl_match_now.zombie_score : 0}
                 </span>
@@ -1268,7 +1268,7 @@ export const ServerRadarPreview: React.FC = () => {
               <table className="w-full min-w-[480px] text-left text-xs font-code">
                 <thead className="bg-slate-900 border-b border-slate-800 text-slate-400 sticky top-0">
                   <tr>
-                    <th className="py-2.5 px-3 w-12 text-center text-slate-500">#</th>
+                    <th className="py-2.5 px-3 w-12 text-center text-slate-400">#</th>
                     <th 
                       onClick={() => handlePlayerSort('name')}
                       className="py-2.5 px-3 cursor-pointer hover:text-cyan-300 transition-colors select-none group"
@@ -1279,7 +1279,7 @@ export const ServerRadarPreview: React.FC = () => {
                         {playerSortField === 'name' ? (
                           playerSortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-cyan-400" /> : <ChevronDown className="w-3.5 h-3.5 text-cyan-400" />
                         ) : (
-                          <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                          <ArrowUpDown className="w-3 h-3 text-slate-400 group-hover:text-slate-400 transition-colors" />
                         )}
                       </div>
                     </th>
@@ -1293,7 +1293,7 @@ export const ServerRadarPreview: React.FC = () => {
                         {playerSortField === 'score' ? (
                           playerSortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-emerald-400" /> : <ChevronDown className="w-3.5 h-3.5 text-emerald-400" />
                         ) : (
-                          <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                          <ArrowUpDown className="w-3 h-3 text-slate-400 group-hover:text-slate-400 transition-colors" />
                         )}
                       </div>
                     </th>
@@ -1307,7 +1307,7 @@ export const ServerRadarPreview: React.FC = () => {
                         {playerSortField === 'duration' ? (
                           playerSortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-cyan-400" /> : <ChevronDown className="w-3.5 h-3.5 text-cyan-400" />
                         ) : (
-                          <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                          <ArrowUpDown className="w-3 h-3 text-slate-400 group-hover:text-slate-400 transition-colors" />
                         )}
                       </div>
                     </th>
@@ -1317,7 +1317,7 @@ export const ServerRadarPreview: React.FC = () => {
                   {activePlayersList.length > 0 ? (
                     activePlayersList.map((player, idx) => (
                       <tr key={idx} className="hover:bg-cyan-950/20 transition-colors">
-                        <td className="py-2 px-3 text-center text-slate-500">
+                        <td className="py-2 px-3 text-center text-slate-400">
                           {idx === 0 ? <Trophy className="w-3.5 h-3.5 text-amber-400 inline" /> : idx + 1}
                         </td>
                         <td className="py-2 px-3 font-semibold text-white">
@@ -1327,14 +1327,14 @@ export const ServerRadarPreview: React.FC = () => {
                           {player.score.toLocaleString()}
                         </td>
                         <td className="py-2 px-3 text-center text-slate-400 flex items-center justify-center gap-1">
-                          <Clock className="w-3 h-3 text-slate-500" />
+                          <Clock className="w-3 h-3 text-slate-400" />
                           <span>{player.time}</span>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4} className="py-8 text-center text-slate-500">
+                      <td colSpan={4} className="py-8 text-center text-slate-400">
                         {modalSearch ? `No players match "${modalSearch}"` : 'No active player data currently available.'}
                       </td>
                     </tr>
@@ -1410,7 +1410,7 @@ export const ServerRadarPreview: React.FC = () => {
                             {song.name}
                           </div>
                           <div className="flex items-center gap-2 text-[11px] font-tech text-slate-400 mt-0.5">
-                            <Clock className="w-3 h-3 text-slate-500" />
+                            <Clock className="w-3 h-3 text-slate-400" />
                             <span>{formatMapElapsed(Math.floor(song.duration || 0))}</span>
                           </div>
                         </div>
@@ -1427,7 +1427,7 @@ export const ServerRadarPreview: React.FC = () => {
                           <span>YouTube ↗</span>
                         </a>
                       ) : (
-                        <span className="text-[11px] font-tech text-slate-600">No stream link</span>
+                        <span className="text-[11px] font-tech text-slate-400">No stream link</span>
                       )}
                     </div>
                   );

@@ -43,7 +43,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
         'snd_mixahead "0.025"                        // Low audio buffer (0.025s) reduces sound delay & spikes',
         'snd_headphone_eq "0"                        // Disables headphone EQ DSP for lowest CPU overhead',
         'snd_spatialize_lerp "1"',
-        'rate "1000000"                              // 1 Mbps max bandwidth',
+        'rate "1000000"                              // max bytes/s (about 8 Mbps; CS2 may cap it lower)',
         'cl_net_buffer_ticks "0"                     // Minimum interpolation delay (fastest packet processing)',
         'cl_allow_animated_avatars "0"               // Disables animated Steam avatars (fixes scoreboard FPS drop)',
         'r_player_visibility_mode "1"                // Enhances enemy contrast',
@@ -292,7 +292,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
               <span>CS2 AUTOEXEC &amp; ZE LASER BINDS STUDIO</span>
             </h2>
             <p className="text-sm font-tech text-slate-300 mt-1 max-w-3xl">
-              Customize your Zombie Escape Laser-Jump Viewmodel, Boss Audio Ducking keybind, First-Person Tracer clutter reducer, and Sub-Tick network rates right in your browser, then download a ready-to-use <code className="text-cyan-300">autoexec.cfg</code> in 1 click.
+              Customize your Zombie Escape Laser-Jump Viewmodel, Boss Audio Ducking keybind, First-Person Tracer clutter reducer, and network rate settings right in your browser, then download a ready-to-use <code className="text-cyan-300">autoexec.cfg</code> in 1 click.
             </p>
           </div>
 
@@ -352,10 +352,10 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
               <span>1. ZOMBIE ESCAPE VISUAL &amp; AUDIO PRESETS</span>
             </div>
 
-            {/* In-App Engine & Sub-Tick Performance Tweaks */}
+            {/* In-App Engine Performance Tweaks */}
             <div className="p-3 rounded-xl bg-slate-950/80 border border-cyan-500/30">
               <label 
-                title="Applies CS2 FPS Optimizer engine & sub-tick tweaks: engine_low_latency_sleep, snd_mixahead 0.025, 1 Mbps bandwidth, and animated avatar fix."
+                title="Adds the same performance block as the desktop app: engine_low_latency_sleep, snd_mixahead 0.025, rate 1000000 (bytes/s), and animated avatars off."
                 className="flex items-start gap-2.5 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input
@@ -367,10 +367,10 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                 <div>
                   <span className="font-bold text-white flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                    CS2 FPS Optimizer Engine &amp; Sub-Tick Performance Tweaks
+                    CS2 FPS Optimizer Engine Performance Tweaks
                   </span>
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    Low-latency tick sleep (<code className="text-cyan-300">engine_low_latency_sleep_after_client_tick true</code>), 0.025s sound buffer, 1 Mbps bandwidth, and animated avatar fix.
+                    Low-latency tick sleep (<code className="text-cyan-300">engine_low_latency_sleep_after_client_tick true</code>), 0.025 s sound buffer, rate 1000000 (bytes/s, about 8 Mbps), and animated avatars off.
                   </p>
                 </div>
               </label>

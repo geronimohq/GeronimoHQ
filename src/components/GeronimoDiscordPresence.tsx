@@ -505,7 +505,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
                 <Users className="w-3 h-3 text-[#23a55a]" />
                 <strong className="text-white font-semibold">{playerDisplay}</strong>
               </span>
-              <span className="text-slate-600">&bull;</span>
+              <span className="text-slate-400">&bull;</span>
               <span className="text-cyan-400 font-code font-bold flex items-center gap-0.5 bg-cyan-950/70 px-1.5 py-0.2 rounded border border-cyan-500/30">
                 <Clock className="w-2.5 h-2.5 text-cyan-400 animate-pulse" />
                 {formatMapElapsed(mapDuration)}

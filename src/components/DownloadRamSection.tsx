@@ -899,7 +899,7 @@ export const DownloadRamSection: React.FC = () => {
             <Sparkles className="w-3.5 h-3.5 text-lime-400" />
             <span>MEME GENERATOR // BROWSER-ONLY SIMULATION (DOWNLOADS 0 REAL BYTES)</span>
           </span>
-          <span className="text-slate-500">GERONIMOHQ.COM // DISCORD BIO VERIFIED</span>
+          <span className="text-slate-400">GERONIMOHQ.COM // DISCORD BIO VERIFIED</span>
         </div>
       </div>
     </section>

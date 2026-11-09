@@ -66,10 +66,10 @@ export const CS2CommandCenterPreview: React.FC = () => {
       shortTag: 'CONFIG & HUD ENGINE',
       badge: 'MANUAL EDIT + REAL-TIME PREVIEW',
       icon: <Sliders className="w-5 h-5 text-fuchsia-400" />,
-      summary: 'Comprehensive autoexec studio: (1) Core Engine & Sub-Tick Tweaks, (2) ZE Visual & Audio Binds, and (3) Manual In-App CFG Editor with direct save capabilities.',
+      summary: 'Comprehensive autoexec studio: (1) Core Engine Tweaks, (2) ZE Visual & Audio Binds, and (3) Manual In-App CFG Editor with direct save capabilities.',
       details: [
         'NEW: In-App Manual CFG Editor — Safe read-only mode by default; toggling manual edit unlocks full in-app editing with a direct "Save CFG" button.',
-        'Block 1 — Engine & Sub-Tick Tweaks: Appends [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS] (fps_max 0, rate 1000000, low-latency sleep) without touching personal binds.',
+        'Block 1 — Engine Tweaks: Appends [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS] (fps_max 0, rate 1000000, low-latency sleep) without touching personal binds.',
         'Block 2 — ZE Visual & Audio Binds: Appends [CS2 COMMAND CENTER - ZE VISUAL & AUDIO CUSTOMIZER] independently.',
         'Real-Time Live Preview: Automatically refreshes and scrolls to the bottom of autoexec.cfg with timestamp banner & confirmation.',
         'ZE Laser-Jump Low Viewmodel (FOV 68, X:+2, Y:+2, Z:-2) & First-Person Bullet Tracer Clutter Reducer (r_drawtracers_firstperson 0).',
@@ -89,17 +89,14 @@ export const CS2CommandCenterPreview: React.FC = () => {
       shortTag: 'SOURCE 2 OPTIMIZER',
       badge: 'FPS STABILIZER',
       icon: <Cpu className="w-5 h-5 text-cyan-400" />,
-      summary: 'Elevates Counter-Strike 2 to High Priority scheduling and optimizes CPU core affinity to prevent frame-time micro-stutters during 64-player combat.',
+      summary: 'Raises cs2.exe to High process priority while it runs, so background apps get CPU time after the game.',
       details: [
         'Elevates cs2.exe OS scheduling priority above background Discord/Chrome processes.',
-        'Binds game render threads to physical high-performance P-Cores on Intel Hybrid & AMD 3D-V-Cache CPUs.',
-        'Direct3D 11 vs Vulkan backend selector for optimal GPU pipeline performance.',
-        'Network interpolation buffer tuning (cl_interp 0 / sub-tick packet smoothing).'
+        'Changes nothing inside the game process: only its Windows priority (reverts when CS2 closes).'
       ],
       parameters: [
         { name: 'Process Priority', value: 'HIGH_PRIORITY_CLASS', desc: 'Direct Windows thread scheduling elevation' },
-        { name: 'Core Affinity Mask', value: '0x0000FFFF (Physical Cores)', desc: 'Avoids scheduling latency on efficiency E-Cores' },
-        { name: 'Sub-Tick Interp', value: '0.015625s buffer', desc: 'Optimal packet tick alignment' }
+        { name: 'Undo', value: 'Close CS2', desc: 'Priority is not saved; it resets on the next launch' }
       ],
       proTip: 'Particularly effective on 64-player Zombie Escape servers where heavy grenade smoke, particle effects, and laser barricades drop 1% low FPS.',
       noMemoryAccess: true
@@ -197,7 +194,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
       shortTag: 'ENGINE LAUNCHER',
       badge: 'PRESET GENERATOR',
       icon: <Terminal className="w-5 h-5 text-blue-400" />,
-      summary: 'Preconfigured launch command presets designed specifically for Counter-Strike 2 sub-tick performance and competitive latency.',
+      summary: 'Launch option presets for Counter-Strike 2 that you can review and copy into Steam.',
       details: [
         'Skips the Valve splash video intro (-novid) for faster game launches.',
         'Disables controller joystick polling (-nojoy) to free input thread cycles.',
@@ -284,7 +281,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           </span>
 
           <div id="exe-sha256-badge" className="flex items-center gap-1.5 text-[10px] font-code text-slate-400 mt-0.5 scroll-mt-28">
-            <span className="text-slate-500">SHA-256:</span>
+            <span className="text-slate-400">SHA-256:</span>
             <code className="text-cyan-300 select-all font-mono">{exeSha256.slice(0, 8).toLowerCase()}...{exeSha256.slice(-8).toLowerCase()}</code>
             <button
               onClick={() => {
@@ -355,7 +352,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
                   </div>
 
                   <ChevronRight className={`w-4 h-4 transition-transform flex-shrink-0 ${
-                    isActive ? 'text-fuchsia-400 translate-x-1' : 'text-slate-600'
+                    isActive ? 'text-fuchsia-400 translate-x-1' : 'text-slate-400'
                   }`} />
                 </button>
               );
@@ -494,7 +491,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
                 <span>1. Click <strong className="text-cyan-300">&ldquo;More info&rdquo;</strong></span>
                 <span>&rarr;</span>
                 <span>2. Click <strong className="text-emerald-400">&ldquo;Run anyway&rdquo;</strong></span>
-                <span className="text-slate-500 hidden lg:inline">|</span>
+                <span className="text-slate-400 hidden lg:inline">|</span>
                 <span className="text-[9px] text-slate-400 hidden lg:inline">(or right-click .exe &rarr; Properties &rarr; &ldquo;Unblock&rdquo;)</span>
               </div>
             </div>
