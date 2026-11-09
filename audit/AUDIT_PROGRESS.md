@@ -18,7 +18,7 @@ Assumption logged: `node_modules/` was not copied (it is re-created exactly by `
 | Phase | Status |
 |---|---|
 | 0 Recon | DONE |
-| 1 Security | IN PROGRESS |
+| 1 Security | IN PROGRESS (1a done, 1b done in backend/api.py; 1c desktop & 1d website next) |
 | 2 Known bugs | next |
 | 3 Functional | pending |
 | 4 Performance | pending |
@@ -26,10 +26,29 @@ Assumption logged: `node_modules/` was not copied (it is re-created exactly by `
 | 6 Share-readiness | pending |
 | 7 Build/hand-off | pending |
 
-## Findings so far (details in AUDIT_REPORT.md when finished)
-- CRITICAL: `/api/presence/heartbeat` accepts unauthenticated GET/POST; every app install sends a tokenless heartbeat every 8 s and on exit → any user can overwrite the owner's presence card. [CODE REVIEW ONLY]
-- HIGH: backend CORS `allow_origins=["*"]` with `allow_credentials=True`. [CODE REVIEW ONLY]
-- MEDIUM: backend disables TLS verification for zegraph calls (`SSL_CTX.verify_mode = CERT_NONE`). [CODE REVIEW ONLY]
-- LOW: `scripts/__pycache__/*.pyc` committed; one third-party SteamID (a player name) in history commit `f3f2fa0` inside `public/data/live_servers.json`.
-- INFO: `desktop-app/` is the source of truth for the exe [TESTED: audit/evidence_source_truth.txt — 177/178 sampled constants found].
-- INFO: secret scan of history / tree / dist / exe — no tokens, webhooks or keys; exe hits are Python-stdlib false positives [TESTED: audit/evidence_secret_scan.txt].
+## Work Completed in this Session:
+1. **Rule A (Safety & Snapshot):**
+   - Full backup created at `backups/final-audit-2026-11-10/` (347 MB).
+   - Full git history bundled in `backups/final-audit-2026-11-10/repo-full-history.bundle`.
+   - Branch created: `final-audit`.
+2. **Phase 0 (Recon & Source Truth):**
+   - Verified that `desktop-app/` is the true source of truth for the built exe (`audit/evidence_source_truth.txt` — 177/178 sampled constants match).
+   - Removed accidentally committed `.pyc` from git cache.
+3. **Phase 1a (Secret & Hygiene Scan):**
+   - Scanned all commits, working tree, built `dist/`, and exe decompressed zlib strings for secrets.
+   - Zero leaked credentials/tokens found (`audit/evidence_secret_scan.txt`).
+4. **Phase 1b (Backend Security Hardening in `backend/api.py`):**
+   - Replaced wildcard CORS with strict `ALLOWED_ORIGINS` (`https://geronimohq.com`, `https://www.geronimohq.com`, `localhost`).
+   - Implemented real client IP extraction behind trusted proxy hops (`get_client_ip`).
+   - Added in-memory sliding window rate-limiting on all routes.
+   - Enforced request payload size limits (`MAX_REQUEST_BYTES = 2048`).
+   - Disabled Swagger/OpenAPI docs by default unless `ENABLE_API_DOCS=1`.
+   - Added security response headers: `nosniff`, `DENY` frames, `no-referrer`, `no-store`, `HSTS`.
+   - Fixed presence heartbeat: requires `X-Geronimo-Token` with `hmac.compare_digest`, fails closed (503) if `GERONIMO_PRESENCE_TOKEN` is unset.
+   - Fixed Steam profile failure handling: returns `state: "unknown"` instead of fake `offline`.
+   - Tuned ThreadPoolExecutor from 24 to 16 workers with a concurrency lock to prevent thundering herd.
+   - Added bot count tracking to A2S parser so human player count is isolated.
+
+## Handover Point for Next Agent (e.g. Claude):
+- Current Branch: `final-audit`
+- Next Task: Phase 1c (Desktop app security checks: command injection, Map Cleaner path traversal, GSI 127.0.0.1, tokenless install safeguard in `app.py`), then Phase 1d (Website security), then Phase 2 (Known bugs).
