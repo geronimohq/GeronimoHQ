@@ -154,6 +154,42 @@ class P3_D12_MaintenanceAsksFirst(AppBase):
             v.set(s)
 
 
+class P4_NoTclCallsFromWorkerThreads(AppBase):
+    """AUDIT P4: a new thread that calls into Tcl leaks one Windows handle (measured).
+    safe_after()/after()/log() from a worker thread must not touch Tcl at all."""
+    def test_worker_thread_makes_no_tcl_calls(self):
+        import threading
+        r = self.root
+        real = r.tk
+        calls = []
+
+        class Proxy:
+            def __getattr__(self, name):
+                attr = getattr(real, name)
+                if not callable(attr):
+                    return attr
+                def wrapped(*a, **k):
+                    if threading.current_thread() is not threading.main_thread():
+                        calls.append(name)
+                    return attr(*a, **k)
+                return wrapped
+
+        ran = []
+        r.tk = Proxy()
+        try:
+            t = threading.Thread(target=lambda: (r.safe_after(0, lambda: ran.append("safe_after")),
+                                                 r.after(0, lambda: ran.append("after")),
+                                                 r.log("from worker")))
+            t.start(); t.join()
+        finally:
+            r.tk = real
+        self.assertEqual(calls, [], f"Tcl called from worker thread: {calls}")
+        end = time.time() + 1
+        while len(ran) < 2 and time.time() < end:
+            r.update(); time.sleep(0.02)
+        self.assertEqual(sorted(ran), ["after", "safe_after"])   # still delivered on the Tk thread
+
+
 class P3_Smoke_EveryPage(AppBase):
     def test_every_page_builds_without_errors(self):
         r = self.root

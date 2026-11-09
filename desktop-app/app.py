@@ -25,6 +25,7 @@ except Exception:
 
 import time
 import threading
+import queue as _queue_mod
 from concurrent.futures import ThreadPoolExecutor
 import datetime
 import urllib.parse
@@ -583,8 +584,35 @@ class CustomMessageBox:
 messagebox = CustomMessageBox
 
 class CS2TruePanoramaApp(tk.Tk):
+    # AUDIT P4 (handle leak): every NEW thread that calls into Tcl (e.g. after() from a
+    # worker) leaks one Windows handle that is never freed. The server refresh starts a new
+    # thread every refresh, so the app leaked ~60 handles per minute (measured: 342 -> 939
+    # in 10 min). Calls from worker threads now go through a queue that the main thread
+    # drains, so worker threads never touch Tcl. Tested: 0 extra handles per thread.
+    def after(self, ms, func=None, *args):
+        if func is not None and threading.current_thread() is not threading.main_thread():
+            q = getattr(self, "_ui_queue", None)
+            if q is not None:
+                q.put((ms, func, args))
+                return None
+        return super().after(ms, func, *args)
+
+    def _pump_ui_queue(self):
+        try:
+            while True:
+                ms, func, args = self._ui_queue.get_nowait()
+                tk.Tk.after(self, ms, func, *args)
+        except _queue_mod.Empty:
+            pass
+        except Exception:
+            pass
+        if not getattr(self, "_quitting", False):
+            tk.Tk.after(self, 50, self._pump_ui_queue)
+
     def __init__(self):
         super().__init__()
+        self._ui_queue = _queue_mod.Queue()
+        tk.Tk.after(self, 50, self._pump_ui_queue)
         # Immediately withdraw to prevent Windows from registering the default Tk feather icon on the taskbar
         self.withdraw()
         self.title("CS2 Command Center")
@@ -842,6 +870,11 @@ class CS2TruePanoramaApp(tk.Tk):
     def safe_after(self, ms: int, func):
         """Thread-safe and shutdown-safe wrapper around tkinter after()."""
         try:
+            if threading.current_thread() is not threading.main_thread():
+                # AUDIT P4: no Tcl call from worker threads (winfo_exists leaked a handle per thread)
+                if not getattr(self, "_quitting", False):
+                    return self.after(ms, func)   # -> queued, see after()
+                return None
             if not getattr(self, "_quitting", False) and self.winfo_exists():
                 return self.after(ms, func)
         except Exception:
@@ -4178,8 +4211,16 @@ class CS2TruePanoramaApp(tk.Tk):
     # --- ACTIONS & LOGS ---
 
     def log(self, text: str):
-        try:
+        if threading.current_thread() is not threading.main_thread():
+            # AUDIT P4: write to the console widget on the Tk thread only.
             timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+            self.after(0, lambda t=text, ts=timestamp: self._log_main(t, ts))
+            return
+        self._log_main(text, None)
+
+    def _log_main(self, text: str, timestamp=None):
+        try:
+            timestamp = timestamp or datetime.datetime.now().strftime("%H:%M:%S")
             if hasattr(self, "console") and self.console.winfo_exists():
                 self.console.config(state="normal")
                 self.console.insert("end", f"[{timestamp}] {text}\n")
