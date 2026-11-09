@@ -1,29 +1,29 @@
-# Final test run (after owner feedback round) - 2026-11-10T05:33:15+08:00 - Windows 11, Python 3.14.7
+# Release test run (v1.5.1) - 2026-11-10T05:36:08+08:00 - Windows 11, Python 3.14.7
 # App tests: temp config + mocked network (desktop-app/_test_isolation.py). Owner config hash before: \9feda7cc00f5dad
-== backend/test_api_security.py rc=0 :: Ran 15 tests in 0.442s OK 
-== desktop-app/test_banned_hues.py rc=0 :: Ran 3 tests in 0.832s OK 
-== desktop-app/test_comprehensive_audit.py rc=0 :: Ran 18 tests in 10.596s OK 
-== desktop-app/test_dashboard_clarity.py rc=0 :: Ran 2 tests in 1.032s OK 
-== desktop-app/test_diagnostics_redaction.py rc=0 :: Ran 1 test in 0.877s OK 
-== desktop-app/test_dialog_geometry.py rc=0 :: Ran 1 test in 1.312s OK 
-== desktop-app/test_dpi_table_scaling.py rc=0 :: Ran 1 test in 0.465s OK 
-== desktop-app/test_map_protection_dummy.py rc=0 :: Ran 1 test in 0.008s OK 
-== desktop-app/test_new_functionality.py rc=0 :: Ran 5 tests in 0.559s OK 
-== desktop-app/test_phase2_bugs.py rc=0 :: Ran 37 tests in 5.364s OK 
-== desktop-app/test_phase3_functional.py rc=0 :: Ran 11 tests in 9.776s OK 
-== desktop-app/test_phase3_gaps.py rc=0 :: Ran 1 test in 7.698s OK 
-== desktop-app/test_phase5_wording_a11y.py rc=0 :: Ran 8 tests in 0.119s OK 
-== desktop-app/test_phase6_revert.py rc=0 :: Ran 8 tests in 1.306s OK 
-== desktop-app/test_pills_calc.py rc=0 :: Ran 1 test in 1.319s OK 
-== desktop-app/test_security_phase1c.py rc=0 :: Ran 18 tests in 0.873s OK (skipped=1) 
-== desktop-app/test_server_asset_protection.py rc=0 :: Ran 3 tests in 0.303s OK 
+== backend/test_api_security.py rc=0 :: Ran 15 tests in 0.360s OK 
+== desktop-app/test_banned_hues.py rc=0 :: Ran 3 tests in 0.838s OK 
+== desktop-app/test_comprehensive_audit.py rc=0 :: Ran 18 tests in 10.638s OK 
+== desktop-app/test_dashboard_clarity.py rc=0 :: Ran 2 tests in 0.983s OK 
+== desktop-app/test_diagnostics_redaction.py rc=0 :: Ran 1 test in 0.870s OK 
+== desktop-app/test_dialog_geometry.py rc=0 :: Ran 1 test in 1.262s OK 
+== desktop-app/test_dpi_table_scaling.py rc=0 :: Ran 1 test in 0.458s OK 
+== desktop-app/test_map_protection_dummy.py rc=0 :: Ran 1 test in 0.007s OK 
+== desktop-app/test_new_functionality.py rc=0 :: Ran 5 tests in 0.660s OK 
+== desktop-app/test_phase2_bugs.py rc=0 :: Ran 37 tests in 5.361s OK 
+== desktop-app/test_phase3_functional.py rc=0 :: Ran 11 tests in 9.762s OK 
+== desktop-app/test_phase3_gaps.py rc=0 :: Ran 1 test in 7.621s OK 
+== desktop-app/test_phase5_wording_a11y.py rc=0 :: Ran 8 tests in 0.105s OK 
+== desktop-app/test_phase6_revert.py rc=0 :: Ran 8 tests in 1.301s OK 
+== desktop-app/test_pills_calc.py rc=0 :: Ran 1 test in 1.316s OK 
+== desktop-app/test_security_phase1c.py rc=0 :: Ran 18 tests in 0.355s OK (skipped=1) 
+== desktop-app/test_server_asset_protection.py rc=0 :: Ran 3 tests in 0.299s OK 
 == desktop-app/test_server_browser_telemetry.py rc=0 :: All tests passed! 
-== desktop-app/test_sidebar_architecture.py rc=0 :: Ran 3 tests in 1.860s OK 
-== desktop-app/test_token_parity.py rc=0 :: Ran 2 tests in 0.006s OK 
-== desktop-app/test_updater.py rc=0 :: Ran 7 tests in 8.551s OK 
-== desktop-app/test_user_feedback_fixes.py rc=0 :: Ran 5 tests in 0.297s OK 
-== desktop-app/test_version_consistency.py rc=0 :: Ran 2 tests in 0.900s OK 
-== desktop-app/test_website_feature_parity.py rc=0 :: Ran 5 tests in 0.891s OK 
-== backend/test_api_security.py (REAL FastAPI) rc=0 :: Ran 15 tests in 0.519s OK 
-== backend/test_api_endpoints.py (REAL FastAPI) rc=0 :: Ran 7 tests in 0.290s OK 
+== desktop-app/test_sidebar_architecture.py rc=0 :: Ran 3 tests in 1.851s OK 
+== desktop-app/test_token_parity.py rc=0 :: Ran 2 tests in 0.000s OK 
+== desktop-app/test_updater.py rc=0 :: Ran 7 tests in 1.945s OK 
+== desktop-app/test_user_feedback_fixes.py rc=0 :: Ran 5 tests in 0.303s OK 
+== desktop-app/test_version_consistency.py rc=0 :: Ran 2 tests in 0.843s OK 
+== desktop-app/test_website_feature_parity.py rc=0 :: Ran 5 tests in 1.758s OK 
+== backend/test_api_security.py (REAL FastAPI) rc=0 :: Ran 15 tests in 0.411s OK 
+== backend/test_api_endpoints.py (REAL FastAPI) rc=0 :: Ran 7 tests in 0.287s OK 
 # Owner config hash after: \9feda7cc00f5dad
