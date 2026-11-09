@@ -28,6 +28,7 @@ app_config.CONFIG_FILE = os.path.join(_TMP, "command_center_config.json")
 app_config.set_windows_startup = lambda enabled, minimized=False: True
 app_config.is_windows_startup_enabled = lambda: False
 app_config.is_windows_startup_minimized = lambda: False
+app_config.migrate_legacy_startup_task = lambda: "none"  # never touch the real Task Scheduler
 
 import app  # noqa: E402
 import core_logic  # noqa: E402

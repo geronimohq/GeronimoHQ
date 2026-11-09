@@ -985,6 +985,17 @@ class CS2TruePanoramaApp(tk.Tk):
         self._init_system_tray()
         self._initial_status_check()
         self._start_presence_heartbeat()
+        # AUDIT D-07: remove the elevated "Start with Windows" task from older versions (once, quietly).
+        def _migrate_startup_task():
+            if os.environ.get("CS2CC_NO_STARTUP_MIGRATION") == "1":  # test/smoke runs
+                return
+            res = app_config.migrate_legacy_startup_task()
+            if res == "removed":
+                self.log("[STARTUP] Removed the old Administrator startup task; the app now starts as a normal user.")
+            elif res == "needs_admin":
+                self.log("[STARTUP] An old Administrator startup task (CS2CommandCenter_AutoStart) is still there. "
+                         "Remove it once in an Administrator PowerShell: schtasks /delete /tn CS2CommandCenter_AutoStart /f")
+        threading.Thread(target=_migrate_startup_task, daemon=True).start()
         self.bind_all("<MouseWheel>", self._on_global_mousewheel)
         self.after(1000, self._tick_discord_elapsed_timer)
 

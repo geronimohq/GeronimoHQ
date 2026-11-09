@@ -19,6 +19,7 @@ app_config.CONFIG_FILE = os.path.join(TEMP_DIR, "command_center_config.json")
 app_config.set_windows_startup = lambda enabled, minimized=False: True
 app_config.is_windows_startup_enabled = lambda: False
 app_config.is_windows_startup_minimized = lambda: False
+app_config.migrate_legacy_startup_task = lambda: "none"  # never touch the real Task Scheduler
 atexit.register(shutil.rmtree, TEMP_DIR, True)
 
 # AUDIT rule D: app tests must not query real game servers, the backend or zegraph.

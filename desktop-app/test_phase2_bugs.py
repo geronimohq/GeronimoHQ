@@ -44,6 +44,7 @@ def _fake_set_startup(enabled, minimized=False):
 app_config.set_windows_startup = _fake_set_startup
 app_config.is_windows_startup_enabled = lambda: _FAKE_STARTUP["enabled"]
 app_config.is_windows_startup_minimized = lambda: _FAKE_STARTUP["minimized"]
+app_config.migrate_legacy_startup_task = lambda: "none"  # never touch the real Task Scheduler
 
 import app  # noqa: E402  (imported after the redirects above)
 import core_logic  # noqa: E402

@@ -110,6 +110,31 @@ class StartupNotElevated(unittest.TestCase):
             importlib.reload(_test_isolation)  # re-apply temp config + stubs
 
 
+class LegacyTaskMigration(unittest.TestCase):
+    def _run(self, exists_seq, delete_rc):
+        import importlib
+        real = importlib.reload(importlib.import_module("app_config"))
+        try:
+            seq = list(exists_seq)
+            def fake(cmd, **k):
+                if "/query" in cmd:
+                    return mock.Mock(returncode=0 if seq.pop(0) else 1)
+                return mock.Mock(returncode=delete_rc)
+            with mock.patch("subprocess.run", side_effect=fake):
+                return real.migrate_legacy_startup_task()
+        finally:
+            importlib.reload(_test_isolation)
+
+    def test_no_task(self):
+        self.assertEqual(self._run([False], 0), "none")
+
+    def test_removed(self):
+        self.assertEqual(self._run([True, False], 0), "removed")
+
+    def test_needs_admin(self):
+        self.assertEqual(self._run([True, True], 1), "needs_admin")
+
+
 class RestoreDefaults(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

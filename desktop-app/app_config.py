@@ -194,6 +194,26 @@ def is_windows_startup_minimized() -> bool:
 LEGACY_TASK_NAME = "CS2CommandCenter_AutoStart"
 
 
+def legacy_elevated_task_exists() -> bool:
+    import subprocess
+    try:
+        r = subprocess.run(["schtasks", "/query", "/tn", LEGACY_TASK_NAME], capture_output=True,
+                           timeout=5, creationflags=0x08000000)
+        return r.returncode == 0
+    except Exception:
+        return False
+
+
+def migrate_legacy_startup_task() -> str:
+    """AUDIT D-07 migration, run once in the background at app start: remove the elevated
+    logon task older versions created. Returns "none" | "removed" | "needs_admin"."""
+    if not legacy_elevated_task_exists():
+        return "none"
+    if remove_legacy_elevated_task() and not legacy_elevated_task_exists():
+        return "removed"
+    return "needs_admin"
+
+
 def remove_legacy_elevated_task() -> bool:
     """Deletes the elevated logon task older versions created (no-op if it does not exist)."""
     import subprocess
