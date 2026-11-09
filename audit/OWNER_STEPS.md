@@ -38,7 +38,8 @@ change your card.
   call during F), P9-01 / P6-08 licence and third-party content: still the owner's call.
 - **C** nothing to do.
 - **D, E, G** skipped by the owner: problems will be reported by the owner and friends.
-- **F** steps 1-4 done (v1.5.1 built and smoke-tested). Next: step 5 (copy into dist\ and public\), 6 (sign), 7-8.
+- **F** steps 1-7 done: v1.5.1 built, smoke-tested, copied into dist\ and public\, `latest.json` signed
+  (signature verified with the app's embedded key), site build shows the new SHA-256. **Next: step 8, merge the PR.**
 - The app removes the old elevated startup task on its first normal run; if Windows refuses (it needs
   Administrator), the log shows the one-line `schtasks /delete` command to run in an Administrator PowerShell.
 
