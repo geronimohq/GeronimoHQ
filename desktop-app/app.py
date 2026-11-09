@@ -5414,6 +5414,8 @@ class CS2TruePanoramaApp(tk.Tk):
                 self._refresh_autoexec_preview()
             if self.opt_power.get():
                 plan = self.selected_power_plan.get()
+                core_logic.remember_power_plan(self.config)  # AUDIT P6: for a real undo
+                app_config.save_config(self.config)
                 for l in core_logic.set_power_plan(plan):
                     self.log(l)
             if self.opt_shaders.get():
@@ -5434,7 +5436,22 @@ class CS2TruePanoramaApp(tk.Tk):
 
         threading.Thread(target=task, daemon=True).start()
 
-    def run_revert_all(self):
+    REVERT_ALL_SUMMARY = (
+        "This undoes:\n"
+        "- Game DVR and fullscreen-optimization settings\n"
+        "- autoexec.cfg: replaced by autoexec_backup.cfg (your file from before the app's first change;\n"
+        "  later edits are lost), or only the app's block is removed if there is no backup\n"
+        "- power plan: back to the plan you had before the app changed it\n\n"
+        "Not changed here: DNS (use 'Restore ISP Default (DHCP)'), Steam launch options\n"
+        "(the original is kept as localconfig.vdf.backup), deleted cache files."
+    )
+
+    def run_revert_all(self, confirm: bool = True):
+        # AUDIT P6: ask first and say exactly what is undone (it said "All settings ... restored").
+        if confirm and not messagebox.askyesno("Restore Defaults?", self.REVERT_ALL_SUMMARY + "\n\nContinue?"):
+            self.log("[RESTORE] Cancelled by user.")
+            return
+
         def task():
             self.log("--- Reverting All Optimizations to Defaults ---")
             for l in core_logic.revert_windows_game_dvr():
@@ -5447,11 +5464,13 @@ class CS2TruePanoramaApp(tk.Tk):
                 for l in logs:
                     self.log(l)
                 self._refresh_autoexec_preview()
-            for l in core_logic.set_power_plan("balanced"):
+            for l in core_logic.restore_previous_power_plan(self.config):  # AUDIT P6 (was: always Balanced)
                 self.log(l)
+            app_config.save_config(self.config)
 
-            self.log("--- ALL TWEAKS REVERTED TO DEFAULTS ---")
-            messagebox.showinfo("Reverted", "All settings and configs have been restored back to defaults!")
+            self.log("--- RESTORE DEFAULTS FINISHED (see the log lines above for each step) ---")
+            messagebox.showinfo("Restore Defaults finished",
+                                "Done. Each step is listed in the log.\n\nDNS and Steam launch options were not changed.")
 
         threading.Thread(target=task, daemon=True).start()
 

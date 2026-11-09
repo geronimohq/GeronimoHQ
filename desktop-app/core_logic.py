@@ -555,6 +555,38 @@ def get_active_power_plan() -> Tuple[str, str]:
         pass
     return "Balanced", ""
 
+_GUID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+
+def remember_power_plan(cfg: Dict[str, Any]) -> None:
+    """AUDIT P6: store the user's plan ONCE, before the app first changes it, so
+    Restore Defaults can put it back (it used to always switch to Balanced)."""
+    if cfg.get("power_plan_before_app"):
+        return
+    name, guid = get_active_power_plan()
+    if guid and _GUID_RE.match(guid):
+        cfg["power_plan_before_app"] = {"guid": guid, "name": name}
+
+
+def restore_previous_power_plan(cfg: Dict[str, Any]) -> List[str]:
+    """Restore the plan recorded by remember_power_plan(); Balanced if none was recorded."""
+    rec = cfg.get("power_plan_before_app") or {}
+    guid = str(rec.get("guid", ""))
+    if not _GUID_RE.match(guid):
+        logs = set_power_plan("balanced")
+        logs.append("[INFO] No earlier power plan was recorded, so Balanced was set.")
+        return logs
+    try:
+        res = subprocess.run(["powercfg", "/setactive", guid], capture_output=True, text=True,
+                             creationflags=0x08000000)
+        if res.returncode == 0:
+            cfg.pop("power_plan_before_app", None)
+            return [f"[SUCCESS] Power plan restored to your previous plan: {rec.get('name') or guid}"]
+        return [f"[INFO] powercfg notice: {res.stderr or res.stdout}"]
+    except Exception as e:
+        return [f"[ERROR] Could not restore power plan: {e}"]
+
+
 def set_power_plan(plan_mode: str) -> List[str]:
     logs = []
     guid = GUID_BALANCED if plan_mode.lower() == "balanced" else GUID_HIGH_PERF
