@@ -57,11 +57,22 @@ def load_config() -> Dict[str, Any]:
     return cfg
 
 def save_config(cfg: Dict[str, Any]) -> bool:
+    # AUDIT 1c-D6: atomic write (temp file + replace) so a crash or a full disk can
+    # never leave a half-written config that silently resets every setting.
+    tmp = CONFIG_FILE + ".tmp"
     try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, CONFIG_FILE)
         return True
     except Exception:
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        except Exception:
+            pass
         return False
 
 def get_days_since_maintenance(cfg: Dict[str, Any]) -> int:

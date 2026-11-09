@@ -446,6 +446,38 @@ def scan_custom_maps(steam_path: str, cs2_dir: str = None, protected_communities
     maps_list.sort(key=lambda x: x["size_bytes"], reverse=True)
     return maps_list
 
+def _is_link_or_junction(p: str) -> bool:
+    """True for symlinks and Windows junctions / reparse points."""
+    try:
+        if os.path.islink(p):
+            return True
+        st = os.lstat(p)
+        return bool(getattr(st, "st_file_attributes", 0) & 0x400)  # FILE_ATTRIBUTE_REPARSE_POINT
+    except OSError:
+        return True
+
+
+def is_deletable_map_path(p: str) -> bool:
+    """AUDIT 1c-D3: only two shapes of path may ever be deleted:
+       <library>/steamapps/workshop/content/730/<digits>      (a Workshop item folder)
+       <cs2>/game/csgo/maps/<name>.vpk                         (a loose custom map file)
+    The path itself and its parent must not be a symlink/junction, and the real
+    path must still have that shape (no '..' tricks)."""
+    if not p or not isinstance(p, str):
+        return False
+    if _is_link_or_junction(p) or _is_link_or_junction(os.path.dirname(os.path.abspath(p))):
+        return False
+    real = os.path.realpath(p)
+    if os.path.normcase(real) != os.path.normcase(os.path.abspath(p)):
+        return False
+    parts = [x.lower() for x in real.replace("\\", "/").split("/") if x]
+    if len(parts) >= 5 and parts[-5:-1] == ["steamapps", "workshop", "content", "730"] and parts[-1].isdigit():
+        return os.path.isdir(real)
+    if len(parts) >= 4 and parts[-4:-1] == ["game", "csgo", "maps"] and parts[-1].endswith(".vpk"):
+        return os.path.isfile(real)
+    return False
+
+
 def delete_custom_maps(map_items: List[Dict[str, Any]]) -> Tuple[int, int, List[str]]:
     """
     Safely deletes selected custom map folders or .vpk files.
@@ -471,6 +503,10 @@ def delete_custom_maps(map_items: List[Dict[str, Any]]) -> Tuple[int, int, List[
 
         if item.get("is_server_asset") or item.get("is_protected") or wid in KNOWN_SERVER_ASSETS:
             logs.append(f"[BLOCKED] Refused deletion of protected Server Asset Pack / Community Map: {name} (#{wid})")
+            continue
+
+        if not is_deletable_map_path(p):
+            logs.append(f"[BLOCKED] Refused deletion outside the Workshop/maps folders or through a link: {name}")
             continue
 
         sz = item.get("size_bytes", 0)

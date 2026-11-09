@@ -52,6 +52,20 @@ import subprocess
 
 _single_instance_mutex = None
 
+_UNSAFE_URL_CHARS = set('&|<>^"`\r\n\t ')
+
+
+def _is_safe_launch_url(url: str) -> bool:
+    try:
+        url = str(url)
+    except Exception:
+        return False
+    low = url.lower()
+    if not (low.startswith("https://") or low.startswith("http://")):
+        return False
+    return not any(c in _UNSAFE_URL_CHARS for c in url) and len(url) < 2048
+
+
 def launch_url_in_browser(url: str) -> bool:
     """
     Universal, elevation-proof URL opener for Windows.
@@ -59,6 +73,10 @@ def launch_url_in_browser(url: str) -> bool:
     (Brave, Chrome, Edge, Firefox), with graceful fallbacks to cmd start, rundll32, and ShellExecute.
     """
     if not url:
+        return False
+    # AUDIT 1c-D2: only http(s) links, and no characters that cmd.exe treats
+    # as command separators (the "start" fallback below runs through cmd.exe).
+    if not _is_safe_launch_url(url):
         return False
 
     # 1. Direct browser binaries (Guaranteed execution even when running as Administrator)
@@ -81,9 +99,11 @@ def launch_url_in_browser(url: str) -> bool:
                 pass
 
     # 2. Windows shell 'start' command (delegates to Windows registered default web browser)
+    #    Skipped when the URL has '%' (cmd.exe would expand %VARIABLES% into it).
     try:
-        subprocess.Popen(["cmd.exe", "/c", "start", "", url])
-        return True
+        if "%" not in url:
+            subprocess.Popen(["cmd.exe", "/c", "start", "", url])
+            return True
     except Exception:
         pass
 
@@ -919,13 +939,17 @@ class CS2TruePanoramaApp(tk.Tk):
         """Completely terminates background processes and closes app."""
         global _single_instance_mutex
         self._quitting = True
+        # AUDIT 1c-D5: only the owner's install (presence_secret set) tells the
+        # website "offline" on exit. Other users' installs send nothing.
         try:
-            import urllib.request
-            req = urllib.request.Request(
-                "https://geronimohq-telemetry.onrender.com/api/presence/heartbeat?is_cs2_running=false&is_steam_running=false&in_menu=false",
-                headers={"User-Agent": "CS2CommandCenter/2.0"}
-            )
-            urllib.request.urlopen(req, timeout=1.5)
+            secret = str(self.config.get("presence_secret", "") or "").strip()
+            if secret:
+                import urllib.request
+                req = urllib.request.Request(
+                    "https://geronimohq-telemetry.onrender.com/api/presence/heartbeat?is_cs2_running=false&is_steam_running=false&in_menu=false",
+                    headers={"User-Agent": "CS2CommandCenter/2.0", "X-Geronimo-Token": secret}
+                )
+                urllib.request.urlopen(req, timeout=1.5)
         except Exception:
             pass
         try:
@@ -5035,6 +5059,11 @@ class CS2TruePanoramaApp(tk.Tk):
         return None
 
     def _send_web_presence_heartbeat(self, is_cs2: bool, is_steam: bool = False):
+        # AUDIT 1c-D5: owner-only. A fresh install (no presence_secret) sends NOTHING
+        # to the owner's backend, so it cannot change the owner's presence card and
+        # does not report anyone else's CS2/Steam status.
+        if not str(self.config.get("presence_secret", "") or "").strip():
+            return
         def _req():
             try:
                 import urllib.request
@@ -6485,10 +6514,12 @@ class CS2TruePanoramaApp(tk.Tk):
                 messagebox.showerror("Validation Error", "Please provide at least a Server Name and Host/IP.")
                 return
 
-            try:
-                port = int(port_s)
-            except ValueError:
-                port = 27015
+            # AUDIT 1c-D1: only a plain IPv4/hostname and port 1-65535 are accepted.
+            checked = server_browser.validate_server_address(host, port_s or "27015")
+            if not checked:
+                messagebox.showerror("Validation Error", "Host must be an IPv4 address or host name (letters, digits, dots, dashes) and Port must be 1-65535.")
+                return
+            host, port = checked
 
             new_server = {
                 "id": f"custom_{int(time.time())}",

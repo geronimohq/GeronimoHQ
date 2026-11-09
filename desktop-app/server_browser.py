@@ -146,6 +146,30 @@ def get_storage_dir() -> str:
 
 SERVERS_FILE = os.path.join(get_storage_dir(), "custom_servers.json")
 
+# AUDIT 1c-D1: one shared check for every host:port the app connects to.
+# The host ends up in "steam://connect/HOST:PORT" (opened through Windows) and in the
+# CS2 console as "connect HOST:PORT". Without a check, text such as "1.2.3.4;quit" or
+# "x&calc" could run extra console or Windows commands.
+import re as _re
+_HOSTNAME_RE = _re.compile(r"^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.(?!-)[A-Za-z0-9-]{1,63}(?<!-))*$")
+_IPV4_RE = _re.compile(r"^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$")
+
+
+def validate_server_address(host: Any, port: Any) -> Optional[tuple]:
+    """Returns (host, port) when the pair is a plain IPv4/hostname and a port 1-65535, else None."""
+    try:
+        host = str(host).strip()
+        if isinstance(port, bool):
+            return None
+        port = int(str(port).strip())
+    except Exception:
+        return None
+    if not (1 <= port <= 65535):
+        return None
+    if _IPV4_RE.match(host) or (_HOSTNAME_RE.match(host) and not host.replace(".", "").isdigit()):
+        return host, port
+    return None
+
 def load_servers() -> List[Dict[str, Any]]:
     """Loads default servers merged with any user-saved custom servers."""
     customs = []
@@ -154,7 +178,8 @@ def load_servers() -> List[Dict[str, Any]]:
             with open(SERVERS_FILE, "r", encoding="utf-8") as f:
                 saved = json.load(f)
                 if isinstance(saved, list):
-                    customs = [s for s in saved if s.get("is_custom")]
+                    customs = [s for s in saved if isinstance(s, dict) and s.get("is_custom")
+                               and validate_server_address(s.get("host"), s.get("port"))]
         except Exception:
             pass
     return list(DEFAULT_SERVERS) + customs
@@ -739,10 +764,14 @@ def _copy_clipboard_fast(text: str):
 
 def direct_connect(host: str, port: int) -> bool:
     """Connects to server via native Steam URL protocol (bypasses console)."""
+    if not validate_server_address(host, port):
+        return False
     try:
         resolved_ip = socket.gethostbyname(host)
     except Exception:
         resolved_ip = host
+    if not validate_server_address(resolved_ip, port):
+        return False
     cmd = f"connect {resolved_ip}:{port}"
     _copy_clipboard_fast(cmd)
     url = f"steam://connect/{resolved_ip}:{port}"
@@ -761,6 +790,8 @@ def fast_console_connect(host: str, port: int, restore_previous_window: bool = T
     """Connects to server using direct in-engine console execution for fastest possible connection.
     Bypasses Steam coordinator delay, copies connect command to clipboard, submits via console,
     and immediately restores the user's previous foreground window so CS2 loads in the background."""
+    if not validate_server_address(host, port):
+        return False
     cmd = f"connect {host}:{port}"
     _copy_clipboard_fast(cmd)
 
@@ -872,6 +903,11 @@ def connect_to_server(
         def _log(msg: str):
             if log_callback:
                 log_callback(msg)
+        if not validate_server_address(host, port):
+            _log(f"[CONNECT] Refused: not a valid host:port ({str(host)[:40]!r}).")
+            if completion_callback:
+                completion_callback(False, "Invalid server address")
+            return
 
         def _status(msg: str):
             if status_callback:

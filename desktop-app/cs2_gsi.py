@@ -48,17 +48,48 @@ def ensure_gsi_config_installed(cfg_dir: str) -> bool:
     return success
 
 class _GSIRequestHandler(BaseHTTPRequestHandler):
+    # AUDIT 1c-D4: CS2 sends small JSON bodies and no "Origin" header. Web pages
+    # always send "Origin" on cross-site POSTs, so a website cannot fake game state.
+    MAX_BODY = 64 * 1024
+
+    MAX_DRAIN = 1024 * 1024
+
+    def _reject(self, code: int, drain: int = 0):
+        # AUDIT P2: read (and discard) a bounded request body before replying, else
+        # Windows resets the socket and the client never sees the error status.
+        remaining = min(max(drain, 0), self.MAX_DRAIN)
+        while remaining > 0:
+            chunk = self.rfile.read(min(65536, remaining))
+            if not chunk:
+                break
+            remaining -= len(chunk)
+        self.close_connection = True
+        self.send_response(code)
+        self.send_header("Content-Type", "text/plain")
+        self.send_header("Connection", "close")
+        self.end_headers()
+
     def do_POST(self):
         try:
             content_length = int(self.headers.get("Content-Length", 0))
+            if self.headers.get("Origin") is not None:
+                return self._reject(403, drain=content_length)
+            if content_length < 0 or content_length > self.MAX_BODY:
+                return self._reject(413, drain=content_length)
             body = self.rfile.read(content_length)
+            # AUDIT P2: handle the payload BEFORE replying (was after), so a 200 means
+            # the state was updated; a bad payload never stops the reply.
+            if body and hasattr(self.server, "on_payload"):
+                try:
+                    payload = json.loads(body.decode("utf-8", errors="replace"))
+                    if isinstance(payload, dict):
+                        self.server.on_payload(payload)
+                except Exception:
+                    pass
             self.send_response(200)
             self.send_header("Content-Type", "text/plain")
             self.end_headers()
             self.wfile.write(b"OK")
-            if body and hasattr(self.server, "on_payload"):
-                payload = json.loads(body.decode("utf-8", errors="replace"))
-                self.server.on_payload(payload)
         except Exception:
             pass
 
