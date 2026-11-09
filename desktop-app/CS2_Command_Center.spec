@@ -5,7 +5,7 @@ a = Analysis(
     ['app.py'],
     pathex=[],
     binaries=[],
-    datas=[('app.ico', '.'), ('app.png', '.'), ('s2ze_maps_cache.json', '.')],
+    datas=[('app.ico', '.'), ('app.png', '.'), ('s2ze_maps_cache.json', '.'), ('..\\design-tokens.json', '.')],
     hiddenimports=['pystray._win32'],
     hookspath=[],
     hooksconfig={},

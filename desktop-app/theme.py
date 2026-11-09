@@ -6,6 +6,7 @@ Provides DPI-aware font scaling and strict parity verification with the web desi
 
 import json
 import os
+import sys
 import tkinter as tk
 from tkinter import ttk, font
 
@@ -13,6 +14,11 @@ from tkinter import ttk, font
 TOKEN_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "design-tokens.json")
 
 def load_tokens():
+    if hasattr(sys, '_MEIPASS'):
+        bundle_path = os.path.join(sys._MEIPASS, "design-tokens.json")
+        if os.path.exists(bundle_path):
+            with open(bundle_path, "r", encoding="utf-8") as f:
+                return json.load(f)
     if os.path.exists(TOKEN_PATH):
         with open(TOKEN_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
