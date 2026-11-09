@@ -1049,6 +1049,8 @@ class CS2TruePanoramaApp(tk.Tk):
         self.page_container.pack(side="top", fill="both", expand=True, pady=(0, 6))
 
         # Populate Vertical Sidebar Navigation Items (Concept 1)
+        self._add_nav_item("DASHBOARD", "⚡", "Dashboard", self._build_page_dashboard,
+                           tooltip="CyberDeck Command Console: High-impact overview of system readiness, hardware telemetry, and quick optimization.")
         self._add_nav_item("ENGINE", "⚙", "Engine Tweaks", self._build_page_engine,
                            tooltip="Configure Direct-Flip, GPU shader cache purges, game DVR, and CPU power plans for maximum FPS.")
 
@@ -1072,7 +1074,7 @@ class CS2TruePanoramaApp(tk.Tk):
                            tooltip="Knowledge base and troubleshooting guide for all optimizer tweaks and competitive settings.")
 
         # Set default active page
-        self._select_nav("ENGINE")
+        self._select_nav("DASHBOARD")
 
         # Open maximized (fullscreen) by default as requested by Geronimo
         if "--minimized" not in sys.argv:
@@ -1148,6 +1150,25 @@ class CS2TruePanoramaApp(tk.Tk):
                                highlightbackground=BG_BORDER, highlightthickness=1, padx=8, pady=4)
         self.console.pack(fill="x")
         self.console.config(state="disabled")
+
+        # Persistent CyberDeck Status Bar
+        self.status_bar = tk.Frame(console_box, bg="#0a0d14", highlightbackground=BG_BORDER, highlightthickness=1, padx=10, pady=3)
+        self.status_bar.pack(fill="x", pady=(3, 0))
+
+        cs2_found = bool(self.paths.get("cs2_exe"))
+        cs2_text = "CS2: GAME READY" if cs2_found else "CS2: NOT DETECTED"
+        cs2_col = ACCENT_GREEN if cs2_found else ACCENT_RED
+        self.status_cs2_lbl = tk.Label(self.status_bar, text=f"● {cs2_text}", font=("Segoe UI", 9, "bold"), fg=cs2_col, bg="#0a0d14")
+        self.status_cs2_lbl.pack(side="left", padx=(0, 15))
+
+        self.status_sniper_lbl = tk.Label(self.status_bar, text="● SLOT SNIPER: IDLE", font=("Segoe UI", 9, "bold"), fg=FG_MUTED, bg="#0a0d14")
+        self.status_sniper_lbl.pack(side="left", padx=15)
+
+        self.status_dns_lbl = tk.Label(self.status_bar, text="● GAMING DNS: ACTIVE", font=("Segoe UI", 9, "bold"), fg=ACCENT_CYAN, bg="#0a0d14")
+        self.status_dns_lbl.pack(side="left", padx=15)
+
+        self.status_vac_lbl = tk.Label(self.status_bar, text="● 100% VAC-SAFE", font=("Segoe UI", 9, "bold"), fg=ACCENT_GREEN, bg="#0a0d14")
+        self.status_vac_lbl.pack(side="right")
 
     def _add_nav_item(self, key, icon, title, builder_func, is_alert=False, tooltip=None):
         item_frame = tk.Frame(self.sidebar, bg=BG_SIDEBAR, cursor="hand2")
@@ -1371,6 +1392,112 @@ class CS2TruePanoramaApp(tk.Tk):
             pass
 
     # --- PAGES ---
+
+    def _build_page_dashboard(self, page):
+        canvas = tk.Canvas(page, bg=BG_CARD, highlightthickness=0, yscrollincrement=1)
+        scrollbar = ttk.Scrollbar(page, orient="vertical", command=canvas.yview, style="Vertical.Dark.TScrollbar")
+        self.dashboard_canvas = canvas
+        self.dashboard_scrollbar = scrollbar
+        content = tk.Frame(canvas, bg=BG_CARD)
+
+        content.bind(
+            "<Configure>",
+            lambda e: self._debounce_sync_scroll(canvas, scrollbar)
+        )
+        c_window = canvas.create_window((0, 0), window=content, anchor="nw")
+        self._bind_canvas_auto_width(canvas, c_window, scrollbar)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        def _bind_dash_wheel(widget):
+            widget.bind("<MouseWheel>", lambda e: self._handle_canvas_wheel(e, canvas), add="+")
+            for ch in widget.winfo_children():
+                _bind_dash_wheel(ch)
+
+        # Tier 1 Main Tab Title
+        t1_box = tk.Frame(content, bg=BG_CARD)
+        t1_box.pack(fill="x", pady=(4, 12))
+        tk.Label(t1_box, text="⚡ SYSTEM READINESS & CYBERDECK DASHBOARD", font=("Segoe UI", 16, "bold"), fg=FG_WHITE, bg=BG_CARD).pack(anchor="w")
+        tk.Label(t1_box, text="Real-time Source 2 engine diagnostics, VAC-safe autoexec status, and live gaming telemetry.", font=("Segoe UI", 12), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(2, 0))
+
+        # Hero Banner: One-Click Total Optimization
+        hero = tk.Frame(content, bg="#0d131f", highlightbackground=ACCENT_CYAN, highlightthickness=1, padx=16, pady=14)
+        hero.pack(fill="x", pady=(0, 14))
+
+        hero_left = tk.Frame(hero, bg="#0d131f")
+        hero_left.pack(side="left", fill="both", expand=True)
+
+        tk.Label(hero_left, text="TACTICAL PERFORMANCE ENGINE", font=("Segoe UI", 13, "bold"), fg=ACCENT_CYAN, bg="#0d131f").pack(anchor="w")
+        tk.Label(hero_left, text="One-click tunes CS2 sub-tick rates, low-latency sleep, CPU power profile, and competitive audio binds.", font=("Segoe UI", 12), fg="#cbd5e1", bg="#0d131f").pack(anchor="w", pady=(2, 6))
+
+        pills = tk.Frame(hero_left, bg="#0d131f")
+        pills.pack(anchor="w")
+        for p_txt, p_col in [("100% VAC-SAFE", ACCENT_GREEN), ("SUB-TICK VERIFIED", ACCENT_CYAN), ("ZERO RUNTIME OVERHEAD", ACCENT_AMBER)]:
+            pf = tk.Frame(pills, bg="#162032", padx=8, pady=2, highlightbackground="#24334d", highlightthickness=1)
+            pf.pack(side="left", padx=(0, 6))
+            tk.Label(pf, text=f"✔ {p_txt}", font=("Segoe UI", 11, "bold"), fg=p_col, bg="#162032").pack()
+
+        hero_right = tk.Frame(hero, bg="#0d131f")
+        hero_right.pack(side="right", padx=(10, 0))
+
+        b_hero_opt = tk.Button(hero_right, text="🚀 ONE-CLICK OPTIMIZE", font=("Segoe UI", 14, "bold"),
+                               fg="#ffffff", bg=ACCENT_ORANGE, activebackground=ACCENT_ORANGE_HOVER,
+                               activeforeground="#ffffff", relief="flat", padx=20, pady=8, cursor="hand2",
+                               command=self.run_one_click_optimization)
+        b_hero_opt.pack(fill="x", pady=2)
+        add_tooltip(b_hero_opt, "Executes complete engine optimization pass and verifies autoexec integrity.")
+
+        # 3-Card Grid Overview
+        grid = tk.Frame(content, bg=BG_CARD)
+        grid.pack(fill="x", pady=(0, 14))
+
+        # Card 1: CS2 Process & Path
+        c1 = tk.Frame(grid, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=12)
+        c1.pack(side="left", fill="both", expand=True, padx=(0, 6))
+        tk.Label(c1, text="🎮 CS2 ENVIRONMENT", font=("Segoe UI", 13, "bold"), fg=ACCENT_GREEN, bg=BG_CARD_ROW).pack(anchor="w")
+        cs2_st = "DETECTED & CONFIGURED" if bool(self.paths.get("cs2_exe")) else "MANUAL PATH REQUIRED"
+        tk.Label(c1, text=f"Executable: {cs2_st}", font=("Segoe UI", 12), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(6, 2))
+        auto_st = "autoexec.cfg ACTIVE" if bool(self.paths.get("autoexec_cfg")) else "autoexec.cfg NOT FOUND"
+        tk.Label(c1, text=f"Config: {auto_st}", font=("Segoe UI", 12), fg=ACCENT_CYAN, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 6))
+        b_c1 = tk.Button(c1, text="Open Config Studio ➔", font=("Segoe UI", -12, "bold"), fg="#ffffff", bg="#1e293b",
+                         activebackground="#334155", relief="flat", padx=10, pady=4, cursor="hand2",
+                         command=lambda: self._select_nav("AUTOEXEC"))
+        b_c1.pack(anchor="w")
+
+        # Card 2: Hardware Profile
+        c2 = tk.Frame(grid, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=12)
+        c2.pack(side="left", fill="both", expand=True, padx=6)
+        tk.Label(c2, text="⚡ HARDWARE PROFILE", font=("Segoe UI", 13, "bold"), fg=ACCENT_CYAN, bg=BG_CARD_ROW).pack(anchor="w")
+        tk.Label(c2, text=f"CPU: {self.cpu_info.get('name', 'AMD Ryzen')[:28]}", font=("Segoe UI", 12), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(6, 2))
+        tk.Label(c2, text=f"GPU: {self.gpu_info.get('name', 'Radeon / GeForce')[:28]}", font=("Segoe UI", 12), fg=ACCENT_CYAN, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 6))
+        b_c2 = tk.Button(c2, text="Engine & CPU Tweaks ➔", font=("Segoe UI", -12, "bold"), fg="#ffffff", bg="#1e293b",
+                         activebackground="#334155", relief="flat", padx=10, pady=4, cursor="hand2",
+                         command=lambda: self._select_nav("ENGINE"))
+        b_c2.pack(anchor="w")
+
+        # Card 3: ZE Servers & Slot Sniper
+        c3 = tk.Frame(grid, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=12)
+        c3.pack(side="left", fill="both", expand=True, padx=(6, 0))
+        tk.Label(c3, text="🌐 ZE GAME SERVERS", font=("Segoe UI", 13, "bold"), fg=ACCENT_AMBER, bg=BG_CARD_ROW).pack(anchor="w")
+        tk.Label(c3, text="Global & Asian ZE Clusters", font=("Segoe UI", 12), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(6, 2))
+        tk.Label(c3, text="Auto Slot Sniper: Ready", font=("Segoe UI", 12), fg=ACCENT_GREEN, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 6))
+        b_c3 = tk.Button(c3, text="Launch ZE Browser ➔", font=("Segoe UI", -12, "bold"), fg="#ffffff", bg="#1e293b",
+                         activebackground="#334155", relief="flat", padx=10, pady=4, cursor="hand2",
+                         command=lambda: self._select_nav("SERVERS"))
+        b_c3.pack(anchor="w")
+
+        # Quick Links & Tooling Row
+        links_box = tk.Frame(content, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=10)
+        links_box.pack(fill="x")
+        tk.Label(links_box, text="QUICK NAVIGATION SHORTCUTS:", font=("Segoe UI", 11, "bold"), fg="#64748b", bg=BG_CARD_ROW).pack(side="left", padx=(0, 10))
+        for l_key, l_title in [("BOOST", "Gaming DNS Optimizer"), ("LAUNCH", "Launch Options"), ("MAINTENANCE", "Custom Map Cleaner"), ("DISCORD", "Discord Presence")]:
+            btn = tk.Button(links_box, text=l_title, font=("Segoe UI", -12, "bold"), fg="#94a3b8", bg="#161e2e",
+                            activebackground="#222f47", activeforeground="#ffffff", relief="flat", padx=10, pady=3, cursor="hand2",
+                            command=lambda k=l_key: self._select_nav(k))
+            btn.pack(side="left", padx=3)
+
+        _bind_dash_wheel(content)
 
     def _build_page_engine(self, page):
         canvas = tk.Canvas(page, bg=BG_CARD, highlightthickness=0, yscrollincrement=1)
