@@ -8,6 +8,18 @@ import os
 import json
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import socket
+
+
+class _ExclusiveHTTPServer(HTTPServer):
+    """AUDIT P3 (D-13): HTTPServer sets SO_REUSEADDR, which on Windows lets two programs
+    bind the same port with no error, so a port clash went unnoticed. Bind exclusively."""
+    allow_reuse_address = False
+
+    def server_bind(self):
+        if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
 from typing import Optional, Callable, Dict, Any
 
 GSI_CONFIG_NAMES = ["gamestate_integration_cs2commandcenter.cfg", "gamestate_integration_cc.cfg"]
@@ -104,6 +116,7 @@ class CS2GSIServer:
         self.httpd: Optional[HTTPServer] = None
         self.thread: Optional[threading.Thread] = None
         self.running = False
+        self.last_error: str = ""
         self.current_state: Dict[str, Any] = {
             "activity": "menu",
             "map_name": "",
@@ -140,14 +153,20 @@ class CS2GSIServer:
         if self.running:
             return True
         try:
-            self.httpd = HTTPServer(("127.0.0.1", self.port), _GSIRequestHandler)
+            self.httpd = _ExclusiveHTTPServer(("127.0.0.1", self.port), _GSIRequestHandler)
             self.httpd.on_payload = self._handle_payload
             self.running = True
             self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
             self.thread.start()
+            self.last_error = ""
             return True
-        except Exception:
+        except OSError as e:
             self.running = False
+            self.last_error = f"port {self.port} is already in use by another program ({e.__class__.__name__})"
+            return False
+        except Exception as e:
+            self.running = False
+            self.last_error = str(e)
             return False
 
     def stop(self):

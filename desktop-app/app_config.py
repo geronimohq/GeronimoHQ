@@ -47,11 +47,32 @@ SETTINGS_DEFAULTS: Dict[str, Any] = {
     "minimize_to_tray_on_close": True,
     "open_on_page": "Dashboard",
     "sniper_sound_enabled": True,
-    "sniper_sound_volume": 100,
     "server_refresh_speed": "Normal (5s)",
-    "discord_presence_share": True,
+    # AUDIT P3-01: the Settings "Share with Discord" tick now drives the REAL switch
+    # (discord_rpc_enabled, also on the Discord tab). The old key discord_presence_share
+    # and the sniper volume slider were saved but never used by anything.
+    "discord_rpc_enabled": True,
     "check_updates_on_startup": True,
 }
+
+# Server query interval on the ZE Game Servers page, per the "Server query speed" setting.
+REFRESH_SPEED_MS = {"Live (1s)": 1000, "Normal (5s)": 5000, "Eco (15s)": 15000}
+
+
+def refresh_interval_ms(cfg: Dict[str, Any]) -> int:
+    return REFRESH_SPEED_MS.get(str(cfg.get("server_refresh_speed", "Normal (5s)")), 5000)
+
+
+START_PAGES = {"Dashboard", "Last used page"}
+
+
+def start_page_key(cfg: Dict[str, Any], valid_keys) -> str:
+    """Page to open at start: Dashboard, or the page used last time (if it still exists)."""
+    if cfg.get("open_on_page") == "Last used page":
+        last = cfg.get("last_page_key")
+        if last in valid_keys:
+            return last
+    return "DASHBOARD"
 
 
 def apply_settings(cfg: Dict[str, Any], values: Dict[str, Any]) -> Dict[str, Any]:
@@ -59,6 +80,10 @@ def apply_settings(cfg: Dict[str, Any], values: Dict[str, Any]) -> Dict[str, Any
     for key, default in SETTINGS_DEFAULTS.items():
         if key in values:
             val = values[key]
+            if key == "open_on_page" and val not in START_PAGES:
+                val = default
+            if key == "server_refresh_speed" and val not in REFRESH_SPEED_MS:
+                val = default
             if isinstance(default, bool):
                 val = bool(val)
             elif isinstance(default, int):

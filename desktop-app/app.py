@@ -792,7 +792,12 @@ class CS2TruePanoramaApp(tk.Tk):
                 pass
         self.gsi_server = cs2_gsi.get_gsi_server(on_state_update=self._on_gsi_state_update)
         try:
-            self.gsi_server.start()
+            if not self.gsi_server.start():
+                # AUDIT P3 (D-13): say so instead of failing silently.
+                self._gsi_start_error = getattr(self.gsi_server, "last_error", "") or "could not start"
+                self.after(1500, lambda: self.log(
+                    f"[GSI] Live game state is OFF: {self._gsi_start_error}. Map/in-game detection falls back to "
+                    "process checks. Close the other program using that port and restart this app."))
         except Exception:
             pass
 
@@ -942,6 +947,12 @@ class CS2TruePanoramaApp(tk.Tk):
         """Completely terminates background processes and closes app."""
         global _single_instance_mutex
         self._quitting = True
+        try:  # AUDIT P3-01: remember the page for "Open on start: Last used page"
+            if getattr(self, "current_page_key", None):
+                self.config["last_page_key"] = self.current_page_key
+                app_config.save_config(self.config)
+        except Exception:
+            pass
         # AUDIT 1c-D5: only the owner's install (presence_secret set) tells the
         # website "offline" on exit. Other users' installs send nothing.
         try:
@@ -1104,8 +1115,8 @@ class CS2TruePanoramaApp(tk.Tk):
         self._add_nav_item("FAQ", "📖", "Help & FAQ Guide", self._build_page_faq,
                            tooltip="Knowledge base and troubleshooting guide for all optimizer tweaks and competitive settings.")
 
-        # Set default active page
-        self._select_nav("DASHBOARD")
+        # Start page (AUDIT P3-01: the "Open on start" setting was saved but ignored)
+        self._select_nav(app_config.start_page_key(self.config, self.nav_items.keys()))
 
         # Open maximized (fullscreen) by default as requested by Geronimo
         if "--minimized" not in sys.argv:
@@ -3466,6 +3477,9 @@ class CS2TruePanoramaApp(tk.Tk):
         _tick(duration)
 
     def _on_sniper_success_ui(self, host: str, port: int, name: str, sid: str):
+        # AUDIT P3-01: the "sound when a slot opens" setting was saved but no sound existed.
+        if self.config.get("sniper_sound_enabled", True):
+            play_calm_tone("success")
         # Stop sniper immediately and start 10-second button cooldown
         self.sniper.stop()
         self.active_sniper_target = None
@@ -5776,7 +5790,31 @@ class CS2TruePanoramaApp(tk.Tk):
 
         threading.Thread(target=task, daemon=True).start()
 
-    def run_pc_maintenance(self):
+    def maintenance_plan(self):
+        """AUDIT P3 (D-12): plain list of what Run Maintenance will delete, from the ticked boxes."""
+        items = [
+            (self.maint_temp, "Windows temp files (%TEMP% and Windows\\Temp)"),
+            (self.maint_win_update, "Windows Update download cache (SoftwareDistribution\\Download)"),
+            (self.maint_discord_steam, "Discord and Steam web caches"),
+            (self.maint_thumb, "Explorer thumbnail cache"),
+            (self.maint_recycle, "everything in the Recycle Bin (cannot be undone)"),
+            (self.maint_dns, "Windows DNS cache (nothing is deleted from disk)"),
+        ]
+        return [label for var, label in items if var.get()]
+
+    def run_pc_maintenance(self, confirm: bool = True):
+        # AUDIT P3 (D-12): it deleted files with no question. Ask first, listing what is ticked.
+        plan = self.maintenance_plan()
+        if not plan:
+            messagebox.showinfo("PC Maintenance", "Nothing is ticked, so there is nothing to clean.")
+            return
+        if confirm and not messagebox.askyesno(
+                "Run PC Maintenance?",
+                "This permanently deletes (it does not go to the Recycle Bin):\n\n- " + "\n- ".join(plan)
+                + "\n\nFiles that are in use are skipped. Continue?"):
+            self.log("[MAINTENANCE] Cancelled by user.")
+            return
+
         def task():
             self.log("--- Starting Safe PC Maintenance ---")
             total_freed = 0
@@ -6068,12 +6106,14 @@ class CS2TruePanoramaApp(tk.Tk):
                         el = max(0, now - s_ts)
                         em = el // 60
                         es = el % 60
+                        # AUDIT P3-02: "≥" when the start was not seen (lower bound only)
+                        pre = "" if getattr(self, "server_map_start_exact", {}).get(sid) else "≥ "
                         if em >= 60:
                             eh = em // 60
                             em = em % 60
-                            s_str = f"⏱️ {eh}:{em:02d}:{es:02d} on map"
+                            s_str = f"⏱️ {pre}{eh}:{em:02d}:{es:02d} on map"
                         else:
-                            s_str = f"⏱️ {em:02d}:{es:02d} on map"
+                            s_str = f"⏱️ {pre}{em:02d}:{es:02d} on map"
                         try:
                             w_data["timer_lbl"].config(text=s_str)
                         except Exception:
@@ -6521,9 +6561,14 @@ class CS2TruePanoramaApp(tk.Tk):
                         if last_m != srv_map or sid not in getattr(self, "server_map_start_timestamps", {}):
                             if not hasattr(self, "server_last_known_maps"):
                                 self.server_last_known_maps = {}
+                            # AUDIT P3-02: was "now - (hash(id) % 900 + 120)", an invented start time.
+                            # First sighting: we only know the map has run AT LEAST since now.
+                            # A map change seen by the app gives a real start time.
+                            if not hasattr(self, "server_map_start_exact"):
+                                self.server_map_start_exact = {}
+                            self.server_map_start_exact[sid] = last_m is not None
                             self.server_last_known_maps[sid] = srv_map
-                            offset = abs(hash(sid)) % 900 + 120
-                            self.server_map_start_timestamps[sid] = int(time.time()) - offset
+                            self.server_map_start_timestamps[sid] = int(time.time())
 
                         if hasattr(self, "server_row_widgets") and sid in self.server_row_widgets:
                             w_dict = self.server_row_widgets[sid]
@@ -6597,7 +6642,8 @@ class CS2TruePanoramaApp(tk.Tk):
                 next_delay_ms = 30000
             else:
                 is_servers_tab = getattr(self, "current_page_key", "") == "SERVERS"
-                next_delay_ms = 1000 if is_servers_tab else 15000
+                # AUDIT P3-01: honour the 'Server query speed' setting (was always 1 s)
+                next_delay_ms = app_config.refresh_interval_ms(self.config) if is_servers_tab else 15000
 
             def _schedule_next():
                 if not getattr(self, "_quitting", False):
@@ -7803,17 +7849,8 @@ class CS2TruePanoramaApp(tk.Tk):
         cb_snd.pack(anchor="w", pady=(0, 4))
         add_tooltip(cb_snd, "Plays an audio chime when a monitored server slot becomes available.")
 
-        # Volume slider row
-        row_vol = tk.Frame(sec_srv, bg=BG_CARD)
-        row_vol.pack(fill="x", padx=4, pady=(0, 4))
-        tk.Label(row_vol, text="Notification volume:", font=("Segoe UI", 10), fg=FG_WHITE, bg=BG_CARD).pack(side="left", padx=(0, 8))
-        var_sniper_vol = tk.IntVar(value=self.config.get("sniper_sound_volume", 100))
-        scale_vol = ttk.Scale(row_vol, from_=0, to=100, orient="horizontal", variable=var_sniper_vol)
-        scale_vol.pack(side="left", fill="x", expand=True, padx=(0, 8))
-        lbl_vol_val = tk.Label(row_vol, text=f"{var_sniper_vol.get()}%", font=("Segoe UI", 9), fg=FG_MUTED, bg=BG_CARD, width=4)
-        lbl_vol_val.pack(side="left")
-        scale_vol.configure(command=lambda val: lbl_vol_val.config(text=f"{int(float(val))}%"))
-        add_tooltip(scale_vol, "Adjusts notification audio volume level.")
+        # AUDIT P3-01: volume slider removed - Windows' simple sound API cannot set a volume,
+        # so the slider was saved but changed nothing.
 
         # Refresh speed row
         row_ref = tk.Frame(sec_srv, bg=BG_CARD)
@@ -7829,7 +7866,7 @@ class CS2TruePanoramaApp(tk.Tk):
         sec_priv.pack(fill="x", pady=(0, 8))
         tk.Label(sec_priv, text="PRIVACY", font=("Segoe UI", 10, "bold"), fg=theme.COLOR_PRIMARY, bg=BG_CARD).pack(anchor="w", pady=(0, 6))
 
-        var_disc_share = tk.BooleanVar(value=self.config.get("discord_presence_share", True))
+        var_disc_share = tk.BooleanVar(value=self.config.get("discord_rpc_enabled", True))
         cb_disc = tk.Checkbutton(sec_priv, text=" Share game telemetry with Discord Rich Presence", variable=var_disc_share,
                                  font=("Segoe UI", 10), fg=FG_WHITE, bg=BG_CARD, activebackground=BG_CARD, selectcolor=BG_WINDOW)
         cb_disc.pack(anchor="w", pady=(0, 4))
@@ -7987,15 +8024,15 @@ class CS2TruePanoramaApp(tk.Tk):
             "minimize_to_tray_on_close": var_tray,
             "open_on_page": var_start_page,
             "sniper_sound_enabled": var_sniper_sound,
-            "sniper_sound_volume": var_sniper_vol,
             "server_refresh_speed": var_refresh_speed,
-            "discord_presence_share": var_disc_share,
+            "discord_rpc_enabled": var_disc_share,
             "check_updates_on_startup": var_check_upd,
         }
         self._settings_dialog_vars = settings_vars  # used by tests
 
         def save_settings():
             before = (bool(self.config.get("start_with_windows", False)), bool(self.config.get("start_minimized", False)))
+            discord_before = bool(self.config.get("discord_rpc_enabled", True))
             values = {}
             for key, var in settings_vars.items():
                 try:
@@ -8019,6 +8056,16 @@ class CS2TruePanoramaApp(tk.Tk):
                                      parent=dlg)
                 return False
             self.log(f"[SETTINGS] Saved to {app_config.CONFIG_FILE}")
+            if bool(self.config.get("discord_rpc_enabled", True)) != discord_before:
+                # Same effect as the Discord tab's switch (clears the activity when turned off).
+                if hasattr(self, "var_discord_enabled"):
+                    self.var_discord_enabled.set(self.config["discord_rpc_enabled"])
+                    self._on_discord_toggle()
+                elif not self.config["discord_rpc_enabled"] and self.discord_rpc:
+                    try:
+                        self.discord_rpc.clear_activity(); self.discord_rpc.close()
+                    except Exception:
+                        pass
             _close_settings()
             if not startup_ok:
                 self.after(50, lambda: messagebox.showwarning("Settings saved",

@@ -42,7 +42,6 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
 }) => {
   const isBanana = theme === 'banana';
   const [timeStr, setTimeStr] = useState<string>('');
-  const [ping, setPing] = useState<number>(12);
   const [activeSection, setActiveSection] = useState<string>('hero-stage');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
@@ -69,12 +68,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    const pingInterval = setInterval(() => {
-      setPing(Math.floor(10 + Math.random() * 8));
-    }, 4000);
-    return () => clearInterval(pingInterval);
-  }, []);
+  // AUDIT P3-03: removed a random 10-18 ms "ping" that was shown like a live measurement.
 
   const isManualScrollingRef = useRef<boolean>(false);
   const scrollTimeoutRef = useRef<number | null>(null);
@@ -333,7 +327,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             </span>
             <span className={`flex items-center gap-1 font-bold ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`}>
               <span className={`w-1.5 h-1.5 rounded-full inline-block animate-pulse ${isBanana ? 'bg-[#FFE135]' : 'bg-[#2ECC71]'}`} />
-              {ping}ms
+              LOCAL
             </span>
           </div>
         </div>

@@ -20,8 +20,8 @@ Assumption logged: `node_modules/` was not copied (it is re-created exactly by `
 | 0 Recon | DONE |
 | 1 Security | DONE + committed (`4e28b66`, `570b7e3`, `8dddc8d`, `370779d`). Windows tests all pass. Only owner action left: deploy (OWNER_STEPS A) |
 | 2 Known bugs | DONE: 9/9 handled (8 fixed, #8 already fixed + confirmed). 36/36 new tests pass; 35 of them fail on the old code. See `audit/FINDINGS_PHASE2.md` |
-| 3 Functional | NEXT |
-| 4 Performance | pending |
+| 3 Functional | DONE: 5 fixes (dead settings, invented map time, fake ping, GSI port clash, maintenance confirm). 10/10 tests; 21/21 files pass. `audit/FINDINGS_PHASE3_7.md` |
+| 4 Performance | NEXT |
 | 5 Wording/a11y | pending |
 | 6 Share-readiness | pending |
 | 7 Build/hand-off | pending |
@@ -139,8 +139,11 @@ Pre-check: branch `final-audit`; `dist/CS2_Command_Center.exe` SHA-256 still `AE
 - Owner items added: decision P2-D1 (website geo model), hand tests (D), in-game checklist (E).
 - Not tested: real Discord client, CS2 in-game commands, the frozen exe (no exe rebuilt in Phase 2).
 
+**Phase 3 (functional)** — owner said "go by titles + findings". Details: `audit/FINDINGS_PHASE3_7.md`.
+5 fixes, `desktop-app/test_phase3_functional.py` 10/10 [TESTED], every app page opens with 0 Tk errors.
+
 ## Next
-1. Phase 3 (functional), starting with the P3-01..P3-06 items found in Phase 2.
+1. Phase 4 (performance): website bundle size, app idle CPU/memory.
 
 ## Handover Point (session 1):
 - Current Branch: `final-audit`

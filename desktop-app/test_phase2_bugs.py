@@ -76,11 +76,10 @@ class Bug6SettingsPersist(AppTestBase):
         "start_with_windows": True,
         "start_minimized": True,
         "minimize_to_tray_on_close": False,
-        "open_on_page": "ZE Game Servers",
+        "open_on_page": "Last used page",
         "sniper_sound_enabled": False,
-        "sniper_sound_volume": 37,
         "server_refresh_speed": "Eco (15s)",
-        "discord_presence_share": False,
+        "discord_rpc_enabled": False,       # P3-01: Settings tick = the real Discord switch
         "check_updates_on_startup": False,   # the owner's reported bug
     }
 
