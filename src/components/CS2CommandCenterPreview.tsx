@@ -33,12 +33,33 @@ declare const __APP_EXE_SHA256__: string;
 
 export const CS2CommandCenterPreview: React.FC = () => {
   const downloadUrl = '/CS2_Command_Center.exe?v=1.4.0';
-  const exeSha256 = typeof __APP_EXE_SHA256__ !== 'undefined' ? __APP_EXE_SHA256__ : 'B59980D8C11620D19867E7A1396D788BDEB8A5A58F98A95B98CBD71F5D7BF3AB';
+  const exeSha256 = typeof __APP_EXE_SHA256__ !== 'undefined' ? __APP_EXE_SHA256__ : '8EEAE87DB3FA7D5D30F63F31070ECE7897AFEA2455B0D496A922228DF3E5DA9C';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [copiedHash, setCopiedHash] = useState<boolean>(false);
 
   const modules: AppFeatureModule[] = [
+    {
+      id: 'dashboard',
+      name: 'CyberDeck Executive Dashboard & Telemetry',
+      shortTag: 'TACTICAL COMMAND OS',
+      badge: 'NEW TACTICAL CONSOLE',
+      icon: <Terminal className="w-5 h-5 text-amber-400" />,
+      summary: 'Centralized executive command hub featuring 1-click total optimization, balanced CPU/GPU hardware diagnostics, persistent bottom telemetry, and instant server jumping.',
+      details: [
+        '1-Click Total Optimization: Automatically verifies and applies recommended Source 2 CVARs, power plans, and autoexec binds in a single click.',
+        'Hardware Architecture Telemetry: Real-time detection of AMD 3D V-Cache, Intel P/E-Core topologies, and discrete GPU drivers.',
+        'Persistent CyberDeck Status Bar: Live tracking of CS2 process status, background UDP slot sniper, active gaming DNS, and 100% VAC safety.',
+        'Tactical Left-Rail Navigation: Quick-jump buttons for seamless switching across all 8 optimization modules.'
+      ],
+      parameters: [
+        { name: 'Architecture', value: 'CyberDeck Command Rail', desc: 'Tactical left-rail navigation with instant view switching' },
+        { name: 'Telemetry Bar', value: 'Real-time Win32 & UDP', desc: 'Monitors game state and network sockets without CPU overhead' },
+        { name: 'VAC Safety', value: '100% Non-Invasive', desc: 'Zero memory injection, zero DLL hooking' }
+      ],
+      proTip: 'The new CyberDeck Command Console is designed for quick in-game alt-tab management and 100% offline portability.',
+      vacSafe: true
+    },
     {
       id: 'autoexec',
       name: 'Autoexec & In-App Manual CFG Editor',
