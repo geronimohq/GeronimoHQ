@@ -114,7 +114,7 @@ class SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
 
 def fetch_update_manifest(
     manifest_url: str = UPDATE_MANIFEST_URL,
-    current_ver: str = "1.5.0",
+    current_ver: str = "1.5.1",
     pub_key_hex: str = EMBEDDED_PUBLIC_KEY_HEX,
     timeout: Tuple[int, int] = (5, 10),
     allow_dev_override: bool = False

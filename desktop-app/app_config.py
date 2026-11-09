@@ -191,6 +191,40 @@ def is_windows_startup_minimized() -> bool:
     except Exception:
         return False
 
+LEGACY_TASK_NAME = "CS2CommandCenter_AutoStart"
+
+
+def legacy_elevated_task_exists() -> bool:
+    import subprocess
+    try:
+        r = subprocess.run(["schtasks", "/query", "/tn", LEGACY_TASK_NAME], capture_output=True,
+                           timeout=5, creationflags=0x08000000)
+        return r.returncode == 0
+    except Exception:
+        return False
+
+
+def migrate_legacy_startup_task() -> str:
+    """AUDIT D-07 migration, run once in the background at app start: remove the elevated
+    logon task older versions created. Returns "none" | "removed" | "needs_admin"."""
+    if not legacy_elevated_task_exists():
+        return "none"
+    if remove_legacy_elevated_task() and not legacy_elevated_task_exists():
+        return "removed"
+    return "needs_admin"
+
+
+def remove_legacy_elevated_task() -> bool:
+    """Deletes the elevated logon task older versions created (no-op if it does not exist)."""
+    import subprocess
+    try:
+        r = subprocess.run(["schtasks", "/delete", "/tn", LEGACY_TASK_NAME, "/f"],
+                           capture_output=True, timeout=5, creationflags=0x08000000)
+        return r.returncode == 0
+    except Exception:
+        return False
+
+
 def set_windows_startup(enabled: bool, minimized: bool = False) -> bool:
     """
     Registers or unregisters the app executable in HKCU Run registry key.
@@ -236,18 +270,9 @@ def set_windows_startup(enabled: bool, minimized: bool = False) -> bool:
     except Exception:
         pass
 
-    # Manage optional elevated Windows Scheduled Task (allows admin users to boot elevated with zero UAC prompts)
-    task_name = "CS2CommandCenter_AutoStart"
-    if enabled:
-        try:
-            sch_cmd = ["schtasks", "/create", "/tn", task_name, "/tr", f'"{exe_path}" --minimized', "/sc", "onlogon", "/rl", "highest", "/f"]
-            subprocess.run(sch_cmd, capture_output=True, timeout=3, creationflags=0x08000000)
-        except Exception:
-            pass
-    else:
-        try:
-            subprocess.run(["schtasks", "/delete", "/tn", task_name, "/f"], capture_output=True, timeout=3, creationflags=0x08000000)
-        except Exception:
-            pass
+    # AUDIT D-07 (owner decision 2026-11-10): start as a normal user. Older versions ALSO
+    # created a Task Scheduler task "/rl highest" (Administrator at every logon, and a second
+    # copy next to the Run key). That task is no longer created, and any old one is removed.
+    remove_legacy_elevated_task()
 
     return success

@@ -92,6 +92,49 @@ class TweakUndo(unittest.TestCase):
             self.assertEqual(f.read(), "// original\n")
 
 
+class StartupNotElevated(unittest.TestCase):
+    """D-07 (owner decision): Start with Windows = normal user, no '/rl highest' task."""
+    def test_enable_never_creates_elevated_task_and_removes_old_one(self):
+        import importlib
+        real = importlib.reload(importlib.import_module("app_config"))  # undo the test stub
+        try:
+            runs = []
+            with mock.patch.object(real.winreg, "OpenKey", return_value=_FakeKey()),                     mock.patch.object(real.winreg, "SetValueEx"),                     mock.patch.object(real.winreg, "DeleteValue"),                     mock.patch("subprocess.run", side_effect=lambda cmd, **k: runs.append(cmd) or mock.Mock(returncode=0)):
+                self.assertTrue(real.set_windows_startup(True, True))
+                real.set_windows_startup(False)
+            flat = [" ".join(map(str, c)) for c in runs]
+            self.assertFalse(any("/create" in c for c in flat), flat)
+            self.assertFalse(any("highest" in c for c in flat), flat)
+            self.assertTrue(any("/delete" in c and "CS2CommandCenter_AutoStart" in c for c in flat), flat)
+        finally:
+            importlib.reload(_test_isolation)  # re-apply temp config + stubs
+
+
+class LegacyTaskMigration(unittest.TestCase):
+    def _run(self, exists_seq, delete_rc):
+        import importlib
+        real = importlib.reload(importlib.import_module("app_config"))
+        try:
+            seq = list(exists_seq)
+            def fake(cmd, **k):
+                if "/query" in cmd:
+                    return mock.Mock(returncode=0 if seq.pop(0) else 1)
+                return mock.Mock(returncode=delete_rc)
+            with mock.patch("subprocess.run", side_effect=fake):
+                return real.migrate_legacy_startup_task()
+        finally:
+            importlib.reload(_test_isolation)
+
+    def test_no_task(self):
+        self.assertEqual(self._run([False], 0), "none")
+
+    def test_removed(self):
+        self.assertEqual(self._run([True, False], 0), "removed")
+
+    def test_needs_admin(self):
+        self.assertEqual(self._run([True, True], 1), "needs_admin")
+
+
 class RestoreDefaults(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

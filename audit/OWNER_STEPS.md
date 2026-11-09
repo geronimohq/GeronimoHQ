@@ -30,6 +30,19 @@ Other people's copies of the app send nothing to your backend after the next exe
 (D-05). Old copies already out there get "401" from the new backend, so they can no longer
 change your card.
 
+## Status (2026-11-10, owner)
+
+- **A** done by the owner (backend deployed with the token).
+- **B** decided: D-07 normal-user startup (done), W-05 pinned Actions (done), B-11 keep player lists,
+  P2-D1 app geo radar uses the website's method (done), P6-10 GitHub Releases recommended (owner's
+  call during F), P9-01 / P6-08 licence and third-party content: still the owner's call.
+- **C** nothing to do.
+- **D, E, G** skipped by the owner: problems will be reported by the owner and friends.
+- **F** steps 1-7 done: v1.5.1 built, smoke-tested, copied into dist\ and public\, `latest.json` signed
+  (signature verified with the app's embedded key), site build shows the new SHA-256. **Next: step 8, merge the PR.**
+- The app removes the old elevated startup task on its first normal run; if Windows refuses (it needs
+  Administrator), the log shows the one-line `schtasks /delete` command to run in an Administrator PowerShell.
+
 ## B. Decisions for you
 
 | ID | Question | My suggestion |
@@ -83,8 +96,9 @@ Tell me the results; I will mark them [TESTED in game].
 ## F. Release the audited app (order matters)
 
 The new exe is **not** released. It is in `scratch\dist\CS2_Command_Center.exe`
-(SHA-256 `78A91320400E43D17583952BFAA2C620E9744A0BB6197EDF8EF3744D4F8254FD`, 37,047,960 bytes,
-built from a clean clone of `final-audit` at `85a0bbf`, smoke-tested from a temp folder).
+**v1.5.1** (SHA-256 `F48472BB7E7AF4368671E77181F158E30B0173BD4682FFEBD32284A4E9D6BE16`, 37,063,751 bytes,
+built from a clean clone of `final-audit` at `2225087`, smoke-tested from a temp folder).
+Steps 1-4 below are DONE (version bump, tests 26/26, rebuild, smoke test).
 Per your rule I did not touch `dist\CS2_Command_Center.exe` or `public\`.
 
 1. **Bump the version first** (the updater only offers a *newer* version; this build still says 1.5.0):
