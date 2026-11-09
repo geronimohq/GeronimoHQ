@@ -2441,18 +2441,18 @@ class CS2TruePanoramaApp(tk.Tk):
         tk.Label(page, text="Direct Steam Game Server Protocol (bypasses console) • Live Server Ping, Map & Player Monitor • ZE Graph Intel", font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(1, 6))
 
         # 1. FEATURED GFL QUICK-CONNECT CARD
-        gfl_card = tk.Frame(page, bg="#151a24", padx=14, pady=10, highlightbackground=ACCENT_ORANGE, highlightthickness=1)
+        gfl_card = tk.Frame(page, bg="#0E1512", padx=14, pady=10, highlightbackground="#FFE135", highlightthickness=1)
         gfl_card.pack(fill="x", pady=(0, 8))
 
-        top_row = tk.Frame(gfl_card, bg="#151a24")
+        top_row = tk.Frame(gfl_card, bg="#0E1512")
         top_row.pack(fill="x")
 
         # Right Actions
-        gfl_right = tk.Frame(top_row, bg="#151a24")
+        gfl_right = tk.Frame(top_row, bg="#0E1512")
         gfl_right.pack(side="right", padx=(8, 0))
 
         # GFL Priority Reserved Slot Tier Selector
-        tier_row = tk.Frame(gfl_right, bg="#151a24")
+        tier_row = tk.Frame(gfl_right, bg="#0E1512")
         tier_row.pack(anchor="e", pady=(0, 6))
         tk.Label(tier_row, text="GFL Slot Priority:", font=("Segoe UI", 10, "bold"), fg=ACCENT_ORANGE, bg="#151a24").pack(side="left", padx=2)
         saved_tier = self.config.get("gfl_sniper_tier", "mapper")
@@ -2472,11 +2472,11 @@ class CS2TruePanoramaApp(tk.Tk):
         self.gfl_tier_combo.bind("<<ComboboxSelected>>", self._on_gfl_tier_changed)
         add_tooltip(self.gfl_tier_combo, "Set sniper target player threshold (e.g. ≤ 62 for Supporter/Mapper reserved slot).")
 
-        btn_box = tk.Frame(gfl_right, bg="#151a24")
+        btn_box = tk.Frame(gfl_right, bg="#0E1512")
         btn_box.pack(anchor="e")
 
         b_gfl_conn = tk.Button(btn_box, text="⚡ Connect", font=("Segoe UI", -12, "bold"), width=9,
-                  fg="#ffffff", bg=ACCENT_ORANGE, activebackground=ACCENT_ORANGE_HOVER,
+                  fg="#070B09", bg="#FFE135", activebackground="#FFF066",
                   relief="flat", padx=7, pady=4, cursor="hand2",
                   command=lambda: self.run_connect_workflow("74.91.124.21", 27015, "GFL Clan Zombie Escape"))
         b_gfl_conn.pack(side="left", padx=2)
@@ -2504,7 +2504,7 @@ class CS2TruePanoramaApp(tk.Tk):
         add_tooltip(b_gfl_copy, "Copies 'connect 74.91.124.21:27015' to your clipboard.")
 
         # Left Info with Map Thumbnail
-        gfl_left = tk.Frame(top_row, bg="#151a24")
+        gfl_left = tk.Frame(top_row, bg="#0E1512")
         gfl_left.pack(side="left", fill="both", expand=True)
 
         # Map Preview Thumbnail Frame (Compact 105x64)
@@ -2524,11 +2524,11 @@ class CS2TruePanoramaApp(tk.Tk):
             self.gfl_thumb_lbl.image = init_gfl_photo
 
         # Info column
-        gfl_info_col = tk.Frame(gfl_left, bg="#151a24")
+        gfl_info_col = tk.Frame(gfl_left, bg="#0E1512")
         gfl_info_col.pack(side="left", fill="both", expand=True)
 
         # Line 1: Badges
-        header_tags = tk.Frame(gfl_info_col, bg="#151a24")
+        header_tags = tk.Frame(gfl_info_col, bg="#0E1512")
         header_tags.pack(anchor="w")
         tk.Label(header_tags, text="★ PREMIER FEATURED SERVER", font=("Segoe UI", 14, "bold"), fg=ACCENT_ORANGE, bg="#151a24").pack(side="left")
         
@@ -2537,7 +2537,7 @@ class CS2TruePanoramaApp(tk.Tk):
         tk.Label(reg_pill, text="CHICAGO, US", font=("Segoe UI", -11, "bold"), fg="#94a3b8", bg="#1e2638").pack()
 
         # Line 2: Server Title and Quick Links
-        title_box = tk.Frame(gfl_info_col, bg="#151a24")
+        title_box = tk.Frame(gfl_info_col, bg="#0E1512")
         title_box.pack(anchor="w", pady=(1, 1))
         tk.Label(title_box, text="🇺🇸 GFL CLAN ZE 24 / 7", font=("Segoe UI", 14, "bold"), fg=FG_WHITE, bg="#151a24").pack(side="left")
 
@@ -2552,7 +2552,7 @@ class CS2TruePanoramaApp(tk.Tk):
         add_tooltip(b_disc, "Join the official GFL Clan Zombie Escape community Discord server")
 
         # Map & Timer row
-        map_timer_row = tk.Frame(gfl_info_col, bg="#151a24")
+        map_timer_row = tk.Frame(gfl_info_col, bg="#0E1512")
         map_timer_row.pack(anchor="w", pady=(1, 1))
         self.gfl_status_lbl = tk.Label(map_timer_row, textvariable=self.gfl_status_text, font=("Segoe UI", 10), fg=ACCENT_GREEN, bg="#151a24")
         self.gfl_status_lbl.pack(side="left")
@@ -5743,7 +5743,7 @@ class CS2TruePanoramaApp(tk.Tk):
         dlg = tk.Toplevel(self)
         dlg.title(f"Soundtrack Intel - {clean}")
         dlg.minsize(680, 480)
-        dlg.configure(bg="#0c0e12")
+        dlg.configure(bg="#070B09")
         dlg.transient(self)
         dlg.grab_set()
         center_window_on_parent(dlg, parent=self, req_w=720, req_h=520)
@@ -6285,7 +6285,7 @@ class CS2TruePanoramaApp(tk.Tk):
         dlg = tk.Toplevel(self)
         dlg.title(f"Active Players — {server_name}")
         dlg.minsize(600, 480)
-        dlg.configure(bg="#0c0e12")
+        dlg.configure(bg="#070B09")
         dlg.transient(self)
         dlg.grab_set()
         center_window_on_parent(dlg, parent=self, req_w=680, req_h=570)
@@ -6521,11 +6521,11 @@ class CS2TruePanoramaApp(tk.Tk):
         """Displays rich table of downloaded workshop maps with interactive column sorting, server pack detection, and dark mode."""
         dlg = tk.Toplevel(self)
         dlg.title("CS2 & Zombie Escape Custom Map Cleaner")
-        dlg.configure(bg="#0c0e12")
+        dlg.configure(bg="#070B09")
         dlg.transient(self)
         dlg.grab_set()
 
-        head = tk.Frame(dlg, bg="#141822", padx=14, pady=10, highlightbackground=BG_BORDER, highlightthickness=1)
+        head = tk.Frame(dlg, bg="#0E1512", padx=14, pady=10, highlightbackground="#1E2E26", highlightthickness=1)
         head.pack(fill="x", padx=10, pady=(10, 6))
 
         tk.Label(head, text="🗺️ CS2 & ZOMBIE ESCAPE CUSTOM MAP CLEANER", font=("Segoe UI", 14, "bold"), fg=FG_WHITE, bg="#141822").pack(anchor="w")
@@ -6533,7 +6533,7 @@ class CS2TruePanoramaApp(tk.Tk):
                  font=("Segoe UI", 10), fg="#cbd5e1", bg="#141822").pack(anchor="w", pady=(1, 0))
 
         # Community Server Pack & Rotation Protection Bar (Custom Server Protection Selectors)
-        prot_bar = tk.Frame(dlg, bg="#111622", padx=10, pady=5, highlightbackground="#1e293b", highlightthickness=1)
+        prot_bar = tk.Frame(dlg, bg="#121C18", padx=10, pady=5, highlightbackground="#1E2E26", highlightthickness=1)
         prot_bar.pack(fill="x", padx=10, pady=(0, 6))
 
         tk.Label(prot_bar, text="🛡️ PROTECT PACKS:", font=("Segoe UI", 10, "bold"), fg="#38bdf8", bg="#111622").pack(side="left", padx=(0, 6))
