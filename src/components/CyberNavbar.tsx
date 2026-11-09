@@ -35,6 +35,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
 }) => {
   const [timeStr, setTimeStr] = useState<string>('');
   const [ping, setPing] = useState<number>(12);
+  const [activeSection, setActiveSection] = useState<string>('hero-stage');
 
   // Digital Cyber Clock & Low-Latency Network Ping Simulation
   useEffect(() => {
@@ -56,9 +57,35 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
     return () => clearInterval(pingInterval);
   }, []);
 
+  // Real-Time Active Section Scroll Spy
+  useEffect(() => {
+    const sectionIds = ['hero-stage', 'download-ram', 'server-radar', 'ze-toolkit', 'cfg-studio', 'cs2-command', 'contact'];
+    const handleScroll = () => {
+      const scrollPos = window.scrollY + 130;
+      for (let i = sectionIds.length - 1; i >= 0; i--) {
+        const id = sectionIds[i];
+        const el = document.getElementById(id);
+        if (el) {
+          const top = el.offsetTop;
+          if (scrollPos >= top) {
+            setActiveSection(id);
+            break;
+          }
+        }
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault();
+    setActiveSection(targetId);
     scrollToSectionById(targetId);
+    if (window.history?.pushState) {
+      window.history.pushState(null, '', `#${targetId}`);
+    }
   };
 
   return (
@@ -122,7 +149,11 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             <a
               href="#hero-stage"
               onClick={(e) => handleNavClick(e, 'hero-stage')}
-              className="hover:text-cyan-400 transition-colors flex items-center gap-1.5 flex-shrink-0"
+              className={`transition-all flex items-center gap-1.5 flex-shrink-0 px-1.5 py-0.5 rounded ${
+                activeSection === 'hero-stage'
+                  ? 'text-cyan-300 font-bold bg-cyan-950/50 border border-cyan-500/40 shadow-[0_0_10px_rgba(0,240,255,0.25)]'
+                  : 'hover:text-cyan-400'
+              }`}
             >
               <Radio className="w-3.5 h-3.5 text-cyan-400" />
               <span>HOLO-DECK</span>
@@ -130,7 +161,9 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             <a
               href="#download-ram"
               onClick={(e) => handleNavClick(e, 'download-ram')}
-              className="px-2.5 py-1 rounded-lg bg-lime-950/80 border border-lime-400/60 text-lime-300 hover:bg-lime-900/80 shadow-[0_0_12px_rgba(57,255,20,0.3)] transition-all flex items-center gap-1 font-bold flex-shrink-0"
+              className={`px-2.5 py-1 rounded-lg bg-lime-950/80 border border-lime-400/60 text-lime-300 hover:bg-lime-900/80 shadow-[0_0_12px_rgba(57,255,20,0.3)] transition-all flex items-center gap-1 font-bold flex-shrink-0 ${
+                activeSection === 'download-ram' ? 'ring-2 ring-lime-400' : ''
+              }`}
             >
               <Cpu className="w-3.5 h-3.5 text-lime-400 animate-pulse" />
               <span>DOWNLOAD RAM</span>
@@ -138,7 +171,11 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             <a
               href="#server-radar"
               onClick={(e) => handleNavClick(e, 'server-radar')}
-              className="hover:text-lime-400 transition-colors flex items-center gap-1.5 flex-shrink-0"
+              className={`transition-all flex items-center gap-1.5 flex-shrink-0 px-1.5 py-0.5 rounded ${
+                activeSection === 'server-radar'
+                  ? 'text-lime-300 font-bold bg-lime-950/50 border border-lime-500/40 shadow-[0_0_10px_rgba(57,255,20,0.25)]'
+                  : 'hover:text-lime-400'
+              }`}
             >
               <Wifi className="w-3.5 h-3.5 text-lime-400" />
               <span>ZE SERVERS</span>
@@ -146,7 +183,11 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             <a
               href="#ze-toolkit"
               onClick={(e) => handleNavClick(e, 'ze-toolkit')}
-              className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 flex-shrink-0"
+              className={`transition-all flex items-center gap-1.5 flex-shrink-0 px-1.5 py-0.5 rounded ${
+                activeSection === 'ze-toolkit'
+                  ? 'text-emerald-300 font-bold bg-emerald-950/50 border border-emerald-500/40 shadow-[0_0_10px_rgba(52,211,153,0.25)]'
+                  : 'hover:text-emerald-400'
+              }`}
             >
               <Wrench className="w-3.5 h-3.5 text-emerald-400" />
               <span>ZE TOOLKIT</span>
@@ -154,7 +195,11 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             <a
               href="#cfg-studio"
               onClick={(e) => handleNavClick(e, 'cfg-studio')}
-              className="hover:text-cyan-400 transition-colors flex items-center gap-1.5 flex-shrink-0"
+              className={`transition-all flex items-center gap-1.5 flex-shrink-0 px-1.5 py-0.5 rounded ${
+                activeSection === 'cfg-studio'
+                  ? 'text-cyan-300 font-bold bg-cyan-950/50 border border-cyan-500/40 shadow-[0_0_10px_rgba(0,240,255,0.25)]'
+                  : 'hover:text-cyan-400'
+              }`}
             >
               <Sliders className="w-3.5 h-3.5 text-cyan-400" />
               <span>CFG STUDIO</span>
@@ -162,7 +207,11 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             <a
               href="#cs2-command"
               onClick={(e) => handleNavClick(e, 'cs2-command')}
-              className="hover:text-fuchsia-400 transition-colors flex items-center gap-1.5 flex-shrink-0"
+              className={`transition-all flex items-center gap-1.5 flex-shrink-0 px-1.5 py-0.5 rounded ${
+                activeSection === 'cs2-command'
+                  ? 'text-fuchsia-300 font-bold bg-fuchsia-950/50 border border-fuchsia-500/40 shadow-[0_0_10px_rgba(217,70,239,0.25)]'
+                  : 'hover:text-fuchsia-400'
+              }`}
             >
               <Shield className="w-3.5 h-3.5 text-fuchsia-400" />
               <span>CS2 APP</span>
@@ -170,7 +219,11 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             <a
               href="#contact"
               onClick={(e) => handleNavClick(e, 'contact')}
-              className="hover:text-cyan-400 transition-colors flex items-center gap-1.5 flex-shrink-0"
+              className={`transition-all flex items-center gap-1.5 flex-shrink-0 px-1.5 py-0.5 rounded ${
+                activeSection === 'contact'
+                  ? 'text-cyan-300 font-bold bg-cyan-950/50 border border-cyan-500/40 shadow-[0_0_10px_rgba(0,240,255,0.25)]'
+                  : 'hover:text-cyan-400'
+              }`}
             >
               <Mail className="w-3.5 h-3.5 text-cyan-400" />
               <span>TRANSMISSION</span>
