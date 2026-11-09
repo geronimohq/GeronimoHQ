@@ -510,32 +510,35 @@ export const ServerRadarPreview: React.FC = () => {
           )}
         </div>
 
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        {/* Server Header: Badges & Title (Positioned cleanly above columns so columns start flush beneath it) */}
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2 flex-wrap sm:pr-48">
+            <span className="px-2 py-0.5 text-[10px] font-code rounded bg-amber-950/90 text-amber-300 border border-amber-500/60 font-bold flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-amber-400" />
+              PREMIER FEATURED SERVER
+            </span>
+            <span className="text-[10px] font-code px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300 font-bold">
+              🇺🇸 US CHICAGO
+            </span>
+            <span className="text-[10px] font-code px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 font-bold">
+              GLOBAL SERVER
+            </span>
+            <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold">
+              128 TICK
+            </span>
+          </div>
+
+          <h3 className="text-xl md:text-2xl font-cyber font-black text-white flex items-center flex-wrap gap-2">
+            <span>GFL Clan Zombie Escape</span>
+            <span className="font-sans font-black text-amber-400 tracking-wider text-xl md:text-2xl">
+              24 / 7
+            </span>
+          </h3>
+        </div>
+
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
           {/* Left Info */}
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="px-2 py-0.5 text-[10px] font-code rounded bg-amber-950/90 text-amber-300 border border-amber-500/60 font-bold flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-400" />
-                PREMIER FEATURED SERVER
-              </span>
-              <span className="text-[10px] font-code px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300 font-bold">
-                🇺🇸 US CHICAGO
-              </span>
-              <span className="text-[10px] font-code px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 font-bold">
-                GLOBAL SERVER
-              </span>
-              <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold">
-                128 TICK
-              </span>
-            </div>
-
-            <h3 className="text-xl md:text-2xl font-cyber font-black text-white mb-2 flex items-center flex-wrap gap-2">
-              <span>GFL Clan Zombie Escape</span>
-              <span className="font-sans font-black text-amber-400 tracking-wider text-xl md:text-2xl">
-                24 / 7
-              </span>
-            </h3>
-
+          <div className="flex-1 min-w-0">
             {/* Big Map Preview & Telemetry Display */}
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-slate-900/90 p-3 rounded-xl border border-slate-800 mb-3">
               {/* Prominent Map Thumbnail */}
@@ -685,7 +688,7 @@ export const ServerRadarPreview: React.FC = () => {
           </div>
 
           {/* Right Action CTAs */}
-          <div className="flex flex-col sm:flex-row lg:flex-col items-stretch lg:items-end justify-center gap-2 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row lg:flex-col items-stretch lg:items-end justify-start gap-2 flex-shrink-0">
             {/* Geographic Demographics Radar HUD */}
             <ServerGeoDemographics
               serverRegion={gflServer.region}

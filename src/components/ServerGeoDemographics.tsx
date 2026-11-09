@@ -46,7 +46,7 @@ export const ServerGeoDemographics: React.FC<ServerGeoDemographicsProps> = ({
     .map((r) => `${r.flag} ${r.name}: ${r.percentage}% (~${r.count} players)${r.pingRange ? ` [Ping: ${r.pingRange}]` : ''}`)
     .join('\n');
 
-  const maxPills = compact ? 5 : 5;
+  const maxPills = compact ? 7 : 4;
 
   return (
     <div
@@ -136,9 +136,9 @@ export const ServerGeoDemographics: React.FC<ServerGeoDemographicsProps> = ({
         ))}
       </div>
 
-      {/* Breakdown Pills: Left-aligned, covering width, with +more on the far right */}
-      <div className="w-full flex items-center justify-between text-[11px] text-slate-300 font-code gap-1">
-        <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+      {/* Breakdown Pills: Left-aligned, strictly single-line, covering width, with +more on the far right */}
+      <div className="w-full flex items-center justify-between text-[11px] text-slate-300 font-code gap-1 flex-nowrap">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1 flex-nowrap overflow-hidden">
           {activeItems.slice(0, maxPills).map((r) => (
             <span
               key={r.code}
