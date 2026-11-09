@@ -24,7 +24,7 @@ class TestUserFeedbackFixes(unittest.TestCase):
             src = f.read()
         # Filter tabs
         self.assertIn('add_tooltip(btn_filter_all, "Show all custom community maps', src)
-        self.assertIn('add_tooltip(btn_filter_temp, "Show only temporary downloaded maps', src)
+        self.assertIn('add_tooltip(btn_filter_temp, "Show only temporary maps downloaded', src)
         self.assertIn('add_tooltip(btn_filter_sub, "Show maps belonging to your subscribed', src)
         self.assertIn('add_tooltip(btn_filter_assets, "Show essential community server content packs', src)
         self.assertIn('add_tooltip(btn_filter_dupe, "Show duplicate copies', src)
