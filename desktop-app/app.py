@@ -43,6 +43,7 @@ import app_config
 import custom_map_cleaner
 import discord_rpc
 import cs2_gsi
+import theme
 
 import subprocess
 
@@ -139,21 +140,21 @@ def check_single_instance():
     return None
 
 # Concept 1 Exact Color Palette (Authentic Panorama Dark)
-BG_WINDOW = "#0c0e12"       # Main background
-BG_SIDEBAR = "#11141a"      # Vertical left sidebar
-BG_SIDEBAR_ACTIVE = "#1a1f29"
-BG_CARD = "#141820"         # Content card panels
-BG_CARD_ROW = "#171c26"
-BG_BORDER = "#1f2533"       # Thin sharp borders
-BG_CONSOLE = "#07080b"      # Terminal black
-FG_WHITE = "#f8fafc"        # Primary typography
-FG_MUTED = "#8e99a8"        # Secondary description
-ACCENT_ORANGE = "#de6c11"   # CS2 Panorama signature orange
-ACCENT_ORANGE_HOVER = "#f27918"
-ACCENT_GREEN = "#10b981"
-ACCENT_CYAN = "#38bdf8"
-ACCENT_RED = "#ef4444"      # Alert Red for AMD MPO Notice & Critical warnings
-ACCENT_AMBER = "#f59e0b"
+BG_WINDOW = theme.COLOR_CANVAS          # Deep Cyber-Swamp Obsidian (#070B09)
+BG_SIDEBAR = theme.COLOR_PANEL          # Moss-Slate (#0E1512)
+BG_SIDEBAR_ACTIVE = theme.COLOR_PANEL_ROW # (#121C18)
+BG_CARD = theme.COLOR_PANEL             # Moss-Slate (#0E1512)
+BG_CARD_ROW = theme.COLOR_PANEL_ROW     # (#121C18)
+BG_BORDER = theme.COLOR_BORDER          # Crisp 1px Border (#1E2E26)
+BG_CONSOLE = theme.COLOR_CANVAS         # (#070B09)
+FG_WHITE = theme.COLOR_TEXT_PRIMARY     # (#FFFFFF)
+FG_MUTED = theme.COLOR_TEXT_MUTED       # (#94A39E)
+ACCENT_ORANGE = theme.COLOR_PRIMARY_BANANA # Cyber Banana Yellow (#FFE135)
+ACCENT_ORANGE_HOVER = "#FFF066"
+ACCENT_GREEN = theme.COLOR_SUCCESS_PEPE # Tactical Pepe Green (#2ECC71)
+ACCENT_CYAN = theme.COLOR_TELEMETRY_CYAN # Cyber Cyan (#00F0FF)
+ACCENT_RED = theme.COLOR_ALERT_MAGENTA  # Synth Magenta (#FF2A85)
+ACCENT_AMBER = theme.COLOR_PRIMARY_BANANA # (#FFE135)
 
 def play_calm_tone(kind="info"):
     """Plays a gentle, soothing, non-intrusive Windows studio notification chime."""
