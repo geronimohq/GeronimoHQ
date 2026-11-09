@@ -23,7 +23,7 @@ export interface LiveServerInfo {
 export interface GeronimoPresence {
   online: boolean;
   in_game: boolean;
-  state: 'in_server' | 'main_menu' | 'other_game' | 'online' | 'offline';
+  state: 'in_server' | 'main_menu' | 'other_game' | 'online' | 'offline' | 'unknown';
   game: string | null;
   server_id: string | null;
   server_name: string | null;

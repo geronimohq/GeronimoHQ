@@ -183,13 +183,19 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
     return () => clearInterval(timer);
   }, []);
 
-  const isPlayerOnGFL = Boolean(
-    gflTelemetry?.players_list?.some((p) => p.name.toLowerCase().includes('geronimo'))
-  );
+  // AUDIT 1b-R6: the backend decides "in server" (it checks owner-only signals).
+  // A name that merely CONTAINS "geronimo" on GFL could be anyone, so it no longer
+  // flips this card to "in server".
+  const isPlayerOnGFL = false;
+
+  // AUDIT 1b-R7: backend state "unknown" (Steam check failed) is shown as Standby,
+  // never as Offline.
+  const viewStatus: 'connecting' | 'connected' | 'standby' =
+    connectionStatus === 'connected' && presence?.state === 'unknown' ? 'standby' : connectionStatus;
 
   // Determine current active presence state: 'in_server' | 'main_menu' | 'other_game' | 'online' | 'offline'
   let state: 'in_server' | 'main_menu' | 'other_game' | 'online' | 'offline' = 'offline';
-  if (connectionStatus === 'connected') {
+  if (viewStatus === 'connected') {
     if (presence?.state === 'in_server' || isPlayerOnGFL) {
       state = 'in_server';
     } else if (presence?.state === 'main_menu') {
@@ -207,12 +213,12 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
 
   // Active Map, Server & Status
   const currentMap = state === 'in_server'
-    ? (presence?.map && presence.map !== '-' && presence.map !== 'Idle' ? presence.map : (gflTelemetry?.map && gflTelemetry.map !== '-' ? gflTelemetry.map : 'ze_eizures_b1_1'))
+    ? (presence?.map && presence.map !== '-' && presence.map !== 'Idle' ? presence.map : (gflTelemetry?.map && gflTelemetry.map !== '-' ? gflTelemetry.map : '-'))
     : (state === 'main_menu' ? 'Main Menu' : state === 'other_game' ? (presence?.game || 'Steam Game') : state === 'online' ? 'Idle' : 'Offline');
 
   // Player display matching server telemetry exactly
   const playerDisplay = state === 'in_server'
-    ? (presence?.players && presence.players !== '-/-' && presence.players !== 'N/A' ? presence.players : (gflTelemetry?.players && gflTelemetry.players !== '-/-' ? gflTelemetry.players : '62/64'))
+    ? (presence?.players && presence.players !== '-/-' && presence.players !== 'N/A' ? presence.players : (gflTelemetry?.players && gflTelemetry.players !== '-/-' ? gflTelemetry.players : '-'))
     : 'N/A';
 
   // Connected Server Name
@@ -243,8 +249,8 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="relative flex-shrink-0">
               <div className={`w-8 h-8 rounded-full overflow-hidden border shadow-sm ${
-                connectionStatus === 'connecting' ? 'border-amber-400/80 shadow-[0_0_10px_rgba(251,191,36,0.3)]' :
-                connectionStatus === 'standby' ? 'border-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.2)]' :
+                viewStatus === 'connecting' ? 'border-amber-400/80 shadow-[0_0_10px_rgba(251,191,36,0.3)]' :
+                viewStatus === 'standby' ? 'border-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.2)]' :
                 state === 'in_server' ? 'border-[#23a55a] shadow-[0_0_10px_rgba(35,165,90,0.4)]' :
                 state === 'main_menu' ? 'border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.4)]' :
                 state === 'online' ? 'border-[#23a55a] shadow-[0_0_10px_rgba(35,165,90,0.4)]' :
@@ -260,8 +266,8 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
                 />
               </div>
               <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#111214] ${
-                connectionStatus === 'connecting' ? 'bg-amber-400 animate-pulse' :
-                connectionStatus === 'standby' ? 'bg-amber-500' :
+                viewStatus === 'connecting' ? 'bg-amber-400 animate-pulse' :
+                viewStatus === 'standby' ? 'bg-amber-500' :
                 state === 'in_server' ? 'bg-[#23a55a]' : 
                 state === 'main_menu' ? 'bg-amber-400' : 
                 state === 'other_game' ? 'bg-purple-400' : 
@@ -276,12 +282,12 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
               </span>
               <span className="text-[#949ba4]">&bull;</span>
               <span className="truncate font-medium">
-                {connectionStatus === 'connecting' ? (
+                {viewStatus === 'connecting' ? (
                   <span className="text-amber-300 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                     <span>Connecting...</span>
                   </span>
-                ) : connectionStatus === 'standby' ? (
+                ) : viewStatus === 'standby' ? (
                   <span className="text-amber-400 flex items-center gap-1">
                     <span>Telemetry Standby</span>
                   </span>
@@ -304,7 +310,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
           </div>
 
           <div className="flex items-center gap-2 text-slate-400 group-hover:text-cyan-400 transition-colors flex-shrink-0 ml-2">
-            {connectionStatus === 'standby' && (
+            {viewStatus === 'standby' && (
               <button
                 onClick={handleManualRetry}
                 title="Retry connecting to GeronimoHQ live telemetry relay"
@@ -331,8 +337,8 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
       <div className="flex items-center justify-between gap-2 border-b border-[#2b2d31]/80 pb-2 mb-2.5">
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full inline-block ${
-            connectionStatus === 'connecting' ? 'bg-amber-400 animate-pulse' :
-            connectionStatus === 'standby' ? 'bg-amber-500' :
+            viewStatus === 'connecting' ? 'bg-amber-400 animate-pulse' :
+            viewStatus === 'standby' ? 'bg-amber-500' :
             state === 'in_server' ? 'bg-[#23a55a] animate-pulse' : 
             state === 'main_menu' ? 'bg-amber-400' : 
             state === 'other_game' ? 'bg-purple-400' : 
@@ -340,8 +346,8 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             'bg-slate-500'
           }`} />
           <span className="text-[10px] font-sans font-extrabold tracking-wider text-[#dbdee1] uppercase flex items-center gap-1.5">
-            {connectionStatus === 'connecting' ? 'STEAM LIVE PRESENCE // CONNECTING' :
-             connectionStatus === 'standby' ? 'STEAM LIVE PRESENCE // STANDBY' :
+            {viewStatus === 'connecting' ? 'STEAM LIVE PRESENCE // CONNECTING' :
+             viewStatus === 'standby' ? 'STEAM LIVE PRESENCE // STANDBY' :
              state === 'in_server' ? 'PLAYING CS2 ZOMBIE ESCAPE' : 
              state === 'main_menu' ? 'COUNTER-STRIKE 2' : 
              state === 'other_game' ? `PLAYING ${presence?.game?.toUpperCase() || 'ON STEAM'}` : 
@@ -366,8 +372,8 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
         {/* Steam Avatar with Status Dot */}
         <div className="relative flex-shrink-0">
           <div className={`w-11 h-11 rounded-full overflow-hidden border-2 shadow-sm ${
-            connectionStatus === 'connecting' ? 'border-amber-400/80 shadow-[0_0_12px_rgba(251,191,36,0.3)]' :
-            connectionStatus === 'standby' ? 'border-amber-500/60 shadow-[0_0_12px_rgba(245,158,11,0.2)]' :
+            viewStatus === 'connecting' ? 'border-amber-400/80 shadow-[0_0_12px_rgba(251,191,36,0.3)]' :
+            viewStatus === 'standby' ? 'border-amber-500/60 shadow-[0_0_12px_rgba(245,158,11,0.2)]' :
             state === 'in_server' ? 'border-[#23a55a] shadow-[0_0_12px_rgba(35,165,90,0.35)]' :
             state === 'main_menu' ? 'border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.35)]' :
             state === 'online' ? 'border-[#23a55a] shadow-[0_0_12px_rgba(35,165,90,0.35)]' :
@@ -384,8 +390,8 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
           </div>
           {/* Status Dot */}
           <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-[#111214] flex items-center justify-center ${
-            connectionStatus === 'connecting' ? 'bg-amber-400' :
-            connectionStatus === 'standby' ? 'bg-amber-500' :
+            viewStatus === 'connecting' ? 'bg-amber-400' :
+            viewStatus === 'standby' ? 'bg-amber-500' :
             state === 'in_server' ? 'bg-[#23a55a]' : 
             state === 'main_menu' ? 'bg-amber-400' : 
             state === 'other_game' ? 'bg-purple-400' : 
@@ -406,11 +412,11 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             <span className="px-1.5 py-0.2 rounded text-[9px] font-sans font-semibold bg-[#2b2d31] text-[#b5bac1]">
               HOST
             </span>
-            {connectionStatus === 'connecting' ? (
+            {viewStatus === 'connecting' ? (
               <span className="px-1.5 py-0.2 rounded text-[9px] font-sans font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
                 <RotateCw className="w-2 h-2 animate-spin" /> SYNCING
               </span>
-            ) : connectionStatus === 'standby' ? (
+            ) : viewStatus === 'standby' ? (
               <span className="px-1.5 py-0.2 rounded text-[9px] font-sans font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
                 <AlertCircle className="w-2 h-2" /> STANDBY
               </span>
@@ -427,12 +433,12 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
 
           {/* Activity Subtitle */}
           <div className="text-xs font-medium font-sans text-[#f2f3f5] truncate flex items-center gap-1.5">
-            {connectionStatus === 'connecting' ? (
+            {viewStatus === 'connecting' ? (
               <>
                 <RotateCw className="w-3.5 h-3.5 text-amber-400 animate-spin flex-shrink-0" />
                 <span className="truncate text-amber-300 font-semibold">Connecting to telemetry...</span>
               </>
-            ) : connectionStatus === 'standby' ? (
+            ) : viewStatus === 'standby' ? (
               <>
                 <AlertCircle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                 <span className="truncate text-amber-300 font-semibold">Telemetry Standby &bull; Retrying in 5s</span>
@@ -468,7 +474,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
       </div>
 
       {/* Dynamic Content Block - Only rendered for active in-server matches with map telemetry */}
-      {connectionStatus === 'connected' && state === 'in_server' && (
+      {viewStatus === 'connected' && state === 'in_server' && (
         <div className="mt-2.5 p-2 rounded-lg bg-[#18191c] border border-[#2b2d31]/80 flex items-center gap-2.5">
           {/* Prominent Map Thumbnail */}
           <div className="relative w-20 h-13 rounded-md overflow-hidden border border-slate-700/80 bg-slate-950 flex-shrink-0 shadow-sm group">
@@ -510,7 +516,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
       )}
 
       {/* Standby Retry Callout Banner */}
-      {connectionStatus === 'standby' && (
+      {viewStatus === 'standby' && (
         <div className="mt-2.5 p-2 rounded-lg bg-amber-950/30 border border-amber-500/40 flex items-center justify-between gap-2">
           <div className="text-[11px] font-sans text-amber-200">
             <span>Cloud relay standing by. Continuous auto-retry every 5s is active.</span>
@@ -529,7 +535,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
 
       {/* Action Buttons */}
       <div className="mt-2.5 pt-2 border-t border-[#2b2d31]/80">
-        {connectionStatus === 'connected' && state === 'in_server' ? (
+        {viewStatus === 'connected' && state === 'in_server' ? (
           <div className="grid grid-cols-2 gap-2">
             <a
               href={connectUrl}
@@ -542,7 +548,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             <a
               href="https://steamcommunity.com/profiles/76561198143793864/"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#2b2d31] hover:bg-[#35373c] text-[#dbdee1] hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
               title="View Geronimo's Steam Community profile in new tab"
             >
@@ -550,7 +556,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
               <ExternalLink className="w-3 h-3 text-slate-400" />
             </a>
           </div>
-        ) : connectionStatus === 'connected' && state === 'main_menu' ? (
+        ) : viewStatus === 'connected' && state === 'main_menu' ? (
           <div className="grid grid-cols-2 gap-2">
             <a
               href="steam://rungameid/730"
@@ -563,7 +569,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             <a
               href="https://steamcommunity.com/profiles/76561198143793864/"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#2b2d31] hover:bg-[#35373c] text-[#dbdee1] hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
               title="View Geronimo's Steam Community profile in new tab"
             >
@@ -571,7 +577,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
               <ExternalLink className="w-3 h-3 text-slate-400" />
             </a>
           </div>
-        ) : connectionStatus === 'standby' ? (
+        ) : viewStatus === 'standby' ? (
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={handleManualRetry}
@@ -585,7 +591,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
             <a
               href="https://steamcommunity.com/profiles/76561198143793864/"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#2b2d31] hover:bg-[#35373c] text-[#dbdee1] hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
               title="View Geronimo's Steam Community profile in new tab"
             >
@@ -597,7 +603,7 @@ export const GeronimoDiscordPresence: React.FC<GeronimoDiscordPresenceProps> = (
           <a
             href="https://steamcommunity.com/profiles/76561198143793864/"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-[#2b2d31] hover:bg-[#35373c] text-[#dbdee1] hover:text-white font-sans text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-[#3f4147]/50"
             title="View Geronimo's Steam Community profile in new tab"
           >

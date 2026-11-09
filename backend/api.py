@@ -11,6 +11,7 @@ import socket
 import struct
 import threading
 import urllib.request
+import urllib.parse
 import json
 import re
 from collections import deque
@@ -530,7 +531,14 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
 
     # 1. Owner's exact in-game name in a monitored server roster (A2S gives names only,
     #    not SteamIDs, so this is a best-effort match; see OWNER_PLAYER_NAMES).
-    for sid, sdata in ({} if heartbeat_denies_cs2 else server_results).items():
+    # AUDIT 1b-R5: anyone can set their in-game name to "Geronimo". Only trust a
+    # roster name match when an owner-only signal also says CS2 is running:
+    # the authenticated heartbeat, or the owner's public Steam profile.
+    heartbeat_confirms_cs2 = has_recent_heartbeat and bool(LOCAL_HEARTBEAT.get("is_cs2"))
+    roster_trusted = (not heartbeat_denies_cs2) and (
+        heartbeat_confirms_cs2 or bool(query_steam_profile_cached().get("is_cs2"))
+    )
+    for sid, sdata in (server_results if roster_trusted else {}).items():
         plist = sdata.get("players_list", [])
         for p in plist:
             pname = p.get("name", "").strip().lower()
@@ -643,9 +651,8 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
 
 import ssl
 
+# AUDIT 1b-R2: certificate checks stay ON (the old code turned them off).
 SSL_CTX = ssl.create_default_context()
-SSL_CTX.check_hostname = False
-SSL_CTX.verify_mode = ssl.CERT_NONE
 
 try:
     from curl_cffi import requests as cffi_requests
@@ -695,7 +702,12 @@ def fetch_gfl_intel(gfl_map: str):
             print(f"[ZEGRAPH_MATCH_ERROR] {e}")
 
     # 2. Musics for current active map
+    # AUDIT 1b-R3: the map name comes from a game server's reply. Only allow a
+    # normal map name and URL-encode it before it goes into a URL path.
     clean_map = gfl_map.strip() if gfl_map else ""
+    if not re.fullmatch(r"[A-Za-z0-9_.\-]{1,64}", clean_map):
+        clean_map = ""
+    clean_map = urllib.parse.quote(clean_map, safe="")
     if clean_map and clean_map != "-":
         if cffi_requests:
             try:
@@ -764,16 +776,36 @@ def get_servers():
     if CACHE["data"] and (now - CACHE["timestamp"] < 3.5):
         return CACHE["data"]
 
-    fresh_data = fetch_all_telemetry()
-    CACHE["data"] = fresh_data
-    CACHE["timestamp"] = now
-    return fresh_data
+    # AUDIT 1b-R1: REFRESH_LOCK was defined but never used. Only one request runs
+    # the full A2S sweep; others wait and then reuse its fresh cache.
+    with REFRESH_LOCK:
+        now = time.time()
+        if CACHE["data"] and (now - CACHE["timestamp"] < 3.5):
+            return CACHE["data"]
+        fresh_data = fetch_all_telemetry()
+        CACHE["data"] = fresh_data
+        CACHE["timestamp"] = time.time()
+        return fresh_data
 
+
+
+DETAIL_CACHE: Dict[str, Dict[str, Any]] = {}
+DETAIL_LOCK = threading.Lock()
 
 
 @app.get("/api/servers/{server_id}")
 def get_server_detail(server_id: str):
+    # AUDIT 1b-R4: only ids from the fixed catalog (no user host:port), 404 for
+    # unknown ids, and a 5 s cache so callers cannot trigger a UDP query per request.
+    if not re.fullmatch(r"[a-z0-9_]{1,32}", server_id or ""):
+        return JSONResponse({"error": "server_not_found"}, status_code=404)
     target = next((s for s in SERVERS if s["id"] == server_id), None)
     if not target:
-        return {"error": "Server not found"}
-    return fetch_single_server(target)
+        return JSONResponse({"error": "server_not_found"}, status_code=404)
+    with DETAIL_LOCK:
+        hit = DETAIL_CACHE.get(server_id)
+        if hit and time.time() - hit["t"] < 5.0:
+            return hit["data"]
+        data = fetch_single_server(target)
+        DETAIL_CACHE[server_id] = {"t": time.time(), "data": data}
+        return data
