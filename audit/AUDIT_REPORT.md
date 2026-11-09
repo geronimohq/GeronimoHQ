@@ -14,7 +14,7 @@ Pre-audit backup: `backups/final-audit-2026-11-10/` (full copy + `repo-full-hist
 
 1. **L-01 Live backend** — owner reports the token deploy is done (OWNER_STEPS A); quick check: `/docs` = 404, heartbeat without token = 401.
 2. **D-05 Old app copies** in the wild still send presence pings; they stop affecting the card only after the backend deploy (fixed in the new exe, which is not released yet).
-3. **P7-01 New exe not released** — `scratch\dist\CS2_Command_Center.exe` (SHA-256 `78A91320…4F8254FD`) holds every fix (incl. the handle leak); the site still serves the pre-audit exe. Release = owner steps (copy, sign manifest, deploy).
+3. **P7-01 New exe not released** — `scratch\dist\CS2_Command_Center.exe` (SHA-256 `F48472BB…E9D6BE16 (v1.5.1)`) holds every fix (incl. the handle leak); the site still serves the pre-audit exe. Release = owner steps (copy, sign manifest, deploy).
 4. **Fixes since the PR need a fresh exe** — the exe in scratch\dist predates the owner-feedback round; rebuild in step F.
 5. **P9-01 Third-party content** (Pepe artwork, "Banana Phone" song/video, Valve/CS2 and community names/logos) — rights not checked; owner decision before sharing widely.
 6. **B-11 `/api/servers` republishes player names** (owner kept it for the Players lists).

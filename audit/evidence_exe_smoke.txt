@@ -1,22 +1,15 @@
-# Exe build + smoke test (Phase 7) - 2026-11-10 ~03:41 (+08:00), Windows 11
-Built from: clean clone of final-audit @ 85a0bbf (scratch/clean_clone), PyInstaller 6.22.3, Python 3.14.7
-Output: H:\GeronimoHQ\scratch\dist\CS2_Command_Center.exe  (37,047,960 bytes)
-SHA-256: 78A91320400E43D17583952BFAA2C620E9744A0BB6197EDF8EF3744D4F8254FD
-Working exe dist\CS2_Command_Center.exe: unchanged (AEC0502A...C913) - not replaced (owner rule)
+# Release build v1.5.1 + smoke test - 2026-11-10 ~05:43 (+08:00), Windows 11
+Built from: clean clone of final-audit @ 2225087 (scratch/clean_clone), PyInstaller 6.22.3, Python 3.14.7
+Output: H:\GeronimoHQ\scratch\dist\CS2_Command_Center.exe  (37,063,751 bytes)
+SHA-256: F48472BB7E7AF4368671E77181F158E30B0173BD4682FFEBD32284A4E9D6BE16
+Working exe dist\CS2_Command_Center.exe: unchanged (AEC0502A...C913) - not replaced yet (owner OK needed)
+Tests before the build: 26/26 runs pass (audit/evidence_final_tests.txt)
 
-Smoke test: exe copied to a new temp folder, temp APPDATA (open on FAQ page, update check off)
-  processes running from temp folder: 2 (PyInstaller onefile parent + app)
-  window title: 'CS2 Command Center'  WS: 76 MB  handles: 381
-  GSI port 3000 listening (owned by new exe): True
-  close via window [X]: sent
-  processes left after close: 0
-  port 3000 still listening: False
-  last page saved on exit: True
-  temp folder removed: True
-
-Personal-path scan (raw bytes + 589 zlib streams): no 'Player1', no 'H:\GeronimoHQ'.
-'C:\Users\Galahad' = Python/numpy doc example text; 'C:\Users\runneradmin' = library CI build paths.
-Same strings exist in the released pre-audit exe (no personal data in either).
-
-Clean clone website: npm ci (0 vulnerabilities), npm run build OK, main JS 582.56 kB (162.10 kB gzip),
-CSP meta present, 0 source maps.
+Smoke test: exe copied to a new temp folder, temp APPDATA (open on FAQ, update check off),
+CS2CC_NO_STARTUP_MIGRATION=1 (so the test does not touch the owner's Task Scheduler)
+  cold start: window ready after 1.7 s
+  processes: 2 (PyInstaller onefile parent + app) | window 'CS2 Command Center' | WS 74 MB | handles 354
+  GSI port 3000 owned by new exe: True
+  close via window [X]: processes left 0 | port 3000 released | last page saved on exit
+  old elevated startup task on the owner's PC: untouched (the app removes it on first normal run)
+  temp folder removed

@@ -24,7 +24,7 @@ Assumption logged: `node_modules/` was not copied (it is re-created exactly by `
 | 4 Performance | DONE: website main JS −34 % gzip (unused 400 kB map catalog + lazy overlays); app idle 0.39 % CPU / 95 MB [TESTED] |
 | 5 Wording/a11y | DONE: false feature claims removed (affinity, Vulkan selector, cl_interp, binds), units/tick fixed; website 0 contrast failures (554 checked), skip link + focus ring; desktop low-contrast labels fixed |
 | 6 Share-readiness | DONE: README rewritten (changes/undo/data/SmartScreen/disclaimer), CSP added (0 violations), revert tests (mocks), power-plan undo fixed, Restore Defaults asks first; licence/logos/hosting flagged for owner |
-| 7 Build/hand-off | DONE: 25/25 test runs pass; clean-clone `npm ci` + build OK; exe rebuilt to `scratch\dist` (SHA-256 `78A91320…4F8254FD`) and smoke-tested from a temp folder; NOT released (owner steps F). Report: `audit/AUDIT_REPORT.md` |
+| 7 Build/hand-off | DONE: 25/25 test runs pass; clean-clone `npm ci` + build OK; exe rebuilt to `scratch\dist` (SHA-256 `F48472BB…E9D6BE16 (v1.5.1)`) and smoke-tested from a temp folder; NOT released (owner steps F). Report: `audit/AUDIT_REPORT.md` |
 
 ## Work Completed in this Session:
 1. **Rule A (Safety & Snapshot):**
