@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Radio, Shield, Wifi, Mail, Cpu, Sparkles, Sliders, Wrench, Crosshair } from 'lucide-react';
+import { 
+  Radio, 
+  Cpu, 
+  Wifi, 
+  Wrench, 
+  Sliders, 
+  Shield, 
+  Mail, 
+  Sparkles 
+} from 'lucide-react';
 
 interface CyberNavbarProps {
   theme: 'pepe' | 'banana';
@@ -7,32 +16,16 @@ interface CyberNavbarProps {
   onToggleGremlin: () => void;
 }
 
-export const scrollToSectionById = (sectionId: string) => {
-  if (sectionId === 'hero-stage') {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (window.history?.pushState) {
-      window.history.pushState(null, '', '#hero-stage');
-    }
-    return;
-  }
-
-  const section = document.getElementById(sectionId);
-  if (!section) return;
-
-  const headerEl = document.querySelector('header');
-  const navHeight = headerEl ? headerEl.getBoundingClientRect().height : 64;
-  // Scroll directly to the first inner content box/badge inside the section so its top sits 14px below the sticky navbar
-  const targetEl = (section.firstElementChild as HTMLElement) || section;
-  const targetTop = targetEl.getBoundingClientRect().top + window.scrollY - navHeight - 14;
-
+export const scrollToSectionById = (id: string) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const navHeight = 76;
+  const elementPosition = el.getBoundingClientRect().top + window.pageYOffset;
+  const offsetPosition = Math.max(0, elementPosition - navHeight);
   window.scrollTo({
-    top: Math.max(0, targetTop),
-    behavior: 'smooth',
+    top: offsetPosition,
+    behavior: 'smooth'
   });
-
-  if (window.history?.pushState) {
-    window.history.pushState(null, '', `#${sectionId}`);
-  }
 };
 
 export const CyberNavbar: React.FC<CyberNavbarProps> = ({
@@ -40,37 +33,32 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
   gremlinEnabled,
   onToggleGremlin,
 }) => {
-  const [timeStr, setTimeStr] = useState('');
-  const [ping, setPing] = useState(14);
+  const [timeStr, setTimeStr] = useState<string>('');
+  const [ping, setPing] = useState<number>(12);
 
+  // Digital Cyber Clock & Low-Latency Network Ping Simulation
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
       setTimeStr(
-        now.toLocaleTimeString('en-US', {
-          hour12: false,
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        })
+        now.toTimeString().split(' ')[0]
       );
     };
     updateTime();
     const interval = setInterval(updateTime, 1000);
-
-    const pingInterval = setInterval(() => {
-      setPing(Math.floor(12 + Math.random() * 8));
-    }, 4000);
-
-    return () => {
-      clearInterval(interval);
-      clearInterval(pingInterval);
-    };
+    return () => clearInterval(interval);
   }, []);
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+  useEffect(() => {
+    const pingInterval = setInterval(() => {
+      setPing(Math.floor(10 + Math.random() * 8));
+    }, 4000);
+    return () => clearInterval(pingInterval);
+  }, []);
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault();
-    scrollToSectionById(sectionId);
+    scrollToSectionById(targetId);
   };
 
   return (
@@ -81,13 +69,13 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           : 'bg-[#060810]/85 border-cyan-500/20'
       }`}
     >
-      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
+      <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
         
-        {/* Brand & Terminal Identifier */}
+        {/* Brand & Terminal Identifier (Left Edge of max-w-6xl) */}
         <a
           href="#hero-stage"
           onClick={(e) => handleNavClick(e, 'hero-stage')}
-          className="flex items-center gap-2.5 group"
+          className="flex items-center gap-2.5 group flex-shrink-0"
         >
           <div
             className={`relative flex items-center justify-center w-9 h-9 rounded-lg border transition-all duration-700 ${
@@ -127,76 +115,68 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           </div>
         </a>
 
-        {/* Center Nav Anchors */}
-        <nav className="hidden lg:flex items-center gap-2 xl:gap-3 text-[11px] xl:text-xs font-cyber tracking-wider text-slate-300 pl-14 xl:pl-0">
+        {/* Center Nav Anchors (Centered & Balanced across max-w-6xl) */}
+        <nav className="hidden lg:flex items-center justify-center gap-2 xl:gap-3 text-[11px] xl:text-xs font-cyber tracking-wider text-slate-300 flex-1 px-2">
           <a
             href="#hero-stage"
             onClick={(e) => handleNavClick(e, 'hero-stage')}
-            className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
+            className="hover:text-cyan-400 transition-colors flex items-center gap-1.5 flex-shrink-0"
           >
             <Radio className="w-3.5 h-3.5 text-cyan-400" />
-            HOLO-DECK
+            <span>HOLO-DECK</span>
           </a>
           <a
             href="#download-ram"
             onClick={(e) => handleNavClick(e, 'download-ram')}
-            className="px-2 py-0.5 rounded-lg bg-lime-950/80 border border-lime-400/60 text-lime-300 hover:bg-lime-900/80 shadow-[0_0_12px_rgba(57,255,20,0.3)] transition-all flex items-center gap-1 font-bold"
+            className="px-2 py-0.5 rounded-lg bg-lime-950/80 border border-lime-400/60 text-lime-300 hover:bg-lime-900/80 shadow-[0_0_12px_rgba(57,255,20,0.3)] transition-all flex items-center gap-1 font-bold flex-shrink-0"
           >
-            <Cpu className="w-3.5 h-3.5 text-lime-400 animate-pulse" />
-            DOWNLOAD RAM
+            <Cpu className="w-3 h-3 text-lime-400 animate-pulse" />
+            <span>DOWNLOAD RAM</span>
           </a>
           <a
             href="#server-radar"
             onClick={(e) => handleNavClick(e, 'server-radar')}
-            className="hover:text-lime-400 transition-colors flex items-center gap-1.5"
+            className="hover:text-lime-400 transition-colors flex items-center gap-1.5 flex-shrink-0"
           >
             <Wifi className="w-3.5 h-3.5 text-lime-400" />
-            ZE SERVERS
-          </a>
-          <a
-            href="#crosshair-studio"
-            onClick={(e) => handleNavClick(e, 'crosshair-studio')}
-            className="hover:text-amber-400 transition-colors flex items-center gap-1.5"
-          >
-            <Crosshair className="w-3.5 h-3.5 text-amber-400" />
-            CROSSHAIR
+            <span>ZE SERVERS</span>
           </a>
           <a
             href="#ze-toolkit"
             onClick={(e) => handleNavClick(e, 'ze-toolkit')}
-            className="hover:text-emerald-400 transition-colors flex items-center gap-1.5"
+            className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 flex-shrink-0"
           >
             <Wrench className="w-3.5 h-3.5 text-emerald-400" />
-            ZE TOOLKIT
+            <span>ZE TOOLKIT</span>
           </a>
           <a
             href="#cfg-studio"
             onClick={(e) => handleNavClick(e, 'cfg-studio')}
-            className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
+            className="hover:text-cyan-400 transition-colors flex items-center gap-1.5 flex-shrink-0"
           >
             <Sliders className="w-3.5 h-3.5 text-cyan-400" />
-            CFG STUDIO
+            <span>CFG STUDIO</span>
           </a>
           <a
             href="#cs2-command"
             onClick={(e) => handleNavClick(e, 'cs2-command')}
-            className="hover:text-fuchsia-400 transition-colors flex items-center gap-1.5"
+            className="hover:text-fuchsia-400 transition-colors flex items-center gap-1.5 flex-shrink-0"
           >
             <Shield className="w-3.5 h-3.5 text-fuchsia-400" />
-            CS2 APP
+            <span>CS2 APP</span>
           </a>
           <a
             href="#contact"
             onClick={(e) => handleNavClick(e, 'contact')}
-            className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
+            className="hover:text-cyan-400 transition-colors flex items-center gap-1.5 flex-shrink-0"
           >
             <Mail className="w-3.5 h-3.5 text-cyan-400" />
-            TRANSMISSION
+            <span>TRANSMISSION</span>
           </a>
         </nav>
 
-        {/* Right HUD Controls: Read-Only Theme Status Badge + Gremlin Toggle + Clock */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Right HUD Controls: Theme Status Badge + Gremlin Toggle + Clock (Right Edge of max-w-6xl) */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           {/* Mobile/Tablet Download RAM Button */}
           <a
             href="#download-ram"
@@ -207,7 +187,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             <span>RAM</span>
           </a>
 
-          {/* Read-Only Active Theme Indicator Badge (Non-clickable as requested by Geronimo) */}
+          {/* Read-Only Active Theme Indicator Badge */}
           <div
             data-gremlin-ignore="true"
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-code font-bold select-none cursor-default ${

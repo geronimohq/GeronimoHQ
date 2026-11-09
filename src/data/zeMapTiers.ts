@@ -657,7 +657,7 @@ export const ZE_MAP_TIERS_REGISTRY: Record<
     tierLabel: 'Casual',
     badge: '🟡 T2 Casual',
     colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]',
-    mapper: 'Community Classic',
+    mapper: 'Subzero / George',
     isHallOfFame: false,
   },
   'ze_overkill': {
@@ -733,7 +733,7 @@ export const ZE_MAP_TIERS_REGISTRY: Record<
     tierLabel: 'Warmup',
     badge: '🟢 T1 Warmup',
     colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
-    mapper: 'Community Classic',
+    mapper: 'Gamer / Fred',
     isHallOfFame: false,
   },
   'ze_panic_escape': {
@@ -741,23 +741,23 @@ export const ZE_MAP_TIERS_REGISTRY: Record<
     tierLabel: 'Warmup',
     badge: '🟢 T1 Warmup',
     colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
-    mapper: 'Community Classic',
-    isHallOfFame: false,
+    mapper: 'Hannibal [GER] / Nipper',
+    isHallOfFame: true,
   },
   'ze_atix_extinction': {
     tier: 1,
     tierLabel: 'Warmup',
     badge: '🟢 T1 Warmup',
     colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
-    mapper: 'Community Classic',
-    isHallOfFame: false,
+    mapper: 'Nipper',
+    isHallOfFame: true,
   },
   'ze_jurassicpark': {
     tier: 1,
     tierLabel: 'Warmup',
     badge: '🟢 T1 Warmup',
     colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
-    mapper: 'Community Classic',
+    mapper: 'G-Man / UT Classic',
     isHallOfFame: false,
   },
 };
@@ -775,7 +775,7 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
       tierLabel: 'Untiered',
       badge: '⚪ UNTIERED',
       colorClass: 'bg-slate-900/90 text-slate-400 border-slate-700',
-      mapper: 'Community Workshop',
+      mapper: 'Steam Workshop Creator',
       isUntiered: true,
     };
   }
@@ -820,24 +820,7 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
     }
   }
 
-  // 3. Comprehensive S2ZE & Steam Workshop Catalog Lookup (500+ Maps)
-  const s2zeMapper = lookupS2zeMapper(clean);
-  if (s2zeMapper) {
-    const isHoF = /Kuroki|ViSral|Hannibal|Luffaren|Airvulpes|Clown|Kaemon|Nipper|Subzero|DarkerZ|TaskuVaras|Moltard|Waffel/i.test(s2zeMapper);
-    return {
-      mapKey: clean,
-      displayName: mapName,
-      tier: 'untiered',
-      tierLabel: 'Untiered',
-      badge: '⚪ UNTIERED',
-      colorClass: 'bg-slate-900/90 text-slate-400 border-slate-700',
-      mapper: s2zeMapper,
-      isHallOfFameMapper: isHoF,
-      isUntiered: false, // Valid mapper confirmed from s2ze / Steam workshop catalog
-    };
-  }
-
-  // 4. Legendary Series Prefix Heuristic Inference
+  // 3. Legendary Series Prefix Heuristic Inference & Specific Authors
   const getInferredMapper = (c: string): { mapper: string; isHoF: boolean; tier?: MapDifficultyTier; tierLabel?: string; badge?: string; colorClass?: string } | null => {
     if (c.includes('resident_evil') || c.includes('biohazard')) {
       return { mapper: 'Kuroki / ViSral', isHoF: true, tier: 4, tierLabel: 'Hardcore', badge: '🔴 T4 Hardcore', colorClass: 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]' };
@@ -914,6 +897,23 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
     };
   }
 
+  // 4. Comprehensive S2ZE & Steam Workshop Catalog Lookup (1,486+ Official Maps)
+  const s2zeMapper = lookupS2zeMapper(clean);
+  if (s2zeMapper && s2zeMapper !== 'Source 2 Zombie Escape') {
+    const isHoF = /Kuroki|ViSral|Hannibal|Luffaren|Airvulpes|Clown|Kaemon|Nipper|Subzero|DarkerZ|TaskuVaras|Moltard|Waffel/i.test(s2zeMapper);
+    return {
+      mapKey: clean,
+      displayName: mapName,
+      tier: 'untiered',
+      tierLabel: 'Untiered',
+      badge: '⚪ UNTIERED',
+      colorClass: 'bg-slate-900/90 text-slate-400 border-slate-700',
+      mapper: s2zeMapper,
+      isHallOfFameMapper: isHoF,
+      isUntiered: false, // Valid mapper confirmed from s2ze / Steam workshop catalog
+    };
+  }
+
     // 4. Heuristic Fallbacks for Untiered Maps (User Workaround)
   if (clean.startsWith('zm_') || clean.includes('warmup') || clean.includes('infection')) {
     return {
@@ -923,7 +923,7 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
       tierLabel: 'Warmup',
       badge: '🟢 T1 Warmup',
       colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
-      mapper: 'Community Classic',
+      mapper: 'Classic CS:S Port',
       isUntiered: false,
     };
   }
@@ -936,7 +936,7 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
       tierLabel: 'Casual',
       badge: '🟡 T2 Surf',
       colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]',
-      mapper: 'Community Workshop',
+      mapper: 'Steam Workshop Creator',
       isUntiered: false,
     };
   }
@@ -949,7 +949,7 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
     tierLabel: 'Untiered',
     badge: '⚪ UNTIERED',
     colorClass: 'bg-slate-900/90 text-slate-400 border-slate-700',
-    mapper: 'Community Workshop',
+    mapper: 'Steam Workshop Creator',
     isUntiered: true,
   };
 }

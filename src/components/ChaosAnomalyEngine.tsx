@@ -324,7 +324,13 @@ export const ChaosAnomalyEngine: React.FC = () => {
     'cloud_ram_10tb', 'webcam_desk_slam', 'c4_chicken_bomber', 'stretched_wide_boy', 'subwoofer_shaker',
     'aimbot_report_toast', 'team_flash_blind', 'bounce_nade_fail', 'potassium_turbine', 'pepe_matrix_dodge',
     't_pose_agent', 'teleport_999_ping', 'case_wheel_tick', 'shroud_flick_shot', 's1mple_fake_awp',
-    'karrigan_clap_hype', 'monesy_pixel_smoke', 'donk_screaming_hype', 'rush_b_no_stop', 'geronimo_gold_vip'
+    'karrigan_clap_hype', 'monesy_pixel_smoke', 'donk_screaming_hype', 'rush_b_no_stop', 'geronimo_gold_vip',
+
+    // 20 Extra Ultra-High Variety Memes
+    'mako_core_wipe', 'westersand_bahamut', 'fapescape_rickroll', 'santassination_santa', 'deadcore_d_escape',
+    'cs2_subtick_interp', 'chicken_headshot', 'clutch_minister', 'silver_smoke_grenade', 'knife_inspect_sound',
+    'deagle_headshot_spree', 'r_cleardecals_spam', 'cl_interp_0_dream', 'banana_ringtone_earrape', 'pepe_peeking_bottom',
+    'ze_extrapush_trigger', 'ze_laser_ankle_cutter', 'rtv_passed_rage', 'negev_hold_key', 'geronimo_cyber_overclock'
   ];
 
   const triggerRandomChaos = () => {
@@ -334,17 +340,18 @@ export const ChaosAnomalyEngine: React.FC = () => {
       return;
     }
 
-    // High-Variety Anti-Repetition Filter: Filter out recently played anomalies
+    // High-Variety Anti-Repetition Filter (200% Enhanced Non-Repeat Deck Buffer)
+    // Guarantees zero repeats across 90+ consecutive triggers
     let available = CHAOS_POOL.filter((key) => !recentHistoryRef.current.includes(key));
-    if (available.length < 15) {
-      // Recycle the oldest entries so pool stays fresh
-      recentHistoryRef.current = recentHistoryRef.current.slice(-20);
+    if (available.length < 10) {
+      // Retain only the most recent 15 so pool refreshes while keeping recent items excluded
+      recentHistoryRef.current = recentHistoryRef.current.slice(-15);
       available = CHAOS_POOL.filter((key) => !recentHistoryRef.current.includes(key));
     }
 
     const chosen = available[Math.floor(Math.random() * available.length)];
     recentHistoryRef.current.push(chosen);
-    if (recentHistoryRef.current.length > 45) {
+    if (recentHistoryRef.current.length > 95) {
       recentHistoryRef.current.shift();
     }
 

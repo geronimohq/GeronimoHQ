@@ -12,7 +12,6 @@ import {
   type PlayerEntry 
 } from '../utils/serverQuery';
 import { ServerGeoDemographics } from './ServerGeoDemographics';
-import { ServerLeaderboardSpotlight } from './ServerLeaderboardSpotlight';
 import { getMapTierAndMapper } from '../data/zeMapTiers';
 import { 
   Play, 
@@ -540,7 +539,7 @@ export const ServerRadarPreview: React.FC = () => {
             {/* Big Map Preview & Telemetry Display */}
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-slate-900/90 p-3 rounded-xl border border-slate-800 mb-3">
               {/* Prominent Map Thumbnail */}
-              <div className="relative w-28 h-18 sm:w-32 sm:h-20 rounded-lg overflow-hidden border border-fuchsia-500/40 bg-slate-950 flex-shrink-0 shadow-[0_0_15px_rgba(255,0,128,0.15)] group">
+              <div className="relative w-40 h-24 sm:w-48 sm:h-30 rounded-xl overflow-hidden border border-fuchsia-500/40 bg-slate-950 flex-shrink-0 shadow-[0_0_20px_rgba(255,0,128,0.2)] group">
                 <img 
                   src={getMapThumbnailUrl(gflMap)} 
                   alt={gflMap}
@@ -782,11 +781,6 @@ export const ServerRadarPreview: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* ==================================================================== */}
-      {/* COMMUNITY LEADERBOARD SPOTLIGHT (MONTHLY MVPS & RECORD CLEARS)       */}
-      {/* ==================================================================== */}
-      <ServerLeaderboardSpotlight />
 
       {/* ==================================================================== */}
       {/* SIMPLIFIED PRIMARY TABS: GLOBAL (6) vs PLANET CHINA (35)             */}
@@ -1040,7 +1034,7 @@ export const ServerRadarPreview: React.FC = () => {
                     {/* Current Active Map & Live Timer */}
                     <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code text-slate-300">
                       {/* Prominent Map Thumbnail */}
-                      <div className="w-14 h-9 sm:w-16 sm:h-10 rounded-md overflow-hidden border border-slate-700 bg-slate-950 flex-shrink-0 shadow-sm group-hover:border-lime-400/50 transition-colors">
+                      <div className="w-32 h-20 sm:w-40 sm:h-24 rounded-lg overflow-hidden border border-slate-700 bg-slate-950 flex-shrink-0 shadow-md group-hover:border-lime-400/50 transition-colors">
                         <img 
                           src={getMapThumbnailUrl(currentMap)} 
                           alt={currentMap} 
@@ -1223,57 +1217,6 @@ export const ServerRadarPreview: React.FC = () => {
           </p>
         </div>
       )}
-
-      {/* ==================================================================== */}
-      {/* COMMUNITY DATA ATTRIBUTION & LEGAL DISCLAIMERS                       */}
-      {/* ==================================================================== */}
-      <div className="mt-8 p-5 rounded-2xl bg-slate-950/80 border border-slate-800/80 backdrop-blur-md shadow-sm">
-        <div className="flex items-center gap-2 text-cyan-300 font-cyber font-bold text-xs mb-3 tracking-wider">
-          <Shield className="w-4 h-4 text-cyan-400" />
-          <span>COMMUNITY ATTRIBUTION &amp; LEGAL DISCLAIMERS</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] font-tech text-slate-400 leading-relaxed">
-          <div className="space-y-1.5 p-3 rounded-xl bg-slate-900/40 border border-slate-800/60">
-            <div className="font-bold text-slate-200 flex items-center gap-1.5">
-              <span>🎮</span>
-              <span>Valve Corporation Disclaimer</span>
-            </div>
-            <p>
-              Counter-Strike, CS2, Steam, and the Steam logo are trademarks and/or registered trademarks of Valve Corporation. GeronimoHQ is an independent, non-commercial hobbyist project and is not affiliated with, sponsored, or endorsed by Valve Corporation.
-            </p>
-          </div>
-
-          <div className="space-y-1.5 p-3 rounded-xl bg-slate-900/40 border border-slate-800/60">
-            <div className="font-bold text-slate-200 flex items-center gap-1.5">
-              <span>🌐</span>
-              <span>queenimella &amp; cybo Telemetry Tools</span>
-            </div>
-            <p>
-              Live server telemetry enrichment and community graphing are powered by queenimella (<a href="https://zegraph.xyz" target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline">zegraph.xyz</a>). Custom soundtrack indexing and 3D interactive map spatial models are powered by cybo (<a href="https://maps.cybo.dev" target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline">maps.cybo.dev</a>).
-            </p>
-          </div>
-
-          <div className="space-y-1.5 p-3 rounded-xl bg-slate-900/40 border border-slate-800/60">
-            <div className="font-bold text-slate-200 flex items-center gap-1.5">
-              <span>🏰</span>
-              <span>Community Server Clans &amp; Mappers</span>
-            </div>
-            <p>
-              Server telemetry and connectivity are provided through the courtesy of GFL Clan, Possession (PSE), Mapeadores, c0La-Team, RSS, EXG, FyS, Moe UB, ZL, and 93X. All Zombie Escape maps, custom models, and soundtracks remain the intellectual property of their respective creators.
-            </p>
-          </div>
-
-          <div className="space-y-1.5 p-3 rounded-xl bg-slate-900/40 border border-slate-800/60">
-            <div className="font-bold text-slate-200 flex items-center gap-1.5">
-              <span>📊</span>
-              <span>Competitive Statistics &amp; Records</span>
-            </div>
-            <p>
-              Leaderboard metrics and speedrun logs are compiled from public community data sources including GFL HLstatsX, s2ze.com (Ruby Bot), cs2ze.org (NERV PR), and verified community video records.
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* ==================================================================== */}
       {/* LIVE PLAYERS ROSTER MODAL                                            */}

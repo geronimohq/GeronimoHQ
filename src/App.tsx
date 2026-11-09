@@ -6,7 +6,6 @@ import { BananaHeroStage } from './components/BananaHeroStage';
 import { DownloadRamSection } from './components/DownloadRamSection';
 import { RoamingMemeGremlin } from './components/RoamingMemeGremlin';
 import { ServerRadarPreview } from './components/ServerRadarPreview';
-import { CrosshairStudio } from './components/CrosshairStudio';
 import { CS2AutoexecGeneratorSection } from './components/CS2AutoexecGeneratorSection';
 import { CS2CommandCenterPreview } from './components/CS2CommandCenterPreview';
 import { GeronimoDiscordPresence } from './components/GeronimoDiscordPresence';
@@ -267,9 +266,6 @@ export const App: React.FC = () => {
 
         {/* MODULE 1: ZOMBIE ESCAPE SERVER RADAR + 24H TIMELINE + MAP & LASER ENCYCLOPEDIA */}
         <ServerRadarPreview />
-
-        {/* MODULE 2: INTERACTIVE CS2 CROSSHAIR STUDIO (#crosshair-studio) */}
-        <CrosshairStudio />
 
         {/* MODULE 3: INTERACTIVE WEB CS2 AUTOEXEC & ZE BINDS GENERATOR (#cfg-studio) */}
         <CS2AutoexecGeneratorSection />
