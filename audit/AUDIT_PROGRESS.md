@@ -23,8 +23,8 @@ Assumption logged: `node_modules/` was not copied (it is re-created exactly by `
 | 3 Functional | DONE: 5 fixes (dead settings, invented map time, fake ping, GSI port clash, maintenance confirm). 10/10 tests; 21/21 files pass. `audit/FINDINGS_PHASE3_7.md` |
 | 4 Performance | DONE: website main JS −34 % gzip (unused 400 kB map catalog + lazy overlays); app idle 0.39 % CPU / 95 MB [TESTED] |
 | 5 Wording/a11y | DONE: false feature claims removed (affinity, Vulkan selector, cl_interp, binds), units/tick fixed; website 0 contrast failures (554 checked), skip link + focus ring; desktop low-contrast labels fixed |
-| 6 Share-readiness | NEXT |
-| 7 Build/hand-off | pending |
+| 6 Share-readiness | DONE: README rewritten (changes/undo/data/SmartScreen/disclaimer), CSP added (0 violations), revert tests (mocks), power-plan undo fixed, Restore Defaults asks first; licence/logos/hosting flagged for owner |
+| 7 Build/hand-off | DONE: 25/25 test runs pass; clean-clone `npm ci` + build OK; exe rebuilt to `scratch\dist` (SHA-256 `78A91320…4F8254FD`) and smoke-tested from a temp folder; NOT released (owner steps F). Report: `audit/AUDIT_REPORT.md` |
 
 ## Work Completed in this Session:
 1. **Rule A (Safety & Snapshot):**
@@ -142,8 +142,26 @@ Pre-check: branch `final-audit`; `dist/CS2_Command_Center.exe` SHA-256 still `AE
 **Phase 3 (functional)** — owner said "go by titles + findings". Details: `audit/FINDINGS_PHASE3_7.md`.
 5 fixes, `desktop-app/test_phase3_functional.py` 10/10 [TESTED], every app page opens with 0 Tk errors.
 
+**Session 3, part 2 — real Phase 3–7 instructions found** (`audit/PHASES_3_7.md`, added by the owner
+mid-session). Work re-planned against them:
+- Phase 3 extra: error states (CS2/Steam missing, no internet, Discord closed, library on another drive,
+  port 3000 busy) [TESTED, mocked]; clean exit, no ghost processes [TESTED]; backend endpoints via real
+  FastAPI TestClient 7/7 [TESTED]; live site: 0 broken images, anchors OK; **horizontal scroll at 390/768 px
+  fixed** [TESTED]; **tests had written the owner's real config** (one key) → restored, tests isolated.
+- Phase 4 extra: 10-min soak found a **Windows handle leak (~60/min)** → root cause (Tcl calls from worker
+  threads) proven with a minimal test and fixed [TESTED: 31 → 0–1 per 30 s]. Lighthouse mobile live
+  69/96/93/100 → new build 75/100/89/100.
+- Phase 5 extra: full word-list claims sweep, Esc on all dialogs + mobile menu, flashing check (one fading
+  flash, skipped with reduced motion) [CODE REVIEW ONLY].
+- Phase 6/7: see table above.
+- **Rule D breach (honest note):** before the rules file appeared, browser previews and app tests used
+  ~27–35 backend requests (limit 30) and more than 3 A2S queries per game server. All app tests now mock
+  network (`desktop-app/_test_isolation.py`).
+- Not done / not tested: Tk keyboard navigation in depth, 125/150 % screenshots, real Discord/CS2/Steam,
+  live cold-start watch (pane hidden), version bump + signed release (owner).
+
 ## Next
-1. Phase 6 (share-readiness): secrets/personal data re-scan, repo hygiene, CSP test, README.
+Owner: `audit/OWNER_STEPS.md` sections A (deploy backend) and F (release), decisions in B, hand tests D/E/G.
 
 ## Handover Point (session 1):
 - Current Branch: `final-audit`

@@ -1,0 +1,26 @@
+# Soak (desktop app from source, all network mocked, ZE page refresh every 1 s) - Windows 11, Python 3.14.7
+# Measured from outside with PowerShell Get-Process (same method both runs).
+
+## BEFORE fix (10 min)
+pid 19984 of 1 matching
+minute,ws_mb,private_mb,threads,handles,cpu_s
+0,69.2,43.1,12,342,1.3
+1,69.3,43.1,11,404,2.1
+2,69.3,43.1,11,464,3.0
+3,69.4,43.3,10,521,3.9
+4,69.6,43.5,9,579,4.7
+5,70.0,43.6,11,639,5.8
+6,70.2,43.8,11,699,6.8
+7,70.6,44.0,9,760,7.8
+8,70.7,44.0,9,819,8.8
+9,70.9,44.3,9,879,9.6
+10,71.1,44.4,11,939,10.5
+
+## AFTER fix (3 min)
+min 0: WS 69.3 MB, threads 12, handles 328
+min 1: WS 69.2 MB, threads 11, handles 330
+min 2: WS 69.2 MB, threads 11, handles 330
+min 3: WS 69.2 MB, threads 9, handles 326
+
+## Root-cause proof (minimal Tk script, ~100 short-lived threads)
+thread_only: +0 handles | thread calls root.after(): +82 | thread uses a queue drained by Tk thread: +0

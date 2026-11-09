@@ -1,0 +1,22 @@
+# Exe build + smoke test (Phase 7) - 2026-11-10 ~03:41 (+08:00), Windows 11
+Built from: clean clone of final-audit @ 85a0bbf (scratch/clean_clone), PyInstaller 6.22.3, Python 3.14.7
+Output: H:\GeronimoHQ\scratch\dist\CS2_Command_Center.exe  (37,047,960 bytes)
+SHA-256: 78A91320400E43D17583952BFAA2C620E9744A0BB6197EDF8EF3744D4F8254FD
+Working exe dist\CS2_Command_Center.exe: unchanged (AEC0502A...C913) - not replaced (owner rule)
+
+Smoke test: exe copied to a new temp folder, temp APPDATA (open on FAQ page, update check off)
+  processes running from temp folder: 2 (PyInstaller onefile parent + app)
+  window title: 'CS2 Command Center'  WS: 76 MB  handles: 381
+  GSI port 3000 listening (owned by new exe): True
+  close via window [X]: sent
+  processes left after close: 0
+  port 3000 still listening: False
+  last page saved on exit: True
+  temp folder removed: True
+
+Personal-path scan (raw bytes + 589 zlib streams): no 'Player1', no 'H:\GeronimoHQ'.
+'C:\Users\Galahad' = Python/numpy doc example text; 'C:\Users\runneradmin' = library CI build paths.
+Same strings exist in the released pre-audit exe (no personal data in either).
+
+Clean clone website: npm ci (0 vulnerabilities), npm run build OK, main JS 582.56 kB (162.10 kB gzip),
+CSP meta present, 0 source maps.
