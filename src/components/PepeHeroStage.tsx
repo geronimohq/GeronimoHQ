@@ -39,7 +39,7 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({
   return (
     <section className="relative w-full max-w-6xl mx-auto px-4 py-8 flex flex-col items-center overflow-hidden">
       {/* HUD Header for Center Chamber */}
-      <div className="w-full flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-cyan-500/30 pb-3">
+      <div className="w-full flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-[#1E2E26] pb-3">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
           <span className="font-cyber text-sm tracking-widest text-cyan-300 font-bold uppercase">

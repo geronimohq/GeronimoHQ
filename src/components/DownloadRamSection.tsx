@@ -479,7 +479,7 @@ export const DownloadRamSection: React.FC = () => {
   return (
     <section id="download-ram" className="relative w-full max-w-6xl mx-auto px-4 py-12 scroll-mt-28">
       {/* Outer Cyberpunk Container */}
-      <div className="relative rounded-2xl border border-lime-500/40 bg-gradient-to-b from-emerald-950/25 via-slate-950/90 to-[#05080f] p-6 md:p-8 shadow-[0_0_50px_rgba(16,185,129,0.15)] overflow-hidden">
+      <div className="bento-card bento-accent-banana p-6 md:p-8 relative overflow-hidden">
         
         {/* Corner Accents */}
         <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-lime-400/80" />

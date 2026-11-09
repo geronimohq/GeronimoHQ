@@ -248,7 +248,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
 
   return (
     <section id="cfg-studio" className="relative w-full max-w-6xl mx-auto px-4 py-12 scroll-mt-28">
-      <div className="rounded-2xl border border-cyan-500/40 bg-gradient-to-b from-cyan-950/20 via-slate-950/90 to-[#050811] p-6 md:p-8 shadow-[0_0_45px_rgba(0,240,255,0.12)]">
+      <div className="bento-card bento-accent-cyan p-6 md:p-8 relative overflow-hidden">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 border-b border-cyan-500/30 pb-4">
           <div>

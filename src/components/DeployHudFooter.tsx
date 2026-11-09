@@ -12,11 +12,11 @@ export const DeployHudFooter: React.FC = () => {
   };
 
   return (
-    <footer id="contact" className="relative w-full border-t border-cyan-500/20 bg-[#04060b]/95 backdrop-blur-xl pt-12 pb-8 px-4 mt-16 z-10">
+    <footer id="contact" className="relative w-full border-t border-[#1E2E26] bg-[#070B09]/95 backdrop-blur-xl pt-12 pb-8 px-4 mt-16 z-10">
       <div className="max-w-6xl mx-auto">
         
         {/* Main Footer Hub */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10 pb-8 border-b border-slate-800/80">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10 pb-8 border-b border-[#1E2E26]">
           
           {/* Col 1: About GeronimoHQ */}
           <div className="space-y-3">
@@ -111,19 +111,19 @@ export const DeployHudFooter: React.FC = () => {
             </div>
 
             <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2 text-xs font-code">
-              <div className="flex justify-between py-0.5 border-b border-slate-800/80">
+              <div className="flex justify-between py-0.5 border-b border-[#1E2E26]">
                 <span className="text-slate-400">CS2 APP</span>
                 <span className="text-emerald-400 font-bold">v1.4.0 // LIVE READY</span>
               </div>
-              <div className="flex justify-between py-0.5 border-b border-slate-800/80">
+              <div className="flex justify-between py-0.5 border-b border-[#1E2E26]">
                 <span className="text-slate-400">ZE CLUSTER</span>
                 <span className="text-lime-300 font-bold">128 TICK // ACTIVE</span>
               </div>
-              <div className="flex justify-between py-0.5 border-b border-slate-800/80">
+              <div className="flex justify-between py-0.5 border-b border-[#1E2E26]">
                 <span className="text-slate-400">CLOUD RAM</span>
                 <span className="text-cyan-300 font-bold">128 GB // DOWNLOADED</span>
               </div>
-              <div className="flex justify-between py-0.5 border-b border-slate-800/80">
+              <div className="flex justify-between py-0.5 border-b border-[#1E2E26]">
                 <span className="text-slate-400">MEME CORE</span>
                 <span className="text-yellow-400 font-bold">PEPE &amp; BANANA PHONE</span>
               </div>
