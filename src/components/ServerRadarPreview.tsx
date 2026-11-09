@@ -691,6 +691,7 @@ export const ServerRadarPreview: React.FC = () => {
               serverRegion={gflServer.region}
               totalPlayers={gflTotalPlayers}
               playerNames={gflPlayerNames}
+              zegraphContinents={telemetry?.gfl_continents}
             />
 
             {/* Primary Connect CTA */}

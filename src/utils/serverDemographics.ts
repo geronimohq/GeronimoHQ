@@ -1,3 +1,5 @@
+import type { ZegraphContinentStats } from './serverQuery';
+
 export interface DemographicItem {
   code: string;
   name: string;
@@ -23,7 +25,7 @@ interface CountryMeta {
   name: string;
   flag: string;
   color: string;
-  continent: 'NA' | 'EU' | 'ASIA' | 'CIS' | 'LATAM' | 'OTHER';
+  continent: 'NA' | 'EU' | 'ASIA' | 'LATAM' | 'OTHER';
 }
 
 const COUNTRY_METAS: Record<string, CountryMeta> = {
@@ -41,7 +43,7 @@ const COUNTRY_METAS: Record<string, CountryMeta> = {
   DE: { name: 'Germany', flag: '🇩🇪', color: '#f59e0b', continent: 'EU' },
   ES: { name: 'Spain', flag: '🇪🇸', color: '#fb923c', continent: 'EU' },
   PL: { name: 'Poland', flag: '🇵🇱', color: '#a855f7', continent: 'EU' },
-  RU: { name: 'Russia / CIS', flag: '🇷🇺', color: '#c084fc', continent: 'CIS' },
+  RU: { name: 'Russia', flag: '🇷🇺', color: '#c084fc', continent: 'EU' },
   BR: { name: 'Brazil / LatAm', flag: '🇧🇷', color: '#22c55e', continent: 'LATAM' },
   OTHER: { name: 'Other Regions', flag: '🌎', color: '#94a3b8', continent: 'OTHER' },
 };
@@ -142,11 +144,13 @@ function getCountryPingRange(countryCode: string, serverRegion: string): string 
  *  1. Physical datacenter location routing & latency tiers
  *  2. Real-time global diurnal gaming cycles (UTC time-of-day peaks)
  *  3. Deep active player roster linguistic, script, and clan tag analysis
+ *  4. Direct ZEGraph live continent intelligence (when available for GFL)
  */
 export function getServerDemographics(
   serverRegion: string,
   totalPlayers: number,
-  playerNames: string[] = []
+  playerNames: string[] = [],
+  zegraphContinents?: ZegraphContinentStats | null
 ): ServerDemographicsResult {
   const idleItem: DemographicItem = {
     code: 'IDLE',
@@ -177,13 +181,11 @@ export function getServerDemographics(
   const naHour = (utcHour - 6 + 24) % 24;      // US Central (Chicago)
   const euHour = (utcHour + 1) % 24;           // Western/Central Europe
   const asiaHour = (utcHour + 8) % 24;         // East/Southeast Asia (PH, VN, CN, SG)
-  const cisHour = (utcHour + 3) % 24;          // Moscow / CIS
   const latamHour = (utcHour - 3 + 24) % 24;   // Brazil / South America
 
   const naDiurnal = getDiurnalFactor(naHour);
   const euDiurnal = getDiurnalFactor(euHour);
   const asiaDiurnal = getDiurnalFactor(asiaHour);
-  const cisDiurnal = getDiurnalFactor(cisHour);
   const latamDiurnal = getDiurnalFactor(latamHour);
 
   // Initialize country counts
@@ -286,10 +288,11 @@ export function getServerDemographics(
     diurnalWeights = {
       US: 1.6 * naDiurnal * 0.85,
       CA: 1.6 * naDiurnal * 0.15,
-      UK: 0.9 * euDiurnal * 0.32,
-      DE: 0.9 * euDiurnal * 0.28,
-      FR: 0.9 * euDiurnal * 0.22,
-      ES: 0.9 * euDiurnal * 0.18,
+      UK: 0.9 * euDiurnal * 0.22,
+      DE: 0.9 * euDiurnal * 0.20,
+      FR: 0.9 * euDiurnal * 0.18,
+      ES: 0.9 * euDiurnal * 0.15,
+      RU: 0.9 * euDiurnal * 0.15,
       PL: 0.9 * euDiurnal * 0.10,
       VN: 0.7 * asiaDiurnal * 0.22,
       PH: 0.7 * asiaDiurnal * 0.22,
@@ -298,18 +301,17 @@ export function getServerDemographics(
       ID: 0.7 * asiaDiurnal * 0.10,
       IN: 0.7 * asiaDiurnal * 0.08,
       KR: 0.7 * asiaDiurnal * 0.08,
-      RU: 0.5 * cisDiurnal,
       BR: 0.5 * latamDiurnal,
       OTHER: 0.3,
     };
   } else if (isEU) {
     diurnalWeights = {
-      FR: 1.8 * euDiurnal * 0.35,
-      DE: 1.8 * euDiurnal * 0.25,
-      ES: 1.8 * euDiurnal * 0.20,
+      FR: 1.8 * euDiurnal * 0.30,
+      DE: 1.8 * euDiurnal * 0.22,
+      ES: 1.8 * euDiurnal * 0.18,
       UK: 1.8 * euDiurnal * 0.15,
-      PL: 1.8 * euDiurnal * 0.10,
-      RU: 0.9 * cisDiurnal,
+      RU: 1.8 * euDiurnal * 0.10,
+      PL: 1.8 * euDiurnal * 0.05,
       US: 0.6 * naDiurnal * 0.85,
       CA: 0.6 * naDiurnal * 0.15,
       BR: 0.4 * latamDiurnal,
@@ -326,14 +328,14 @@ export function getServerDemographics(
       VN: 1.8 * asiaDiurnal * 0.12,
       PH: 1.8 * asiaDiurnal * 0.10,
       ID: 1.8 * asiaDiurnal * 0.08,
-      RU: 0.6 * cisDiurnal,
+      RU: 0.4 * euDiurnal,
       US: 0.4 * naDiurnal,
       UK: 0.3 * euDiurnal,
       OTHER: 0.2,
     };
   } else {
     diurnalWeights = {
-      RU: 1.5 * cisDiurnal,
+      RU: 1.2 * euDiurnal,
       PL: 1.0 * euDiurnal,
       DE: 0.8 * euDiurnal,
       US: 0.4 * naDiurnal,
@@ -346,6 +348,36 @@ export function getServerDemographics(
   for (const [code, weight] of Object.entries(diurnalWeights)) {
     if (countryCounts[code] !== undefined) {
       countryCounts[code] += (weight / sumDiurnal) * unattributed;
+    }
+  }
+
+  // Direct alignment with live ZEGraph continental data if available
+  if (zegraphContinents?.continents && zegraphContinents.continents.length > 0) {
+    const totalContain = zegraphContinents.contain_countries ||
+      zegraphContinents.continents.reduce((acc, c) => acc + c.count, 0) || 1;
+
+    const targetContinentPcts: Record<string, number> = { ASIA: 0, EU: 0, NA: 0, LATAM: 0, OTHER: 0 };
+    for (const c of zegraphContinents.continents) {
+      const pct = (c.count / totalContain) * 100;
+      if (c.name === 'Asia') targetContinentPcts.ASIA = pct;
+      else if (c.name === 'Europe') targetContinentPcts.EU = pct;
+      else if (c.name === 'North America') targetContinentPcts.NA = pct;
+      else if (c.name === 'South America') targetContinentPcts.LATAM = pct;
+      else targetContinentPcts.OTHER = (targetContinentPcts.OTHER || 0) + pct;
+    }
+
+    for (const cont of ['ASIA', 'EU', 'NA', 'LATAM', 'OTHER'] as const) {
+      const targetPct = targetContinentPcts[cont];
+      if (targetPct > 0) {
+        const matchingCodes = Object.keys(countryCounts).filter((code) => COUNTRY_METAS[code]?.continent === cont);
+        const currentSum = matchingCodes.reduce((acc, code) => acc + countryCounts[code], 0);
+        if (currentSum > 0) {
+          const factor = targetPct / currentSum;
+          for (const code of matchingCodes) {
+            countryCounts[code] *= factor;
+          }
+        }
+      }
     }
   }
 
@@ -363,7 +395,7 @@ export function getServerDemographics(
         flag: meta.flag,
         color: meta.color,
         percentage: pct,
-        count: Math.max(1, Math.round(count)),
+        count: Math.max(1, Math.round((pct / 100) * totalPlayers)),
         pingRange,
       };
     })
@@ -371,7 +403,7 @@ export function getServerDemographics(
     .sort((a, b) => b.percentage - a.percentage);
 
   // Continental Aggregation
-  const continentSums: Record<string, number> = { NA: 0, EU: 0, ASIA: 0, CIS: 0, LATAM: 0, OTHER: 0 };
+  const continentSums: Record<string, number> = { NA: 0, EU: 0, ASIA: 0, LATAM: 0, OTHER: 0 };
   for (const c of countryItems) {
     const meta = COUNTRY_METAS[c.code] || COUNTRY_METAS.OTHER;
     continentSums[meta.continent] = (continentSums[meta.continent] || 0) + c.percentage;
@@ -381,21 +413,18 @@ export function getServerDemographics(
     if (isNA) {
       if (cont === 'NA') return '< 70 ms';
       if (cont === 'EU') return '95–135 ms';
-      if (cont === 'CIS') return '135–175 ms';
       if (cont === 'LATAM') return '130–170 ms';
       if (cont === 'ASIA') return '170–240 ms+';
       return '120–220 ms';
     }
     if (isEU) {
       if (cont === 'EU') return '< 50 ms';
-      if (cont === 'CIS') return '50–85 ms';
       if (cont === 'NA') return '95–130 ms';
       if (cont === 'LATAM') return '140–180 ms';
       return '180–240 ms+';
     }
     if (isAsia) {
       if (cont === 'ASIA') return '< 60 ms';
-      if (cont === 'CIS') return '100–150 ms';
       if (cont === 'NA') return '140–190 ms';
       return '180–240 ms+';
     }
@@ -406,7 +435,6 @@ export function getServerDemographics(
     ASIA: { name: 'Asia-Pacific', flag: '🌏', color: '#f59e0b' },
     EU: { name: 'Europe', flag: '🇪🇺', color: '#10b981' },
     NA: { name: 'North America', flag: '🇺🇸', color: '#00f0ff' },
-    CIS: { name: 'CIS / East EU', flag: '🇷🇺', color: '#c084fc' },
     LATAM: { name: 'Latin America', flag: '🇧🇷', color: '#22c55e' },
     OTHER: { name: 'Other Regions', flag: '🌎', color: '#94a3b8' },
   };
@@ -432,17 +460,17 @@ export function getServerDemographics(
   if (isNA) {
     lowPingPct = continentSums.NA || 0;
     midPingPct = (continentSums.EU || 0) + (continentSums.LATAM || 0);
-    highPingPct = (continentSums.ASIA || 0) + (continentSums.CIS || 0) + (continentSums.OTHER || 0);
+    highPingPct = (continentSums.ASIA || 0) + (continentSums.OTHER || 0);
   } else if (isEU) {
-    lowPingPct = (continentSums.EU || 0) + (continentSums.CIS || 0);
+    lowPingPct = continentSums.EU || 0;
     midPingPct = continentSums.NA || 0;
     highPingPct = (continentSums.ASIA || 0) + (continentSums.LATAM || 0) + (continentSums.OTHER || 0);
   } else if (isAsia) {
     lowPingPct = continentSums.ASIA || 0;
-    midPingPct = (continentSums.CIS || 0) + (continentSums.NA || 0);
+    midPingPct = continentSums.NA || 0;
     highPingPct = (continentSums.EU || 0) + (continentSums.LATAM || 0) + (continentSums.OTHER || 0);
   } else {
-    lowPingPct = (continentSums.CIS || 0) + (continentSums.EU || 0);
+    lowPingPct = continentSums.EU || 0;
     midPingPct = continentSums.ASIA || 0;
     highPingPct = continentSums.NA || 0;
   }

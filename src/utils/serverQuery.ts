@@ -53,6 +53,17 @@ export interface MapMusicEntry {
   tags?: string[];
 }
 
+export interface ZegraphContinentItem {
+  name: string;
+  count: number;
+}
+
+export interface ZegraphContinentStats {
+  contain_countries: number;
+  continents: ZegraphContinentItem[];
+  total_count: number;
+}
+
 export interface LiveTelemetryPayload {
   timestamp: number;
   iso_time: string;
@@ -60,6 +71,7 @@ export interface LiveTelemetryPayload {
   online_servers: number;
   geronimo_presence?: GeronimoPresence;
   gfl_match_now?: GflMatchNow | null;
+  gfl_continents?: ZegraphContinentStats | null;
   gfl_map_musics?: MapMusicEntry[];
   servers: Record<string, LiveServerInfo>;
 }
@@ -69,6 +81,7 @@ const CLOUD_RELAY_URL = 'https://geronimohq-telemetry.onrender.com/api/servers';
 
 // Module-level caches to guarantee zero flicker / flapping across periodic polling intervals
 let cachedGflMatchNow: GflMatchNow | null = null;
+let cachedGflContinents: ZegraphContinentStats | null = null;
 let cachedGflMusics: { map: string; musics: MapMusicEntry[] } | null = null;
 let lastMatchFetchTimestamp = 0;
 let inFlightTelemetryPromise: Promise<LiveTelemetryPayload | null> | null = null;
@@ -126,16 +139,27 @@ async function executeFetchLiveTelemetry(): Promise<LiveTelemetryPayload | null>
 
   if (shouldQueryZegraph) {
     try {
-      const matchRes = await fetch(`https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now?_t=${now}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-        },
-        signal: AbortSignal.timeout(4500),
-      });
-      if (matchRes.ok) {
-        const matchJson = await matchRes.json();
+      const [matchRes, contRes] = await Promise.allSettled([
+        fetch(`https://zegraph.xyz/data/api/servers/65bdad6379cefd7ebcecce5c/match-now?_t=${now}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          },
+          signal: AbortSignal.timeout(4500),
+        }),
+        fetch(`https://zegraph.xyz/data/api/radars/65bdad6379cefd7ebcecce5c/live_statistics/continents?_t=${now}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          },
+          signal: AbortSignal.timeout(4500),
+        }),
+      ]);
+
+      if (matchRes.status === 'fulfilled' && matchRes.value.ok) {
+        const matchJson = await matchRes.value.json();
         if (matchJson?.code === 0 && matchJson?.data) {
           cachedGflMatchNow = matchJson.data;
           lastMatchFetchTimestamp = now;
@@ -148,12 +172,32 @@ async function executeFetchLiveTelemetry(): Promise<LiveTelemetryPayload | null>
           }
         }
       }
+
+      if (contRes.status === 'fulfilled' && contRes.value.ok) {
+        const contJson = await contRes.value.json();
+        if (contJson?.code === 0 && contJson?.data) {
+          cachedGflContinents = contJson.data;
+          try {
+            if (typeof window !== 'undefined' && window.sessionStorage) {
+              window.sessionStorage.setItem('ze_cached_gfl_continents', JSON.stringify(cachedGflContinents));
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
     } catch {
-      // Retain cachedGflMatchNow without zeroing out scores!
+      // Retain caches without zeroing out
     }
   }
 
-  // Authoritatively attach the best valid match data to prevent flapping
+  // Authoritatively attach the best valid match & continent data
+  if (cachedGflMatchNow) {
+    payload.gfl_match_now = cachedGflMatchNow;
+  }
+  if (cachedGflContinents) {
+    payload.gfl_continents = cachedGflContinents;
+  }
   if (cachedGflMatchNow) {
     payload.gfl_match_now = cachedGflMatchNow;
     if (cachedGflMatchNow.started_at && payload.servers?.gfl) {

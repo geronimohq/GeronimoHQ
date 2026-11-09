@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { getServerDemographics } from '../utils/serverDemographics';
+import type { ZegraphContinentStats } from '../utils/serverQuery';
 import { Globe, Flag, Zap } from 'lucide-react';
 
 interface ServerGeoDemographicsProps {
@@ -7,6 +8,7 @@ interface ServerGeoDemographicsProps {
   totalPlayers: number;
   playerNames?: string[];
   compact?: boolean;
+  zegraphContinents?: ZegraphContinentStats | null;
 }
 
 export const ServerGeoDemographics: React.FC<ServerGeoDemographicsProps> = ({
@@ -14,12 +16,13 @@ export const ServerGeoDemographics: React.FC<ServerGeoDemographicsProps> = ({
   totalPlayers,
   playerNames = [],
   compact = false,
+  zegraphContinents,
 }) => {
   const [viewMode, setViewMode] = useState<'country' | 'continent' | 'latency'>('country');
 
   const demographics = useMemo(
-    () => getServerDemographics(serverRegion, totalPlayers, playerNames),
-    [serverRegion, totalPlayers, playerNames]
+    () => getServerDemographics(serverRegion, totalPlayers, playerNames, zegraphContinents),
+    [serverRegion, totalPlayers, playerNames, zegraphContinents]
   );
 
   const { dominantCountry, dominantContinent, dominantLatency, countries, continents, latencies, summary } = demographics;
@@ -42,6 +45,8 @@ export const ServerGeoDemographics: React.FC<ServerGeoDemographicsProps> = ({
   const tooltipText = activeItems
     .map((r) => `${r.flag} ${r.name}: ${r.percentage}% (~${r.count} players)${r.pingRange ? ` [Ping: ${r.pingRange}]` : ''}`)
     .join('\n');
+
+  const maxPills = compact ? 5 : 5;
 
   return (
     <div
@@ -131,25 +136,30 @@ export const ServerGeoDemographics: React.FC<ServerGeoDemographicsProps> = ({
         ))}
       </div>
 
-      {/* Breakdown Pills */}
-      <div className="flex items-center justify-start text-[11px] text-slate-300 font-code gap-1.5 flex-wrap">
-        {activeItems.slice(0, 4).map((r) => (
+      {/* Breakdown Pills: Left-aligned, covering width, with +more on the far right */}
+      <div className="w-full flex items-center justify-between text-[11px] text-slate-300 font-code gap-1">
+        <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+          {activeItems.slice(0, maxPills).map((r) => (
+            <span
+              key={r.code}
+              className="flex items-center gap-1 bg-slate-900/90 border border-slate-800 px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap flex-shrink-0"
+              title={`${r.flag} ${r.name}: ${r.percentage}% (~${r.count} players)${r.pingRange ? ` • Ping: ${r.pingRange}` : ''}${r.description ? `\n• ${r.description}` : ''}`}
+            >
+              <span style={{ color: r.color }} className="font-black text-xs leading-none">&bull;</span>
+              <span>{r.flag}</span>
+              <span className="font-bold text-slate-200">{r.percentage}%</span>
+              {viewMode === 'latency' && (
+                <span className="text-[9px] text-cyan-400 font-mono">({r.pingRange})</span>
+              )}
+            </span>
+          ))}
+        </div>
+        {activeItems.length > maxPills && (
           <span
-            key={r.code}
-            className="flex items-center gap-1 bg-slate-900/90 border border-slate-800 px-1.5 py-0.5 rounded text-[10px]"
-            title={`${r.flag} ${r.name}: ${r.percentage}% (~${r.count} players)${r.pingRange ? ` • Ping: ${r.pingRange}` : ''}${r.description ? `\n• ${r.description}` : ''}`}
+            className="ml-auto text-[10px] text-slate-400 hover:text-cyan-300 transition-colors font-medium whitespace-nowrap pl-1.5 flex-shrink-0 cursor-help"
+            title={tooltipText}
           >
-            <span style={{ color: r.color }} className="font-black text-xs leading-none">&bull;</span>
-            <span>{r.flag}</span>
-            <span className="font-bold text-slate-200">{r.percentage}%</span>
-            {viewMode === 'latency' && (
-              <span className="text-[9px] text-cyan-400 font-mono">({r.pingRange})</span>
-            )}
-          </span>
-        ))}
-        {activeItems.length > 4 && (
-          <span className="text-[10px] text-slate-400 font-medium" title={tooltipText}>
-            +{activeItems.length - 4} more
+            +{activeItems.length - maxPills} more
           </span>
         )}
       </div>
