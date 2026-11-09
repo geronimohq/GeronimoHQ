@@ -667,12 +667,12 @@ export const ServerRadarPreview: React.FC = () => {
               </button>
             </div>
 
-            {/* Desktop Slot Sniper & Web Slot Watcher Instructions Banner */}
+            {/* Desktop Slot Sniper & Web Auto Join Instructions Banner */}
             <div className="p-3.5 rounded-xl bg-slate-950/85 border border-slate-800 flex flex-col gap-2 text-xs font-tech text-slate-300">
               <div className="flex items-start gap-2.5">
                 <Zap className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <span>
-                  <strong>Server Full at 64/64?</strong> Arm the <strong>Web Slot Watcher</strong> below. When a player leaves, the radar alerts you with sound/tab notification and displays an instant <strong>Connect Now</strong> button to launch CS2!
+                  <strong>Server Full at 64/64?</strong> Arm <strong>Auto Join</strong> below with your slot tier. When a player leaves, the radar automatically triggers your Steam connection to join the server immediately!
                 </span>
               </div>
               <div className="flex items-center gap-2 pl-6 text-[11px] text-fuchsia-300 font-code bg-fuchsia-950/40 p-2 rounded-lg border border-fuchsia-500/30">
