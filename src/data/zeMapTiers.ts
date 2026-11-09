@@ -876,6 +876,18 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
     if (c.startsWith('zm_') || c.includes('warmup') || c.includes('infection')) {
       return { mapper: 'Nipper / Dave J.', isHoF: false, tier: 1, tierLabel: 'Warmup', badge: '🟢 T1 Warmup', colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]' };
     }
+    if (c.includes('mojos') || c.includes('minigames')) {
+      return { mapper: 'Mojo', isHoF: false, tier: 2, tierLabel: 'Casual', badge: '🟡 T2 Casual', colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]' };
+    }
+    if (c.includes('zk_mall') || c.includes('mall_of_zombies')) {
+      return { mapper: 'Killik / ZK', isHoF: false, tier: 2, tierLabel: 'Casual', badge: '🟡 T2 Casual', colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]' };
+    }
+    if (c.includes('dear_cs2') || c.includes('ze_dear')) {
+      return { mapper: 'Havi', isHoF: false, tier: 2, tierLabel: 'Casual', badge: '🟡 T2 Casual', colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]' };
+    }
+    if (c.includes('world_escape') || c.includes('world_esc')) {
+      return { mapper: 'R1cko27', isHoF: false, tier: 2, tierLabel: 'Casual', badge: '🟡 T2 Casual', colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]' };
+    }
     if (c.includes('surf')) {
       return { mapper: 'Community Surf', isHoF: false, tier: 2, tierLabel: 'Casual', badge: '🟡 T2 Surf', colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]' };
     }

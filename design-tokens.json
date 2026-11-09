@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "Tactical Pepe & Banana Phone Cyber-Deck Design System",
+  "version": "1.0.0",
+  "colors": {
+    "canvas": "#070B09",
+    "panel": "#0E1512",
+    "panel_row": "#121C18",
+    "panel_hover": "#16241E",
+    "border": "#1E2E26",
+    "border_hover": "#2B4036",
+    "text_primary": "#FFFFFF",
+    "text_muted": "#94A39E",
+    "primary_banana": "#FFE135",
+    "text_on_banana": "#070B09",
+    "success_pepe": "#2ECC71",
+    "alert_magenta": "#FF2A85",
+    "telemetry_cyan": "#00F0FF",
+    "focus_ring": "#FFE135"
+  },
+  "typography": {
+    "tier_1": {
+      "name": "Main View Title",
+      "font_family_web": "var(--font-cyber)",
+      "font_family_desktop": "Segoe UI",
+      "size_px": 16,
+      "weight": "bold",
+      "transform": "uppercase",
+      "letter_spacing": "0.08em",
+      "color": "#FFFFFF",
+      "line_height": 1.3
+    },
+    "tier_2": {
+      "name": "Sub-Section Card Header",
+      "font_family_web": "var(--font-cyber)",
+      "font_family_desktop": "Segoe UI",
+      "size_px": 13,
+      "weight": "bold",
+      "transform": "uppercase",
+      "letter_spacing": "0.05em",
+      "color": "#FFE135",
+      "line_height": 1.35
+    },
+    "tier_3": {
+      "name": "Row Title / Setting Label",
+      "font_family_web": "var(--font-tech)",
+      "font_family_desktop": "Segoe UI",
+      "size_px": 14,
+      "weight": "semibold",
+      "transform": "none",
+      "letter_spacing": "normal",
+      "color": "#FFFFFF",
+      "line_height": 1.4
+    },
+    "tier_4": {
+      "name": "Description / Logs / Body",
+      "font_family_web": "var(--font-tech)",
+      "font_family_desktop": "Segoe UI",
+      "size_px": 12,
+      "weight": "regular",
+      "transform": "none",
+      "letter_spacing": "normal",
+      "color": "#94A39E",
+      "line_height": 1.5
+    },
+    "tier_5": {
+      "name": "Micro Badge / Region Pill",
+      "font_family_web": "var(--font-code)",
+      "font_family_desktop": "Consolas",
+      "size_px": 11,
+      "weight": "bold",
+      "transform": "uppercase",
+      "letter_spacing": "0.05em",
+      "line_height": 1.25
+    }
+  },
+  "dimensions": {
+    "button_height_desktop": 34,
+    "button_font_size": 12.5,
+    "button_touch_min_height": 44,
+    "bento_card_padding": 16,
+    "bento_card_gap": 12,
+    "border_width": 1,
+    "accent_line_height": 2,
+    "focus_offset": 2
+  },
+  "contrast_ratios": {
+    "text_primary_on_canvas": "20.1:1",
+    "text_muted_on_canvas": "8.2:1",
+    "primary_banana_on_canvas": "16.8:1",
+    "text_on_banana": "16.8:1",
+    "success_pepe_on_canvas": "9.6:1",
+    "alert_magenta_on_canvas": "6.4:1",
+    "telemetry_cyan_on_canvas": "15.9:1",
+    "text_primary_on_panel": "17.8:1",
+    "text_muted_on_panel": "7.3:1"
+  }
+}

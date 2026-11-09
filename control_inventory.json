@@ -1,0 +1,1012 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-11-09T10:45:00+08:00",
+  "baseline_metrics": {
+    "web": {
+      "js_size_raw_kb": 993.74,
+      "js_size_gzip_kb": 243.44,
+      "css_size_raw_kb": 196.17,
+      "css_size_gzip_kb": 23.0,
+      "modules_transformed": 2084,
+      "typecheck_status": "PASS"
+    },
+    "desktop": {
+      "exe_size_bytes": 33149788,
+      "exe_size_mb": 31.6,
+      "sha256": "8EEAE87DB3FA7D5D30F63F31070ECE7897AFEA2455B0D496A922228DF3E5DA9C",
+      "test_suites_passed": 9,
+      "comprehensive_audit_tests": 14,
+      "cold_start_seconds": 0.8
+    }
+  },
+  "total_desktop_controls": 109,
+  "total_web_controls": 16,
+  "desktop_controls": [
+    {
+      "platform": "desktop",
+      "name": "self.text",
+      "type": "str",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self._app_icon_photo",
+      "type": "PhotoImage",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.style",
+      "type": "Style",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.opt_shaders",
+      "type": "BooleanVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.opt_cs2_dumps",
+      "type": "BooleanVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.opt_gamedvr",
+      "type": "BooleanVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.opt_fullscreen",
+      "type": "BooleanVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.opt_autoexec",
+      "type": "BooleanVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.opt_power",
+      "type": "BooleanVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.selected_power_plan",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.maint_temp",
+      "type": "BooleanVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.maint_win_update",
+      "type": "BooleanVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.maint_discord_steam",
+      "type": "BooleanVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.maint_thumb",
+      "type": "BooleanVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.maint_recycle",
+      "type": "BooleanVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.maint_dns",
+      "type": "BooleanVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.connect_delay",
+      "type": "IntVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.gfl_status_text",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.gfl_workflow_status",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.gfl_score_var",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.gfl_extends_var",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.gfl_timer_var",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.gfl_geo_var",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.comm_sniper_target_var",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.server_search_var",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_session_start",
+      "type": "int",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_preview_details",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_preview_state",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_preview_elapsed",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_preview_btn1",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_preview_btn2",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.sidebar",
+      "type": "Frame",
+      "label": "NAVIGATION",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.main_content",
+      "type": "Frame",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.page_container",
+      "type": "Frame",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.console",
+      "type": "Text",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.status_bar",
+      "type": "Frame",
+      "label": "CS2: GAME READY",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.status_cs2_lbl",
+      "type": "Label",
+      "label": "\u25cf SLOT SNIPER: IDLE",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.status_sniper_lbl",
+      "type": "Label",
+      "label": "\u25cf SLOT SNIPER: IDLE",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.status_dns_lbl",
+      "type": "Label",
+      "label": "\u25cf GAMING DNS: ACTIVE",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.status_vac_lbl",
+      "type": "Label",
+      "label": "\u25cf 100% VAC-SAFE",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.weekly_banner_box",
+      "type": "Frame",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.ze_vm_var",
+      "type": "BooleanVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.ze_telemetry_var",
+      "type": "BooleanVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.ze_hud_color_var",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.ze_duck_key_var",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.ze_mute_key_var",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.btn_edit_cfg",
+      "type": "Button",
+      "label": "\u270f\ufe0f Edit Config",
+      "handler": "self._toggle_autoexec_manual_edit",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.btn_save_cfg",
+      "type": "Button",
+      "label": "\ud83d\udcbe Save Changes",
+      "handler": "self._save_autoexec_manual",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.autoexec_live_status_var",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.txt_box",
+      "type": "Text",
+      "label": "",
+      "handler": "txt_scroll.set",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.launch_entry",
+      "type": "Entry",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.btn_boost",
+      "type": "Button",
+      "label": "\u26a1 APPLY SAFE CS2 CPU PRIORITY BOOST",
+      "handler": "self.run_live_boost",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.status_cs2_lbl",
+      "type": "Label",
+      "label": "Status: Ready to boost",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.dns_iface_var",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.btn_dns_bench",
+      "type": "Button",
+      "label": "\u26a1 Benchmark All DNS Servers",
+      "handler": "self.run_dns_benchmark_ui",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.btn_dns_restore",
+      "type": "Button",
+      "label": "\u21ba Restore ISP Default (DHCP)",
+      "handler": "self.restore_dns_dhcp_ui",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.dns_status_var",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.selected_dns_id",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.custom_dns_primary_var",
+      "type": "StringVar",
+      "label": "Secondary:",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.custom_dns_secondary_var",
+      "type": "StringVar",
+      "label": "\ud83d\ude80 Apply Custom DNS",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.log_analyzer_summary_var",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.gfl_tier_var",
+      "type": "StringVar",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.gfl_tier_combo",
+      "type": "Combobox",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.btn_gfl_sniper",
+      "type": "Button",
+      "label": "\ud83c\udfaf Sniper",
+      "handler": "self.toggle_gfl_slot_sniper",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.gfl_thumb_frame",
+      "type": "Frame",
+      "label": "MAP INTEL",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.gfl_thumb_lbl",
+      "type": "Label",
+      "label": "MAP INTEL",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.gfl_status_lbl",
+      "type": "Label",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.gfl_timer_lbl",
+      "type": "Label",
+      "label": "\ud83c\udf10 3D Map \u2197",
+      "handler": "lambda",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.gfl_flow_lbl",
+      "type": "Label",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.list_head",
+      "type": "Frame",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.btn_subtab_global",
+      "type": "Button",
+      "label": "\ud83c\udf10 Global Communities",
+      "handler": "lambda",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.btn_subtab_china",
+      "type": "Button",
+      "label": "\ud83c\udde8\ud83c\uddf3 Planet China",
+      "handler": "lambda",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.comm_sniper_combo",
+      "type": "Combobox",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.server_search_entry",
+      "type": "Entry",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.china_bar",
+      "type": "Frame",
+      "label": "Select Community Cluster:",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.china_combo",
+      "type": "Combobox",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.cluster_desc_lbl",
+      "type": "Label",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.server_canvas",
+      "type": "Canvas",
+      "label": "",
+      "handler": "self.server_canvas.yview",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.server_scrollbar",
+      "type": "Scrollbar",
+      "label": "",
+      "handler": "self.server_canvas.yview",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.server_list_frame",
+      "type": "Frame",
+      "label": "",
+      "handler": "self.server_scrollbar.set",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_session_start",
+      "type": "int",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.maint_weekly_banner_box",
+      "type": "Frame",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.map_stat_lbl",
+      "type": "Label",
+      "label": "Scanning maps & workshop content...",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.os_diag_cards_container",
+      "type": "Frame",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.var_discord_enabled",
+      "type": "BooleanVar",
+      "label": " Enable Discord Rich Presence (RPC)",
+      "handler": "self._on_discord_toggle",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_status_lbl",
+      "type": "Label",
+      "label": "\u25cb Status: Checking CS2...",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.preview_ava",
+      "type": "Frame",
+      "label": "CS2",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.preview_username_lbl",
+      "type": "Label",
+      "label": "\u25cb Standby  |  CS2 Closed (No Presence)",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.preview_status_lbl",
+      "type": "Label",
+      "label": "\u25cb Standby  |  CS2 Closed (No Presence)",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.preview_act_box",
+      "type": "Frame",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.preview_dormant",
+      "type": "Frame",
+      "label": "\ud83d\udca4 NO ACTIVE CS2 PRESENCE BROADCASTED",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.preview_active",
+      "type": "Frame",
+      "label": "PLAYING A GAME",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.lbl_prev_details",
+      "type": "Label",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.lbl_prev_state",
+      "type": "Label",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.lbl_prev_elapsed",
+      "type": "Label",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.prev_btn_box",
+      "type": "Frame",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.preview_b1_frame",
+      "type": "Frame",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.lbl_btn1",
+      "type": "Label",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.preview_b2_frame",
+      "type": "Frame",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.lbl_btn2",
+      "type": "Label",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_session_start",
+      "type": "int",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_session_start",
+      "type": "int",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_session_start",
+      "type": "int",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_session_start",
+      "type": "int",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_session_start",
+      "type": "int",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_session_start",
+      "type": "int",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_session_start",
+      "type": "int",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_session_start",
+      "type": "int",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    },
+    {
+      "platform": "desktop",
+      "name": "self.discord_session_start",
+      "type": "int",
+      "label": "",
+      "handler": "",
+      "tooltip": ""
+    }
+  ],
+  "web_controls": [
+    {
+      "platform": "web",
+      "id": "nav-hero-stage",
+      "label": "HOLO-DECK",
+      "handler": "handleNavClick",
+      "tooltip": "Navigate to Holo-Deck"
+    },
+    {
+      "platform": "web",
+      "id": "nav-download-ram",
+      "label": "DOWNLOAD RAM",
+      "handler": "handleNavClick",
+      "tooltip": "Navigate to Download RAM"
+    },
+    {
+      "platform": "web",
+      "id": "nav-server-radar",
+      "label": "ZE SERVERS",
+      "handler": "handleNavClick",
+      "tooltip": "Navigate to Zombie Escape Server Radar"
+    },
+    {
+      "platform": "web",
+      "id": "nav-ze-toolkit",
+      "label": "ZE TOOLKIT",
+      "handler": "handleNavClick",
+      "tooltip": "Navigate to ZE Toolkit"
+    },
+    {
+      "platform": "web",
+      "id": "nav-cfg-studio",
+      "label": "CFG STUDIO",
+      "handler": "handleNavClick",
+      "tooltip": "Navigate to Config Studio"
+    },
+    {
+      "platform": "web",
+      "id": "nav-cs2-command",
+      "label": "CS2 APP",
+      "handler": "handleNavClick",
+      "tooltip": "Navigate to CS2 Command Center"
+    },
+    {
+      "platform": "web",
+      "id": "nav-contact",
+      "label": "TRANSMISSION",
+      "handler": "handleNavClick",
+      "tooltip": "Navigate to Transmission / Contact"
+    },
+    {
+      "platform": "web",
+      "id": "toggle-gremlin",
+      "label": "ROAMER TOGGLE",
+      "handler": "onToggleGremlin",
+      "tooltip": "Toggle roaming interactive character"
+    },
+    {
+      "platform": "web",
+      "id": "btn-connect-steam-gfl",
+      "label": "CONNECT VIA STEAM",
+      "handler": "handleOpenConnect(gflServer, false)",
+      "tooltip": "Connect directly to GFL ZE via Steam protocol"
+    },
+    {
+      "platform": "web",
+      "id": "btn-slot-watcher-gfl",
+      "label": "AUTO JOIN",
+      "handler": "handleToggleSlotWatcher(gflServer)",
+      "tooltip": "Arm auto join slot watcher"
+    },
+    {
+      "platform": "web",
+      "id": "btn-players-modal-gfl",
+      "label": "PLAYERS",
+      "handler": "fetchServerPlayers(gflServer)",
+      "tooltip": "View live player roster"
+    },
+    {
+      "platform": "web",
+      "id": "btn-copy-ip-gfl",
+      "label": "COPY IP",
+      "handler": "handleCopyIp(gflServer)",
+      "tooltip": "Copy server IP to clipboard"
+    },
+    {
+      "platform": "web",
+      "id": "btn-comm-connect",
+      "label": "CONNECT VIA STEAM",
+      "handler": "handleOpenConnect(server, false)",
+      "tooltip": "Connect to community ZE server via Steam"
+    },
+    {
+      "platform": "web",
+      "id": "btn-comm-auto-join",
+      "label": "AUTO JOIN",
+      "handler": "handleToggleSlotWatcher(server)",
+      "tooltip": "Arm auto join for community server"
+    },
+    {
+      "platform": "web",
+      "id": "btn-comm-players",
+      "label": "PLAYERS",
+      "handler": "fetchServerPlayers(server)",
+      "tooltip": "View live community player roster"
+    },
+    {
+      "platform": "web",
+      "id": "btn-comm-copy",
+      "label": "COPY",
+      "handler": "handleCopyIp(server)",
+      "tooltip": "Copy server IP address"
+    }
+  ]
+}

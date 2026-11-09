@@ -481,7 +481,7 @@ export const ServerRadarPreview: React.FC = () => {
       {/* ==================================================================== */}
       {/* PINNED PREMIER FEATURED GFL CARD                                     */}
       {/* ==================================================================== */}
-      <div className="mb-8 p-6 rounded-2xl bg-gradient-to-br from-slate-950/95 via-slate-900/90 to-amber-950/40 border border-amber-500/50 shadow-[0_0_35px_rgba(251,191,36,0.18)] backdrop-blur-md relative overflow-hidden">
+      <div className="bento-card bento-accent-banana mb-8 relative overflow-hidden">
         {/* Top-Right Corner: GFL Community Links (Website & Discord) */}
         <div className="sm:absolute sm:top-5 sm:right-6 flex items-center gap-2.5 z-10 mb-3 sm:mb-0">
           {gflServer.website && (
@@ -539,7 +539,7 @@ export const ServerRadarPreview: React.FC = () => {
             {/* Big Map Preview & Telemetry Display */}
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-slate-900/90 p-3 rounded-xl border border-slate-800 mb-3">
               {/* Prominent Map Thumbnail */}
-              <div className="relative w-40 h-24 sm:w-48 sm:h-30 rounded-xl overflow-hidden border border-fuchsia-500/40 bg-slate-950 flex-shrink-0 shadow-[0_0_20px_rgba(255,0,128,0.2)] group">
+              <div className="relative w-56 h-34 sm:w-72 sm:h-42 rounded-xl overflow-hidden border border-[#1E2E26] bg-[#070B09] flex-shrink-0 shadow-lg group">
                 <img 
                   src={getMapThumbnailUrl(gflMap)} 
                   alt={gflMap}
@@ -960,28 +960,26 @@ export const ServerRadarPreview: React.FC = () => {
           return (
             <div
               key={server.id}
-              className={`relative p-5 rounded-xl border transition-all backdrop-blur-md flex flex-col justify-between group ${
-                server.isFeatured
-                  ? 'bg-gradient-to-br from-slate-950/90 via-slate-900/70 to-amber-950/30 border-amber-500/40 shadow-[0_0_25px_rgba(251,191,36,0.15)]'
-                  : 'bg-slate-950/60 border-slate-800 hover:border-lime-500/40 hover:shadow-[0_0_20px_rgba(57,255,20,0.1)]'
+              className={`bento-card relative flex flex-col justify-between transition-all duration-300 group ${
+                server.isFeatured ? 'bento-accent-banana shadow-[0_0_24px_rgba(255,225,53,0.18)]' : 'bento-accent-pepe shadow-[0_0_20px_rgba(46,204,113,0.12)]'
               }`}
             >
               <div>
-                {/* Top Badge Row */}
-                <div className="flex items-center justify-between gap-2 mb-2">
+                {/* 1. Top Badges & External Links Header */}
+                <div className="flex items-center justify-between gap-2 mb-3">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] font-code px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300 font-bold">
+                    <span className="tier-5-badge bg-[#121C18] border border-[#1E2E26] text-[#FFFFFF]">
                       {server.countryCode}
                     </span>
-                    <span className="text-[10px] font-code px-2 py-0.5 rounded bg-slate-900/90 border border-slate-800 text-slate-400">
+                    <span className="tier-5-badge bg-[#121C18] border border-[#1E2E26] text-[#94A39E]">
                       {server.clusterName}
                     </span>
                     {server.isFeatured && (
-                      <span className="text-[10px] font-code px-2 py-0.5 rounded bg-amber-950/90 text-amber-300 border border-amber-500/50 flex items-center gap-1 font-bold">
-                        <Sparkles className="w-3 h-3 text-amber-400" /> FEATURED
+                      <span className="tier-5-badge bg-[#FFE135]/15 text-[#FFE135] border border-[#FFE135]/50">
+                        <Sparkles className="w-3 h-3 text-[#FFE135]" /> FEATURED
                       </span>
                     )}
-                    <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/30">
+                    <span className="tier-5-badge bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40">
                       128T
                     </span>
                   </div>
@@ -993,7 +991,7 @@ export const ServerRadarPreview: React.FC = () => {
                         href={server.discord}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[11px] font-code text-slate-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
+                        className="text-[11px] font-code text-[#94A39E] hover:text-[#00F0FF] flex items-center gap-1 transition-colors"
                       >
                         Discord <ExternalLink className="w-3 h-3" />
                       </a>
@@ -1003,7 +1001,7 @@ export const ServerRadarPreview: React.FC = () => {
                         href={server.website}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[11px] font-code text-slate-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
+                        className="text-[11px] font-code text-[#94A39E] hover:text-[#FFE135] flex items-center gap-1 transition-colors"
                       >
                         Portal <ExternalLink className="w-3 h-3" />
                       </a>
@@ -1011,111 +1009,101 @@ export const ServerRadarPreview: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Server Name */}
-                <h3 className="font-cyber font-bold text-white text-base group-hover:text-lime-300 transition-colors mb-1 truncate">
+                {/* 2. Server Title (Tier 2/3) */}
+                <h3 className="font-cyber font-bold text-white text-[15px] group-hover:text-[#FFE135] transition-colors mb-1 truncate">
                   {server.name}
                 </h3>
 
-                {/* Region & Host IP */}
-                <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs font-tech text-slate-400 mb-3">
+                {/* 3. Host IP & Region */}
+                <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs font-tech text-[#94A39E] mb-3">
                   <span className="flex items-center gap-1">
-                    <Globe className="w-3 h-3 text-cyan-400" />
+                    <Globe className="w-3 h-3 text-[#00F0FF]" />
                     {server.region}
                   </span>
-                  <span className="text-[11px] font-code text-slate-400">
+                  <span className="text-[11px] font-code text-[#94A39E]">
                     <code>{server.host}:{server.port}</code>
                   </span>
                 </div>
 
-                {/* Live Telemetry Row: Map Preview & Server Telemetry Pills */}
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                    {/* Current Active Map & Live Timer */}
-                    <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code text-slate-300">
-                      {/* Prominent Map Thumbnail */}
-                      <div className="w-32 h-20 sm:w-40 sm:h-24 rounded-lg overflow-hidden border border-slate-700 bg-slate-950 flex-shrink-0 shadow-md group-hover:border-lime-400/50 transition-colors">
-                        <img 
-                          src={getMapThumbnailUrl(currentMap)} 
-                          alt={currentMap} 
-                          className="w-full h-full object-cover"
-                          onError={handleMapImageFallback}
-                        />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 flex-wrap">
-                          <MapPin className="w-3 h-3 text-fuchsia-400 flex-shrink-0" />
-                          <span>Map:</span>
-                          <strong className="text-fuchsia-300 font-bold truncate max-w-[110px] sm:max-w-[130px]">
-                            {currentMap || 'ze_escape'}
-                          </strong>
-                          {/* Map Difficulty Tier Badge */}
-                          <span className={`px-1.5 py-0.2 rounded text-[9px] font-code font-bold border ${commMapTier.colorClass}`} title={`Difficulty: ${commMapTier.tierLabel}`}>
-                            {commMapTier.badge}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-cyan-300 text-[10px] font-bold bg-cyan-950/80 px-1.5 py-0.2 rounded border border-cyan-500/30 flex items-center gap-0.5">
-                            <Clock className="w-2.5 h-2.5 text-cyan-400" />
-                            {formatMapElapsed(mapDuration)}
-                          </span>
-                          <a
-                            href={getMap3DViewerUrl(currentMap)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[10px] font-code px-1.5 py-0.2 rounded bg-blue-950/80 text-blue-300 hover:text-white border border-blue-500/30 hover:border-blue-400 flex items-center gap-0.5 transition-colors"
-                            title="Explore 3D Map model on maps.cybo.dev (Powered by cybo)"
-                          >
-                            <span>3D</span>
-                            <ExternalLink className="w-2.5 h-2.5" />
-                          </a>
-                        </div>
-                      </div>
-                    </div>
+                {/* 4. Prominent Map Showcase Banner (150% Larger Thumbnail!) */}
+                <div className="relative w-full h-36 sm:h-44 rounded-xl overflow-hidden border border-[#1E2E26] bg-[#070B09] shadow-inner mb-3 group-hover:border-[#2ECC71]/50 transition-colors">
+                  <img 
+                    src={getMapThumbnailUrl(currentMap)} 
+                    alt={currentMap} 
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    onError={handleMapImageFallback}
+                  />
+                  {/* Subtle Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#070B09]/95 via-transparent to-[#070B09]/40 pointer-events-none" />
 
-                    {/* Dedicated Mapper Attribution Pill */}
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code whitespace-nowrap shadow-sm">
-                      <span className="text-slate-400">🔨 by:</span>
-                      <div className="flex items-center gap-1">
-                        <strong className="text-amber-300 font-bold">{commMapTier.mapper}</strong>
-                        {commMapTier.isHallOfFameMapper && (
-                          <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-500/50 font-bold flex items-center gap-0.5" title="Legendary Mapper (Hall of Fame)">
-                            👑 HoF
-                          </span>
-                        )}
-                        <a
-                          href={`https://steamcommunity.com/workshop/browse/?appid=730&searchtext=${encodeURIComponent((currentMap || 'ze_escape').replace(/(_p|_v\d+.*)/, ''))}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-slate-500 hover:text-amber-300 ml-0.5 transition-colors"
-                          title={`Search ${commMapTier.mapper}'s map on Steam Workshop ↗`}
-                        >
-                          <ExternalLink className="w-2.5 h-2.5" />
-                        </a>
-                      </div>
+                  {/* Top Overlay: Difficulty & Live Timer */}
+                  <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 pointer-events-auto">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-code font-bold border backdrop-blur-md ${commMapTier.colorClass}`} title={`Difficulty: ${commMapTier.tierLabel}`}>
+                      {commMapTier.badge}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[#00F0FF] text-[10px] font-code font-bold bg-[#070B09]/80 backdrop-blur-md px-2 py-0.5 rounded border border-[#00F0FF]/40 flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5 text-[#00F0FF]" />
+                        {formatMapElapsed(mapDuration)}
+                      </span>
+                      <a
+                        href={getMap3DViewerUrl(currentMap)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] font-code px-2 py-0.5 rounded bg-[#070B09]/80 text-[#FFE135] hover:text-white border border-[#FFE135]/40 hover:border-[#FFE135] flex items-center gap-1 backdrop-blur-md transition-colors"
+                        title="Explore 3D Map model on maps.cybo.dev (Powered by cybo)"
+                      >
+                        <span>3D</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
                     </div>
+                  </div>
 
-                  {/* Player Count */}
-                  {currentPlayers ? (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code">
-                      <Users className="w-3 h-3 text-emerald-400" />
-                      <span className="text-slate-400">Players:</span>
-                      <span className="text-emerald-300 font-bold">{currentPlayers}</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code text-slate-400">
-                      <Users className="w-3 h-3 text-slate-500" />
-                      <span>{isOnline ? 'Online' : 'Offline'}</span>
-                    </div>
-                  )}
-
-                  {/* Realistic Estimated Regional Ping */}
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] font-code text-cyan-300" title={`Estimated route latency: ${regionalPing.userLocation} ➔ ${regionalPing.serverLocation}`}>
-                    <Radio className="w-3 h-3 text-cyan-400" />
-                    <span className="font-bold">{regionalPing.display}</span>
-                    <span className="text-[10px] text-slate-500 font-normal hidden sm:inline">({regionalPing.route})</span>
+                  {/* Bottom Overlay: Active Map Name */}
+                  <div className="absolute bottom-2 left-2.5 right-2 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-[#FF2A85] flex-shrink-0" />
+                    <span className="font-cyber font-bold text-sm text-white drop-shadow truncate">
+                      {currentMap || 'ze_escape'}
+                    </span>
                   </div>
                 </div>
 
-                {/* Dedicated Lower Row: Geographic Demographics Radar HUD (Zero Overlap) */}
+                {/* 5. Metadata Strip: Mapper Attribution & Live In-Game Telemetry */}
+                <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
+                  {/* Mapper Attribution Pill */}
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#121C18] border border-[#1E2E26] text-xs font-code shadow-sm">
+                    <span className="text-[#94A39E]">🔨 by:</span>
+                    <strong className="text-[#FFE135] font-bold">{commMapTier.mapper}</strong>
+                    {commMapTier.isHallOfFameMapper && (
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-[#FFE135]/20 text-[#FFE135] border border-[#FFE135]/50 font-bold" title="Legendary Mapper (Hall of Fame)">
+                        👑 HoF
+                      </span>
+                    )}
+                    <a
+                      href={`https://steamcommunity.com/workshop/browse/?appid=730&searchtext=${encodeURIComponent((currentMap || 'ze_escape').replace(/(_p|_v\d+.*)/, ''))}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#94A39E] hover:text-[#FFE135] transition-colors ml-0.5"
+                      title={`Search ${commMapTier.mapper}'s map on Steam Workshop ↗`}
+                    >
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  </div>
+
+                  {/* Telemetry Pills (Players & Ping) */}
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#121C18] border border-[#1E2E26] text-xs font-code">
+                      <Users className="w-3 h-3 text-[#2ECC71]" />
+                      <span className="text-[#2ECC71] font-bold">{currentPlayers || (isOnline ? 'Online' : 'Offline')}</span>
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#121C18] border border-[#1E2E26] text-[11px] font-code text-[#00F0FF]" title={`Estimated route latency: ${regionalPing.userLocation} ➔ ${regionalPing.serverLocation}`}>
+                      <Radio className="w-3 h-3 text-[#00F0FF]" />
+                      <span className="font-bold">{regionalPing.display}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 6. Dedicated Lower Row: Geographic Demographics Radar HUD (Zero Overlap Guaranteed) */}
                 <div className="w-full mb-3">
                   <ServerGeoDemographics
                     serverRegion={server.region}
@@ -1126,52 +1114,53 @@ export const ServerRadarPreview: React.FC = () => {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="pt-3 border-t border-slate-800/80 flex items-center gap-2">
+              {/* 7. Uniform Action Buttons Bar (34px, 44px mobile touch) */}
+              <div className="pt-3 border-t border-[#1E2E26] flex items-center gap-2">
                 {/* 1-Click Steam Connect */}
                 <button
                   onClick={() => handleOpenConnect(server, false)}
-                  className="min-h-[44px] flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-lime-600 hover:from-emerald-500 hover:to-lime-500 text-white font-cyber text-xs tracking-wider font-bold rounded-lg shadow-[0_0_15px_rgba(57,255,20,0.3)] transition-all cursor-pointer touch-manipulation"
+                  className="btn-cyber-34 btn-pepe-cta flex-1 min-h-[34px] sm:min-h-[34px] touch-manipulation"
                   title={`Connect directly to ${server.name} (${server.host}:${server.port}) via Steam Game Server protocol. Launches CS2 if closed, or connects immediately if open.`}
                 >
                   <Play className="w-3.5 h-3.5 fill-current" />
                   <span>CONNECT VIA STEAM</span>
                 </button>
 
+                {/* Auto Join */}
                 <button
                   onClick={() => handleToggleSlotWatcher(server)}
-                  className={`min-h-[44px] px-2.5 py-2 border rounded-lg text-xs font-code transition-colors cursor-pointer flex items-center gap-1 flex-shrink-0 touch-manipulation ${
+                  className={`btn-cyber-34 btn-surface-34 px-2.5 touch-manipulation ${
                     slotWatcherServerId === server.id
-                      ? 'bg-amber-500/25 border-amber-400 text-amber-300 animate-pulse'
-                      : 'bg-slate-900 hover:bg-emerald-950/80 border-slate-700 hover:border-emerald-500 text-slate-300 hover:text-emerald-300'
+                      ? 'border-[#FFE135] text-[#FFE135] bg-[#FFE135]/15 animate-pulse'
+                      : ''
                   }`}
-                  title={`Auto Join (Target: ${commSlotPriority === 'normal' ? '≤61 Players' : commSlotPriority === 'supporter' ? '≤62 Players' : '≤63 Players'}):\n• If CS2 is OPEN: Connects you directly into the server the moment a slot opens!\n• If CS2 is CLOSED: Steam protocol only opens CS2 to Main Menu (will not join directly). Launch CS2 first, then arm Auto Join!\n• Pro-Tip: For 100% automated in-game console sniping that bypasses Steam, use the CS2 Command Center desktop app.`}
+                  title={`Auto Join (Target: ${commSlotPriority === 'normal' ? '≤61 Players' : commSlotPriority === 'supporter' ? '≤62 Players' : '≤63 Players'})\n• Connects automatically when a slot opens.`}
                 >
-                  <Target className={`w-3 h-3 ${slotWatcherServerId === server.id ? 'text-amber-400 animate-spin' : 'text-emerald-400'}`} />
+                  <Target className={`w-3.5 h-3.5 ${slotWatcherServerId === server.id ? 'text-[#FFE135] animate-spin' : 'text-[#2ECC71]'}`} />
                   <span className="hidden sm:inline">
-                    {slotWatcherServerId === server.id ? 'ACTIVE (CANCEL)' : `AUTO JOIN (${commSlotPriority === 'normal' ? '≤61' : commSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
+                    {slotWatcherServerId === server.id ? 'CANCEL' : `AUTO JOIN (${commSlotPriority === 'normal' ? '≤61' : commSlotPriority === 'supporter' ? '≤62' : '≤63'})`}
                   </span>
                 </button>
 
-                {/* Non-China Server: Live Players Modal */}
+                {/* Live Players Modal */}
                 {server.allowPlayerRoster ? (
                   <button
                     onClick={() => {
                       setActiveModalServer(server);
                       setModalSearch('');
                     }}
-                    className="min-h-[44px] px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-400 text-slate-300 hover:text-white rounded-lg text-xs font-code flex items-center gap-1 transition-colors cursor-pointer flex-shrink-0 touch-manipulation"
+                    className="btn-cyber-34 btn-surface-34 px-2.5 touch-manipulation"
                     title={`View real-time player list, scores, and connection times for ${server.name}`}
                   >
-                    <Users className="w-3.5 h-3.5 text-cyan-400" />
+                    <Users className="w-3.5 h-3.5 text-[#00F0FF]" />
                     <span className="hidden sm:inline">PLAYERS</span>
                   </button>
                 ) : (
                   <div
-                    className="min-h-[44px] px-2.5 py-2 bg-slate-950 border border-slate-800/80 rounded-lg text-[10px] font-code text-slate-400 flex items-center gap-1 flex-shrink-0"
+                    className="btn-cyber-34 bg-[#070B09] border border-[#1E2E26] text-[#94A39E] cursor-default px-2.5"
                     title="Player names query blocked by server community anti-DDoS privacy policy"
                   >
-                    <Shield className="w-3 h-3 text-slate-400" />
+                    <Shield className="w-3.5 h-3.5 text-[#94A39E]" />
                     <span className="hidden sm:inline">SHIELDED</span>
                   </div>
                 )}
@@ -1179,17 +1168,17 @@ export const ServerRadarPreview: React.FC = () => {
                 {/* Copy IP Button */}
                 <button
                   onClick={() => handleCopy(server)}
-                  className="min-h-[44px] px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-lime-400 text-slate-300 hover:text-white rounded-lg text-xs font-code flex items-center gap-1 transition-colors cursor-pointer flex-shrink-0 touch-manipulation"
+                  className="btn-cyber-34 btn-surface-34 px-2.5 touch-manipulation"
                   title={`Copy in-game console command: connect ${server.host}:${server.port}`}
                 >
                   {isCopied ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400 font-bold hidden sm:inline">COPIED</span>
+                      <Check className="w-3.5 h-3.5 text-[#2ECC71]" />
+                      <span className="text-[#2ECC71] font-bold hidden sm:inline">COPIED</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3.5 h-3.5 text-slate-400" />
+                      <Copy className="w-3.5 h-3.5 text-[#94A39E]" />
                       <span className="hidden sm:inline">COPY</span>
                     </>
                   )}
@@ -1197,11 +1186,9 @@ export const ServerRadarPreview: React.FC = () => {
               </div>
 
               {/* CS2 Open Requirement Note */}
-              <div className="text-[10px] font-sans text-amber-300/80 mt-2 flex items-center justify-center sm:justify-start gap-1">
-                <span>💡</span>
-                <span>Note: Only use Auto Join if CS2 is already open.</span>
+              <div className="text-[10px] font-sans text-[#FFE135]/80 mt-2 flex items-center justify-center sm:justify-start gap-1">
+                <span className="text-[#FFE135]">💡</span> Note: Only use Auto Join if CS2 is already open.
               </div>
-
             </div>
           );
         })}

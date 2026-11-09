@@ -11,7 +11,7 @@ import { CS2CommandCenterPreview } from './components/CS2CommandCenterPreview';
 import { GeronimoDiscordPresence } from './components/GeronimoDiscordPresence';
 import { DeployHudFooter } from './components/DeployHudFooter';
 import { ChaosAnomalyEngine } from './components/ChaosAnomalyEngine';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, PhoneCall, Radio, ShieldCheck, Wifi, Download } from 'lucide-react';
 
 const pickRandomBananaLoops = (): number => {
   const choices = [2, 3, 4];
@@ -19,7 +19,6 @@ const pickRandomBananaLoops = (): number => {
 };
 
 export const App: React.FC = () => {
-  // Randomize initial theme on open: either 'pepe' or 'banana'
   // Handle direct CS2 Steam Connect Trampoline (e.g., /connect?ip=74.91.124.21:27015)
   useEffect(() => {
     try {
@@ -106,7 +105,6 @@ export const App: React.FC = () => {
     const handleInitialHash = () => {
       const rawHash = window.location.hash.replace('#', '').trim();
       if (rawHash) {
-        // Small delay to ensure all DOM elements and images have completed initial mount/layout
         window.setTimeout(() => {
           scrollToSectionById(rawHash);
         }, 150);
@@ -141,23 +139,18 @@ export const App: React.FC = () => {
     });
   };
 
-
   return (
-    <div
-      className={`relative min-h-screen text-slate-100 flex flex-col font-tech transition-colors duration-1000 selection:bg-fuchsia-500 selection:text-white ${
-        theme === 'banana' ? 'bg-[#090701]' : 'bg-[#05070d]'
-      }`}
-    >
-      {/* 3D Wireframe Retro-Futuristic Background Grid (Adapts smoothly to Pepe or Banana Phone theme) */}
+    <div className="relative min-h-screen bg-[#070B09] text-white flex flex-col font-tech selection:bg-[#FFE135] selection:text-[#070B09]">
+      {/* 3D Wireframe Retro-Futuristic Background Grid (Tactical Pepe Green & Cyber Banana Yellow) */}
       <RetroGridCanvas
-        glowColor={theme === 'banana' ? '#f59e0b' : '#ff007f'}
-        gridColor={theme === 'banana' ? '#facc15' : '#00f0ff'}
+        glowColor={theme === 'banana' ? '#FFE135' : '#2ECC71'}
+        gridColor={theme === 'banana' ? '#FACC15' : '#10B981'}
       />
 
       {/* Interactive Roaming Pepe / Banana Character */}
       <RoamingMemeGremlin theme={theme} enabled={gremlinEnabled} />
 
-      {/* Cyberpunk HUD Navbar */}
+      {/* Unified Top Command Dock & Telemetry Strip */}
       <CyberNavbar
         theme={theme}
         gremlinEnabled={gremlinEnabled}
@@ -166,7 +159,7 @@ export const App: React.FC = () => {
 
       {/* Smooth Theme Transition Toast Notification */}
       {transitionBanner && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl border border-yellow-400 bg-slate-950/95 text-yellow-300 font-cyber text-xs font-bold shadow-[0_0_25px_rgba(250,204,21,0.6)] animate-bounce">
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl border border-[#FFE135] bg-[#0E1512]/95 text-[#FFE135] font-cyber text-xs font-bold shadow-[0_0_25px_rgba(255,225,53,0.5)] animate-bounce">
           {transitionBanner}
         </div>
       )}
@@ -174,61 +167,120 @@ export const App: React.FC = () => {
       {/* Main Content Area */}
       <main className="relative z-10 flex-grow flex flex-col items-center">
         
-        {/* HERO TITLE & INTRO BANNER */}
-        <div id="hero-stage" className="w-full max-w-5xl mx-auto pt-8 pb-4 px-4 text-center scroll-mt-32">
-          
-          {/* Top Status Pill */}
-          <div
-            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-code mb-4 transition-all duration-700 ${
-              theme === 'banana'
-                ? 'bg-amber-950/80 border border-yellow-400/60 text-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.35)]'
-                : 'bg-cyan-950/70 border border-cyan-400/50 text-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.3)]'
-            }`}
-          >
-            <span
-              className={`w-2 h-2 rounded-full animate-pulse ${
-                theme === 'banana' ? 'bg-yellow-400' : 'bg-cyan-400'
-              }`}
-            />
-            <span>
-              {theme === 'banana'
-                ? 'GERONIMO_HQ // BANANA PHONE HOTLINE ONLINE 🍌📞'
-                : 'GERONIMO_HQ NEURAL LINK // ONLINE'}
-            </span>
-          </div>
+        {/* ASYMMETRIC BENTO-GRID COMMAND HEADER */}
+        <div id="hero-stage" className="w-full max-w-6xl mx-auto pt-6 pb-2 px-4 scroll-mt-32">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+            
+            {/* Left Bento Card (8 Cols): Main Cyber-Deck Identity & Command Actions */}
+            <div className="lg:col-span-8 bento-card bento-accent-banana relative overflow-hidden flex flex-col justify-between">
+              {/* Subtle Tactical Frog / Rotary SVG Watermark */}
+              <svg
+                viewBox="0 0 120 120"
+                className="absolute -right-6 -bottom-6 w-40 h-40 opacity-[0.04] pointer-events-none text-[#FFE135]"
+                fill="currentColor"
+              >
+                <circle cx="60" cy="60" r="50" stroke="currentColor" strokeWidth="4" fill="none" strokeDasharray="8 6" />
+                <circle cx="42" cy="45" r="10" />
+                <circle cx="78" cy="45" r="10" />
+                <path d="M35 75 Q60 95 85 75" stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round" />
+              </svg>
 
-          {/* Main Glitch / Cyber Title */}
-          <h1
-            className={`text-4xl sm:text-5xl md:text-6xl font-cyber font-black tracking-wider text-transparent bg-clip-text mb-3 transition-all duration-700 ${
-              theme === 'banana'
-                ? 'bg-gradient-to-r from-yellow-300 via-amber-400 to-red-400 drop-shadow-[0_0_25px_rgba(250,204,21,0.5)]'
-                : 'bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-lime-300 drop-shadow-[0_0_25px_rgba(0,240,255,0.4)]'
-            }`}
-          >
-            GERONIMO<span className="text-white">HQ</span>
-          </h1>
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <span className="tier-2-header flex items-center gap-1.5">
+                    <Radio className="w-3.5 h-3.5 text-[#FFE135]" />
+                    <span>TACTICAL PEPE &amp; BANANA PHONE CYBER-DECK // SYS.CORE</span>
+                  </span>
+                  <span className="tier-5-badge bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40">
+                    ● UPLINK VERIFIED
+                  </span>
+                </div>
 
-          <p className="max-w-2xl mx-auto text-sm sm:text-base md:text-lg font-tech text-slate-300 tracking-wide leading-relaxed">
-            Personal Cyber-Hub &amp; Experimental Holo-Chamber for{' '}
-            <strong className={theme === 'banana' ? 'text-yellow-400' : 'text-cyan-400'}>
-              geronimohq.com
-            </strong>
-            . Featuring legendary animated memes, free cloud RAM downloads, live CS2 Zombie Escape server browser, Web Config Studio, and desktop gaming tools.
-          </p>
+                <div className="flex flex-wrap items-baseline gap-3 mb-2">
+                  <h1 className="tier-1-title">
+                    GERONIMO<span className="text-[#FFE135]">HQ</span> COMMAND SUITE
+                  </h1>
+                  <span className="text-xs font-code text-[#2ECC71]">
+                    [geronimohq.com]
+                  </span>
+                </div>
 
-          {/* Quick HUD Toolbar: Theme Toggle */}
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-4 text-[11px] font-code">
-            <button
-              onClick={handleToggleTheme}
-              data-gremlin-ignore="true"
-              className={`px-3 py-1.5 rounded-lg border cursor-pointer transition-all font-bold ${
-                theme === 'banana'
-                  ? 'bg-amber-950/90 border-yellow-400 text-yellow-300 shadow-[0_0_12px_rgba(250,204,21,0.4)]'
-                  : 'bg-slate-900/80 border-cyan-500/40 text-cyan-300 hover:border-yellow-400'
-              }`}
-            >
-              {theme === 'banana' ? '🐸 SWITCH TO PEPE THEME' : '🍌 SWITCH TO BANANA PHONE THEME'}
-            </button>
+                <p className="tier-4-body max-w-2xl">
+                  Unified retro-cyberpunk command deck for <strong className="text-[#FFE135]">geronimohq.com</strong>. Blending interactive Pepe &amp; Rotary Banana Phone holo-chambers, live CS2 Zombie Escape satellite telemetry, VAC-safe Config Studio, and the standalone <strong className="text-[#2ECC71]">CS2 Command Center</strong> desktop utility.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 mt-4 pt-3 border-t border-[#1E2E26]">
+                <button
+                  onClick={handleToggleTheme}
+                  data-gremlin-ignore="true"
+                  className="btn-cyber-34 btn-banana-cta"
+                >
+                  <PhoneCall className="w-3.5 h-3.5" />
+                  <span>{theme === 'banana' ? '🐸 SWITCH TO PEPE HOLO' : '🍌 SWITCH TO BANANA PHONE'}</span>
+                </button>
+
+                <button
+                  onClick={() => scrollToSectionById('server-radar')}
+                  className="btn-cyber-34 btn-pepe-cta"
+                >
+                  <Wifi className="w-3.5 h-3.5" />
+                  <span>LIVE ZE SERVERS</span>
+                </button>
+
+                <button
+                  onClick={() => scrollToSectionById('cs2-command')}
+                  className="btn-cyber-34 btn-surface-34"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#FFE135]" />
+                  <span>DESKTOP APP (.EXE)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Right Bento Card (4 Cols): Rotary Banana Hotline & Pepe Telemetry Diagnostics */}
+            <div className="lg:col-span-4 bento-card bento-accent-pepe flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <span className="tier-2-header-pepe flex items-center gap-1.5">
+                    <PhoneCall className="w-3.5 h-3.5 text-[#2ECC71]" />
+                    <span>ROTARY SIGNAL &amp; AUDIO</span>
+                  </span>
+                  <span className="tier-5-badge bg-[#FFE135]/15 text-[#FFE135] border border-[#FFE135]/40">
+                    3:16 CYCLE
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#070B09] border border-[#1E2E26]">
+                    <span className="tier-4-body">Active Holo-Deck</span>
+                    <span className="tier-3-label text-[#FFE135]">
+                      {theme === 'banana' ? '🍌 Banana Hotline' : '🐸 Pepe Matrix'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#070B09] border border-[#1E2E26]">
+                    <span className="tier-4-body">Audio Synchronization</span>
+                    <span className="tier-5-badge bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40">
+                      {isMasterMuted ? 'MUTED' : `ACTIVE (${masterVolume}%)`}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#070B09] border border-[#1E2E26]">
+                    <span className="tier-4-body">VAC Safety Protocol</span>
+                    <span className="tier-5-badge bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40">
+                      <ShieldCheck className="w-3 h-3" /> 100% VERIFIED
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 pt-2.5 border-t border-[#1E2E26] flex items-center justify-between text-[11px] font-code text-[#94A39E]">
+                <span>FREQ: 128-TICK SUB-SYNC</span>
+                <span className="text-[#FFE135] font-bold">STATUS: OPTIMAL</span>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -254,11 +306,11 @@ export const App: React.FC = () => {
         </div>
 
         {/* Down Indicator */}
-        <div className="flex flex-col items-center my-3 text-slate-400 hover:text-cyan-400 transition-colors">
-          <span className="text-[10px] font-code tracking-widest uppercase mb-1">
-            SCROLL FOR DOWNLOAD MORE RAM, ZE SERVER RADAR, CFG STUDIO &amp; CS2 APP
+        <div className="flex flex-col items-center my-2 text-[#94A39E] hover:text-[#FFE135] transition-colors">
+          <span className="text-[11px] font-code tracking-widest uppercase mb-1">
+            SCROLL FOR BENTO MODULES: RAM DOWNLOADER, ZE SERVER RADAR, CFG STUDIO &amp; DESKTOP SUITE
           </span>
-          <ChevronDown className="w-4 h-4 animate-bounce text-cyan-400" />
+          <ChevronDown className="w-4 h-4 animate-bounce text-[#FFE135]" />
         </div>
 
         {/* MEME MODULE: DOWNLOAD MORE RAM (16GB - 128GB Interactive UI + ZE Laser Mini-Game) */}
@@ -267,10 +319,10 @@ export const App: React.FC = () => {
         {/* MODULE 1: ZOMBIE ESCAPE SERVER RADAR + 24H TIMELINE + MAP & LASER ENCYCLOPEDIA */}
         <ServerRadarPreview />
 
-        {/* MODULE 3: INTERACTIVE WEB CS2 AUTOEXEC & ZE BINDS GENERATOR (#cfg-studio) */}
+        {/* MODULE 2: INTERACTIVE WEB CS2 AUTOEXEC & ZE BINDS GENERATOR (#cfg-studio) */}
         <CS2AutoexecGeneratorSection />
 
-        {/* MODULE 3: CS2 COMMAND CENTER DESKTOP SUITE (1-Click App Download v1.3.0) */}
+        {/* MODULE 3: CS2 COMMAND CENTER DESKTOP SUITE (1-Click App Download v1.4.0) */}
         <CS2CommandCenterPreview />
 
       </main>

@@ -5,12 +5,194 @@
     --font-cyber: 'Orbitron', monospace, sans-serif;
     --font-tech: 'Rajdhani', sans-serif;
     --font-code: 'JetBrains Mono', monospace;
+
+    /* Unified Theme: Tactical Pepe & Banana Phone Cyber-Deck */
+    --bg-obsidian: #070B09;
+    --bg-panel: #0E1512;
+    --bg-panel-row: #121C18;
+    --border-crisp: #1E2E26;
+    --accent-banana: #FFE135;
+    --accent-banana-alt: #FACC15;
+    --accent-pepe: #2ECC71;
+    --accent-pepe-alt: #10B981;
+    --accent-magenta: #FF2A85;
+    --accent-cyan: #00F0FF;
+    --text-white: #FFFFFF;
+    --text-sage: #94A39E;
   }
 
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 7.5rem;
+    scroll-padding-top: 8.5rem;
+    background-color: #070B09;
+    color: #FFFFFF;
   }
+
+  body {
+    background-color: #070B09;
+    color: #FFFFFF;
+  }
+
+  select {
+    padding-right: 2.25rem !important;
+  }
+}
+
+/* ============================================================================
+   STRICT 5-TIER GLOBAL TYPOGRAPHY SYSTEM
+   ============================================================================ */
+.tier-1-title {
+  font-family: var(--font-cyber);
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  color: #FFFFFF !important;
+  line-height: 1.3;
+}
+
+.tier-2-header {
+  font-family: var(--font-cyber);
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #FFE135 !important;
+  line-height: 1.35;
+}
+
+.tier-2-header-pepe {
+  font-family: var(--font-cyber);
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #2ECC71 !important;
+  line-height: 1.35;
+}
+
+.tier-3-label {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #FFFFFF !important;
+  line-height: 1.4;
+}
+
+.tier-4-body {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: #94A39E !important;
+  line-height: 1.5 !important;
+}
+
+.tier-5-badge {
+  font-family: var(--font-code);
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  padding: 2px 7px !important;
+  border-radius: 5px;
+  line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ============================================================================
+   UNIFORM 34PX ACTION BUTTON & BENTO GRID SYSTEM
+   ============================================================================ */
+.btn-cyber-34 {
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.btn-banana-cta {
+  background-color: #FFE135;
+  color: #070B09 !important;
+  border: 1px solid #FFE135;
+  font-weight: 700 !important;
+  box-shadow: 0 0 16px rgba(255, 225, 53, 0.35);
+}
+
+.btn-banana-cta:hover {
+  background-color: #FFF066;
+  box-shadow: 0 0 24px rgba(255, 225, 53, 0.65);
+  transform: translateY(-1px);
+}
+
+.btn-pepe-cta {
+  background-color: rgba(46, 204, 113, 0.16);
+  color: #2ECC71 !important;
+  border: 1px solid rgba(46, 204, 113, 0.55);
+  box-shadow: 0 0 14px rgba(46, 204, 113, 0.2);
+}
+
+.btn-pepe-cta:hover {
+  background-color: rgba(46, 204, 113, 0.28);
+  border-color: #2ECC71;
+  color: #FFFFFF !important;
+}
+
+.btn-surface-34 {
+  background-color: #121C18;
+  color: #FFFFFF;
+  border: 1px solid #1E2E26;
+}
+
+.btn-surface-34:hover {
+  border-color: #FFE135;
+  color: #FFE135;
+  background-color: #16241E;
+}
+
+.bento-card {
+  background-color: rgba(14, 21, 18, 0.92);
+  border: 1px solid #1E2E26;
+  border-radius: 12px;
+  padding: 16px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+}
+
+.bento-accent-banana {
+  border-top: 2px solid #FFE135;
+}
+
+.bento-accent-pepe {
+  border-top: 2px solid #2ECC71;
+}
+
+.bento-accent-cyan {
+  border-top: 2px solid #00F0FF;
+}
+
+.bento-accent-magenta {
+  border-top: 2px solid #FF2A85;
+}
+
+.hud-data-pill {
+  background-color: #0E1512;
+  border: 1px solid #1E2E26;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-family: var(--font-code);
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* Custom Cyberpunk Font Classes */

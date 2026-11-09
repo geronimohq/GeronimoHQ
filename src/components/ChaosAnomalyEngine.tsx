@@ -340,20 +340,16 @@ export const ChaosAnomalyEngine: React.FC = () => {
       return;
     }
 
-    // High-Variety Anti-Repetition Filter (200% Enhanced Non-Repeat Deck Buffer)
-    // Guarantees zero repeats across 90+ consecutive triggers
+    // True Shuffled Deck Anti-Repetition Ring Buffer (200% Enhanced Non-Repeat Guarantee)
+    // Ensures every single anomaly in the 120-item pool plays before any anomaly can repeat
     let available = CHAOS_POOL.filter((key) => !recentHistoryRef.current.includes(key));
-    if (available.length < 10) {
-      // Retain only the most recent 15 so pool refreshes while keeping recent items excluded
-      recentHistoryRef.current = recentHistoryRef.current.slice(-15);
-      available = CHAOS_POOL.filter((key) => !recentHistoryRef.current.includes(key));
+    if (available.length === 0) {
+      recentHistoryRef.current = [];
+      available = [...CHAOS_POOL];
     }
 
     const chosen = available[Math.floor(Math.random() * available.length)];
     recentHistoryRef.current.push(chosen);
-    if (recentHistoryRef.current.length > 95) {
-      recentHistoryRef.current.shift();
-    }
 
     if (chosen === 'barrel_roll') {
       playChaosSynth('rave');
