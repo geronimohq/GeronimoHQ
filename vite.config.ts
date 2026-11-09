@@ -6,7 +6,7 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 
 // Compute exact SHA-256 of the desktop app binary at build time to prevent hash drift
-let calculatedExeHash = '739E821B12704ADC21464173D886E490B78390E3779856C2C6736AF932B92BB6'
+let calculatedExeHash = 'B59980D8C11620D19867E7A1396D788BDEB8A5A58F98A95B98CBD71F5D7BF3AB'
 try {
   const exePath = path.resolve('public', 'CS2_Command_Center.exe')
   const distExePath = path.resolve('dist', 'CS2_Command_Center.exe')

@@ -1027,10 +1027,8 @@ export const ServerRadarPreview: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Live Telemetry Row: Map/Pills on Left, Geo Radar on Right */}
-                <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-4">
-                  {/* Left: Map & Player Stats */}
-                  <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+                {/* Live Telemetry Row: Map Preview & Server Telemetry Pills */}
+                <div className="flex flex-wrap items-center gap-2 mb-3">
                     {/* Current Active Map & Live Timer */}
                     <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-code text-slate-300">
                       {/* Prominent Map Thumbnail */}
@@ -1117,8 +1115,8 @@ export const ServerRadarPreview: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Right: Geographic Demographics Radar HUD */}
-                <div className="w-full lg:w-auto lg:min-w-[210px] lg:max-w-[250px] flex-shrink-0">
+                {/* Dedicated Lower Row: Geographic Demographics Radar HUD (Zero Overlap) */}
+                <div className="w-full mb-3">
                   <ServerGeoDemographics
                     serverRegion={server.region}
                     totalPlayers={currPlayersNum}
@@ -1127,9 +1125,8 @@ export const ServerRadarPreview: React.FC = () => {
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Action Buttons */}
+              {/* Action Buttons */}
               <div className="pt-3 border-t border-slate-800/80 flex items-center gap-2">
                 {/* 1-Click Steam Connect */}
                 <button

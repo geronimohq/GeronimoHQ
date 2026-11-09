@@ -33,7 +33,7 @@ declare const __APP_EXE_SHA256__: string;
 
 export const CS2CommandCenterPreview: React.FC = () => {
   const downloadUrl = '/CS2_Command_Center.exe?v=1.4.0';
-  const exeSha256 = typeof __APP_EXE_SHA256__ !== 'undefined' ? __APP_EXE_SHA256__ : '739E821B12704ADC21464173D886E490B78390E3779856C2C6736AF932B92BB6';
+  const exeSha256 = typeof __APP_EXE_SHA256__ !== 'undefined' ? __APP_EXE_SHA256__ : 'B59980D8C11620D19867E7A1396D788BDEB8A5A58F98A95B98CBD71F5D7BF3AB';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [copiedHash, setCopiedHash] = useState<boolean>(false);
@@ -264,7 +264,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
 
           <div id="exe-sha256-badge" className="flex items-center gap-1.5 text-[10px] font-code text-slate-400 mt-0.5 scroll-mt-28">
             <span className="text-slate-500">SHA-256:</span>
-            <code className="text-cyan-300 select-all font-mono">739e821b...32b92bb6</code>
+            <code className="text-cyan-300 select-all font-mono">{exeSha256.slice(0, 8).toLowerCase()}...{exeSha256.slice(-8).toLowerCase()}</code>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(exeSha256);
