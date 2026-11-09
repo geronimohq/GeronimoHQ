@@ -1,7 +1,18 @@
 """
-Tactical Pepe & Banana Phone Cyber-Deck - Unified Desktop Theme Engine
-Derives color palette, typography tiers, and widget styles from design-tokens.json.
-Provides DPI-aware font scaling and strict parity verification with the web design system.
+Tactical Pepe Cyber-Deck - Dark Slate Desktop Theme Engine
+Derives color palette, typography tiers, and widget styles for CS2 Command Center.
+Strict Dark Slate palette:
+  bg: #0A0E12
+  panel: #11171D
+  raised: #161E26
+  border: #243241
+  text: #E6EDF3
+  muted: #A3B3C0
+  primary: #E48716, hover #F09527, pressed #C5720E, text-on-primary #0A0E12
+  info: #38BDF8
+  success text: #E48716
+  danger: #F26D6D
+CS2 Tactical Warm Amber-Orange theme.
 """
 
 import json
@@ -13,62 +24,67 @@ from tkinter import ttk, font
 # Locate and parse design-tokens.json
 TOKEN_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "design-tokens.json")
 
-def load_tokens():
-    if hasattr(sys, '_MEIPASS'):
-        bundle_path = os.path.join(sys._MEIPASS, "design-tokens.json")
-        if os.path.exists(bundle_path):
-            with open(bundle_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-    if os.path.exists(TOKEN_PATH):
-        with open(TOKEN_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    # Built-in fallback matching design-tokens.json exactly
-    return {
-        "colors": {
-            "canvas": "#070B09",
-            "panel": "#0E1512",
-            "panel_row": "#121C18",
-            "panel_hover": "#16241E",
-            "border": "#1E2E26",
-            "border_hover": "#2B4036",
-            "text_primary": "#FFFFFF",
-            "text_muted": "#94A39E",
-            "primary_banana": "#FFE135",
-            "text_on_banana": "#070B09",
-            "success_pepe": "#2ECC71",
-            "alert_magenta": "#FF2A85",
-            "telemetry_cyan": "#00F0FF",
-            "focus_ring": "#FFE135"
-        }
-    }
+# Desktop Dark Slate Color Constants
+COLOR_BG = "#0A0E12"
+COLOR_PANEL = "#11171D"
+COLOR_RAISED = "#161E26"
+COLOR_BORDER = "#243241"
+COLOR_BORDER_HOVER = "#364B60"
+COLOR_TEXT = "#E6EDF3"
+COLOR_MUTED = "#A3B3C0"
+COLOR_PRIMARY = "#E48716"
+COLOR_PRIMARY_HOVER = "#F09527"
+COLOR_PRIMARY_PRESSED = "#C5720E"
+COLOR_TEXT_ON_PRIMARY = "#0A0E12"
+COLOR_INFO = "#38BDF8"
+COLOR_SUCCESS = "#E48716"
+COLOR_DANGER = "#F26D6D"
 
-TOKENS = load_tokens()
-COLORS = TOKENS["colors"]
-
-# Direct Color Constants
-COLOR_CANVAS = COLORS["canvas"]
-COLOR_PANEL = COLORS["panel"]
-COLOR_PANEL_ROW = COLORS["panel_row"]
-COLOR_PANEL_HOVER = COLORS["panel_hover"]
-COLOR_BORDER = COLORS["border"]
-COLOR_BORDER_HOVER = COLORS["border_hover"]
-COLOR_TEXT_PRIMARY = COLORS["text_primary"]
-COLOR_TEXT_MUTED = COLORS["text_muted"]
-COLOR_PRIMARY_BANANA = COLORS["primary_banana"]
-COLOR_TEXT_ON_BANANA = COLORS["text_on_banana"]
-COLOR_SUCCESS_PEPE = COLORS["success_pepe"]
-COLOR_ALERT_MAGENTA = COLORS["alert_magenta"]
-COLOR_TELEMETRY_CYAN = COLORS["telemetry_cyan"]
-COLOR_FOCUS_RING = COLORS["focus_ring"]
-
-# Legacy aliases for compatibility with existing tests
-COLOR_BG_DARK = COLOR_CANVAS
+# Semantic and backward-compatible aliases
+COLOR_CANVAS = COLOR_BG
+COLOR_BG_DARK = COLOR_BG
 COLOR_BG_PANEL = COLOR_PANEL
-COLOR_ACCENT = COLOR_PRIMARY_BANANA
-COLOR_TEXT_MAIN = COLOR_TEXT_PRIMARY
-COLOR_TEXT_SECONDARY = COLOR_TEXT_MUTED
-COLOR_ACCENT_PEPE = COLOR_SUCCESS_PEPE
-COLOR_CYAN = COLOR_TELEMETRY_CYAN
+COLOR_PANEL_ROW = COLOR_RAISED
+COLOR_PANEL_HOVER = COLOR_RAISED
+COLOR_TEXT_PRIMARY = COLOR_TEXT
+COLOR_TEXT_MAIN = COLOR_TEXT
+COLOR_TEXT_MUTED = COLOR_MUTED
+COLOR_TEXT_SECONDARY = COLOR_MUTED
+COLOR_ACCENT = COLOR_PRIMARY
+COLOR_ACCENT_PEPE = COLOR_PRIMARY
+COLOR_SUCCESS_PEPE = COLOR_PRIMARY
+COLOR_CYAN = COLOR_INFO
+COLOR_TELEMETRY_CYAN = COLOR_INFO
+COLOR_ALERT_MAGENTA = COLOR_DANGER
+COLOR_FOCUS_RING = COLOR_PRIMARY
+COLOR_PRIMARY_BANANA = COLOR_PRIMARY
+COLOR_TEXT_ON_BANANA = COLOR_TEXT_ON_PRIMARY
+
+COLORS = {
+    "canvas": COLOR_CANVAS,
+    "panel": COLOR_PANEL,
+    "panel_row": COLOR_PANEL_ROW,
+    "panel_hover": COLOR_PANEL_HOVER,
+    "border": COLOR_BORDER,
+    "border_hover": COLOR_BORDER_HOVER,
+    "text_primary": COLOR_TEXT_PRIMARY,
+    "text_muted": COLOR_TEXT_MUTED,
+    "primary_banana": COLOR_PRIMARY,
+    "text_on_banana": COLOR_TEXT_ON_PRIMARY,
+    "success_pepe": COLOR_PRIMARY,
+    "alert_magenta": COLOR_DANGER,
+    "telemetry_cyan": COLOR_INFO,
+    "focus_ring": COLOR_FOCUS_RING,
+    "bg": COLOR_BG,
+    "raised": COLOR_RAISED,
+    "primary": COLOR_PRIMARY,
+    "primary_hover": COLOR_PRIMARY_HOVER,
+    "primary_pressed": COLOR_PRIMARY_PRESSED,
+    "text_on_primary": COLOR_TEXT_ON_PRIMARY,
+    "info": COLOR_INFO,
+    "success": COLOR_SUCCESS,
+    "danger": COLOR_DANGER,
+}
 
 def get_dpi_scale(root=None):
     """Calculate current screen DPI scale factor (1.0 = 96 DPI, 1.25 = 120 DPI, 1.5 = 144 DPI)."""
@@ -105,43 +121,43 @@ def get_tier_font(tier=1, scale=1.0, family="Segoe UI"):
     return (family, scaled_pt, weight)
 
 def apply_cyberdeck_theme(style: ttk.Style, root=None):
-    """Configure ttk Style with Cyber-Deck unified styling."""
+    """Configure ttk Style with Dark Slate unified styling."""
     scale = get_dpi_scale(root)
     
     # Configure TFrame
-    style.configure("Cyber.TFrame", background=COLOR_CANVAS)
+    style.configure("Cyber.TFrame", background=COLOR_BG)
     style.configure("Panel.TFrame", background=COLOR_PANEL, relief="flat")
-    style.configure("PanelRow.TFrame", background=COLOR_PANEL_ROW, relief="flat")
+    style.configure("PanelRow.TFrame", background=COLOR_RAISED, relief="flat")
     
     # Configure TLabel
     style.configure("Tier1.TLabel",
-                    background=COLOR_CANVAS,
-                    foreground=COLOR_TEXT_PRIMARY,
+                    background=COLOR_BG,
+                    foreground=COLOR_TEXT,
                     font=get_tier_font(1, scale))
     
     style.configure("Tier2.TLabel",
                     background=COLOR_PANEL,
-                    foreground=COLOR_PRIMARY_BANANA,
+                    foreground=COLOR_PRIMARY,
                     font=get_tier_font(2, scale))
     
     style.configure("Tier2Pepe.TLabel",
                     background=COLOR_PANEL,
-                    foreground=COLOR_SUCCESS_PEPE,
+                    foreground=COLOR_PRIMARY,
                     font=get_tier_font(2, scale))
                     
     style.configure("Tier3.TLabel",
                     background=COLOR_PANEL,
-                    foreground=COLOR_TEXT_PRIMARY,
+                    foreground=COLOR_TEXT,
                     font=get_tier_font(3, scale))
                     
     style.configure("Tier4.TLabel",
                     background=COLOR_PANEL,
-                    foreground=COLOR_TEXT_MUTED,
+                    foreground=COLOR_MUTED,
                     font=get_tier_font(4, scale))
                     
     style.configure("Tier5.TLabel",
-                    background=COLOR_PANEL_ROW,
-                    foreground=COLOR_PRIMARY_BANANA,
+                    background=COLOR_RAISED,
+                    foreground=COLOR_PRIMARY,
                     font=get_tier_font(5, scale, family="Consolas"))
 
     # Configure 34px Button styles
@@ -154,34 +170,40 @@ def apply_cyberdeck_theme(style: ttk.Style, root=None):
     style.configure("BananaCTA.TButton",
                     font=get_tier_font(3, scale),
                     padding=(14, 6),
-                    background=COLOR_PRIMARY_BANANA,
-                    foreground=COLOR_TEXT_ON_BANANA)
+                    background=COLOR_PRIMARY,
+                    foreground=COLOR_TEXT_ON_PRIMARY)
+
+    style.configure("PepeCTA.TButton",
+                    font=get_tier_font(3, scale),
+                    padding=(14, 6),
+                    background=COLOR_PRIMARY,
+                    foreground=COLOR_TEXT_ON_PRIMARY)
 
     # Configure Treeview & Combobox
     style.configure("Cyber.Treeview",
-                    background=COLOR_PANEL_ROW,
-                    fieldbackground=COLOR_PANEL_ROW,
-                    foreground=COLOR_TEXT_PRIMARY,
+                    background=COLOR_RAISED,
+                    fieldbackground=COLOR_RAISED,
+                    foreground=COLOR_TEXT,
                     font=get_tier_font(4, scale, family="Consolas"),
                     rowheight=int(26 * scale))
                     
     style.configure("Cyber.Treeview.Heading",
                     background=COLOR_PANEL,
-                    foreground=COLOR_PRIMARY_BANANA,
+                    foreground=COLOR_TEXT,
                     font=get_tier_font(2, scale))
                     
     style.map("Cyber.Treeview",
-              background=[("selected", COLOR_PRIMARY_BANANA)],
-              foreground=[("selected", COLOR_TEXT_ON_BANANA)])
+              background=[("selected", COLOR_PRIMARY)],
+              foreground=[("selected", COLOR_TEXT_ON_PRIMARY)])
 
     style.configure("Cyber.TCombobox",
-                    fieldbackground=COLOR_PANEL_ROW,
+                    fieldbackground=COLOR_RAISED,
                     background=COLOR_PANEL,
-                    foreground=COLOR_TEXT_PRIMARY,
-                    arrowcolor=COLOR_PRIMARY_BANANA,
+                    foreground=COLOR_TEXT,
+                    arrowcolor=COLOR_PRIMARY,
                     font=get_tier_font(4, scale))
                     
     style.map("Cyber.TCombobox",
-              fieldbackground=[("readonly", COLOR_PANEL_ROW)],
-              selectbackground=[("readonly", COLOR_PRIMARY_BANANA)],
-              selectforeground=[("readonly", COLOR_TEXT_ON_BANANA)])
+              fieldbackground=[("readonly", COLOR_RAISED)],
+              selectbackground=[("readonly", COLOR_PRIMARY)],
+              selectforeground=[("readonly", COLOR_TEXT_ON_PRIMARY)])

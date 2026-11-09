@@ -33,7 +33,7 @@ declare const __APP_EXE_SHA256__: string;
 
 export const CS2CommandCenterPreview: React.FC = () => {
   const downloadUrl = '/CS2_Command_Center.exe?v=1.4.0';
-  const exeSha256 = typeof __APP_EXE_SHA256__ !== 'undefined' ? __APP_EXE_SHA256__ : '44A39C0EBBDC6317801AB8C26E14510D70B8DF0A18FBCBEDEF60CBD6A3407B97';
+  const exeSha256 = typeof __APP_EXE_SHA256__ !== 'undefined' ? __APP_EXE_SHA256__ : '66B78485C7C1F5622C12B702D07C83B7CEC781E344DC7AFE35B0272B494E7A01';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [copiedHash, setCopiedHash] = useState<boolean>(false);

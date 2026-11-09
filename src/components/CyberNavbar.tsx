@@ -23,9 +23,11 @@ interface CyberNavbarProps {
 export const scrollToSectionById = (id: string) => {
   const el = document.getElementById(id);
   if (!el) return;
-  const navHeight = 104;
+  const navEl = document.querySelector('header');
+  const navHeight = navEl ? navEl.offsetHeight : 104;
+  const targetGap = 16;
   const elementPosition = el.getBoundingClientRect().top + window.pageYOffset;
-  const offsetPosition = Math.max(0, elementPosition - navHeight);
+  const offsetPosition = Math.max(0, elementPosition - navHeight - targetGap);
   window.scrollTo({
     top: offsetPosition,
     behavior: 'smooth'
@@ -41,6 +43,18 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
   const [ping, setPing] = useState<number>(12);
   const [activeSection, setActiveSection] = useState<string>('hero-stage');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  useEffect(() => {
+    const updateNavHeight = () => {
+      const nav = document.querySelector('header');
+      if (nav) {
+        document.documentElement.style.setProperty('--nav-height', `${nav.offsetHeight}px`);
+      }
+    };
+    updateNavHeight();
+    window.addEventListener('resize', updateNavHeight);
+    return () => window.removeEventListener('resize', updateNavHeight);
+  }, []);
+
 
   // Digital Cyber Clock & Low-Latency Network Ping Simulation
   useEffect(() => {
@@ -120,7 +134,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
               <span className="font-cyber font-black text-base text-[#FFE135]">
                 {theme === 'banana' ? '🍌' : '🐸'}
               </span>
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#2ECC71] border border-[#070B09] animate-pulse" />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#E48716] border border-[#070B09] animate-pulse" />
             </div>
 
             <div>
@@ -128,14 +142,14 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
                 <span className="font-cyber font-bold tracking-wider text-white text-[16px]">
                   GERONIMO<span className="text-[#FFE135]">HQ</span>
                 </span>
-                <span className="hidden sm:inline-flex tier-5-badge bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/50">
+                <span className="hidden sm:inline-flex tier-5-badge bg-[#E48716]/15 text-[#E48716] border border-[#E48716]/50">
                   ● ONLINE
                 </span>
               </div>
               <div className="text-[10px] font-code tracking-widest uppercase text-[#94A39E] flex items-center gap-1">
                 <span>CYBER-DECK OS</span>
                 <span className="text-[#FFE135]">//</span>
-                <span className="text-[#2ECC71]">{theme === 'banana' ? 'ROTARY.HOTLINE' : 'PEPE.MATRIX'}</span>
+                <span className="text-[#E48716]">{theme === 'banana' ? 'ROTARY.HOTLINE' : 'PEPE.MATRIX'}</span>
               </div>
             </div>
           </a>
@@ -159,7 +173,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
                       : 'text-[#94A39E] hover:text-white hover:bg-[#14201B]'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#070B09]' : 'text-[#2ECC71]'}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#070B09]' : 'text-[#E48716]'}`} />
                   <span>{item.label}</span>
                 </a>
               );
@@ -207,7 +221,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
                       : 'text-[#94A39E] hover:text-white hover:bg-[#121C18]'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#070B09]' : 'text-[#2ECC71]'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#070B09]' : 'text-[#E48716]'}`} />
                   <span>{item.label}</span>
                 </a>
               );
@@ -238,7 +252,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             data-gremlin-ignore="true"
             className={`hud-data-pill justify-between cursor-pointer transition-all ${
               gremlinEnabled
-                ? 'border-[#2ECC71]/60 text-[#2ECC71] bg-[#0E1512] hover:bg-[#13201A]'
+                ? 'border-[#E48716]/60 text-[#E48716] bg-[#0E1512] hover:bg-[#2A1B0E]'
                 : 'border-[#1E2E26] text-[#94A39E] bg-[#0E1512] hover:text-white'
             }`}
             title="Toggle the roaming interactive Pepe / Banana character"
@@ -249,7 +263,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
                 {gremlinEnabled ? 'ROAMER: ACTIVE' : 'ROAMER: STANDBY'}
               </span>
             </span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${gremlinEnabled ? 'bg-[#2ECC71]/20 text-[#2ECC71]' : 'bg-black/40 text-[#94A39E]'}`}>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${gremlinEnabled ? 'bg-[#E48716]/20 text-[#E48716]' : 'bg-black/40 text-[#94A39E]'}`}>
               {gremlinEnabled ? 'ON' : 'OFF'}
             </span>
           </button>
@@ -260,17 +274,17 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
               <Wifi className="w-3.5 h-3.5 text-[#00F0FF] flex-shrink-0" />
               <span className="truncate">SERVERS: <strong className="text-white">6 CLUSTERS</strong></span>
             </span>
-            <span className="text-[#2ECC71] font-bold">ONLINE</span>
+            <span className="text-[#E48716] font-bold">ONLINE</span>
           </div>
 
           {/* Pill 4: Real-Time Clock & Low-Latency Uplink */}
           <div className="hidden sm:flex hud-data-pill justify-between text-[#94A39E]">
             <span className="flex items-center gap-1.5">
-              <Activity className="w-3.5 h-3.5 text-[#2ECC71] flex-shrink-0" />
+              <Activity className="w-3.5 h-3.5 text-[#E48716] flex-shrink-0" />
               <strong className="text-[#FFE135]">{timeStr || '18:00:00'}</strong>
             </span>
-            <span className="text-[#2ECC71] flex items-center gap-1 font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2ECC71] inline-block animate-pulse" />
+            <span className="text-[#E48716] flex items-center gap-1 font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E48716] inline-block animate-pulse" />
               {ping}ms
             </span>
           </div>

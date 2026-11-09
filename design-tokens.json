@@ -1,22 +1,29 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "name": "Tactical Pepe & Banana Phone Cyber-Deck Design System",
-  "version": "1.0.0",
+  "name": "Tactical Pepe Cyber-Deck Dark Slate Design System",
+  "version": "1.4.0",
   "colors": {
-    "canvas": "#070B09",
-    "panel": "#0E1512",
-    "panel_row": "#121C18",
-    "panel_hover": "#16241E",
-    "border": "#1E2E26",
-    "border_hover": "#2B4036",
-    "text_primary": "#FFFFFF",
-    "text_muted": "#94A39E",
-    "primary_banana": "#FFE135",
-    "text_on_banana": "#070B09",
-    "success_pepe": "#2ECC71",
-    "alert_magenta": "#FF2A85",
-    "telemetry_cyan": "#00F0FF",
-    "focus_ring": "#FFE135"
+    "canvas": "#0A0E12",
+    "panel": "#11171D",
+    "panel_row": "#161E26",
+    "panel_hover": "#161E26",
+    "border": "#243241",
+    "border_hover": "#364B60",
+    "text_primary": "#E6EDF3",
+    "text_muted": "#A3B3C0",
+    "primary_banana": "#E48716",
+    "text_on_banana": "#0A0E12",
+    "success_pepe": "#E48716",
+    "alert_magenta": "#F26D6D",
+    "telemetry_cyan": "#38BDF8",
+    "focus_ring": "#E48716",
+    "primary": "#E48716",
+    "primary_hover": "#F09527",
+    "primary_pressed": "#C5720E",
+    "text_on_primary": "#0A0E12",
+    "info": "#38BDF8",
+    "success": "#4ADE80",
+    "danger": "#F26D6D"
   },
   "typography": {
     "tier_1": {
@@ -27,7 +34,7 @@
       "weight": "bold",
       "transform": "uppercase",
       "letter_spacing": "0.08em",
-      "color": "#FFFFFF",
+      "color": "#E6EDF3",
       "line_height": 1.3
     },
     "tier_2": {
@@ -38,7 +45,7 @@
       "weight": "bold",
       "transform": "uppercase",
       "letter_spacing": "0.05em",
-      "color": "#FFE135",
+      "color": "#E48716",
       "line_height": 1.35
     },
     "tier_3": {
@@ -49,7 +56,7 @@
       "weight": "semibold",
       "transform": "none",
       "letter_spacing": "normal",
-      "color": "#FFFFFF",
+      "color": "#E6EDF3",
       "line_height": 1.4
     },
     "tier_4": {
@@ -60,39 +67,39 @@
       "weight": "regular",
       "transform": "none",
       "letter_spacing": "normal",
-      "color": "#94A39E",
-      "line_height": 1.5
+      "color": "#A3B3C0",
+      "line_height": 1.45
     },
     "tier_5": {
-      "name": "Micro Badge / Region Pill",
+      "name": "Badge / Monospace Telemetry",
       "font_family_web": "var(--font-code)",
       "font_family_desktop": "Consolas",
       "size_px": 11,
       "weight": "bold",
       "transform": "uppercase",
       "letter_spacing": "0.05em",
-      "line_height": 1.25
+      "color": "#E48716",
+      "line_height": 1.2
     }
   },
-  "dimensions": {
-    "button_height_desktop": 34,
-    "button_font_size": 12.5,
-    "button_touch_min_height": 44,
-    "bento_card_padding": 16,
-    "bento_card_gap": 12,
-    "border_width": 1,
-    "accent_line_height": 2,
-    "focus_offset": 2
+  "spacing": {
+    "card_padding": "16px",
+    "card_gap": "12px",
+    "row_padding": "12px",
+    "corner_radius": "8px"
   },
-  "contrast_ratios": {
-    "text_primary_on_canvas": "20.1:1",
-    "text_muted_on_canvas": "8.2:1",
-    "primary_banana_on_canvas": "16.8:1",
-    "text_on_banana": "16.8:1",
-    "success_pepe_on_canvas": "9.6:1",
-    "alert_magenta_on_canvas": "6.4:1",
-    "telemetry_cyan_on_canvas": "15.9:1",
-    "text_primary_on_panel": "17.8:1",
-    "text_muted_on_panel": "7.3:1"
+  "components": {
+    "button_34": {
+      "height_px": 34,
+      "padding": "6px 14px",
+      "font_tier": 3,
+      "corner_radius": "6px"
+    },
+    "bento_card": {
+      "bg": "#11171D",
+      "border": "1px solid #243241",
+      "padding": "16px",
+      "corner_radius": "8px"
+    }
   }
 }

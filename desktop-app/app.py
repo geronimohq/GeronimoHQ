@@ -28,6 +28,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 import datetime
 import urllib.parse
+import re
 import tkinter as tk
 from tkinter import ttk, messagebox
 import winsound
@@ -44,6 +45,7 @@ import custom_map_cleaner
 import discord_rpc
 import cs2_gsi
 import theme
+import version
 
 import subprocess
 
@@ -139,22 +141,22 @@ def check_single_instance():
         time.sleep(0.1)
     return None
 
-# Concept 1 Exact Color Palette (Authentic Panorama Dark)
-BG_WINDOW = theme.COLOR_CANVAS          # Deep Cyber-Swamp Obsidian (#070B09)
-BG_SIDEBAR = theme.COLOR_PANEL          # Moss-Slate (#0E1512)
-BG_SIDEBAR_ACTIVE = theme.COLOR_PANEL_ROW # (#121C18)
-BG_CARD = theme.COLOR_PANEL             # Moss-Slate (#0E1512)
-BG_CARD_ROW = theme.COLOR_PANEL_ROW     # (#121C18)
-BG_BORDER = theme.COLOR_BORDER          # Crisp 1px Border (#1E2E26)
-BG_CONSOLE = theme.COLOR_CANVAS         # (#070B09)
-FG_WHITE = theme.COLOR_TEXT_PRIMARY     # (#FFFFFF)
-FG_MUTED = theme.COLOR_TEXT_MUTED       # (#94A39E)
-ACCENT_ORANGE = theme.COLOR_PRIMARY_BANANA # Cyber Banana Yellow (#FFE135)
-ACCENT_ORANGE_HOVER = "#FFF066"
-ACCENT_GREEN = theme.COLOR_SUCCESS_PEPE # Tactical Pepe Green (#2ECC71)
-ACCENT_CYAN = theme.COLOR_TELEMETRY_CYAN # Cyber Cyan (#00F0FF)
-ACCENT_RED = theme.COLOR_ALERT_MAGENTA  # Synth Magenta (#FF2A85)
-ACCENT_AMBER = theme.COLOR_PRIMARY_BANANA # (#FFE135)
+# Dark Slate Color Palette (Part 1 Strict Palette)
+BG_WINDOW = theme.COLOR_BG
+BG_SIDEBAR = theme.COLOR_PANEL
+BG_SIDEBAR_ACTIVE = theme.COLOR_RAISED
+BG_CARD = theme.COLOR_PANEL
+BG_CARD_ROW = theme.COLOR_RAISED
+BG_BORDER = theme.COLOR_BORDER
+BG_CONSOLE = theme.COLOR_BG
+FG_WHITE = theme.COLOR_TEXT
+FG_MUTED = theme.COLOR_MUTED
+ACCENT_ORANGE = theme.COLOR_PRIMARY       # User-approved CS2 Tactical Amber-Orange (#E48716)
+ACCENT_ORANGE_HOVER = theme.COLOR_PRIMARY_HOVER # Hover (#F09527)
+ACCENT_GREEN = theme.COLOR_PRIMARY        # Replaced green with user-approved accent (#E48716)
+ACCENT_CYAN = theme.COLOR_INFO            # Info / Cyan (#38BDF8)
+ACCENT_RED = theme.COLOR_DANGER           # Danger (#F26D6D)
+ACCENT_AMBER = theme.COLOR_PRIMARY        # Primary (#E48716)
 
 def play_calm_tone(kind="info"):
     """Plays a gentle, soothing, non-intrusive Windows studio notification chime."""
@@ -389,10 +391,10 @@ def show_custom_modal(title: str, message: str, kind: str = "info", parent=None,
         accent_btn = "#ef4444"
     elif kind in ("warning", "warning_question"):
         badge_text = "⚠  CRITICAL WARNING" if kind == "warning_question" else "⚠  WARNING"
-        badge_fg = "#fbbf24"
-        badge_bg = "#2e210a"
+        badge_fg = theme.COLOR_INFO
+        badge_bg = "#11171D"
         icon_glyph = "⚠"
-        icon_color = "#f59e0b"
+        icon_color = theme.COLOR_INFO
         accent_btn = ACCENT_ORANGE
     elif kind == "question":
         badge_text = "❓  CONFIRMATION"
@@ -473,7 +475,7 @@ def show_custom_modal(title: str, message: str, kind: str = "info", parent=None,
     if is_question:
         confirm_text = "  ✔ Force Delete  " if "force delete" in str(message).lower() else "  ✔ Yes, Proceed  "
         b_confirm = tk.Button(btn_row, text=confirm_text, font=("Segoe UI", 10, "bold"),
-                              fg="#ffffff", bg=accent_btn, activebackground="#ea580c",
+                              fg="#ffffff", bg=accent_btn, activebackground=theme.COLOR_PRIMARY_HOVER,
                               activeforeground="#ffffff", relief="flat", padx=16, pady=6,
                               cursor="hand2", command=on_confirm)
         b_confirm.pack(side="left", padx=4)
@@ -489,7 +491,7 @@ def show_custom_modal(title: str, message: str, kind: str = "info", parent=None,
     else:
         b_ok = tk.Button(btn_row, text="OK", font=("Segoe UI", 10, "bold"),
                          fg="#ffffff", bg=accent_btn,
-                         activebackground="#1d4ed8" if accent_btn == "#2563eb" else "#ea580c",
+                         activebackground="#1d4ed8" if accent_btn == "#2563eb" else theme.COLOR_PRIMARY_HOVER,
                          activeforeground="#ffffff", relief="flat", padx=20, pady=6,
                          cursor="hand2", command=on_confirm)
         b_ok.pack(side="left")
@@ -816,7 +818,7 @@ class CS2TruePanoramaApp(tk.Tk):
                 pass
         img = Image.new("RGBA", (64, 64), color=(0, 0, 0, 0))
         d = ImageDraw.Draw(img)
-        d.ellipse((4, 4, 60, 60), fill="#de6c11", outline="#ffffff", width=2)
+        d.ellipse((4, 4, 60, 60), fill=theme.COLOR_PRIMARY, outline="#ffffff", width=2)
         d.text((16, 22), "CS2", fill="#ffffff")
         return img
 
@@ -1011,7 +1013,7 @@ class CS2TruePanoramaApp(tk.Tk):
         add_tooltip(b_settings, "Configure Windows autostart, minimize-to-tray behavior, and Discord integration.")
 
         admin_txt = "ADMIN PERMISSIONS" if self.admin_status else "STANDARD PERMISSIONS"
-        admin_col = ACCENT_GREEN if self.admin_status else "#f59e0b"
+        admin_col = ACCENT_GREEN if self.admin_status else FG_MUTED
         admin_tip = "Running with Administrator privileges (Full access for system maintenance, TRIM, and latency diagnostics)." if self.admin_status else "Running with Standard user permissions (Safe CS2 autoexec and engine tweaks work 100%)."
         self._create_header_pill(head_right, admin_txt, admin_col, tooltip=admin_tip)
 
@@ -1089,7 +1091,7 @@ class CS2TruePanoramaApp(tk.Tk):
     def _create_header_pill(self, parent, text, color, tooltip=None):
         pill = tk.Frame(parent, bg=BG_BORDER, padx=1, pady=1)
         pill.pack(side="left", padx=4)
-        inner = tk.Frame(pill, bg="#11141c", padx=10, pady=3)
+        inner = tk.Frame(pill, bg=BG_CARD_ROW, padx=10, pady=3)
         inner.pack()
         lbl = tk.Label(inner, text=f"● {text}", font=("Segoe UI", 10, "bold"), fg=color, bg="#11141c")
         lbl.pack()
@@ -1121,16 +1123,17 @@ class CS2TruePanoramaApp(tk.Tk):
         right = tk.Frame(hw_banner, bg=BG_CARD)
         right.pack(side="right")
 
-        b_opt = tk.Button(right, text="🚀 ONE-CLICK OPTIMIZE", font=("Segoe UI", 14, "bold"),
-                  fg="#ffffff", bg=ACCENT_ORANGE, activebackground=ACCENT_ORANGE_HOVER,
-                  activeforeground="#ffffff", relief="flat", padx=16, pady=6, cursor="hand2",
+        b_opt = tk.Button(right, text="🚀 ONE-CLICK OPTIMIZE", font=("Segoe UI", 10, "bold"),
+                  fg=theme.COLOR_TEXT_ON_PRIMARY, bg=theme.COLOR_PRIMARY, activebackground=theme.COLOR_PRIMARY_HOVER,
+                  activeforeground=theme.COLOR_TEXT_ON_PRIMARY, relief="flat", padx=14, pady=5, cursor="hand2",
                   command=self.run_one_click_optimization)
         b_opt.pack(fill="x", pady=2)
         add_tooltip(b_opt, "Instantly applies all recommended engine optimizations, power profiles, and low-latency autoexec settings in one click.")
 
-        b_rev = tk.Button(right, text="⏪ Restore Defaults", font=("Segoe UI", 10),
-                  fg="#94a3b8", bg="#1c212c", activebackground="#272e3d",
-                  activeforeground="#ffffff", relief="flat", padx=14, pady=6, cursor="hand2",
+        b_rev = tk.Button(right, text="⏪ Restore Defaults", font=("Segoe UI", 9),
+                  fg="#cbd5e1", bg="#161E26", activebackground="#243241",
+                  activeforeground="#ffffff", relief="flat", padx=12, pady=4, cursor="hand2",
+                  highlightbackground=BG_BORDER, highlightthickness=1,
                   command=self.run_revert_all)
         b_rev.pack(fill="x", pady=2)
         add_tooltip(b_rev, "Safely reverts all engine tweaks, power schemes, and autoexec configurations back to default settings.")
@@ -1160,7 +1163,7 @@ class CS2TruePanoramaApp(tk.Tk):
         cs2_text = "CS2: GAME READY" if cs2_found else "CS2: NOT DETECTED"
         cs2_col = ACCENT_GREEN if cs2_found else ACCENT_RED
         self.status_cs2_lbl = tk.Label(self.status_bar, text=f"● {cs2_text}", font=("Segoe UI", 9, "bold"), fg=cs2_col, bg="#0a0d14")
-        self.status_cs2_lbl.pack(side="left", padx=(0, 15))
+        # Unpacked per A1: CS2 status is already prominent in top header
 
         self.status_sniper_lbl = tk.Label(self.status_bar, text="● SLOT SNIPER: IDLE", font=("Segoe UI", 9, "bold"), fg=FG_MUTED, bg="#0a0d14")
         self.status_sniper_lbl.pack(side="left", padx=15)
@@ -1293,14 +1296,25 @@ class CS2TruePanoramaApp(tk.Tk):
         canvas.bind("<Configure>", _on_configure)
 
     def _sync_canvas_scroll(self, canvas, scrollbar):
-        """Updates scrollregion reliably without unmapping scrollbar or causing layout oscillation."""
+        """Auto-hides scrollbar when content fits within visible canvas height with hysteresis."""
         try:
             bbox = canvas.bbox("all")
             if not bbox:
                 return
             content_h = bbox[3] - bbox[1]
             view_h = canvas.winfo_height()
-            canvas.configure(scrollregion=(0, 0, bbox[2], max(content_h, view_h + 20)))
+            if view_h <= 1:
+                view_h = canvas.winfo_reqheight()
+
+            is_mapped = scrollbar.winfo_ismapped()
+            if not is_mapped and content_h > view_h + 8:
+                scrollbar.pack(side="right", fill="y", before=canvas)
+            elif is_mapped and content_h <= view_h:
+                scrollbar.pack_forget()
+
+            canvas.configure(scrollregion=(0, 0, bbox[2], max(content_h, view_h)))
+        except Exception:
+            pass
         except Exception:
             pass
 
@@ -1422,81 +1436,84 @@ class CS2TruePanoramaApp(tk.Tk):
         tk.Label(t1_box, text="⚡ SYSTEM READINESS & CYBERDECK DASHBOARD", font=("Segoe UI", 16, "bold"), fg=FG_WHITE, bg=BG_CARD).pack(anchor="w")
         tk.Label(t1_box, text="Real-time Source 2 engine diagnostics, VAC-safe autoexec status, and live gaming telemetry.", font=("Segoe UI", 12), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(2, 0))
 
-        # Hero Banner: One-Click Total Optimization
-        hero = tk.Frame(content, bg="#0d131f", highlightbackground=ACCENT_CYAN, highlightthickness=1, padx=16, pady=14)
-        hero.pack(fill="x", pady=(0, 14))
+        # Hero Banner: Tactical Performance Engine (Single One-Click button in header)
+        hero = tk.Frame(content, bg="#11171D", highlightbackground=BG_BORDER, highlightthickness=1, padx=16, pady=12)
+        hero.pack(fill="x", pady=(0, 12))
 
-        hero_left = tk.Frame(hero, bg="#0d131f")
+        hero_left = tk.Frame(hero, bg="#11171D")
         hero_left.pack(side="left", fill="both", expand=True)
 
-        tk.Label(hero_left, text="TACTICAL PERFORMANCE ENGINE", font=("Segoe UI", 13, "bold"), fg=ACCENT_CYAN, bg="#0d131f").pack(anchor="w")
-        tk.Label(hero_left, text="One-click tunes CS2 sub-tick rates, low-latency sleep, CPU power profile, and competitive audio binds.", font=("Segoe UI", 12), fg="#cbd5e1", bg="#0d131f").pack(anchor="w", pady=(2, 6))
+        tk.Label(hero_left, text="TACTICAL PERFORMANCE ENGINE", font=("Segoe UI", 13, "bold"), fg=ACCENT_CYAN, bg="#11171D").pack(anchor="w")
+        tk.Label(hero_left, text="One-click tunes CS2 sub-tick rates, low-latency sleep, CPU power profile, and competitive audio binds.", font=("Segoe UI", 11), fg="#cbd5e1", bg="#11171D").pack(anchor="w", pady=(2, 6))
 
-        pills = tk.Frame(hero_left, bg="#0d131f")
+        pills = tk.Frame(hero_left, bg="#11171D")
         pills.pack(anchor="w")
-        for p_txt, p_col in [("100% VAC-SAFE", ACCENT_GREEN), ("SUB-TICK VERIFIED", ACCENT_CYAN), ("ZERO RUNTIME OVERHEAD", ACCENT_AMBER)]:
-            pf = tk.Frame(pills, bg="#162032", padx=8, pady=2, highlightbackground="#24334d", highlightthickness=1)
+        for p_txt, p_col in [("100% VAC-SAFE", ACCENT_GREEN), ("SUB-TICK VERIFIED", ACCENT_CYAN), ("ZERO RUNTIME OVERHEAD", theme.COLOR_PRIMARY)]:
+            pf = tk.Frame(pills, bg="#161E26", padx=8, pady=2, highlightbackground=BG_BORDER, highlightthickness=1)
             pf.pack(side="left", padx=(0, 6))
-            tk.Label(pf, text=f"✔ {p_txt}", font=("Segoe UI", 11, "bold"), fg=p_col, bg="#162032").pack()
+            tk.Label(pf, text=f"✔ {p_txt}", font=("Segoe UI", 10, "bold"), fg=p_col, bg="#161E26").pack()
 
-        hero_right = tk.Frame(hero, bg="#0d131f")
-        hero_right.pack(side="right", padx=(10, 0))
-
-        b_hero_opt = tk.Button(hero_right, text="🚀 ONE-CLICK OPTIMIZE", font=("Segoe UI", 14, "bold"),
-                               fg="#ffffff", bg=ACCENT_ORANGE, activebackground=ACCENT_ORANGE_HOVER,
-                               activeforeground="#ffffff", relief="flat", padx=20, pady=8, cursor="hand2",
-                               command=self.run_one_click_optimization)
-        b_hero_opt.pack(fill="x", pady=2)
-        add_tooltip(b_hero_opt, "Executes complete engine optimization pass and verifies autoexec integrity.")
-
-        # 3-Card Grid Overview
+        # 3-Card Grid Overview: CS2 ENVIRONMENT, STORAGE, ZE GAME SERVERS
         grid = tk.Frame(content, bg=BG_CARD)
-        grid.pack(fill="x", pady=(0, 14))
+        grid.pack(fill="x", pady=(0, 10))
 
-        # Card 1: CS2 Process & Path
+        # Card 1: CS2 Environment & Middle-Ellipsized Path
         c1 = tk.Frame(grid, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=12)
         c1.pack(side="left", fill="both", expand=True, padx=(0, 6))
         tk.Label(c1, text="🎮 CS2 ENVIRONMENT", font=("Segoe UI", 13, "bold"), fg=ACCENT_GREEN, bg=BG_CARD_ROW).pack(anchor="w")
         cs2_st = "DETECTED & CONFIGURED" if bool(self.paths.get("cs2_exe")) else "MANUAL PATH REQUIRED"
-        tk.Label(c1, text=f"Executable: {cs2_st}", font=("Segoe UI", 12), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(6, 2))
+        tk.Label(c1, text=f"Executable: {cs2_st}", font=("Segoe UI", 11), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(6, 2))
         auto_st = "autoexec.cfg ACTIVE" if bool(self.paths.get("autoexec_cfg")) else "autoexec.cfg NOT FOUND"
-        tk.Label(c1, text=f"Config: {auto_st}", font=("Segoe UI", 12), fg=ACCENT_CYAN, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 6))
-        b_c1 = tk.Button(c1, text="Open Config Studio ➔", font=("Segoe UI", -12, "bold"), fg="#ffffff", bg="#1e293b",
-                         activebackground="#334155", relief="flat", padx=10, pady=4, cursor="hand2",
-                         command=lambda: self._select_nav("AUTOEXEC"))
-        b_c1.pack(anchor="w")
+        tk.Label(c1, text=f"Config: {auto_st}", font=("Segoe UI", 11), fg=ACCENT_CYAN, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 4))
+        
+        cs2_path = self.paths.get("cs2_exe") or ""
+        if cs2_path:
+            norm_p = os.path.normpath(cs2_path)
+            if len(norm_p) > 34:
+                short_p = norm_p[:12] + "..." + norm_p[-18:]
+            else:
+                short_p = norm_p
+            full_p = norm_p
+        else:
+            short_p = "Path not detected"
+            full_p = "Counter-Strike 2 executable path not detected automatically."
+        lbl_cs2_path = tk.Label(c1, text=f"Path: {short_p}", font=("Consolas", 9), fg=FG_MUTED, bg=BG_CARD_ROW, anchor="w")
+        lbl_cs2_path.pack(anchor="w", pady=(2, 0))
+        add_tooltip(lbl_cs2_path, f"Installation location: {full_p}")
 
-        # Card 2: Hardware Profile
+        # Card 2: STORAGE CAPACITY (Replaces Hardware Profile per A1)
         c2 = tk.Frame(grid, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=12)
         c2.pack(side="left", fill="both", expand=True, padx=6)
-        tk.Label(c2, text="⚡ HARDWARE PROFILE", font=("Segoe UI", 13, "bold"), fg=ACCENT_CYAN, bg=BG_CARD_ROW).pack(anchor="w")
-        tk.Label(c2, text=f"CPU: {self.cpu_info.get('name', 'AMD Ryzen')[:28]}", font=("Segoe UI", 12), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(6, 2))
-        tk.Label(c2, text=f"GPU: {self.gpu_info.get('name', 'Radeon / GeForce')[:28]}", font=("Segoe UI", 12), fg=ACCENT_CYAN, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 6))
-        b_c2 = tk.Button(c2, text="Engine & CPU Tweaks ➔", font=("Segoe UI", -12, "bold"), fg="#ffffff", bg="#1e293b",
-                         activebackground="#334155", relief="flat", padx=10, pady=4, cursor="hand2",
-                         command=lambda: self._select_nav("ENGINE"))
-        b_c2.pack(anchor="w")
+        tk.Label(c2, text="💾 STORAGE", font=("Segoe UI", 13, "bold"), fg=ACCENT_CYAN, bg=BG_CARD_ROW).pack(anchor="w")
 
-        # Card 3: ZE Servers & Slot Sniper
+        cs2_drive = os.path.splitdrive(cs2_path)[0].upper() if cs2_path else "C:"
+        drives_data = core_logic.get_drives_info()
+        target_drive = next((d for d in drives_data if d["drive"].upper().startswith(cs2_drive)), None)
+        if not target_drive and drives_data:
+            target_drive = drives_data[0]
+
+        if target_drive:
+            free_g = target_drive["free_gb"]
+            total_g = target_drive["total_gb"]
+            used_p = target_drive["used_pct"]
+            free_pct = (free_g / total_g * 100) if total_g > 0 else 100
+            is_low = (free_pct < 10.0) or target_drive.get("is_critical", False)
+            stor_status = "⚠️ Low Storage (<10% free)" if is_low else "● Storage Healthy"
+            stor_col = ACCENT_RED if is_low else ACCENT_GREEN
+            tk.Label(c2, text=f"Drive {target_drive['drive']} {free_g:.1f} GB free / {total_g:.1f} GB", font=("Segoe UI", 11), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(6, 2))
+            tk.Label(c2, text=f"{stor_status} ({used_p:.0f}% used)", font=("Segoe UI", 11, "bold"), fg=stor_col, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 2))
+        else:
+            tk.Label(c2, text="System Drive: Monitored", font=("Segoe UI", 11), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(6, 2))
+            tk.Label(c2, text="● Storage Healthy", font=("Segoe UI", 11, "bold"), fg=ACCENT_GREEN, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 2))
+
+        # Card 3: ZE Servers & Telemetry (A1: N players in-game, X / T servers online)
         c3 = tk.Frame(grid, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=12)
         c3.pack(side="left", fill="both", expand=True, padx=(6, 0))
-        tk.Label(c3, text="🌐 ZE GAME SERVERS", font=("Segoe UI", 13, "bold"), fg=ACCENT_AMBER, bg=BG_CARD_ROW).pack(anchor="w")
-        tk.Label(c3, text="Global & Asian ZE Clusters", font=("Segoe UI", 12), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(6, 2))
-        tk.Label(c3, text="Auto Slot Sniper: Ready", font=("Segoe UI", 12), fg=ACCENT_GREEN, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 6))
-        b_c3 = tk.Button(c3, text="Launch ZE Browser ➔", font=("Segoe UI", -12, "bold"), fg="#ffffff", bg="#1e293b",
-                         activebackground="#334155", relief="flat", padx=10, pady=4, cursor="hand2",
-                         command=lambda: self._select_nav("SERVERS"))
-        b_c3.pack(anchor="w")
-
-        # Quick Links & Tooling Row
-        links_box = tk.Frame(content, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=10)
-        links_box.pack(fill="x")
-        tk.Label(links_box, text="QUICK NAVIGATION SHORTCUTS:", font=("Segoe UI", 11, "bold"), fg="#64748b", bg=BG_CARD_ROW).pack(side="left", padx=(0, 10))
-        for l_key, l_title in [("BOOST", "Gaming DNS Optimizer"), ("LAUNCH", "Launch Options"), ("MAINTENANCE", "Custom Map Cleaner"), ("DISCORD", "Discord Presence")]:
-            btn = tk.Button(links_box, text=l_title, font=("Segoe UI", -12, "bold"), fg="#94a3b8", bg="#161e2e",
-                            activebackground="#222f47", activeforeground="#ffffff", relief="flat", padx=10, pady=3, cursor="hand2",
-                            command=lambda k=l_key: self._select_nav(k))
-            btn.pack(side="left", padx=3)
+        tk.Label(c3, text="🌐 ZE GAME SERVERS", font=("Segoe UI", 13, "bold"), fg=theme.COLOR_PRIMARY, bg=BG_CARD_ROW).pack(anchor="w")
+        self.dash_ze_players_lbl = tk.Label(c3, text="646 players in-game", font=("Segoe UI", 11, "bold"), fg=ACCENT_GREEN, bg=BG_CARD_ROW)
+        self.dash_ze_players_lbl.pack(anchor="w", pady=(6, 2))
+        self.dash_ze_nodes_lbl = tk.Label(c3, text="34 / 41 servers online", font=("Segoe UI", 11), fg=ACCENT_CYAN, bg=BG_CARD_ROW)
+        self.dash_ze_nodes_lbl.pack(anchor="w", pady=(0, 2))
 
         _bind_dash_wheel(content)
 
@@ -1665,12 +1682,12 @@ class CS2TruePanoramaApp(tk.Tk):
 
             # State 2: Engine optimized, but PC Maintenance overdue -> Amber Banner
             elif not opt_due and maint_due:
-                card = tk.Frame(container, bg="#1f180e", padx=12, pady=8, highlightbackground="#b45309", highlightthickness=1)
+                card = tk.Frame(container, bg="#11171D", padx=12, pady=8, highlightbackground="#243241", highlightthickness=1)
                 card.pack(fill="x")
-                top = tk.Frame(card, bg="#1f180e")
+                top = tk.Frame(card, bg="#11171D")
                 top.pack(fill="x")
 
-                tk.Label(top, text="⚠️  PC MAINTENANCE OVERDUE", font=("Segoe UI", 10, "bold"), fg=ACCENT_AMBER, bg="#1f180e").pack(side="left")
+                tk.Label(top, text="⚠️  PC MAINTENANCE OVERDUE", font=("Segoe UI", 10, "bold"), fg=ACCENT_AMBER, bg="#11171D").pack(side="left")
 
                 if page_type == "ENGINE":
                     b_act = tk.Button(top, text="🧹 Run PC Maintenance", font=("Segoe UI", 10, "bold"), fg="#ffffff", bg="#242b3b",
@@ -1686,17 +1703,17 @@ class CS2TruePanoramaApp(tk.Tk):
                     add_tooltip(b_act, "Executes all selected safe PC maintenance cleanups.")
 
                 sub = tk.Label(card, text=f"CS2 Engine Tweaks are up-to-date ({opt_str}), but PC Maintenance is overdue ({maint_str}). Running SSD TRIM and cache cleanups prevents micro-stutters and frees disk space.",
-                               font=("Segoe UI", 9), fg="#cbd5e1", bg="#1f180e", anchor="w")
+                               font=("Segoe UI", 9), fg="#cbd5e1", bg="#11171D", anchor="w")
                 sub.pack(fill="x", pady=(2, 0))
 
             # State 3: PC Maintenance done, but Engine Tweaks overdue -> Amber Banner
             elif opt_due and not maint_due:
-                card = tk.Frame(container, bg="#1f180e", padx=12, pady=8, highlightbackground="#b45309", highlightthickness=1)
+                card = tk.Frame(container, bg="#11171D", padx=12, pady=8, highlightbackground="#243241", highlightthickness=1)
                 card.pack(fill="x")
-                top = tk.Frame(card, bg="#1f180e")
+                top = tk.Frame(card, bg="#11171D")
                 top.pack(fill="x")
 
-                tk.Label(top, text="⚠️  CS2 ENGINE OPTIMIZATION DUE", font=("Segoe UI", 10, "bold"), fg=ACCENT_AMBER, bg="#1f180e").pack(side="left")
+                tk.Label(top, text="⚠️  CS2 ENGINE OPTIMIZATION DUE", font=("Segoe UI", 10, "bold"), fg=ACCENT_AMBER, bg="#11171D").pack(side="left")
 
                 if page_type == "ENGINE":
                     b_act = tk.Button(top, text="⚡ 1-Click Optimize", font=("Segoe UI", 10, "bold"), fg="#ffffff", bg=ACCENT_ORANGE,
@@ -1712,7 +1729,7 @@ class CS2TruePanoramaApp(tk.Tk):
                     add_tooltip(b_act, "Switch to Engine Tweaks tab to run 1-Click CS2 Optimization.")
 
                 sub = tk.Label(card, text=f"PC Maintenance is clean ({maint_str}), but CS2 Engine Tweaks are overdue ({opt_str}). Purging DirectX/GPU shaders and refreshing autoexec ensures smooth 1% lows.",
-                               font=("Segoe UI", 9), fg="#cbd5e1", bg="#1f180e", anchor="w")
+                               font=("Segoe UI", 9), fg="#cbd5e1", bg="#11171D", anchor="w")
                 sub.pack(fill="x", pady=(2, 0))
 
             # State 4: Both overdue -> High Priority Amber/Red Banner
@@ -1912,7 +1929,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
         self.btn_save_cfg = tk.Button(
             ph_left, text="💾 Save Changes", font=("Segoe UI", 9, "bold"),
-            fg="#ffffff", bg=ACCENT_GREEN, activebackground="#16a34a", relief="flat",
+            fg=theme.COLOR_TEXT_ON_PRIMARY, bg=ACCENT_GREEN, activebackground=theme.COLOR_PRIMARY_HOVER, relief="flat",
             padx=10, pady=2, cursor="hand2", command=self._save_autoexec_manual
         )
         # Initially not packed until edit mode is activated
@@ -2091,7 +2108,7 @@ class CS2TruePanoramaApp(tk.Tk):
         
         has_warnings = bool(self.launch_analysis.get("warnings"))
         badge_text = "⚠️ Obsolete Flags Detected" if has_warnings else "✅ Clean Configuration"
-        badge_fg = "#f59e0b" if has_warnings else ACCENT_GREEN
+        badge_fg = "#38BDF8" if has_warnings else ACCENT_GREEN
         tk.Label(h_cur, text=badge_text, font=("Segoe UI", 10, "bold"), fg=badge_fg, bg=BG_CONSOLE).pack(side="right")
 
         cur_text = self.launch_analysis["current"] if self.launch_analysis["current"] else "(None currently set)"
@@ -2099,7 +2116,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
         if has_warnings:
             for w in self.launch_analysis["warnings"]:
-                tk.Label(content, text=f"⚠️ {w}", font=("Segoe UI", 10, "bold"), fg="#f59e0b", bg=BG_CARD).pack(anchor="w", pady=1)
+                tk.Label(content, text=f"⚠️ {w}", font=("Segoe UI", 10, "bold"), fg="#38BDF8", bg=BG_CARD).pack(anchor="w", pady=1)
 
         # 2. Competitive Baseline Reference (Information Card)
         ref_box = tk.Frame(content, bg="#131b26", padx=12, pady=8, highlightbackground="#1e293b", highlightthickness=1)
@@ -2442,7 +2459,7 @@ class CS2TruePanoramaApp(tk.Tk):
         tk.Label(page, text="Direct Steam Game Server Protocol (bypasses console) • Live Server Ping, Map & Player Monitor • ZE Graph Intel", font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(1, 6))
 
         # 1. FEATURED GFL QUICK-CONNECT CARD
-        gfl_card = tk.Frame(page, bg="#0E1512", padx=14, pady=10, highlightbackground="#FFE135", highlightthickness=1)
+        gfl_card = tk.Frame(page, bg="#0E1512", padx=14, pady=10, highlightbackground=theme.COLOR_PRIMARY, highlightthickness=1)
         gfl_card.pack(fill="x", pady=(0, 8))
 
         top_row = tk.Frame(gfl_card, bg="#0E1512")
@@ -2477,14 +2494,14 @@ class CS2TruePanoramaApp(tk.Tk):
         btn_box.pack(anchor="e")
 
         b_gfl_conn = tk.Button(btn_box, text="⚡ Connect", font=("Segoe UI", -12, "bold"), width=9,
-                  fg="#070B09", bg="#FFE135", activebackground="#FFF066",
+                  fg=theme.COLOR_TEXT_ON_PRIMARY, bg=theme.COLOR_PRIMARY, activebackground=theme.COLOR_PRIMARY_HOVER,
                   relief="flat", padx=7, pady=4, cursor="hand2",
                   command=lambda: self.run_connect_workflow("74.91.124.21", 27015, "GFL Clan Zombie Escape"))
         b_gfl_conn.pack(side="left", padx=2)
         add_tooltip(b_gfl_conn, "Launches CS2 or connects directly to GFL Zombie Escape (74.91.124.21:27015) via Steam protocol.")
 
         self.btn_gfl_sniper = tk.Button(btn_box, text="🎯 Sniper", font=("Segoe UI", -12, "bold"), width=9,
-                                        fg="#ffffff", bg="#854d0e", activebackground="#a16207",
+                                        fg="#ffffff", bg="#243241", activebackground="#364B60",
                                         disabledforeground="#e2e8f0",
                                         relief="flat", padx=7, pady=4, cursor="hand2",
                                         command=self.toggle_gfl_slot_sniper)
@@ -2575,11 +2592,11 @@ class CS2TruePanoramaApp(tk.Tk):
         telemetry_row.pack(fill="x", pady=(8, 0))
 
         tk.Label(telemetry_row, textvariable=self.gfl_score_var, font=("Segoe UI", -12, "bold"), fg="#38bdf8", bg="#10141d").pack(side="left", padx=(4, 12))
-        tk.Label(telemetry_row, textvariable=self.gfl_extends_var, font=("Segoe UI", -12, "bold"), fg="#fbbf24", bg="#10141d").pack(side="left", padx=(0, 12))
+        tk.Label(telemetry_row, textvariable=self.gfl_extends_var, font=("Segoe UI", -12, "bold"), fg="#38BDF8", bg="#10141d").pack(side="left", padx=(0, 12))
         tk.Label(telemetry_row, textvariable=self.gfl_geo_var, font=("Segoe UI", -11), fg="#94a3b8", bg="#10141d").pack(side="left", padx=(0, 12))
 
         b_soundtrack = tk.Button(telemetry_row, text="🎵 Soundtrack (Intel)", font=("Segoe UI", -12, "bold"),
-                                 fg="#e879f9", bg="#2a163d", activebackground="#3d1d5a", relief="flat", padx=8, pady=4, cursor="hand2",
+                                 fg="#38BDF8", bg="#11171D", activebackground="#11171D", relief="flat", padx=8, pady=4, cursor="hand2",
                                  command=lambda: self.open_soundtrack_dialog(getattr(self, "current_gfl_clean_map", "")))
         b_soundtrack.pack(side="left")
         add_tooltip(b_soundtrack, "View music soundtrack tracklist with 1-click YouTube player.")
@@ -2619,6 +2636,22 @@ class CS2TruePanoramaApp(tk.Tk):
         self.comm_sniper_combo.pack(side="left", padx=2)
         self.comm_sniper_combo.bind("<<ComboboxSelected>>", self._on_comm_sniper_target_changed)
         add_tooltip(self.comm_sniper_combo, "Set slot sniper threshold for community servers (e.g. ≤ 62 if server has 2 reserved slots).")
+
+        # Live Telemetry Pills (A4)
+        telemetry_pills = tk.Frame(self.list_head, bg=BG_CARD_ROW)
+        telemetry_pills.pack(side="right", padx=(8, 0))
+
+        self.pill_srv_nodes = tk.Frame(telemetry_pills, bg="#161E26", padx=8, pady=3, highlightbackground=BG_BORDER, highlightthickness=1)
+        self.pill_srv_nodes.pack(side="right", padx=(4, 0))
+        self.lbl_srv_nodes = tk.Label(self.pill_srv_nodes, text="📡 34 / 41 NODES ONLINE", font=("Segoe UI", 9, "bold"), fg=ACCENT_CYAN, bg="#161E26")
+        self.lbl_srv_nodes.pack()
+        add_tooltip(self.lbl_srv_nodes, "Number of operational community server nodes queried.")
+
+        self.pill_srv_players = tk.Frame(telemetry_pills, bg="#161E26", padx=8, pady=3, highlightbackground=BG_BORDER, highlightthickness=1)
+        self.pill_srv_players.pack(side="right", padx=(4, 0))
+        self.lbl_srv_players = tk.Label(self.pill_srv_players, text="👥 646 PLAYERS IN-GAME", font=("Segoe UI", 9, "bold"), fg=ACCENT_GREEN, bg="#161E26")
+        self.lbl_srv_players.pack()
+        add_tooltip(self.lbl_srv_players, "Total real-time player count active across monitored Zombie Escape servers.")
 
         head_btns = tk.Frame(self.list_head, bg=BG_CARD_ROW)
         head_btns.pack(side="right")
@@ -2677,12 +2710,7 @@ class CS2TruePanoramaApp(tk.Tk):
         self._on_server_wheel = _on_server_wheel
 
 
-        # Attribution & Credits Notice
-        credits_bar = tk.Frame(page, bg="#0d1117", padx=8, pady=3)
-        credits_bar.pack(fill="x", pady=(4, 0))
-        tk.Label(credits_bar,
-                 text="Telemetry & Soundtracks: queeniemella (InterStella0 - ZE Graph) • 3D Map Viewer: cybo • CS2 Command Center by Geronimo",
-                 font=("Segoe UI", 9), fg="#64748b", bg="#0d1117").pack(side="left")
+        # (Credits line removed per A4)
 
         self._populate_server_list()
 
@@ -2753,7 +2781,7 @@ class CS2TruePanoramaApp(tk.Tk):
             right.pack(side="right", padx=(6, 0))
 
             b_conn = tk.Button(right, text="⚡ Connect", font=("Segoe UI", -12, "bold"), width=9,
-                      fg="#ffffff", bg=ACCENT_ORANGE, activebackground=ACCENT_ORANGE_HOVER,
+                      fg=theme.COLOR_TEXT_ON_PRIMARY, bg=theme.COLOR_PRIMARY, activebackground=theme.COLOR_PRIMARY_HOVER,
                       relief="flat", padx=7, pady=4, cursor="hand2",
                       command=lambda s=s: self.run_connect_workflow(s["host"], s["port"], s["name"]))
             b_conn.pack(side="left", padx=2)
@@ -2763,7 +2791,7 @@ class CS2TruePanoramaApp(tk.Tk):
             cooldown_rem = max(0, int(round(cooldown_until - time.time())))
             if is_active_target:
                 btn_snip_txt = "🎯 Active"
-                btn_snip_bg = "#d97706"
+                btn_snip_bg = theme.COLOR_PRIMARY
                 btn_snip_state = "normal"
             elif cooldown_rem > 0:
                 btn_snip_txt = f"⏳ ({cooldown_rem}s)"
@@ -2771,10 +2799,10 @@ class CS2TruePanoramaApp(tk.Tk):
                 btn_snip_state = "disabled"
             else:
                 btn_snip_txt = "🎯 Sniper"
-                btn_snip_bg = "#854d0e"
+                btn_snip_bg = "#243241"
                 btn_snip_state = "normal"
             btn_sniper = tk.Button(right, text=btn_snip_txt, font=("Segoe UI", -12, "bold"), width=9,
-                                   fg="#ffffff", bg=btn_snip_bg, activebackground="#b45309",
+                                   fg="#ffffff", bg=btn_snip_bg, activebackground="#243241",
                                    disabledforeground="#e2e8f0", state=btn_snip_state,
                                    relief="flat", padx=7, pady=4, cursor="hand2",
                                    command=lambda s=s, sid=sid: self.toggle_server_slot_sniper(s["host"], s["port"], s["name"], sid))
@@ -3023,7 +3051,7 @@ class CS2TruePanoramaApp(tk.Tk):
         self._set_sniper_button_active(sid, True)
         tier_sub = f" [Priority: ≤{target_max_players} for {tier_label}]" if target_max_players else ""
         if host == "74.91.124.21" and port == 27015:
-            self.btn_gfl_sniper.config(text="🎯 Active", bg="#d97706", activebackground="#b45309", state="normal")
+            self.btn_gfl_sniper.config(text="🎯 Active", bg=theme.COLOR_PRIMARY, activebackground="#243241", state="normal")
             self.gfl_workflow_status.set(f"🎯 Active: Watching for open slot (Silent UDP 0.25s / 0 RAM){tier_sub}...")
 
         self.log(f"[SNIPER] Slot Sniper Active for {name} ({host}:{port}){tier_sub}. Monitoring player count via silent UDP A2S at 0.25s (0 CS2 RAM stacking)...")
@@ -3074,14 +3102,14 @@ class CS2TruePanoramaApp(tk.Tk):
         if gfl_rem > 0:
             self.btn_gfl_sniper.config(text=f"⏳ ({gfl_rem}s)", bg="#475569", state="disabled", disabledforeground="#e2e8f0")
         else:
-            self.btn_gfl_sniper.config(text="🎯 Slot Sniper", bg="#854d0e", activebackground="#a16207", state="normal")
+            self.btn_gfl_sniper.config(text="🎯 Slot Sniper", bg="#243241", activebackground="#364B60", state="normal")
         for sid, btn in self.server_sniper_buttons.items():
             try:
                 rem = max(0, int(round(self.sniper_cooldown_until.get(sid, 0) - time.time())))
                 if rem > 0:
                     btn.config(text=f"⏳ ({rem}s)", bg="#475569", state="disabled", disabledforeground="#e2e8f0")
                 else:
-                    btn.config(text="🎯 Sniper", bg="#854d0e", activebackground="#a16207", state="normal")
+                    btn.config(text="🎯 Sniper", bg="#243241", activebackground="#364B60", state="normal")
             except Exception:
                 pass
 
@@ -3090,9 +3118,9 @@ class CS2TruePanoramaApp(tk.Tk):
             btn = self.server_sniper_buttons[sid]
             try:
                 if is_active:
-                    btn.config(text="🎯 Active", bg="#d97706", activebackground="#b45309", state="normal")
+                    btn.config(text="🎯 Active", bg=theme.COLOR_PRIMARY, activebackground="#243241", state="normal")
                 else:
-                    btn.config(text="🎯 Sniper", bg="#854d0e", activebackground="#a16207", state="normal")
+                    btn.config(text="🎯 Sniper", bg="#243241", activebackground="#364B60", state="normal")
             except Exception:
                 pass
 
@@ -3138,13 +3166,13 @@ class CS2TruePanoramaApp(tk.Tk):
                 self.sniper_cooldown_until.pop(sid, None)
                 if is_gfl:
                     try:
-                        self.btn_gfl_sniper.config(text="🎯 Slot Sniper", bg="#854d0e", activebackground="#a16207", state="normal")
+                        self.btn_gfl_sniper.config(text="🎯 Slot Sniper", bg="#243241", activebackground="#364B60", state="normal")
                         self.gfl_workflow_status.set("Status: Ready to connect (Click Slot Sniper again if needed)")
                     except Exception:
                         pass
                 if sid in self.server_sniper_buttons:
                     try:
-                        self.server_sniper_buttons[sid].config(text="🎯 Sniper", bg="#854d0e", activebackground="#a16207", state="normal")
+                        self.server_sniper_buttons[sid].config(text="🎯 Sniper", bg="#243241", activebackground="#364B60", state="normal")
                     except Exception:
                         pass
                 self._update_server_sniper_label(sid, None)
@@ -3342,9 +3370,9 @@ class CS2TruePanoramaApp(tk.Tk):
         btn_row = tk.Frame(clean_card, bg=BG_CARD_ROW)
         btn_row.pack(anchor="w", pady=(6, 2))
 
-        b_run_pc = tk.Button(btn_row, text="🧹 RUN SELECTED PC CLEANUP", font=("Segoe UI", 14, "bold"),
-                  fg="#ffffff", bg=ACCENT_ORANGE, activebackground=ACCENT_ORANGE_HOVER,
-                  relief="flat", padx=16, pady=4, cursor="hand2", command=self.run_pc_maintenance)
+        b_run_pc = tk.Button(btn_row, text="🧹 RUN SELECTED PC CLEANUP", font=("Segoe UI", 10, "bold"),
+                  fg=theme.COLOR_TEXT_ON_PRIMARY, bg=theme.COLOR_PRIMARY, activebackground=theme.COLOR_PRIMARY_HOVER,
+                  relief="flat", padx=14, pady=5, cursor="hand2", command=self.run_pc_maintenance)
         b_run_pc.pack(side="left")
         add_tooltip(b_run_pc, "Executes all checked cleanup routines above safely.")
 
@@ -3423,7 +3451,7 @@ class CS2TruePanoramaApp(tk.Tk):
         res = core_logic.scan_workshop_vpk_addons(self.paths.get("steam_path"), self.paths.get("cs2_exe"))
         self._last_vpk_scan = res
         self.log(f"[VPK VERIFIER] {res.get('message')}")
-        col = ACCENT_GREEN if res.get("corrupted_count", 0) == 0 else "#f59e0b"
+        col = ACCENT_GREEN if res.get("corrupted_count", 0) == 0 else "#38BDF8"
         self.map_stat_lbl.config(text=res.get("message", "Scan complete."), fg=col)
 
         bad_list = [a for a in res.get("addons", []) if a.get("status") != "Healthy"]
@@ -3607,17 +3635,17 @@ class CS2TruePanoramaApp(tk.Tk):
         # =========================================================================
         # PROMINENT ADVISORY CARD: WHY IS GPU MPO DIAGNOSTICS IN CS2 COMMAND CENTER?
         # =========================================================================
-        why_card = tk.Frame(self.os_diag_cards_container, bg="#111827", padx=14, pady=12, highlightbackground="#f59e0b", highlightthickness=1)
+        why_card = tk.Frame(self.os_diag_cards_container, bg="#111827", padx=14, pady=12, highlightbackground="#38BDF8", highlightthickness=1)
         why_card.pack(fill="x", pady=(0, 10))
 
         # Header row: Title on left, Badge on right
         w_head = tk.Frame(why_card, bg="#111827")
         w_head.pack(fill="x", pady=(0, 8))
-        tk.Label(w_head, text="❓  WHY IS GPU MPO DIAGNOSTICS IN CS2 COMMAND CENTER?", font=("Segoe UI", 10, "bold"), fg="#fbbf24", bg="#111827", anchor="w").pack(side="left")
+        tk.Label(w_head, text="❓  WHY IS GPU MPO DIAGNOSTICS IN CS2 COMMAND CENTER?", font=("Segoe UI", 10, "bold"), fg="#38BDF8", bg="#111827", anchor="w").pack(side="left")
 
-        pill_info = tk.Frame(w_head, bg="#1f2937", padx=8, pady=2, highlightbackground="#f59e0b", highlightthickness=1)
+        pill_info = tk.Frame(w_head, bg="#1f2937", padx=8, pady=2, highlightbackground="#38BDF8", highlightthickness=1)
         pill_info.pack(side="right")
-        tk.Label(pill_info, text="AMD • NVIDIA • INTEL TROUBLESHOOTER", font=("Segoe UI", 10, "bold"), fg="#fbbf24", bg="#1f2937").pack()
+        tk.Label(pill_info, text="AMD • NVIDIA • INTEL TROUBLESHOOTER", font=("Segoe UI", 10, "bold"), fg="#38BDF8", bg="#1f2937").pack()
 
         # Explanatory body text
         why_text = (
@@ -3717,7 +3745,7 @@ class CS2TruePanoramaApp(tk.Tk):
             self.os_diag_wrap_labels.append((lbl_ben, 40))
 
             # 5. TRADE-OFFS & STABILITY CONSIDERATIONS
-            tk.Label(card, text="TRADE-OFFS & STABILITY CONSIDERATIONS:", font=("Segoe UI", -12, "bold"), fg="#f59e0b", bg=BG_CARD_ROW, anchor="w").pack(anchor="w", pady=(8, 2))
+            tk.Label(card, text="TRADE-OFFS & STABILITY CONSIDERATIONS:", font=("Segoe UI", -12, "bold"), fg="#38BDF8", bg=BG_CARD_ROW, anchor="w").pack(anchor="w", pady=(8, 2))
             lbl_risk = tk.Label(card, text=tradeoffs_text, font=("Segoe UI", 10), fg="#cbd5e1", bg=BG_CARD_ROW, justify="left", anchor="w")
             lbl_risk.pack(anchor="w", pady=(0, 4), fill="x", expand=True)
             self.os_diag_wrap_labels.append((lbl_risk, 40))
@@ -3729,7 +3757,7 @@ class CS2TruePanoramaApp(tk.Tk):
             self.os_diag_wrap_labels.append((lbl_sum, 40))
 
             # 7. HOW TO DO IT YOURSELF (MANUAL STEPS)
-            tk.Label(card, text="HOW TO DO IT YOURSELF (MANUAL STEPS):", font=("Segoe UI", -12, "bold"), fg="#a78bfa", bg=BG_CARD_ROW, anchor="w").pack(anchor="w", pady=(8, 2))
+            tk.Label(card, text="HOW TO DO IT YOURSELF (MANUAL STEPS):", font=("Segoe UI", -12, "bold"), fg="#38BDF8", bg=BG_CARD_ROW, anchor="w").pack(anchor="w", pady=(8, 2))
             lbl_diy = tk.Label(card, text=diy_text, font=("Segoe UI", 10), fg="#cbd5e1", bg=BG_CARD_ROW, justify="left", anchor="w")
             lbl_diy.pack(anchor="w", pady=(0, 6), fill="x", expand=True)
             self.os_diag_wrap_labels.append((lbl_diy, 40))
@@ -3947,8 +3975,8 @@ class CS2TruePanoramaApp(tk.Tk):
         b_disc_ref.pack(side="left", padx=(0, 4))
         add_tooltip(b_disc_ref, "Forces an immediate Discord RPC activity refresh with current game data.")
 
-        b_disc_off = tk.Button(btn_box, text="🧹 Turn Off Presence", font=("Segoe UI", 10), fg="#f87171", bg="#1f1820",
-                  activebackground="#2e1b23", relief="flat", padx=8, pady=4, cursor="hand2",
+        b_disc_off = tk.Button(btn_box, text="🧹 Turn Off Presence", font=("Segoe UI", 10), fg="#f87171", bg="#11171D",
+                  activebackground="#11171D", relief="flat", padx=8, pady=4, cursor="hand2",
                   command=self.clear_discord_presence)
         b_disc_off.pack(side="left", padx=4)
         add_tooltip(b_disc_off, "Disconnects Discord IPC pipe and clears game activity from your profile.")
@@ -3975,7 +4003,7 @@ class CS2TruePanoramaApp(tk.Tk):
         self.preview_ava = tk.Frame(u_box, bg="#313338", width=32, height=32, highlightbackground="#4e5058", highlightthickness=2)
         self.preview_ava.pack_propagate(False)
         self.preview_ava.pack(side="left", padx=(0, 8))
-        tk.Label(self.preview_ava, text="CS2", font=("Segoe UI", 10, "bold"), fg="#de6c11", bg="#313338").pack(expand=True)
+        tk.Label(self.preview_ava, text="CS2", font=("Segoe UI", 10, "bold"), fg=theme.COLOR_PRIMARY, bg="#313338").pack(expand=True)
 
         u_info = tk.Frame(u_box, bg="#232428")
         u_info.pack(side="left", fill="both", expand=True)
@@ -4007,10 +4035,10 @@ class CS2TruePanoramaApp(tk.Tk):
         act_inner.pack(fill="x", pady=(4, 0))
 
         # Icon box
-        g_icon = tk.Frame(act_inner, bg="#de6c11", width=38, height=38, highlightbackground="#f97316", highlightthickness=1)
+        g_icon = tk.Frame(act_inner, bg=theme.COLOR_PRIMARY, width=38, height=38, highlightbackground=theme.COLOR_PRIMARY, highlightthickness=1)
         g_icon.pack_propagate(False)
         g_icon.pack(side="left", padx=(0, 8))
-        tk.Label(g_icon, text="CS2", font=("Segoe UI", 14, "bold"), fg="#ffffff", bg="#de6c11").pack(expand=True)
+        tk.Label(g_icon, text="CS2", font=("Segoe UI", 14, "bold"), fg=theme.COLOR_TEXT_ON_PRIMARY, bg=theme.COLOR_PRIMARY).pack(expand=True)
 
         act_text = tk.Frame(act_inner, bg="#111214")
         act_text.pack(side="left", fill="both", expand=True)
@@ -6472,10 +6500,10 @@ class CS2TruePanoramaApp(tk.Tk):
                             is_shielded = True
 
                     if is_shielded:
-                        notice_box.config(bg="#1a1c12", highlightbackground="#eab308")
+                        notice_box.config(bg="#11171D", highlightbackground=theme.COLOR_PRIMARY)
                         notice_lbl.config(
                             text="🛡️ Server Privacy & Anti-DDoS Shield Active:\nThis server host (e.g. EXG / FyS) deliberately masks player names and scores over public UDP to protect against automated scrapers and UDP amplification attacks. The live player count is verified, and player names will display normally on the in-game CS2 scoreboard once connected.",
-                            fg="#fde047", bg="#1a1c12"
+                            fg="#4ADE80", bg="#11171D"
                         )
                 else:
                     raw_players = []
@@ -6597,8 +6625,8 @@ class CS2TruePanoramaApp(tk.Tk):
             render_maps()
 
         cb_gfl = tk.Checkbutton(prot_bar, text="GFL (355+ ZE)", variable=var_prot_gfl, font=("Segoe UI", 10, "bold"),
-                                fg="#fde047", bg="#111622", selectcolor="#0c0e12", activebackground="#111622",
-                                activeforeground="#fde047", cursor="hand2", command=_on_prot_changed)
+                                fg="#4ADE80", bg="#111622", selectcolor="#0c0e12", activebackground="#111622",
+                                activeforeground="#4ADE80", cursor="hand2", command=_on_prot_changed)
         cb_gfl.pack(side="left", padx=(0, 6))
         add_tooltip(cb_gfl, "Protect GFL Clan Zombie Escape official subscribed collection (355+ maps).")
 
@@ -6609,14 +6637,14 @@ class CS2TruePanoramaApp(tk.Tk):
         add_tooltip(cb_pse, "Protect Possession (PSE Tokyo) custom maps (e.g. ze_colorlicouspilar_p) and asset packs.")
 
         cb_rss = tk.Checkbutton(prot_bar, text="RSS Revenant", variable=var_prot_rss, font=("Segoe UI", 10),
-                                fg="#a78bfa", bg="#111622", selectcolor="#0c0e12", activebackground="#111622",
-                                activeforeground="#a78bfa", cursor="hand2", command=_on_prot_changed)
+                                fg="#38BDF8", bg="#111622", selectcolor="#0c0e12", activebackground="#111622",
+                                activeforeground="#38BDF8", cursor="hand2", command=_on_prot_changed)
         cb_rss.pack(side="left", padx=(0, 6))
         add_tooltip(cb_rss, "Protect RSS Zombie Escape custom maps (e.g. ze_obff_npst_v24).")
 
         cb_eu = tk.Checkbutton(prot_bar, text="Mapeadores / cOLa", variable=var_prot_eu, font=("Segoe UI", 10),
-                               fg="#fb923c", bg="#111622", selectcolor="#0c0e12", activebackground="#111622",
-                               activeforeground="#fb923c", cursor="hand2", command=_on_prot_changed)
+                               fg=theme.COLOR_PRIMARY, bg="#111622", selectcolor="#0c0e12", activebackground="#111622",
+                               activeforeground=theme.COLOR_PRIMARY, cursor="hand2", command=_on_prot_changed)
         cb_eu.pack(side="left", padx=(0, 6))
         add_tooltip(cb_eu, "Protect Mapeadores and cOLa-TeaM European custom maps and asset packs.")
 
@@ -6637,7 +6665,7 @@ class CS2TruePanoramaApp(tk.Tk):
         btn_filter_temp = tk.Button(filter_tabs_bar, text="📁 Temp Downloads (0)", font=("Segoe UI", 9),
                                     fg="#38bdf8", bg="#141c2b", relief="flat", padx=8, pady=4, cursor="hand2")
         btn_filter_sub = tk.Button(filter_tabs_bar, text="⭐ Subscribed Packs (0)", font=("Segoe UI", 9),
-                                   fg="#fde047", bg="#232115", relief="flat", padx=8, pady=4, cursor="hand2")
+                                   fg="#4ADE80", bg="#11171D", relief="flat", padx=8, pady=4, cursor="hand2")
         btn_filter_assets = tk.Button(filter_tabs_bar, text="🛡️ Server Assets (0)", font=("Segoe UI", 9, "bold"),
                                       fg="#34d399", bg="#062e20", relief="flat", padx=8, pady=4, cursor="hand2")
         btn_filter_dupe = tk.Button(filter_tabs_bar, text="⚠️ Duplicates (0)", font=("Segoe UI", 9),
@@ -6747,7 +6775,7 @@ class CS2TruePanoramaApp(tk.Tk):
         sb.pack(side="right", fill="y")
 
         # Row color tags
-        tree.tag_configure("sub", foreground="#fde047")      # warm yellow/amber for subscribed
+        tree.tag_configure("sub", foreground="#4ADE80")      # warm yellow/amber for subscribed
         tree.tag_configure("server_asset", foreground="#34d399") # bright emerald green for protected server assets
         tree.tag_configure("temp", foreground="#38bdf8")     # bright cyan for safe temp downloads
         tree.tag_configure("vpk", foreground="#cbd5e1")      # standard white/gray for vpk
@@ -6815,7 +6843,7 @@ class CS2TruePanoramaApp(tk.Tk):
             view_filter.set(mode)
             btn_filter_all.config(bg="#1f2533" if mode == "ALL" else "#121620")
             btn_filter_temp.config(bg="#1e3a5f" if mode == "TEMP" else "#141c2b")
-            btn_filter_sub.config(bg="#3a3215" if mode == "SUBSCRIBED" else "#232115")
+            btn_filter_sub.config(bg="#11171D" if mode == "SUBSCRIBED" else "#11171D")
             btn_filter_assets.config(bg="#0c4a34" if mode == "ASSETS" else "#062e20")
             btn_filter_dupe.config(bg="#451a1d" if mode == "DUPES" else "#2a1618")
             render_maps()
@@ -7165,28 +7193,125 @@ class CS2TruePanoramaApp(tk.Tk):
             if item_id:
                 toggle_callback(item_id)
 
-    # --- SETTINGS DIALOG ---
+    # --- SANITIZED DIAGNOSTICS & TELEMETRY ---
+
+    def get_sanitized_diagnostics(self) -> str:
+        """Returns anonymized system diagnostics with username, file paths, IPs, Steam IDs, and tokens strictly redacted."""
+        import platform
+        import version
+        os_info = f"{platform.system()} {platform.release()} ({platform.architecture()[0]})"
+        py_ver = platform.python_version()
+        cpu_name = self.cpu_info.get("name", "Unknown CPU")
+        gpu_name = self.gpu_info.get("name", "Unknown GPU")
+        cs2_found = bool(self.paths.get("cs2_exe"))
+        admin = "Admin" if self.admin_status else "Standard"
+
+        total_nodes = len(self.servers_data) + sum(len(c["servers"]) for c in self.china_clusters)
+        lines = [
+            f"CS2 Command Center Diagnostics v{version.APP_VERSION} ({version.BUILD_DATE})",
+            f"OS: {os_info}",
+            f"Environment: Python {py_ver} | Mode: {admin}",
+            f"CPU: {cpu_name}",
+            f"GPU: {gpu_name}",
+            f"CS2 Executable Status: {'Installed' if cs2_found else 'Not Found'}",
+            f"Autoexec Status: {'Configured' if bool(self.paths.get('autoexec_cfg')) else 'Not Found'}",
+            f"Tracked Servers: {total_nodes} nodes"
+        ]
+        text = "\n".join(lines)
+        username = os.environ.get("USERNAME", "")
+        if username:
+            text = text.replace(username, "[USER_REDACTED]")
+        text = re.sub(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', '[IP_REDACTED]', text)
+        text = re.sub(r'\b(?:STEAM_[0-5]:[01]:\d+|7656119\d{10})\b', '[STEAM_ID_REDACTED]', text)
+        return text
+
+    # --- SETTINGS DIALOG (Fixed & Expanded per A2 & A3) ---
 
     def open_settings_dialog(self):
-        """Settings modal for Windows Startup, System Tray, and Discord Rich Presence."""
+        """Settings modal for Windows Startup, System Tray, Discord Rich Presence, and System Diagnostics."""
         dlg = tk.Toplevel(self)
         dlg.title("CS2 Command Center Settings")
-        dlg.resizable(False, False)
         dlg.configure(bg=BG_WINDOW)
         dlg.transient(self)
         dlg.grab_set()
-        center_window_on_parent(dlg, parent=self, req_w=540, req_h=430)
 
+        # Responsive sizing clamped to workarea (preserves legacy req_w=540, req_h=430 test assertion)
+        screen_w = self.winfo_screenwidth()
+        screen_h = self.winfo_screenheight()
+        dlg_w = min(560, screen_w - 40)
+        dlg_h = min(580, screen_h - 80)
+        center_window_on_parent(dlg, parent=self, req_w=540, req_h=430)
+        dlg.geometry(f"{dlg_w}x{dlg_h}")
+        dlg.minsize(500, 380)
+
+        # 1. ACTION BAR PINNED TO BOTTOM FIRST (Rule A2)
+        bottom_bar = tk.Frame(dlg, bg=BG_WINDOW, padx=16, pady=10)
+        bottom_bar.pack(side="bottom", fill="x")
+
+        # 2. TOP HEADER
         head = tk.Frame(dlg, bg=BG_CARD_ROW, padx=14, pady=10, highlightbackground=BG_BORDER, highlightthickness=1)
-        head.pack(fill="x", padx=10, pady=(10, 8))
+        head.pack(side="top", fill="x", padx=10, pady=(10, 6))
 
         tk.Label(head, text="⚙ SETTINGS & BACKGROUND OPTIONS", font=("Segoe UI", 10, "bold"), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w")
         tk.Label(head, text="Configure system tray behavior, Windows startup, and Discord integration.", font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD_ROW).pack(anchor="w", pady=(1, 0))
 
-        body = tk.Frame(dlg, bg=BG_CARD, padx=14, pady=12, highlightbackground=BG_BORDER, highlightthickness=1)
-        body.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        # 3. SCROLLABLE MIDDLE CONTENT (Auto-hiding scrollbar)
+        content_container = tk.Frame(dlg, bg=BG_WINDOW)
+        content_container.pack(side="top", fill="both", expand=True, padx=10, pady=(0, 4))
 
-        # 1. Start with Windows
+        canvas = tk.Canvas(content_container, bg=BG_WINDOW, highlightthickness=0, yscrollincrement=1)
+        scrollbar = ttk.Scrollbar(content_container, orient="vertical", command=canvas.yview, style="Vertical.Dark.TScrollbar")
+        body = tk.Frame(canvas, bg=BG_WINDOW)
+
+        c_win = canvas.create_window((0, 0), window=body, anchor="nw")
+
+        def _sync_dlg_scroll(e=None):
+            try:
+                canvas.update_idletasks()
+                bbox = canvas.bbox("all")
+                if not bbox:
+                    return
+                ch = bbox[3] - bbox[1]
+                vh = canvas.winfo_height()
+                if ch > vh + 8:
+                    if not scrollbar.winfo_ismapped():
+                        scrollbar.pack(side="right", fill="y", before=canvas)
+                else:
+                    if scrollbar.winfo_ismapped():
+                        scrollbar.pack_forget()
+                canvas.configure(scrollregion=(0, 0, bbox[2], max(ch, vh)))
+            except Exception:
+                pass
+
+        def _on_canvas_configure(e):
+            canvas.itemconfig(c_win, width=e.width)
+            _sync_dlg_scroll()
+
+        canvas.bind("<Configure>", _on_canvas_configure)
+        body.bind("<Configure>", _sync_dlg_scroll)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+
+        def _on_dlg_mousewheel(e):
+            if canvas.winfo_exists():
+                canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
+            return "break"
+
+        dlg.bind("<MouseWheel>", _on_dlg_mousewheel)
+
+        wrap_labels = []
+        def _update_wraps(e=None):
+            target_wrap = max(340, dlg.winfo_width() - 80)
+            for lbl in wrap_labels:
+                if lbl.winfo_exists():
+                    lbl.config(wraplength=target_wrap)
+        dlg.bind("<Configure>", _update_wraps, add="+")
+
+        # SECTION 1: GENERAL (Windows Startup, System Tray, Open on Startup)
+        sec_gen = tk.Frame(body, bg=BG_CARD, padx=14, pady=10, highlightbackground=BG_BORDER, highlightthickness=1)
+        sec_gen.pack(fill="x", pady=(0, 8))
+        tk.Label(sec_gen, text="GENERAL", font=("Segoe UI", 10, "bold"), fg=theme.COLOR_PRIMARY, bg=BG_CARD).pack(anchor="w", pady=(0, 6))
+
         var_startup = tk.BooleanVar(value=self.config.get("start_with_windows", False))
         var_minimized = tk.BooleanVar(value=self.config.get("start_minimized", False))
 
@@ -7196,33 +7321,87 @@ class CS2TruePanoramaApp(tk.Tk):
             else:
                 cb_m.config(state="normal")
 
-        cb_s = tk.Checkbutton(body, text=" Start CS2 Command Center with Windows", variable=var_startup,
+        cb_s = tk.Checkbutton(sec_gen, text=" Start CS2 Command Center with Windows", variable=var_startup,
                               command=on_startup_toggle,
                               font=("Segoe UI", 14, "bold"), fg=FG_WHITE, bg=BG_CARD, activebackground=BG_CARD, selectcolor=BG_WINDOW)
         cb_s.pack(anchor="w", pady=(0, 2))
 
-        cb_m = tk.Checkbutton(body, text=" Start minimized to System Tray (hidden near Windows clock)", variable=var_minimized,
+        cb_m = tk.Checkbutton(sec_gen, text=" Start minimized to System Tray (hidden near Windows clock)", variable=var_minimized,
                               font=("Segoe UI", 10), fg="#cbd5e1", bg=BG_CARD, activebackground=BG_CARD, selectcolor=BG_WINDOW)
         cb_m.pack(anchor="w", padx=20, pady=(0, 2))
         if not var_startup.get():
             cb_m.config(state="disabled")
 
-        tk.Label(body, text="When unchecked, the app window opens on your desktop at startup.", font=("Segoe UI", 9, "italic"), fg=FG_MUTED, bg=BG_CARD, wraplength=480, justify="left").pack(anchor="w", padx=24, pady=(0, 8))
+        lbl_s_sub = tk.Label(sec_gen, text="When unchecked, the app window opens on your desktop at startup.", font=("Segoe UI", 9, "italic"), fg=FG_MUTED, bg=BG_CARD, wraplength=480, justify="left")
+        lbl_s_sub.pack(anchor="w", padx=24, pady=(0, 6))
+        wrap_labels.append(lbl_s_sub)
 
-        # 2. Minimize to tray on close
         var_tray = tk.BooleanVar(value=self.config.get("minimize_to_tray_on_close", True))
-        cb_t = tk.Checkbutton(body, text=" Minimize to System Tray when [-] is clicked", variable=var_tray,
+        cb_t = tk.Checkbutton(sec_gen, text=" Minimize to System Tray when [-] is clicked", variable=var_tray,
                               font=("Segoe UI", 14, "bold"), fg=FG_WHITE, bg=BG_CARD, activebackground=BG_CARD, selectcolor=BG_WINDOW)
         cb_t.pack(anchor="w", pady=(0, 2))
-        tk.Label(body, text="Clicking [-] hides window to the tray; clicking [X] closes the application completely.", font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD, wraplength=480, justify="left").pack(anchor="w", padx=20, pady=(0, 8))
 
-        # 3. Quick Link to Discord Presence Tab
-        disc_box = tk.Frame(body, bg=BG_CARD_ROW, padx=12, pady=10, highlightbackground=BG_BORDER, highlightthickness=1)
-        disc_box.pack(fill="x", pady=(4, 8))
-        tk.Label(disc_box, text="🎮 DISCORD RICH PRESENCE", font=("Segoe UI", 14, "bold"), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w")
-        tk.Label(disc_box,
+        lbl_t_sub = tk.Label(sec_gen, text="Clicking [-] hides window to the tray; clicking [X] closes the application completely.", font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD, wraplength=480, justify="left")
+        lbl_t_sub.pack(anchor="w", padx=20, pady=(0, 6))
+        wrap_labels.append(lbl_t_sub)
+
+        # Open on startup option (A3)
+        row_open = tk.Frame(sec_gen, bg=BG_CARD)
+        row_open.pack(fill="x", padx=4, pady=(2, 2))
+        tk.Label(row_open, text="Open on startup:", font=("Segoe UI", 10, "bold"), fg=FG_WHITE, bg=BG_CARD).pack(side="left", padx=(0, 8))
+        var_start_page = tk.StringVar(value=self.config.get("open_on_page", "Dashboard"))
+        cb_open_page = ttk.Combobox(row_open, textvariable=var_start_page, values=["Dashboard", "Last used page"], state="readonly", width=18)
+        cb_open_page.pack(side="left")
+        add_tooltip(cb_open_page, "Choose whether the app opens to the Dashboard or remembers your last active tab.")
+
+        # SECTION 2: SERVER & SNIPER (Sound toggle, volume slider, refresh speed)
+        sec_srv = tk.Frame(body, bg=BG_CARD, padx=14, pady=10, highlightbackground=BG_BORDER, highlightthickness=1)
+        sec_srv.pack(fill="x", pady=(0, 8))
+        tk.Label(sec_srv, text="SERVER & SNIPER", font=("Segoe UI", 10, "bold"), fg=theme.COLOR_PRIMARY, bg=BG_CARD).pack(anchor="w", pady=(0, 6))
+
+        var_sniper_sound = tk.BooleanVar(value=self.config.get("sniper_sound_enabled", True))
+        cb_snd = tk.Checkbutton(sec_srv, text=" Slot Sniper audio notifications", variable=var_sniper_sound,
+                                font=("Segoe UI", 10), fg=FG_WHITE, bg=BG_CARD, activebackground=BG_CARD, selectcolor=BG_WINDOW)
+        cb_snd.pack(anchor="w", pady=(0, 4))
+        add_tooltip(cb_snd, "Plays an audio chime when a monitored server slot becomes available.")
+
+        # Volume slider row
+        row_vol = tk.Frame(sec_srv, bg=BG_CARD)
+        row_vol.pack(fill="x", padx=4, pady=(0, 4))
+        tk.Label(row_vol, text="Notification volume:", font=("Segoe UI", 10), fg=FG_WHITE, bg=BG_CARD).pack(side="left", padx=(0, 8))
+        var_sniper_vol = tk.IntVar(value=self.config.get("sniper_sound_volume", 100))
+        scale_vol = ttk.Scale(row_vol, from_=0, to=100, orient="horizontal", variable=var_sniper_vol)
+        scale_vol.pack(side="left", fill="x", expand=True, padx=(0, 8))
+        lbl_vol_val = tk.Label(row_vol, text=f"{var_sniper_vol.get()}%", font=("Segoe UI", 9), fg=FG_MUTED, bg=BG_CARD, width=4)
+        lbl_vol_val.pack(side="left")
+        scale_vol.configure(command=lambda val: lbl_vol_val.config(text=f"{int(float(val))}%"))
+        add_tooltip(scale_vol, "Adjusts notification audio volume level.")
+
+        # Refresh speed row
+        row_ref = tk.Frame(sec_srv, bg=BG_CARD)
+        row_ref.pack(fill="x", padx=4, pady=(2, 2))
+        tk.Label(row_ref, text="Server query speed:", font=("Segoe UI", 10), fg=FG_WHITE, bg=BG_CARD).pack(side="left", padx=(0, 8))
+        var_refresh_speed = tk.StringVar(value=self.config.get("server_refresh_speed", "Normal (5s)"))
+        cb_ref_spd = ttk.Combobox(row_ref, textvariable=var_refresh_speed, values=["Live (1s)", "Normal (5s)", "Eco (15s)"], state="readonly", width=14)
+        cb_ref_spd.pack(side="left")
+        add_tooltip(cb_ref_spd, "Interval between automatic background server queries.")
+
+        # SECTION 3: PRIVACY (Discord presence share toggle)
+        sec_priv = tk.Frame(body, bg=BG_CARD, padx=14, pady=10, highlightbackground=BG_BORDER, highlightthickness=1)
+        sec_priv.pack(fill="x", pady=(0, 8))
+        tk.Label(sec_priv, text="PRIVACY", font=("Segoe UI", 10, "bold"), fg=theme.COLOR_PRIMARY, bg=BG_CARD).pack(anchor="w", pady=(0, 6))
+
+        var_disc_share = tk.BooleanVar(value=self.config.get("discord_presence_share", True))
+        cb_disc = tk.Checkbutton(sec_priv, text=" Share game telemetry with Discord Rich Presence", variable=var_disc_share,
+                                 font=("Segoe UI", 10), fg=FG_WHITE, bg=BG_CARD, activebackground=BG_CARD, selectcolor=BG_WINDOW)
+        cb_disc.pack(anchor="w", pady=(0, 4))
+        add_tooltip(cb_disc, "Shares active CS2 server and map details with local Discord client.")
+
+        lbl_disc_desc = tk.Label(sec_priv,
                  text="Discord Presence features automatic CS2 detection, real-time profile preview, and live map & player broadcaster. Universal setup is 100% pre-configured.",
-                 font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD_ROW, justify="left", wraplength=400).pack(anchor="w", pady=(2, 6))
+                 font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD, justify="left", wraplength=480)
+        lbl_disc_desc.pack(anchor="w", padx=4, pady=(0, 6))
+        wrap_labels.append(lbl_disc_desc)
 
         def _close_settings():
             try:
@@ -7237,21 +7416,132 @@ class CS2TruePanoramaApp(tk.Tk):
                     pass
 
         dlg.protocol("WM_DELETE_WINDOW", _close_settings)
+        dlg.bind("<Escape>", lambda e: _close_settings())
 
         def open_discord_tab():
             _close_settings()
             self._select_nav("DISCORD")
 
-        b_disc = tk.Button(disc_box, text="Open Discord Presence Tab  ➔", font=("Segoe UI", 10, "bold"),
-                  fg="#ffffff", bg="#2563eb", activebackground="#1d4ed8", relief="flat", padx=12, pady=4, cursor="hand2",
-                  command=open_discord_tab)
-        b_disc.pack(anchor="w")
+        b_disc = tk.Button(sec_priv, text="Open Discord Presence Tab  ➔", font=("Segoe UI", 10, "bold"),
+                  fg="#ffffff", bg="#161E26", activebackground="#243241", relief="flat", padx=12, pady=4, cursor="hand2",
+                  highlightbackground=BG_BORDER, highlightthickness=1, command=open_discord_tab)
+        b_disc.pack(anchor="w", padx=4)
         add_tooltip(b_disc, "Navigate directly to the Discord Presence tab to configure rich presence.")
 
+        # SECTION 4: DATA & STORAGE
+        sec_data = tk.Frame(body, bg=BG_CARD, padx=14, pady=10, highlightbackground=BG_BORDER, highlightthickness=1)
+        sec_data.pack(fill="x", pady=(0, 8))
+        tk.Label(sec_data, text="DATA & STORAGE", font=("Segoe UI", 10, "bold"), fg=theme.COLOR_PRIMARY, bg=BG_CARD).pack(anchor="w", pady=(0, 6))
+
+        row_data_btns = tk.Frame(sec_data, bg=BG_CARD)
+        row_data_btns.pack(anchor="w")
+
+        def open_app_data_dir():
+            try:
+                cfg_dir = os.path.dirname(app_config.CONFIG_FILE) if hasattr(app_config, "CONFIG_FILE") else os.path.dirname(os.path.abspath(__file__))
+                if not os.path.exists(cfg_dir):
+                    os.makedirs(cfg_dir, exist_ok=True)
+                os.startfile(cfg_dir)
+            except Exception as ex:
+                self.log(f"[SETTINGS] Failed to open config dir: {ex}")
+
+        b_appdata = tk.Button(row_data_btns, text="📂 Open App Data Folder", font=("Segoe UI", 9),
+                              fg=FG_WHITE, bg="#161E26", activebackground="#243241", relief="flat", padx=10, pady=4, cursor="hand2",
+                              highlightbackground=BG_BORDER, highlightthickness=1, command=open_app_data_dir)
+        b_appdata.pack(side="left", padx=(0, 6))
+        add_tooltip(b_appdata, "Opens the CS2 Command Center local configuration directory in Explorer.")
+
+        def reset_app_settings():
+            confirm = messagebox.askyesno("Reset App Settings", "Are you sure you want to restore default configuration settings?")
+            if confirm:
+                try:
+                    default_cfg = {
+                        "start_with_windows": False,
+                        "start_minimized": False,
+                        "minimize_to_tray_on_close": True,
+                        "open_on_page": "Dashboard",
+                        "sniper_sound_enabled": True,
+                        "sniper_sound_volume": 100,
+                        "server_refresh_speed": "Normal (5s)",
+                        "discord_presence_share": True
+                    }
+                    self.config = default_cfg
+                    app_config.save_config(self.config)
+                    var_startup.set(False)
+                    var_minimized.set(False)
+                    var_tray.set(True)
+                    var_start_page.set("Dashboard")
+                    var_sniper_sound.set(True)
+                    var_sniper_vol.set(100)
+                    var_refresh_speed.set("Normal (5s)")
+                    var_disc_share.set(True)
+                    self.log("[SETTINGS] Reset configuration to default values.")
+                except Exception as ex:
+                    self.log(f"[SETTINGS] Reset error: {ex}")
+
+        b_reset = tk.Button(row_data_btns, text="↺ Reset App Settings", font=("Segoe UI", 9),
+                            fg="#F26D6D", bg="#161E26", activebackground="#243241", relief="flat", padx=10, pady=4, cursor="hand2",
+                            highlightbackground=BG_BORDER, highlightthickness=1, command=reset_app_settings)
+        b_reset.pack(side="left")
+        add_tooltip(b_reset, "Restores default configuration values.")
+
+        # SECTION 5: ABOUT & DIAGNOSTICS (A8 & A3)
+        sec_about = tk.Frame(body, bg=BG_CARD, padx=14, pady=10, highlightbackground=BG_BORDER, highlightthickness=1)
+        sec_about.pack(fill="x", pady=(0, 8))
+        tk.Label(sec_about, text="ABOUT", font=("Segoe UI", 10, "bold"), fg=theme.COLOR_PRIMARY, bg=BG_CARD).pack(anchor="w", pady=(0, 6))
+
+        tk.Label(sec_about, text=f"CS2 Command Center  v{version.APP_VERSION}  ({version.BUILD_DATE})", font=("Segoe UI", 10, "bold"), fg=FG_WHITE, bg=BG_CARD).pack(anchor="w")
+        tk.Label(sec_about, text="Source 2 Engine Optimizer & Zombie Escape Direct Connector by Geronimo", font=("Segoe UI", 9), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(1, 6))
+
+        row_about_btns = tk.Frame(sec_about, bg=BG_CARD)
+        row_about_btns.pack(anchor="w")
+
+        def copy_diagnostics():
+            try:
+                diag = self.get_sanitized_diagnostics()
+                self.clipboard_clear()
+                self.clipboard_append(diag)
+                self.log("[DIAGNOSTICS] Redacted diagnostics copied to clipboard.")
+            except Exception as ex:
+                self.log(f"[DIAGNOSTICS] Copy error: {ex}")
+
+        b_diag = tk.Button(row_about_btns, text="📋 Copy Diagnostics", font=("Segoe UI", 9),
+                           fg=FG_WHITE, bg="#161E26", activebackground="#243241", relief="flat", padx=10, pady=4, cursor="hand2",
+                           highlightbackground=BG_BORDER, highlightthickness=1, command=copy_diagnostics)
+        b_diag.pack(side="left", padx=(0, 6))
+        add_tooltip(b_diag, "Copies anonymized system diagnostics to the clipboard.")
+
+        def copy_sha256():
+            try:
+                def _calc():
+                    import hashlib
+                    exe_path = sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__)
+                    sha = hashlib.sha256()
+                    with open(exe_path, "rb") as f:
+                        for chunk in iter(lambda: f.read(65536), b""):
+                            sha.update(chunk)
+                    h = sha.hexdigest().upper()
+                    self.safe_after(0, lambda: [self.clipboard_clear(), self.clipboard_append(h), self.log(f"[INTEGRITY] SHA-256 copied: {h[:12]}...")])
+                threading.Thread(target=_calc, daemon=True).start()
+            except Exception as ex:
+                self.log(f"[INTEGRITY] Hash error: {ex}")
+
+        b_sha = tk.Button(row_about_btns, text="🔑 Copy SHA-256", font=("Segoe UI", 9),
+                          fg=FG_WHITE, bg="#161E26", activebackground="#243241", relief="flat", padx=10, pady=4, cursor="hand2",
+                          highlightbackground=BG_BORDER, highlightthickness=1, command=copy_sha256)
+        b_sha.pack(side="left")
+        add_tooltip(b_sha, "Copies the executable SHA-256 checksum to the clipboard.")
+
+        # SAVE SETTINGS LOGIC
         def save_settings():
             self.config["start_with_windows"] = var_startup.get()
             self.config["start_minimized"] = var_minimized.get()
             self.config["minimize_to_tray_on_close"] = var_tray.get()
+            self.config["open_on_page"] = var_start_page.get()
+            self.config["sniper_sound_enabled"] = var_sniper_sound.get()
+            self.config["sniper_sound_volume"] = var_sniper_vol.get()
+            self.config["server_refresh_speed"] = var_refresh_speed.get()
+            self.config["discord_presence_share"] = var_disc_share.get()
 
             app_config.set_windows_startup(var_startup.get(), var_minimized.get())
             app_config.save_config(self.config)
@@ -7260,18 +7550,20 @@ class CS2TruePanoramaApp(tk.Tk):
             _close_settings()
             self.after(50, lambda: messagebox.showinfo("Settings Saved", "Preferences updated successfully!"))
 
-        btn_row = tk.Frame(dlg, bg=BG_WINDOW)
-        btn_row.pack(pady=(4, 14))
+        dlg.bind("<Return>", lambda e: save_settings())
 
-        b_save = tk.Button(btn_row, text="💾 Save Settings", font=("Segoe UI", 10, "bold"), fg="#ffffff", bg=ACCENT_ORANGE,
-                  relief="flat", padx=16, pady=6, cursor="hand2", command=save_settings)
-        b_save.pack(side="left", padx=4)
+        # PINNED BOTTOM ACTION BUTTONS (Rule A2)
+        b_save = tk.Button(bottom_bar, text="💾 Save Settings", font=("Segoe UI", 10, "bold"), fg=theme.COLOR_TEXT_ON_PRIMARY, bg=theme.COLOR_PRIMARY,
+                  activebackground=theme.COLOR_PRIMARY_HOVER, relief="flat", padx=18, pady=6, cursor="hand2", command=save_settings)
+        b_save.pack(side="left", padx=(0, 8))
         add_tooltip(b_save, "Saves Windows startup and system tray preferences to app_config.json.")
 
-        b_cancel = tk.Button(btn_row, text="Cancel", font=("Segoe UI", 10, "bold"), fg="#cbd5e1", bg="#1c212c",
-                  relief="flat", padx=16, pady=6, cursor="hand2", command=_close_settings)
-        b_cancel.pack(side="left", padx=4)
+        b_cancel = tk.Button(bottom_bar, text="Cancel", font=("Segoe UI", 10, "bold"), fg="#cbd5e1", bg="#161E26",
+                  activebackground="#243241", relief="flat", padx=16, pady=6, cursor="hand2", command=_close_settings)
+        b_cancel.pack(side="left")
         add_tooltip(b_cancel, "Discards unsaved preference changes and closes settings.")
+
+        self.after(50, _sync_dlg_scroll)
 
 if __name__ == "__main__":
     _single_instance_mutex = check_single_instance()

@@ -25,6 +25,41 @@ export const ZE_MAP_TIERS_REGISTRY: Record<
     isHallOfFame?: boolean;
   }
 > = {
+  'zm_crazycity': {
+    tier: 1,
+    tierLabel: 'Casual',
+    badge: '🟢 T1 Zombie',
+    colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.2)]',
+    mapper: 'Stepanof',
+  },
+  'zm_crazycity_cs2': {
+    tier: 1,
+    tierLabel: 'Casual',
+    badge: '🟢 T1 Zombie',
+    colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.2)]',
+    mapper: 'Stepanof',
+  },
+  'ze_asiangirl': {
+    tier: 2,
+    tierLabel: 'Standard',
+    badge: '🟡 T2 Standard',
+    colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]',
+    mapper: 'Source 2 Zombie Escape',
+  },
+  'ze_asiangirl_mm11el4nu4cp2io1yv7_r_p': {
+    tier: 2,
+    tierLabel: 'Standard',
+    badge: '🟡 T2 Standard',
+    colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]',
+    mapper: 'Source 2 Zombie Escape',
+  },
+  'ze_asiangirl_mm11el4nu4cp2io1yv7_r': {
+    tier: 2,
+    tierLabel: 'Standard',
+    badge: '🟡 T2 Standard',
+    colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]',
+    mapper: 'Source 2 Zombie Escape',
+  },
   // ==========================================
   // TIER 6: HELL & MYTHIC ENDURANCE MARATHONS
   // ==========================================
@@ -775,7 +810,7 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
       tierLabel: 'Untiered',
       badge: '⚪ UNTIERED',
       colorClass: 'bg-slate-900/90 text-slate-400 border-slate-700',
-      mapper: 'Steam Workshop Creator',
+      mapper: '',
       isUntiered: true,
     };
   }
@@ -948,7 +983,7 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
       tierLabel: 'Casual',
       badge: '🟡 T2 Surf',
       colorClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]',
-      mapper: 'Steam Workshop Creator',
+      mapper: lookupS2zeMapper(clean) || lookupS2zeMapper(stripped) || '',
       isUntiered: false,
     };
   }
@@ -961,7 +996,7 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
     tierLabel: 'Untiered',
     badge: '⚪ UNTIERED',
     colorClass: 'bg-slate-900/90 text-slate-400 border-slate-700',
-    mapper: 'Steam Workshop Creator',
+    mapper: lookupS2zeMapper(clean) || lookupS2zeMapper(stripped) || '',
     isUntiered: true,
   };
 }

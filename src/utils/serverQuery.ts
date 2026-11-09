@@ -284,14 +284,30 @@ export function formatMapElapsed(totalSeconds: number): string {
  * Prioritizes GeronimoHQ's self-hosted online map pack (/images/maps/<clean>.jpg)
  * served directly from GitHub Pages' global CDN with zero latency and 100% uptime.
  */
+// Known Workshop Map UGC Thumbnails
+export const KNOWN_MAP_THUMBNAILS: Record<string, string> = {
+  'zm_crazycity': 'https://images.steamusercontent.com/ugc/1797820635604698/683CA2631D76004D8A8751A5C820597C7C6B8092/?imw=637&imh=358&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false',
+  'zm_crazycity_cs2': 'https://images.steamusercontent.com/ugc/1797820635604698/683CA2631D76004D8A8751A5C820597C7C6B8092/?imw=637&imh=358&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false',
+  'ze_asiangirl': 'https://images.steamusercontent.com/ugc/17546108323537288474/900255F978513F58E27C940411DF5A0127C73830/?imw=637&imh=358&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false',
+  'ze_asiangirl_mm11el4nu4cp2io1yv7_r_p': 'https://images.steamusercontent.com/ugc/17546108323537288474/900255F978513F58E27C940411DF5A0127C73830/?imw=637&imh=358&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false',
+  'ze_asiangirl_mm11el4nu4cp2io1yv7_r': 'https://images.steamusercontent.com/ugc/17546108323537288474/900255F978513F58E27C940411DF5A0127C73830/?imw=637&imh=358&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false',
+};
+
 export function getMapThumbnailUrl(mapName?: string): string {
   if (!mapName || mapName === '-' || mapName === 'Unknown') {
     return '/images/map_placeholder.svg';
   }
   let clean = mapName.trim().toLowerCase();
-  // Strip workshop path prefix if any (e.g. workshop/12345/ze_map -> ze_map)
   if (clean.includes('/')) {
     clean = clean.split('/').pop() || clean;
+  }
+  if (KNOWN_MAP_THUMBNAILS[clean]) {
+    return KNOWN_MAP_THUMBNAILS[clean];
+  }
+  for (const [k, url] of Object.entries(KNOWN_MAP_THUMBNAILS)) {
+    if (clean.includes(k) || k.includes(clean)) {
+      return url;
+    }
   }
   return `/images/maps/${clean}.jpg`;
 }

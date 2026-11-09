@@ -13,8 +13,8 @@
     --border-crisp: #1E2E26;
     --accent-banana: #FFE135;
     --accent-banana-alt: #FACC15;
-    --accent-pepe: #2ECC71;
-    --accent-pepe-alt: #10B981;
+    --accent-pepe: #E48716;
+    --accent-pepe-alt: #C5720E;
     --accent-magenta: #FF2A85;
     --accent-cyan: #00F0FF;
     --text-white: #FFFFFF;
@@ -23,7 +23,7 @@
 
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 8.5rem;
+    scroll-padding-top: calc(var(--nav-height, 104px) + 16px);
     background-color: #070B09;
     color: #FFFFFF;
   }
@@ -67,7 +67,7 @@
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
-  color: #2ECC71 !important;
+  color: #E48716 !important;
   line-height: 1.35;
 }
 
@@ -134,15 +134,15 @@
 }
 
 .btn-pepe-cta {
-  background-color: rgba(46, 204, 113, 0.16);
-  color: #2ECC71 !important;
-  border: 1px solid rgba(46, 204, 113, 0.55);
-  box-shadow: 0 0 14px rgba(46, 204, 113, 0.2);
+  background-color: rgba(228, 135, 22, 0.16);
+  color: #E48716 !important;
+  border: 1px solid rgba(228, 135, 22, 0.55);
+  box-shadow: 0 0 14px rgba(228, 135, 22, 0.2);
 }
 
 .btn-pepe-cta:hover {
-  background-color: rgba(46, 204, 113, 0.28);
-  border-color: #2ECC71;
+  background-color: rgba(228, 135, 22, 0.28);
+  border-color: #E48716;
   color: #FFFFFF !important;
 }
 
@@ -172,7 +172,7 @@
 }
 
 .bento-accent-pepe {
-  border-top: 2px solid #2ECC71;
+  border-top: 2px solid #E48716;
 }
 
 .bento-accent-cyan {
