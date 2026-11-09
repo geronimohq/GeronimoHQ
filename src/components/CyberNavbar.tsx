@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Radio, 
   Cpu, 
@@ -76,11 +76,34 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
     return () => clearInterval(pingInterval);
   }, []);
 
+  const isManualScrollingRef = useRef<boolean>(false);
+  const scrollTimeoutRef = useRef<number | null>(null);
+
   // Real-Time Active Section Scroll Spy
   useEffect(() => {
     const sectionIds = ['hero-stage', 'download-ram', 'server-radar', 'ze-toolkit', 'cfg-studio', 'cs2-command', 'contact'];
+    
     const handleScroll = () => {
-      const scrollPos = window.scrollY + 140;
+      // 1. If manual smooth scroll is in progress from a nav click, ignore scroll-spy updates
+      if (isManualScrollingRef.current) return;
+
+      // 2. Bottom of the page check: force the last item ('contact' / TRANSMISSION) to be active
+      const scrollY = window.scrollY || window.pageYOffset;
+      const windowHeight = window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
+      if (scrollY + windowHeight >= docHeight - 4) {
+        setActiveSection('contact');
+        return;
+      }
+
+      // 3. Top of page check: force 'hero-stage' if near top
+      if (scrollY <= 50) {
+        setActiveSection('hero-stage');
+        return;
+      }
+
+      // 4. Standard section hit-testing from bottom up
+      const scrollPos = scrollY + 140;
       for (let i = sectionIds.length - 1; i >= 0; i--) {
         const id = sectionIds[i];
         const el = document.getElementById(id);
@@ -93,6 +116,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
         }
       }
     };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
@@ -102,6 +126,28 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
     e.preventDefault();
     setActiveSection(targetId);
     setMobileMenuOpen(false);
+
+    // Set manual scrolling flag and lock scroll spy during animation
+    isManualScrollingRef.current = true;
+    if (scrollTimeoutRef.current) {
+      window.clearTimeout(scrollTimeoutRef.current);
+    }
+
+    const resetManualScrolling = () => {
+      isManualScrollingRef.current = false;
+      window.removeEventListener('scrollend', resetManualScrolling);
+      if (scrollTimeoutRef.current) {
+        window.clearTimeout(scrollTimeoutRef.current);
+        scrollTimeoutRef.current = null;
+      }
+    };
+
+    // Use scrollend event with 1000ms timeout fallback
+    if ('onscrollend' in window) {
+      window.addEventListener('scrollend', resetManualScrolling, { once: true });
+    }
+    scrollTimeoutRef.current = window.setTimeout(resetManualScrolling, 1000);
+
     scrollToSectionById(targetId);
     if (window.history?.pushState) {
       window.history.pushState(null, '', `#${targetId}`);
