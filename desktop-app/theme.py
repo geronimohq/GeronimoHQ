@@ -8,11 +8,11 @@ Strict Dark Slate palette:
   border: #243241
   text: #E6EDF3
   muted: #A3B3C0
-  primary: #E48716, hover #F09527, pressed #C5720E, text-on-primary #0A0E12
+  primary: #43A857, hover #52BC67, pressed #368F49, text-on-primary #04120A
   info: #38BDF8
-  success text: #E48716
+  success text: #43A857
   danger: #F26D6D
-CS2 Tactical Warm Amber-Orange theme.
+Banned: yellow, amber, orange, pink, magenta, fuchsia.
 """
 
 import json
@@ -32,12 +32,12 @@ COLOR_BORDER = "#243241"
 COLOR_BORDER_HOVER = "#364B60"
 COLOR_TEXT = "#E6EDF3"
 COLOR_MUTED = "#A3B3C0"
-COLOR_PRIMARY = "#E48716"
-COLOR_PRIMARY_HOVER = "#F09527"
-COLOR_PRIMARY_PRESSED = "#C5720E"
-COLOR_TEXT_ON_PRIMARY = "#0A0E12"
+COLOR_PRIMARY = "#43A857"
+COLOR_PRIMARY_HOVER = "#52BC67"
+COLOR_PRIMARY_PRESSED = "#368F49"
+COLOR_TEXT_ON_PRIMARY = "#04120A"
 COLOR_INFO = "#38BDF8"
-COLOR_SUCCESS = "#E48716"
+COLOR_SUCCESS = "#43A857"
 COLOR_DANGER = "#F26D6D"
 
 # Semantic and backward-compatible aliases

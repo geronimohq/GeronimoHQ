@@ -38,6 +38,7 @@ from PIL import Image, ImageDraw, ImageTk
 import webbrowser
 
 import core_logic
+import updater
 import hardware_info
 import server_browser
 import app_config
@@ -151,12 +152,12 @@ BG_BORDER = theme.COLOR_BORDER
 BG_CONSOLE = theme.COLOR_BG
 FG_WHITE = theme.COLOR_TEXT
 FG_MUTED = theme.COLOR_MUTED
-ACCENT_ORANGE = theme.COLOR_PRIMARY       # User-approved CS2 Tactical Amber-Orange (#E48716)
-ACCENT_ORANGE_HOVER = theme.COLOR_PRIMARY_HOVER # Hover (#F09527)
-ACCENT_GREEN = theme.COLOR_PRIMARY        # Replaced green with user-approved accent (#E48716)
+ACCENT_ORANGE = theme.COLOR_PRIMARY       # Dark Slate Primary Green (#43A857)
+ACCENT_ORANGE_HOVER = theme.COLOR_PRIMARY_HOVER # Hover (#52BC67)
+ACCENT_GREEN = theme.COLOR_PRIMARY        # Dark Slate Primary Green (#43A857)
 ACCENT_CYAN = theme.COLOR_INFO            # Info / Cyan (#38BDF8)
 ACCENT_RED = theme.COLOR_DANGER           # Danger (#F26D6D)
-ACCENT_AMBER = theme.COLOR_PRIMARY        # Primary (#E48716)
+ACCENT_AMBER = theme.COLOR_PRIMARY        # Primary Green (#43A857)
 
 def play_calm_tone(kind="info"):
     """Plays a gentle, soothing, non-intrusive Windows studio notification chime."""
@@ -1408,6 +1409,165 @@ class CS2TruePanoramaApp(tk.Tk):
 
     # --- PAGES ---
 
+
+    def _open_cs2_cfg_folder(self):
+        """Opens CS2 cfg folder in File Explorer or shows informational message if not found."""
+        cfg_dir = self.paths.get("cfg_dir")
+        if cfg_dir and os.path.exists(cfg_dir):
+            try:
+                os.startfile(cfg_dir)
+            except Exception:
+                subprocess.Popen(["explorer", cfg_dir])
+        else:
+            messagebox.showinfo("Config Folder", f"CS2 config folder does not exist at:\n{cfg_dir or 'Unknown location'}")
+
+    def _start_startup_update_check(self):
+        """Executes non-blocking background update check once per launch if enabled."""
+        if not getattr(updater, "UPDATE_CHECK_ENABLED", True):
+            return
+        if not self.config.get("check_updates_on_startup", True):
+            return
+
+        def _worker():
+            try:
+                curr_ver = version.get_app_version()
+                avail, manifest, msg = updater.fetch_update_manifest(current_ver=curr_ver)
+                now_str = time.strftime("%Y-%m-%d %H:%M")
+                self.config["last_update_check_time"] = now_str
+                app_config.save_config(self.config)
+
+                if avail and manifest:
+                    self.update_status_msg = f"Update available: v{manifest['version']}"
+                    self.pending_manifest = manifest
+                    skipped = self.config.get("skipped_update_version")
+                    if skipped != manifest["version"]:
+                        self.safe_after(0, lambda: self._show_update_banner(manifest))
+                else:
+                    self.update_status_msg = msg
+            except Exception as e:
+                self.log(f"[UPDATE] Network error: {e}")
+
+        t = threading.Thread(target=_worker, daemon=True, name="StartupUpdateCheckThread")
+        t.start()
+
+    def _check_updates_manual(self, lbl_status=None, lbl_last=None):
+        """Manual check for updates triggered from Settings dialog."""
+        def _worker():
+            curr_ver = version.get_app_version()
+            avail, manifest, msg = updater.fetch_update_manifest(current_ver=curr_ver)
+            now_str = time.strftime("%Y-%m-%d %H:%M")
+            self.config["last_update_check_time"] = now_str
+            app_config.save_config(self.config)
+            self.update_status_msg = f"Update available: v{manifest['version']}" if (avail and manifest) else msg
+
+            def _update_ui():
+                if lbl_status and lbl_status.winfo_exists():
+                    lbl_status.config(text=self.update_status_msg, fg=ACCENT_GREEN if avail else ACCENT_CYAN)
+                if lbl_last and lbl_last.winfo_exists():
+                    lbl_last.config(text=f"Last checked: {now_str}")
+                if avail and manifest:
+                    self._show_update_banner(manifest)
+            self.safe_after(0, _update_ui)
+
+        t = threading.Thread(target=_worker, daemon=True, name="ManualUpdateCheckThread")
+        t.start()
+
+    def _show_update_banner(self, manifest):
+        """Displays non-modal notification banner at top of window."""
+        if hasattr(self, "update_banner_frame") and self.update_banner_frame and self.update_banner_frame.winfo_exists():
+            return
+
+        target_ver = manifest.get("version", "newer")
+        curr_ver = version.get_app_version()
+
+        banner = tk.Frame(self, bg="#11171D", highlightbackground=ACCENT_GREEN, highlightthickness=1, padx=14, pady=6)
+        self.update_banner_frame = banner
+        banner.pack(side="top", fill="x", before=self.sidebar.master, padx=10, pady=(4, 0))
+
+        left_f = tk.Frame(banner, bg="#11171D")
+        left_f.pack(side="left", fill="x", expand=True)
+
+        is_running = getattr(self, "active_sniper_target", None) or getattr(self, "cs2_process_running", False)
+        warn_txt = " — Updating stops the sniper." if is_running else ""
+        msg_lbl = tk.Label(
+            left_f,
+            text=f"Version {target_ver} is available (you have {curr_ver}){warn_txt}",
+            font=("Segoe UI", 10, "bold"),
+            fg=ACCENT_GREEN,
+            bg="#11171D"
+        )
+        msg_lbl.pack(side="left", padx=(0, 8))
+        notes = manifest.get("notes", "No release notes provided.")
+        add_tooltip(msg_lbl, f"What's new in v{target_ver}:\n{notes}")
+
+        btn_f = tk.Frame(banner, bg="#11171D")
+        btn_f.pack(side="right")
+
+        b_upd_now = tk.Button(
+            btn_f, text="Update now", font=("Segoe UI", 9, "bold"),
+            fg=theme.COLOR_TEXT_ON_PRIMARY, bg=theme.COLOR_PRIMARY,
+            activebackground=theme.COLOR_PRIMARY_HOVER, relief="flat",
+            padx=10, pady=2, cursor="hand2",
+            command=lambda: self._execute_update(manifest)
+        )
+        b_upd_now.pack(side="left", padx=4)
+        add_tooltip(b_upd_now, "Downloads and applies update securely.")
+
+        b_later = tk.Button(
+            btn_f, text="Later", font=("Segoe UI", 9),
+            fg="#94a3b8", bg="#161E26", relief="flat", padx=8, pady=2, cursor="hand2",
+            command=self._dismiss_update_banner
+        )
+        b_later.pack(side="left", padx=4)
+        add_tooltip(b_later, "Dismiss update notice for this session.")
+
+        b_skip = tk.Button(
+            btn_f, text="Skip this version", font=("Segoe UI", 9),
+            fg="#94a3b8", bg="#161E26", relief="flat", padx=8, pady=2, cursor="hand2",
+            command=lambda: self._skip_version(target_ver)
+        )
+        b_skip.pack(side="left", padx=4)
+        add_tooltip(b_skip, "Do not notify about this version again.")
+
+    def _dismiss_update_banner(self):
+        if hasattr(self, "update_banner_frame") and self.update_banner_frame:
+            try:
+                self.update_banner_frame.destroy()
+                self.update_banner_frame = None
+            except Exception:
+                pass
+
+    def _skip_version(self, ver):
+        self.config["skipped_update_version"] = ver
+        app_config.save_config(self.config)
+        self._dismiss_update_banner()
+
+    def _execute_update(self, manifest):
+        """Downloads verified update and triggers atomic swap."""
+        if getattr(self, "active_sniper_target", None):
+            self.stop_sniper()
+
+        # Target executable path
+        if getattr(sys, "frozen", False):
+            curr_exe = os.path.abspath(sys.executable)
+        else:
+            curr_exe = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scratch", "dist", "CS2_Command_Center.exe")
+
+        new_exe = curr_exe + ".new"
+        self.log(f"[UPDATE] Initiating download of v{manifest['version']} from {manifest['url']}...")
+
+        def _worker():
+            success, msg = updater.download_and_verify_binary(manifest, new_exe)
+            if success:
+                self.log("[UPDATE] Binary integrity and signature verified. Applying update...")
+                self.safe_after(0, lambda: updater.spawn_updater_helper_and_exit(curr_exe, new_exe))
+            else:
+                self.log(f"[UPDATE ERROR] {msg}")
+                self.safe_after(0, lambda: messagebox.showerror("Update Error", f"Failed to apply update:\n{msg}\n\nPlease visit https://geronimohq.com to download manually."))
+
+        t = threading.Thread(target=_worker, daemon=True, name="UpdateDownloadThread")
+        t.start()
+
     def _build_page_dashboard(self, page):
         canvas = tk.Canvas(page, bg=BG_CARD, highlightthickness=0, yscrollincrement=1)
         scrollbar = ttk.Scrollbar(page, orient="vertical", command=canvas.yview, style="Vertical.Dark.TScrollbar")
@@ -1453,67 +1613,129 @@ class CS2TruePanoramaApp(tk.Tk):
             pf.pack(side="left", padx=(0, 6))
             tk.Label(pf, text=f"✔ {p_txt}", font=("Segoe UI", 10, "bold"), fg=p_col, bg="#161E26").pack()
 
-        # 3-Card Grid Overview: CS2 ENVIRONMENT, STORAGE, ZE GAME SERVERS
+        # 4-Card 2x2 Grid Overview: CS2 ENVIRONMENT, STORAGE, ZE GAME SERVERS, MAINTENANCE
         grid = tk.Frame(content, bg=BG_CARD)
-        grid.pack(fill="x", pady=(0, 10))
+        grid.pack(fill="both", expand=True, pady=(0, 10))
 
-        # Card 1: CS2 Environment & Middle-Ellipsized Path
-        c1 = tk.Frame(grid, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=12)
-        c1.pack(side="left", fill="both", expand=True, padx=(0, 6))
-        tk.Label(c1, text="🎮 CS2 ENVIRONMENT", font=("Segoe UI", 13, "bold"), fg=ACCENT_GREEN, bg=BG_CARD_ROW).pack(anchor="w")
-        cs2_st = "DETECTED & CONFIGURED" if bool(self.paths.get("cs2_exe")) else "MANUAL PATH REQUIRED"
-        tk.Label(c1, text=f"Executable: {cs2_st}", font=("Segoe UI", 11), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(6, 2))
-        auto_st = "autoexec.cfg ACTIVE" if bool(self.paths.get("autoexec_cfg")) else "autoexec.cfg NOT FOUND"
-        tk.Label(c1, text=f"Config: {auto_st}", font=("Segoe UI", 11), fg=ACCENT_CYAN, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 4))
-        
-        cs2_path = self.paths.get("cs2_exe") or ""
-        if cs2_path:
-            norm_p = os.path.normpath(cs2_path)
-            if len(norm_p) > 34:
-                short_p = norm_p[:12] + "..." + norm_p[-18:]
+        grid_r1 = tk.Frame(grid, bg=BG_CARD)
+        grid_r1.pack(side="top", fill="both", expand=True, pady=(0, 8))
+
+        grid_r2 = tk.Frame(grid, bg=BG_CARD)
+        grid_r2.pack(side="top", fill="both", expand=True)
+
+        # Card 1: CS2 Environment (Executable + Truth Autoexec + Open cfg folder)
+        c1 = tk.Frame(grid_r1, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=12)
+        c1.pack(side="left", fill="both", expand=True, padx=(0, 4))
+        tk.Label(c1, text="🎮 CS2 ENVIRONMENT", font=("Segoe UI", 12, "bold"), fg=ACCENT_GREEN, bg=BG_CARD_ROW).pack(anchor="w")
+
+        cs2_dir = self.paths.get("cs2_dir") or ""
+        cs2_exe = self.paths.get("cs2_exe") or ""
+        if cs2_exe:
+            if len(cs2_dir) > 28:
+                short_dir = cs2_dir[:12] + "..." + cs2_dir[-14:]
             else:
-                short_p = norm_p
-            full_p = norm_p
+                short_dir = cs2_dir
+            lbl_cs2_st = tk.Label(c1, text=f"CS2 found ({short_dir})", font=("Segoe UI", 10, "bold"), fg=FG_WHITE, bg=BG_CARD_ROW)
+            lbl_cs2_st.pack(anchor="w", pady=(4, 2))
+            add_tooltip(lbl_cs2_st, f"Counter-Strike 2 installation: {cs2_dir}")
         else:
-            short_p = "Path not detected"
-            full_p = "Counter-Strike 2 executable path not detected automatically."
-        lbl_cs2_path = tk.Label(c1, text=f"Path: {short_p}", font=("Consolas", 9), fg=FG_MUTED, bg=BG_CARD_ROW, anchor="w")
-        lbl_cs2_path.pack(anchor="w", pady=(2, 0))
-        add_tooltip(lbl_cs2_path, f"Installation location: {full_p}")
+            lbl_cs2_st = tk.Label(c1, text="CS2 not found", font=("Segoe UI", 10, "bold"), fg=ACCENT_RED, bg=BG_CARD_ROW)
+            lbl_cs2_st.pack(anchor="w", pady=(4, 2))
+            add_tooltip(lbl_cs2_st, "Counter-Strike 2 executable path could not be detected automatically.")
 
-        # Card 2: STORAGE CAPACITY (Replaces Hardware Profile per A1)
-        c2 = tk.Frame(grid, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=12)
-        c2.pack(side="left", fill="both", expand=True, padx=6)
-        tk.Label(c2, text="💾 STORAGE", font=("Segoe UI", 13, "bold"), fg=ACCENT_CYAN, bg=BG_CARD_ROW).pack(anchor="w")
+        # Determine true autoexec status from disk
+        cfg_dir = self.paths.get("cfg_dir")
+        auto_file = self.paths.get("autoexec_cfg")
+        if auto_file and os.path.exists(auto_file):
+            try:
+                with open(auto_file, "r", encoding="utf-8", errors="ignore") as _f:
+                    _c_txt = _f.read()
+                has_app_block = ("// --- CS2 COMMAND CENTER" in _c_txt or "GERONIMOHQ" in _c_txt)
+            except Exception:
+                has_app_block = False
+            if has_app_block:
+                auto_st_text = "Autoexec: found (includes settings written by this app)"
+            else:
+                auto_st_text = "Autoexec: found (not edited by this app)"
+        else:
+            short_cfg_path = (f"...{cfg_dir[-18:]}\\autoexec.cfg" if cfg_dir and len(cfg_dir) > 22 else "cfg\\autoexec.cfg")
+            auto_st_text = f"Autoexec: not found at {short_cfg_path}"
 
-        cs2_drive = os.path.splitdrive(cs2_path)[0].upper() if cs2_path else "C:"
+        lbl_auto_st = tk.Label(c1, text=auto_st_text, font=("Segoe UI", 10), fg=ACCENT_CYAN, bg=BG_CARD_ROW)
+        lbl_auto_st.pack(anchor="w", pady=(0, 4))
+        full_check_path = auto_file or (os.path.join(cfg_dir, "autoexec.cfg") if cfg_dir else "None")
+        add_tooltip(lbl_auto_st, f"autoexec.cfg is a text file in CS2's cfg folder that CS2 runs at every launch to apply console settings. Config Studio can add settings to it with a backup. Path checked: {full_check_path}. The app works without it.")
+
+        c1_btn_bar = tk.Frame(c1, bg=BG_CARD_ROW)
+        c1_btn_bar.pack(anchor="w", pady=(4, 0))
+        b_open_cfg = tk.Button(c1_btn_bar, text="📁 Open cfg folder", font=("Segoe UI", 9, "bold"), fg="#cbd5e1", bg="#161E26",
+                               relief="flat", cursor="hand2", padx=8, pady=3, command=self._open_cs2_cfg_folder)
+        b_open_cfg.pack(side="left")
+        add_tooltip(b_open_cfg, "Opens the CS2 game\\csgo\\cfg directory in Windows File Explorer.")
+
+        # Card 2: STORAGE: CS2 / STEAM LIBRARY DRIVE (Real values, no Healthy word, fallback if not found)
+        c2 = tk.Frame(grid_r1, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=12)
+        c2.pack(side="left", fill="both", expand=True, padx=(4, 0))
+        tk.Label(c2, text="💾 STORAGE: CS2 / STEAM LIBRARY DRIVE", font=("Segoe UI", 12, "bold"), fg=ACCENT_CYAN, bg=BG_CARD_ROW).pack(anchor="w")
+
+        cs2_target_path = cs2_dir or cs2_exe
+        cs2_drive = os.path.splitdrive(cs2_target_path)[0].upper() if cs2_target_path else ""
         drives_data = core_logic.get_drives_info()
-        target_drive = next((d for d in drives_data if d["drive"].upper().startswith(cs2_drive)), None)
-        if not target_drive and drives_data:
-            target_drive = drives_data[0]
+        target_drive = next((d for d in drives_data if cs2_drive and d["drive"].upper().startswith(cs2_drive)), None) if cs2_drive else None
 
         if target_drive:
             free_g = target_drive["free_gb"]
             total_g = target_drive["total_gb"]
-            used_p = target_drive["used_pct"]
-            free_pct = (free_g / total_g * 100) if total_g > 0 else 100
+            free_pct = (free_g / total_g * 100) if total_g > 0 else 0
             is_low = (free_pct < 10.0) or target_drive.get("is_critical", False)
-            stor_status = "⚠️ Low Storage (<10% free)" if is_low else "● Storage Healthy"
+            stor_line1 = f"Drive {target_drive['drive']} {free_g:.1f} GB free of {total_g:.1f} GB ({free_pct:.0f}% free)"
+            stor_line2 = "⚠️ Low space (under 10% free)" if is_low else "● Space: OK"
             stor_col = ACCENT_RED if is_low else ACCENT_GREEN
-            tk.Label(c2, text=f"Drive {target_drive['drive']} {free_g:.1f} GB free / {total_g:.1f} GB", font=("Segoe UI", 11), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(6, 2))
-            tk.Label(c2, text=f"{stor_status} ({used_p:.0f}% used)", font=("Segoe UI", 11, "bold"), fg=stor_col, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 2))
-        else:
-            tk.Label(c2, text="System Drive: Monitored", font=("Segoe UI", 11), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(6, 2))
-            tk.Label(c2, text="● Storage Healthy", font=("Segoe UI", 11, "bold"), fg=ACCENT_GREEN, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 2))
 
-        # Card 3: ZE Servers & Telemetry (A1: N players in-game, X / T servers online)
-        c3 = tk.Frame(grid, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=12)
-        c3.pack(side="left", fill="both", expand=True, padx=(6, 0))
-        tk.Label(c3, text="🌐 ZE GAME SERVERS", font=("Segoe UI", 13, "bold"), fg=theme.COLOR_PRIMARY, bg=BG_CARD_ROW).pack(anchor="w")
-        self.dash_ze_players_lbl = tk.Label(c3, text="646 players in-game", font=("Segoe UI", 11, "bold"), fg=ACCENT_GREEN, bg=BG_CARD_ROW)
-        self.dash_ze_players_lbl.pack(anchor="w", pady=(6, 2))
-        self.dash_ze_nodes_lbl = tk.Label(c3, text="34 / 41 servers online", font=("Segoe UI", 11), fg=ACCENT_CYAN, bg=BG_CARD_ROW)
-        self.dash_ze_nodes_lbl.pack(anchor="w", pady=(0, 2))
+            lbl_stor1 = tk.Label(c2, text=stor_line1, font=("Segoe UI", 10), fg=FG_WHITE, bg=BG_CARD_ROW)
+            lbl_stor1.pack(anchor="w", pady=(4, 2))
+            lbl_stor2 = tk.Label(c2, text=stor_line2, font=("Segoe UI", 10, "bold"), fg=stor_col, bg=BG_CARD_ROW)
+            lbl_stor2.pack(anchor="w", pady=(0, 2))
+            add_tooltip(c2, f"This is the drive that holds your CS2 install ({cs2_dir}). Only free space is measured (not drive hardware health).")
+            add_tooltip(lbl_stor1, f"This is the drive that holds your CS2 install ({cs2_dir}). Only free space is measured (not drive hardware health).")
+            add_tooltip(lbl_stor2, f"This is the drive that holds your CS2 install ({cs2_dir}). Only free space is measured (not drive hardware health).")
+        else:
+            lbl_stor1 = tk.Label(c2, text="CS2 not found", font=("Segoe UI", 10), fg=FG_WHITE, bg=BG_CARD_ROW)
+            lbl_stor1.pack(anchor="w", pady=(4, 2))
+            lbl_stor2 = tk.Label(c2, text="● Space: Unmonitored", font=("Segoe UI", 10, "bold"), fg=FG_MUTED, bg=BG_CARD_ROW)
+            lbl_stor2.pack(anchor="w", pady=(0, 2))
+            add_tooltip(c2, "CS2 install folder not found. Drive storage can only be checked when CS2 is detected.")
+
+        # Card 3: ZE GAME SERVERS
+        c3 = tk.Frame(grid_r2, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=12)
+        c3.pack(side="left", fill="both", expand=True, padx=(0, 4))
+        tk.Label(c3, text="🌐 ZE GAME SERVERS", font=("Segoe UI", 12, "bold"), fg=theme.COLOR_PRIMARY, bg=BG_CARD_ROW).pack(anchor="w")
+        self.dash_ze_players_lbl = tk.Label(c3, text="646 players in-game", font=("Segoe UI", 10, "bold"), fg=ACCENT_GREEN, bg=BG_CARD_ROW)
+        self.dash_ze_players_lbl.pack(anchor="w", pady=(4, 2))
+        self.dash_ze_nodes_lbl = tk.Label(c3, text="34 / 41 servers online", font=("Segoe UI", 10), fg=ACCENT_CYAN, bg=BG_CARD_ROW)
+        self.dash_ze_nodes_lbl.pack(anchor="w", pady=(0, 4))
+        b_srv_nav = tk.Button(c3, text="Launch ZE Browser →", font=("Segoe UI", 9, "bold"), fg=ACCENT_CYAN, bg="#161E26",
+                              relief="flat", cursor="hand2", padx=8, pady=3, command=lambda: self._select_nav("SERVERS"))
+        b_srv_nav.pack(anchor="w", pady=(2, 0))
+        add_tooltip(b_srv_nav, "Switch to the Zombie Escape Server Browser tab.")
+
+        # Card 4: MAINTENANCE (Read-only dates app already stores)
+        c4 = tk.Frame(grid_r2, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=12)
+        c4.pack(side="left", fill="both", expand=True, padx=(4, 0))
+        tk.Label(c4, text="🛠 MAINTENANCE", font=("Segoe UI", 12, "bold"), fg=ACCENT_GREEN, bg=BG_CARD_ROW).pack(anchor="w")
+
+        _opt_days = app_config.get_days_since_optimization(self.config)
+        _maint_days = app_config.get_days_since_maintenance(self.config)
+        _opt_str = "Never" if _opt_days is None else ("Today" if _opt_days == 0 else f"{_opt_days}d ago")
+        _maint_str = "Never" if _maint_days is None else ("Today" if _maint_days == 0 else f"{_maint_days}d ago")
+
+        tk.Label(c4, text=f"CS2 Engine Tweaks: Optimized {_opt_str}", font=("Segoe UI", 10), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(4, 1))
+        tk.Label(c4, text=f"PC Maintenance: Clean {_maint_str}", font=("Segoe UI", 10), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 1))
+        tk.Label(c4, text="(Recommended every 7 days)", font=("Segoe UI", 9), fg=FG_MUTED, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 4))
+        b_maint_nav = tk.Button(c4, text="Open PC Maintenance →", font=("Segoe UI", 9, "bold"), fg=ACCENT_GREEN, bg="#161E26",
+                                relief="flat", cursor="hand2", padx=8, pady=3, command=lambda: self._select_nav("MAINTENANCE"))
+        b_maint_nav.pack(anchor="w", pady=(2, 0))
+        add_tooltip(b_maint_nav, "Switch to the PC Maintenance tab to run SSD TRIM, disk cleanup, and system file repairs.")
 
         _bind_dash_wheel(content)
 
@@ -2654,15 +2876,15 @@ class CS2TruePanoramaApp(tk.Tk):
         add_tooltip(self.lbl_srv_players, "Total real-time player count active across monitored Zombie Escape servers.")
 
         head_btns = tk.Frame(self.list_head, bg=BG_CARD_ROW)
-        head_btns.pack(side="right")
+        head_btns.pack(side="right", padx=(8, 0))
 
-        b_ref_all = tk.Button(head_btns, text="🔄 Refresh All", font=("Segoe UI", 9), fg="#94a3b8", bg=BG_CARD,
-                  relief="flat", cursor="hand2", command=self.refresh_all_servers)
-        b_ref_all.pack(side="left", padx=3)
+        b_ref_all = tk.Button(head_btns, text="🔄 Refresh All", font=("Segoe UI", 9, "bold"), fg="#94a3b8", bg=BG_CARD,
+                              relief="flat", padx=10, pady=5, cursor="hand2", command=self.refresh_all_servers)
+        b_ref_all.pack(side="left", padx=(0, 8))
         add_tooltip(b_ref_all, "Refresh live player counts, ping, and active map for all servers in the list.")
 
-        b_add_srv = tk.Button(head_btns, text="➕ Add Server", font=("Segoe UI", 14, "bold"), fg=ACCENT_CYAN, bg=BG_CARD,
-                  relief="flat", cursor="hand2", command=self.open_add_server_dialog)
+        b_add_srv = tk.Button(head_btns, text="➕ Add Server", font=("Segoe UI", 9, "bold"), fg=ACCENT_CYAN, bg=BG_CARD,
+                              relief="flat", padx=10, pady=5, cursor="hand2", command=self.open_add_server_dialog)
         b_add_srv.pack(side="left")
         add_tooltip(b_add_srv, "Register your own custom CS2 community server to track in the browser.")
 
@@ -7265,9 +7487,17 @@ class CS2TruePanoramaApp(tk.Tk):
 
         c_win = canvas.create_window((0, 0), window=body, anchor="nw")
 
-        def _sync_dlg_scroll(e=None):
+        _sync_timer = [None]
+        def _schedule_sync(e=None):
+            if _sync_timer[0]:
+                dlg.after_cancel(_sync_timer[0])
+            _sync_timer[0] = dlg.after(50, _do_sync_scroll)
+
+        def _do_sync_scroll():
+            _sync_timer[0] = None
             try:
-                canvas.update_idletasks()
+                if not canvas.winfo_exists():
+                    return
                 bbox = canvas.bbox("all")
                 if not bbox:
                     return
@@ -7285,27 +7515,41 @@ class CS2TruePanoramaApp(tk.Tk):
 
         def _on_canvas_configure(e):
             canvas.itemconfig(c_win, width=e.width)
-            _sync_dlg_scroll()
+            _schedule_sync()
 
         canvas.bind("<Configure>", _on_canvas_configure)
-        body.bind("<Configure>", _sync_dlg_scroll)
+        body.bind("<Configure>", _schedule_sync)
         canvas.configure(yscrollcommand=scrollbar.set)
         canvas.pack(side="left", fill="both", expand=True)
 
+        dpi_scale = getattr(self, "dpi_scale", 1.0) or 1.0
+        scroll_step_px = int(round(60 * dpi_scale))
+
         def _on_dlg_mousewheel(e):
             if canvas.winfo_exists():
-                canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
+                steps = int(-1 * (e.delta / 120)) * scroll_step_px
+                canvas.yview_scroll(steps, "units")
             return "break"
 
         dlg.bind("<MouseWheel>", _on_dlg_mousewheel)
 
         wrap_labels = []
-        def _update_wraps(e=None):
+        _wrap_timer = [None]
+        def _schedule_wraps(e=None):
+            if _wrap_timer[0]:
+                dlg.after_cancel(_wrap_timer[0])
+            _wrap_timer[0] = dlg.after(50, _do_wraps)
+
+        def _do_wraps():
+            _wrap_timer[0] = None
+            if not dlg.winfo_exists():
+                return
             target_wrap = max(340, dlg.winfo_width() - 80)
             for lbl in wrap_labels:
                 if lbl.winfo_exists():
                     lbl.config(wraplength=target_wrap)
-        dlg.bind("<Configure>", _update_wraps, add="+")
+
+        dlg.bind("<Configure>", _schedule_wraps, add="+")
 
         # SECTION 1: GENERAL (Windows Startup, System Tray, Open on Startup)
         sec_gen = tk.Frame(body, bg=BG_CARD, padx=14, pady=10, highlightbackground=BG_BORDER, highlightthickness=1)
@@ -7485,6 +7729,32 @@ class CS2TruePanoramaApp(tk.Tk):
         b_reset.pack(side="left")
         add_tooltip(b_reset, "Restores default configuration values.")
 
+        # SECTION: UPDATES
+        sec_upd = tk.Frame(body, bg=BG_CARD, padx=14, pady=10, highlightbackground=BG_BORDER, highlightthickness=1)
+        sec_upd.pack(fill="x", pady=(0, 8))
+        tk.Label(sec_upd, text="UPDATES", font=("Segoe UI", 10, "bold"), fg=theme.COLOR_PRIMARY, bg=BG_CARD).pack(anchor="w", pady=(0, 6))
+
+        var_check_upd = tk.BooleanVar(value=self.config.get("check_updates_on_startup", True))
+        cb_upd = tk.Checkbutton(sec_upd, text="Check for updates when the app starts", variable=var_check_upd,
+                                font=("Segoe UI", 10), fg=FG_WHITE, bg=BG_CARD, selectcolor=BG_CONSOLE,
+                                activebackground=BG_CARD, activeforeground=FG_WHITE, cursor="hand2")
+        cb_upd.pack(anchor="w")
+        add_tooltip(cb_upd, "Connects to https://geronimohq.com/update/latest.json via HTTPS GET to check if a newer version is available. Only your app version is sent in the User-Agent header; no telemetry, identity, or settings are transmitted.")
+
+        upd_btn_row = tk.Frame(sec_upd, bg=BG_CARD)
+        upd_btn_row.pack(fill="x", pady=(6, 2))
+
+        b_check_now = tk.Button(upd_btn_row, text="🔄 Check now", font=("Segoe UI", 9, "bold"), fg=FG_WHITE, bg="#161E26",
+                                relief="flat", padx=10, pady=3, cursor="hand2", command=lambda: self._check_updates_manual(lbl_upd_status, lbl_upd_last))
+        b_check_now.pack(side="left", padx=(0, 10))
+
+        last_upd_time = self.config.get("last_update_check_time", "Never")
+        lbl_upd_last = tk.Label(upd_btn_row, text=f"Last checked: {last_upd_time}", font=("Segoe UI", 9), fg=FG_MUTED, bg=BG_CARD)
+        lbl_upd_last.pack(side="left")
+
+        lbl_upd_status = tk.Label(sec_upd, text=getattr(self, "update_status_msg", "Up to date"), font=("Segoe UI", 9), fg=ACCENT_CYAN, bg=BG_CARD)
+        lbl_upd_status.pack(anchor="w", pady=(4, 0))
+
         # SECTION 5: ABOUT & DIAGNOSTICS (A8 & A3)
         sec_about = tk.Frame(body, bg=BG_CARD, padx=14, pady=10, highlightbackground=BG_BORDER, highlightthickness=1)
         sec_about.pack(fill="x", pady=(0, 8))
@@ -7563,7 +7833,7 @@ class CS2TruePanoramaApp(tk.Tk):
         b_cancel.pack(side="left")
         add_tooltip(b_cancel, "Discards unsaved preference changes and closes settings.")
 
-        self.after(50, _sync_dlg_scroll)
+        self.after(50, _schedule_sync)
 
 if __name__ == "__main__":
     _single_instance_mutex = check_single_instance()
