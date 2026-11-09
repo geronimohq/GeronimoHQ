@@ -18,8 +18,8 @@ Assumption logged: `node_modules/` was not copied (it is re-created exactly by `
 | Phase | Status |
 |---|---|
 | 0 Recon | DONE |
-| 1 Security | IN PROGRESS (1a done, 1b done in backend/api.py; 1c desktop & 1d website next) |
-| 2 Known bugs | next |
+| 1 Security | DONE + committed (`4e28b66`, `570b7e3`, `8dddc8d`, `370779d`). Windows tests all pass. Only owner action left: deploy (OWNER_STEPS A) |
+| 2 Known bugs | NEXT |
 | 3 Functional | pending |
 | 4 Performance | pending |
 | 5 Wording/a11y | pending |
@@ -49,6 +49,82 @@ Assumption logged: `node_modules/` was not copied (it is re-created exactly by `
    - Tuned ThreadPoolExecutor from 24 to 16 workers with a concurrency lock to prevent thundering herd.
    - Added bot count tracking to A2S parser so human player count is isolated.
 
-## Handover Point for Next Agent (e.g. Claude):
+## Session 2 (Claude, 2026-11-10 ~01:10-02:00 +08:00)
+
+**Important limit:** no command line on the PC this session (only file read/write).
+So: no git commits, no npm/pip, no Windows-only tests here. Every command that still
+has to run is in `audit/RUN_ON_PC.md`. The edited files ARE saved in `H:\GeronimoHQ`
+(uncommitted on branch `final-audit`).
+
+Verified before editing: branch `final-audit` @ `c181482`; working tree of `backend/`,
+`desktop-app/`, `src/` matched that commit (only CRLF line-ending differences).
+
+Done:
+1. **1b re-check.** Token fails closed, CORS exact, no user host:port: confirmed
+   [TESTED]. Two earlier claims were **false**: the refresh lock was unused, and the
+   website showed Offline (not Standby) for `unknown`. Both fixed, plus TLS checks on,
+   name-impersonation block, 404 + cache for the detail route.
+   Tests: `backend/test_api_security.py` 15/15 OK (original code: 4 fail).
+2. **1c desktop.** Fixed the Critical one: fresh installs no longer ping the owner's
+   backend. Also host:port validation (command injection), safe link opener,
+   Map Cleaner path/junction guard, GSI limits, atomic config save.
+   Anti-cheat check: no memory read/write or injection calls found.
+   Tests: `desktop-app/test_security_phase1c.py` 18/18 OK (original code: 13 fail/error).
+3. **1d website.** Home page `?ip=` no longer auto-launches Steam (goes via /connect),
+   `rel=noopener`, CI script TLS on, workflow least privilege. /connect page input tests OK.
+   CSP proposed but not added (untested).
+
+Findings so far (this session): Critical 2 (1 fixed, 1 needs deploy), High 1 fixed,
+Medium 11 (9 fixed, 2 open), Low 16 (7 fixed, 9 open/owner), Not tested 2 (npm audit, pip-audit). Full table: `audit/FINDINGS_PHASE1.md`.
+Backend requests used: still 8 of 30 (none this session).
+
+Files changed this session: backend/api.py, backend/.python-version, backend/test_api_security.py,
+desktop-app/{app.py, app_config.py, cs2_gsi.py, custom_map_cleaner.py, server_browser.py, test_security_phase1c.py},
+src/{App.tsx, components/GeronimoDiscordPresence.tsx, components/ServerRadarPreview.tsx, utils/serverQuery.ts},
+scripts/fetch_live_servers.py, .github/workflows/deploy.yml, audit/*.
+
+## Session 3 (Claude Code on the PC, 2026-11-10 ~01:50+ +08:00)
+
+This session HAS a command line on the PC, so `RUN_ON_PC.md` steps 1-5 were run here.
+Pre-check: branch `final-audit`; `dist/CS2_Command_Center.exe` SHA-256 still `AEC0502A…C913`.
+
+**RUN_ON_PC step 1-3 (tests + commits)** — Python 3.14.7, Windows 11:
+- All 19 test files pass [TESTED: `audit/evidence_windows_tests.txt`]. Backend test also run
+  against REAL FastAPI 0.162.2 (scratch venv): 15/15 OK.
+- Problems found while running them, and fixed:
+  1. `backend/test_api_security.py`: with real FastAPI the test helper passed `None` as the
+     request → 3 errors. Test bug, not an API bug. Helper now builds a real Starlette request. [TESTED]
+  2. `test_comprehensive_audit.py` + `test_sidebar_architecture.py` **could never fail**:
+     tearDown called `exit_application()` → `os._exit(0)` before unittest printed results
+     (exit code always 0). `os._exit` is now stubbed in teardown. [TESTED: 14/14, 3/3 now print]
+  3. 8 app test files hung forever after passing (non-daemon tray/GSI threads). They now exit
+     with the real pass/fail code. [TESTED]
+  4. GSI listener (real bug, small): replied 200 *before* handling the payload, and replied
+     403/413 without reading the body, so Windows reset the socket and the client never saw
+     the status. `test_security_phase1c` failed 3 of 10 runs. Fixed in `cs2_gsi.py`
+     (handle first, bounded 1 MB drain before reject). [TESTED: 0 of 45 runs fail]
+- `.github/workflows/deploy.yml` replaced by `audit/proposed_deploy.yml` (W-04). [TESTED: diff]
+- Commits (files by name): `4e28b66` 1b-recheck, `570b7e3` 1c, `8dddc8d` 1d, `370779d` tests/build.
+
+**RUN_ON_PC step 4-5 (website + deps)**:
+- **Build safety bug found + fixed:** the `safe-copy-public` plugin in `vite.config.ts` always
+  copied `public/` into a hard-coded `dist/`, even with `--outDir`. That means any build
+  overwrote `dist/CS2_Command_Center.exe` with `public/`'s copy. Plugin now uses the resolved
+  outDir. [TESTED: build to `scratch/dist`, exe hash identical before/after, dist/ mtimes unchanged]
+- `npm ci` OK · `npx tsc -b` 0 errors · `vite build --outDir scratch/dist` OK (JS 1,005 kB /
+  246 kB gzip: one chunk > 500 kB, see Phase 4) · source maps 0. [TESTED]
+- `npm audit` and `npm audit --omit=dev`: **0 vulnerabilities** → no fixes needed. [TESTED]
+- `npm outdated`: only patch/minor updates (vite 8.3.7, tailwind 4.3.5, plugin-react 6.3.0,
+  oxlint 1.93.0). Not applied (not security; Phase 7 decision).
+- `pip-audit -r backend/requirements.txt`: **No known vulnerabilities** (resolved: fastapi
+  0.162.2, starlette 1.10.0, uvicorn 0.54.0, curl_cffi 0.17.0). Note: requirements use `>=`,
+  so Render may resolve different versions (B-09). [TESTED]
+- `oxlint`: 0 errors, a few React-hook warnings in ServerRadarPreview.tsx (Phase 3/4).
+- B-10 and W-12 (Phase 1 "not tested") are now **closed** [TESTED].
+
+## Next
+1. Phase 2 (known bugs 1-9).
+
+## Handover Point (session 1):
 - Current Branch: `final-audit`
 - Next Task: Phase 1c (Desktop app security checks: command injection, Map Cleaner path traversal, GSI 127.0.0.1, tokenless install safeguard in `app.py`), then Phase 1d (Website security), then Phase 2 (Known bugs).
