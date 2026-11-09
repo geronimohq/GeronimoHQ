@@ -132,7 +132,7 @@ export const ServerGeoDemographics: React.FC<ServerGeoDemographicsProps> = ({
       </div>
 
       {/* Breakdown Pills */}
-      <div className="flex items-center justify-between text-[11px] text-slate-300 font-code gap-1 flex-wrap">
+      <div className="flex items-center justify-start text-[11px] text-slate-300 font-code gap-1.5 flex-wrap">
         {activeItems.slice(0, 4).map((r) => (
           <span
             key={r.code}
