@@ -25,7 +25,8 @@ export const scrollToSectionById = (id: string) => {
   if (!el) return;
   const navEl = document.querySelector('header');
   const navHeight = navEl ? navEl.offsetHeight : 104;
-  const targetGap = 16;
+  // Holo-deck and Transmission keep original spacing per user spec; other modules land snug (8px) below navbar
+  const targetGap = (id === 'hero-stage' || id === 'contact') ? 16 : 8;
   const elementPosition = el.getBoundingClientRect().top + window.pageYOffset;
   const offsetPosition = Math.max(0, elementPosition - navHeight - targetGap);
   window.scrollTo({

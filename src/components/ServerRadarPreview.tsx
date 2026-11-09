@@ -405,7 +405,7 @@ export const ServerRadarPreview: React.FC = () => {
   }, [activeModalServer, telemetry, modalSearch, playerSortField, playerSortOrder]);
 
   return (
-    <section id="server-radar" className="relative w-full max-w-6xl mx-auto px-4 pt-12 pb-28 sm:pb-24 scroll-mt-28">
+    <section id="server-radar" className="relative w-full max-w-6xl mx-auto px-4 pt-2 pb-28 sm:pb-24 scroll-mt-4">
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 border-b border-lime-500/30 pb-5">
@@ -1604,7 +1604,7 @@ export const ServerRadarPreview: React.FC = () => {
       {/* ==================================================================== */}
       {/* COMMUNITY ZE ECOSYSTEM & ESSENTIAL WEB TOOLS                        */}
       {/* ==================================================================== */}
-      <div id="ze-toolkit" className="mt-8 scroll-mt-24">
+      <div id="ze-toolkit" className="mt-8 scroll-mt-4">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="w-4 h-4 text-cyan-400" />
           <h3 className="text-sm font-cyber font-bold text-white tracking-wider uppercase">

@@ -477,7 +477,7 @@ export const DownloadRamSection: React.FC = () => {
   };
 
   return (
-    <section id="download-ram" className="relative w-full max-w-6xl mx-auto px-4 py-12 scroll-mt-28">
+    <section id="download-ram" className="relative w-full max-w-6xl mx-auto px-4 pt-2 pb-12 scroll-mt-4">
       {/* Outer Cyberpunk Container */}
       <div className="bento-card bento-accent-banana p-6 md:p-8 relative overflow-hidden">
         

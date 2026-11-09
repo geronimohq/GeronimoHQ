@@ -244,7 +244,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
   };
 
   return (
-    <section id="cs2-command" className="relative w-full max-w-6xl mx-auto px-4 py-12 scroll-mt-28">
+    <section id="cs2-command" className="relative w-full max-w-6xl mx-auto px-4 pt-2 pb-12 scroll-mt-4">
       {/* Section Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 border-b border-[#1E2E26] pb-5">
         <div>
