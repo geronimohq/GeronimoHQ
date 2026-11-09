@@ -117,7 +117,7 @@ export const DeployHudFooter: React.FC = () => {
               </div>
               <div className="flex justify-between py-0.5 border-b border-[#1E2E26]">
                 <span className="text-slate-400">ZE CLUSTER</span>
-                <span className="text-lime-300 font-bold">128 TICK // ACTIVE</span>
+                <span className="text-lime-300 font-bold">64 TICK + SUB-TICK</span>
               </div>
               <div className="flex justify-between py-0.5 border-b border-[#1E2E26]">
                 <span className="text-slate-400">CLOUD RAM</span>

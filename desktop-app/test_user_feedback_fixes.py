@@ -4,6 +4,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import custom_map_cleaner
+import _test_isolation  # noqa: E402,F401  (AUDIT: temp config, no registry; must come before app)
 import app
 
 class TestUserFeedbackFixes(unittest.TestCase):
@@ -23,7 +24,7 @@ class TestUserFeedbackFixes(unittest.TestCase):
             src = f.read()
         # Filter tabs
         self.assertIn('add_tooltip(btn_filter_all, "Show all custom community maps', src)
-        self.assertIn('add_tooltip(btn_filter_temp, "Show only temporary downloaded maps', src)
+        self.assertIn('add_tooltip(btn_filter_temp, "Show only temporary maps downloaded', src)
         self.assertIn('add_tooltip(btn_filter_sub, "Show maps belonging to your subscribed', src)
         self.assertIn('add_tooltip(btn_filter_assets, "Show essential community server content packs', src)
         self.assertIn('add_tooltip(btn_filter_dupe, "Show duplicate copies', src)

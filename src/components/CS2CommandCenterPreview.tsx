@@ -26,7 +26,7 @@ interface AppFeatureModule {
   details: string[];
   parameters: { name: string; value: string; desc: string }[];
   proTip: string;
-  vacSafe: boolean;
+  noMemoryAccess: boolean;
 }
 
 declare const __APP_EXE_SHA256__: string;
@@ -49,16 +49,16 @@ export const CS2CommandCenterPreview: React.FC = () => {
       details: [
         '1-Click Total Optimization: Automatically verifies and applies recommended Source 2 CVARs, power plans, and autoexec binds in a single click.',
         'Hardware Architecture Telemetry: Real-time detection of AMD 3D V-Cache, Intel P/E-Core topologies, and discrete GPU drivers.',
-        'Persistent CyberDeck Status Bar: Live tracking of CS2 process status, background UDP slot sniper, active gaming DNS, and 100% VAC safety.',
+        'Persistent CyberDeck Status Bar: Live tracking of CS2 process status, background UDP slot sniper and the DNS your adapter really uses.',
         'Tactical Left-Rail Navigation: Quick-jump buttons for seamless switching across all 8 optimization modules.'
       ],
       parameters: [
         { name: 'Architecture', value: 'CyberDeck Command Rail', desc: 'Tactical left-rail navigation with instant view switching' },
-        { name: 'Telemetry Bar', value: 'Real-time Win32 & UDP', desc: 'Monitors game state and network sockets without CPU overhead' },
-        { name: 'VAC Safety', value: '100% Non-Invasive', desc: 'Zero memory injection, zero DLL hooking' }
+        { name: 'Telemetry Bar', value: 'Real-time Win32 & UDP', desc: 'Reads game state (Valve GSI) and server info over UDP' },
+        { name: 'Game process', value: 'No memory access', desc: 'Does not read or modify CS2 memory; no DLL injection' }
       ],
-      proTip: 'The new CyberDeck Command Console is designed for quick in-game alt-tab management and 100% offline portability.',
-      vacSafe: true
+      proTip: 'The new CyberDeck Command Console is designed for quick alt-tab use; most features work offline.',
+      noMemoryAccess: true
     },
     {
       id: 'autoexec',
@@ -66,10 +66,10 @@ export const CS2CommandCenterPreview: React.FC = () => {
       shortTag: 'CONFIG & HUD ENGINE',
       badge: 'MANUAL EDIT + REAL-TIME PREVIEW',
       icon: <Sliders className="w-5 h-5 text-fuchsia-400" />,
-      summary: 'Comprehensive autoexec studio: (1) Core Engine & Sub-Tick Tweaks, (2) ZE Visual & Audio Binds, and (3) Manual In-App CFG Editor with direct save capabilities.',
+      summary: 'Comprehensive autoexec studio: (1) Core Engine Tweaks, (2) ZE Visual & Audio Binds, and (3) Manual In-App CFG Editor with direct save capabilities.',
       details: [
         'NEW: In-App Manual CFG Editor — Safe read-only mode by default; toggling manual edit unlocks full in-app editing with a direct "Save CFG" button.',
-        'Block 1 — Engine & Sub-Tick Tweaks: Appends [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS] (fps_max 0, rate 1000000, low-latency sleep) without touching personal binds.',
+        'Block 1 — Engine Tweaks: Appends [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS] (fps_max 0, rate 1000000, low-latency sleep) without touching personal binds.',
         'Block 2 — ZE Visual & Audio Binds: Appends [CS2 COMMAND CENTER - ZE VISUAL & AUDIO CUSTOMIZER] independently.',
         'Real-Time Live Preview: Automatically refreshes and scrolls to the bottom of autoexec.cfg with timestamp banner & confirmation.',
         'ZE Laser-Jump Low Viewmodel (FOV 68, X:+2, Y:+2, Z:-2) & First-Person Bullet Tracer Clutter Reducer (r_drawtracers_firstperson 0).',
@@ -81,7 +81,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
         { name: 'r_drawtracers_firstperson', value: '0 (Disabled)', desc: 'Eliminates 64-player Negev tracer clutter' }
       ],
       proTip: 'Engine Tweaks and ZE Visual/Audio Binds are stored as two separate tagged sections inside autoexec.cfg—updating one never overwrites the other, and the live preview scrolls directly to your newly injected block!',
-      vacSafe: true
+      noMemoryAccess: true
     },
     {
       id: 'engine',
@@ -89,20 +89,17 @@ export const CS2CommandCenterPreview: React.FC = () => {
       shortTag: 'SOURCE 2 OPTIMIZER',
       badge: 'FPS STABILIZER',
       icon: <Cpu className="w-5 h-5 text-cyan-400" />,
-      summary: 'Elevates Counter-Strike 2 to High Priority scheduling and optimizes CPU core affinity to prevent frame-time micro-stutters during 64-player combat.',
+      summary: 'Raises cs2.exe to High process priority while it runs, so background apps get CPU time after the game.',
       details: [
         'Elevates cs2.exe OS scheduling priority above background Discord/Chrome processes.',
-        'Binds game render threads to physical high-performance P-Cores on Intel Hybrid & AMD 3D-V-Cache CPUs.',
-        'Direct3D 11 vs Vulkan backend selector for optimal GPU pipeline performance.',
-        'Network interpolation buffer tuning (cl_interp 0 / sub-tick packet smoothing).'
+        'Changes nothing inside the game process: only its Windows priority (reverts when CS2 closes).'
       ],
       parameters: [
         { name: 'Process Priority', value: 'HIGH_PRIORITY_CLASS', desc: 'Direct Windows thread scheduling elevation' },
-        { name: 'Core Affinity Mask', value: '0x0000FFFF (Physical Cores)', desc: 'Avoids scheduling latency on efficiency E-Cores' },
-        { name: 'Sub-Tick Interp', value: '0.015625s buffer', desc: 'Optimal packet tick alignment' }
+        { name: 'Undo', value: 'Close CS2', desc: 'Priority is not saved; it resets on the next launch' }
       ],
       proTip: 'Particularly effective on 64-player Zombie Escape servers where heavy grenade smoke, particle effects, and laser barricades drop 1% low FPS.',
-      vacSafe: true
+      noMemoryAccess: true
     },
     {
       id: 'mpo',
@@ -125,7 +122,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
         { name: 'Alt-Tab Freeze', value: 'RESOLVED', desc: 'Seamless instant desktop switching' }
       ],
       proTip: 'Before toggling MPO, try running DDU + clean GPU driver reinstall first to verify if that solves your issue! If Alt-Tab freezing persists, disable MPO.',
-      vacSafe: true
+      noMemoryAccess: true
     },
     {
       id: 'sniper',
@@ -147,7 +144,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
         { name: 'Auto-Stop Cooldown', value: '10s Timer on Button', desc: 'Prevents duplicate spam & allows clean retry' }
       ],
       proTip: 'Set your slot priority (Normal ≤ 61, Supporter ≤ 62, VIP ≤ 63) and activate Slot Sniper—it queries server telemetry via background UDP about four times a second, using the console when CS2 is in front and otherwise opening a Steam connect link.',
-      vacSafe: true
+      noMemoryAccess: true
     },
     {
       id: 'cleaner',
@@ -168,7 +165,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
         { name: 'Space Reclaimed', value: '10 GB - 50 GB avg', desc: 'Instant SSD space recovery' }
       ],
       proTip: 'If you ever get kicked from a ZE server with a "Missing VPK" or "Pure Server File Mismatch" error, run the Workshop VPK Health Verifier in 1 click!',
-      vacSafe: true
+      noMemoryAccess: true
     },
     {
       id: 'dns',
@@ -180,16 +177,16 @@ export const CS2CommandCenterPreview: React.FC = () => {
       details: [
         'NEW: Full DNS Freedom — Click any row or click "Use This DNS" on Cloudflare, Google, Quad9, OpenDNS, Level3, or AdGuard to apply your preferred resolver regardless of benchmark rank.',
         'NEW: Custom DNS IPv4 Input — Enter any custom Primary & Secondary IPv4 DNS servers and apply in 1 click.',
-        'Post-Session CS2 Frame-Time & Network Jitter Log Analyzer (100% passive console.log parser, zero DLL hooks).',
+        'Post-Session CS2 Frame-Time & Network Jitter Log Analyzer (reads console.log only; no game hooks).',
         'Parallel real-time UDP port 53 latency & jitter benchmark + 1-Click Restore to ISP Default (Automatic DHCP).'
       ],
       parameters: [
         { name: 'Any / Custom DNS', value: 'Preset or Custom IPv4', desc: 'Pick any provider or enter custom Primary/Secondary IPs' },
         { name: 'Passive Log Analyzer', value: 'game/csgo/console.log', desc: 'Counts frame hitches, shader stalls & net jitter' },
-        { name: 'Safety Guarantee', value: '100% Reversible DHCP', desc: 'Official Windows netsh • 1-Click Restore' }
+        { name: 'Undo', value: 'Back to automatic DNS', desc: 'Windows netsh • 1-click restore (needs Administrator)' }
       ],
       proTip: 'You do not have to use the #1 fastest DNS—click any provider row (e.g. Quad9 for security or AdGuard for ad-blocking) or enter custom IPv4 addresses and apply immediately!',
-      vacSafe: true
+      noMemoryAccess: true
     },
     {
       id: 'launch',
@@ -197,11 +194,11 @@ export const CS2CommandCenterPreview: React.FC = () => {
       shortTag: 'ENGINE LAUNCHER',
       badge: 'PRESET GENERATOR',
       icon: <Terminal className="w-5 h-5 text-blue-400" />,
-      summary: 'Preconfigured launch command presets designed specifically for Counter-Strike 2 sub-tick performance and competitive latency.',
+      summary: 'Launch option presets for Counter-Strike 2 that you can review and copy into Steam.',
       details: [
         'Skips the Valve splash video intro (-novid) for faster game launches.',
         'Disables controller joystick polling (-nojoy) to free input thread cycles.',
-        'Sets maximum tickrate and updates frequency automatically (+cl_updaterate 128).',
+        'Adds launch options you can copy into Steam (review each one before use).',
         'High execution priority (-high) and physical thread affinity (-threads N).'
       ],
       parameters: [
@@ -210,7 +207,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
         { name: 'Third-Party Interop', value: '-allow_third_party_software', desc: 'For Discord / OBS / NVIDIA overlay' }
       ],
       proTip: 'Click any preset in the app to immediately copy the exact command line ready to paste into Steam CS2 Properties.',
-      vacSafe: true
+      noMemoryAccess: true
     },
     {
       id: 'discord',
@@ -231,7 +228,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
         { name: 'Join Party Hook', value: 'steam://connect/IP:PORT', desc: 'Allows friends to spectate or join' }
       ],
       proTip: 'Show off your Zombie Escape adventures directly on Discord with custom map artwork!',
-      vacSafe: true
+      noMemoryAccess: true
     }
   ];
 
@@ -284,7 +281,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           </span>
 
           <div id="exe-sha256-badge" className="flex items-center gap-1.5 text-[10px] font-code text-slate-400 mt-0.5 scroll-mt-28">
-            <span className="text-slate-500">SHA-256:</span>
+            <span className="text-slate-400">SHA-256:</span>
             <code className="text-cyan-300 select-all font-mono">{exeSha256.slice(0, 8).toLowerCase()}...{exeSha256.slice(-8).toLowerCase()}</code>
             <button
               onClick={() => {
@@ -292,7 +289,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
                 setCopiedHash(true);
                 setTimeout(() => setCopiedHash(false), 2000);
               }}
-              title="Copy verified SHA-256 hash to clipboard"
+              title="Copy the SHA-256 hash to clipboard"
               className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 border border-slate-700 cursor-pointer flex items-center gap-1 transition-colors touch-manipulation"
             >
               {copiedHash ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
@@ -309,7 +306,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <strong className="font-cyber text-cyan-300 tracking-wide uppercase block mb-0.5">
             WHAT THIS OPTIMIZER & PC MAINTENANCE ACTUALLY DO (STABILITY vs. RAW FPS):
           </strong>
-          These tools are <strong className="text-white">not</strong> meant to magically inflate maximum FPS beyond your physical CPU/GPU hardware limits. Instead, they are engineered to improve <strong className="text-cyan-300">Frame-Time Consistency (1% Lows)</strong>, eliminate micro-stutters during 64-player Zombie Escape &amp; heavy smoke utility, resolve <strong className="text-cyan-300">Display / Alt-Tab freezes (MPO)</strong>, optimize <strong className="text-cyan-300">Sub-Tick &amp; Gaming DNS network responsiveness</strong>, and maintain peak SSD/OS storage health with <strong className="text-lime-300">100% system safety</strong> (zero risky RAM cleaners).
+          These tools are <strong className="text-white">not</strong> meant to magically inflate maximum FPS beyond your physical CPU/GPU hardware limits. Instead, they are engineered to improve <strong className="text-cyan-300">Frame-Time Consistency (1% Lows)</strong>, eliminate micro-stutters during 64-player Zombie Escape &amp; heavy smoke utility, resolve <strong className="text-cyan-300">Display / Alt-Tab freezes (MPO)</strong>, optimize <strong className="text-cyan-300">Sub-Tick &amp; Gaming DNS network responsiveness</strong>, and maintain peak SSD/OS storage health with <strong className="text-lime-300">an undo for each change</strong> (zero risky RAM cleaners).
         </div>
       </div>
 
@@ -355,7 +352,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
                   </div>
 
                   <ChevronRight className={`w-4 h-4 transition-transform flex-shrink-0 ${
-                    isActive ? 'text-fuchsia-400 translate-x-1' : 'text-slate-600'
+                    isActive ? 'text-fuchsia-400 translate-x-1' : 'text-slate-400'
                   }`} />
                 </button>
               );
@@ -378,7 +375,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
                       {currentModule.badge}
                     </span>
                     <span className="text-[10px] font-code text-emerald-400 flex items-center gap-1 font-bold">
-                      <ShieldCheck className="w-3 h-3" /> 100% VAC-SAFE
+                      <ShieldCheck className="w-3 h-3" /> NO GAME MEMORY ACCESS
                     </span>
                   </div>
                   <h3 className="text-lg md:text-xl font-cyber font-bold text-white mt-1">
@@ -464,16 +461,16 @@ export const CS2CommandCenterPreview: React.FC = () => {
       {/* Unified Security & First-Launch Guidance Banner */}
       <div className="mt-6 p-4 rounded-xl bg-slate-950/90 border border-slate-800 shadow-lg">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-800/80">
-          {/* VAC Compliance Guarantee */}
+          {/* What the app changes (plain facts) */}
           <div className="flex items-start gap-3 text-xs font-tech text-slate-300 pr-0 md:pr-4">
             <ShieldCheck className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
             <div>
               <div className="font-cyber font-bold text-white text-xs mb-1 flex items-center gap-1.5">
-                <span>100% VAC-SAFE GUARANTEE</span>
-                <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40">VERIFIED</span>
+                <span>WHAT IT CHANGES</span>
+                <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40">PLAIN FACTS</span>
               </div>
               <p className="text-slate-400 leading-relaxed text-[11px]">
-                Modifies standard CS2 text config files (<code className="text-cyan-300">.cfg</code>) and uses Valve&apos;s official Steam game server protocols and Windows registry entries. It does <strong className="text-white">not</strong> inject into game memory, read process handles, or modify game binaries.
+                Modifies standard CS2 text config files (<code className="text-cyan-300">.cfg</code>) and uses Valve&apos;s official Steam game server protocols and Windows registry entries. It does <strong className="text-white">not</strong> read or modify CS2 memory, inject DLLs or patch game files. It can raise CS2&apos;s process priority and type a <code className="text-cyan-300">connect</code> command into the CS2 console. Hobby project, not affiliated with Valve. Use at your own risk.
               </p>
             </div>
           </div>
@@ -494,7 +491,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
                 <span>1. Click <strong className="text-cyan-300">&ldquo;More info&rdquo;</strong></span>
                 <span>&rarr;</span>
                 <span>2. Click <strong className="text-emerald-400">&ldquo;Run anyway&rdquo;</strong></span>
-                <span className="text-slate-500 hidden lg:inline">|</span>
+                <span className="text-slate-400 hidden lg:inline">|</span>
                 <span className="text-[9px] text-slate-400 hidden lg:inline">(or right-click .exe &rarr; Properties &rarr; &ldquo;Unblock&rdquo;)</span>
               </div>
             </div>

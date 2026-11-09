@@ -5,27 +5,159 @@ Deployable on Render, Railway, or Fly.io (Free Tier).
 """
 
 import os
+import hmac
 import time
 import socket
 import struct
+import threading
 import urllib.request
+import urllib.parse
 import json
 import re
+from collections import deque
 from typing import Dict, Any, List
 from concurrent.futures import ThreadPoolExecutor
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-app = FastAPI(title="GeronimoHQ CS2 Telemetry Relay", version="1.0.0")
+# ---------------------------------------------------------------------------
+# Security configuration (all values come from environment variables on Render)
+# ---------------------------------------------------------------------------
+# GERONIMO_PRESENCE_TOKEN : shared secret the owner's desktop app sends in the
+#                           X-Geronimo-Token header. If it is NOT set, presence
+#                           updates are DISABLED (fail closed).
+# ENABLE_API_DOCS=1       : re-enable /docs, /redoc and /openapi.json (off by default).
+# TRUSTED_PROXY_HOPS      : how many proxies append to X-Forwarded-For (default 1).
+# OWNER_PLAYER_NAMES      : comma list of exact in-game names that count as the owner
+#                           when found in a server roster (default "geronimo").
+PRESENCE_TOKEN = os.getenv("GERONIMO_PRESENCE_TOKEN", "").strip()
+ENABLE_DOCS = os.getenv("ENABLE_API_DOCS", "") == "1"
+try:
+    TRUSTED_PROXY_HOPS = max(0, int(os.getenv("TRUSTED_PROXY_HOPS", "1")))
+except ValueError:
+    TRUSTED_PROXY_HOPS = 1
+OWNER_PLAYER_NAMES = {n.strip().lower() for n in os.getenv("OWNER_PLAYER_NAMES", "geronimo").split(",") if n.strip()}
 
-# Enable CORS for geronimohq.com and local development
+ALLOWED_ORIGINS = [
+    "https://geronimohq.com",
+    "https://www.geronimohq.com",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
+]
+MAX_REQUEST_BYTES = 2048  # no endpoint needs a body; reject anything bigger
+
+app = FastAPI(
+    title="GeronimoHQ CS2 Telemetry Relay",
+    version="1.1.0",
+    docs_url="/docs" if ENABLE_DOCS else None,
+    redoc_url="/redoc" if ENABLE_DOCS else None,
+    openapi_url="/openapi.json" if ENABLE_DOCS else None,
+)
+
+
+def get_client_ip(request: Request) -> str:
+    """Real client IP behind Render's proxy.
+
+    A client can put anything in X-Forwarded-For, but each trusted proxy APPENDS the
+    address it saw. So we read the entry TRUSTED_PROXY_HOPS from the right, never the
+    left-most (spoofable) one. Falls back to the socket peer.
+    """
+    xff = request.headers.get("x-forwarded-for", "")
+    parts = [p.strip() for p in xff.split(",") if p.strip()]
+    if TRUSTED_PROXY_HOPS and len(parts) >= TRUSTED_PROXY_HOPS:
+        return parts[-TRUSTED_PROXY_HOPS][:64]
+    return (request.client.host if request.client else "unknown")[:64]
+
+
+class RateLimiter:
+    """Small in-memory sliding-window limiter (per key). Bounded memory."""
+
+    def __init__(self, max_hits: int, window_s: float, max_keys: int = 5000):
+        self.max_hits, self.window_s, self.max_keys = max_hits, window_s, max_keys
+        self.hits: Dict[str, deque] = {}
+        self.lock = threading.Lock()
+
+    def allow(self, key: str) -> bool:
+        now = time.time()
+        with self.lock:
+            if len(self.hits) > self.max_keys:  # prune idle keys
+                for k in [k for k, q in self.hits.items() if not q or now - q[-1] > self.window_s]:
+                    self.hits.pop(k, None)
+                if len(self.hits) > self.max_keys:
+                    self.hits.clear()
+            q = self.hits.setdefault(key, deque())
+            while q and now - q[0] > self.window_s:
+                q.popleft()
+            if len(q) >= self.max_hits:
+                return False
+            q.append(now)
+            return True
+
+
+# Website visitors poll /api/servers about every 5 s  -> 30/min leaves headroom.
+# Owner heartbeat is about every 8 s (7.5/min)          -> 20/min.
+# Per-server detail bypasses the big cache              -> 20/min.
+LIMIT_SERVERS = RateLimiter(30, 60)
+LIMIT_HEARTBEAT = RateLimiter(20, 60)
+LIMIT_DETAIL = RateLimiter(20, 60)
+LIMIT_OTHER = RateLimiter(60, 60)
+
+
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    # 1. Request size limits (declared body size, chunked bodies, long query strings)
+    cl = request.headers.get("content-length")
+    if (cl and (not cl.isdigit() or int(cl) > MAX_REQUEST_BYTES)) or "chunked" in request.headers.get("transfer-encoding", "").lower():
+        return JSONResponse({"error": "request_too_large"}, status_code=413)
+    if len(request.url.query) > 512:
+        return JSONResponse({"error": "query_too_long"}, status_code=414)
+
+    # 2. Rate limits by real client IP
+    if request.method != "OPTIONS":
+        ip = get_client_ip(request)
+        path = request.url.path
+        if path == "/api/servers":
+            ok = LIMIT_SERVERS.allow(ip)
+        elif path == "/api/presence/heartbeat":
+            ok = LIMIT_HEARTBEAT.allow(ip)
+        elif path.startswith("/api/servers/"):
+            ok = LIMIT_DETAIL.allow(ip)
+        else:
+            ok = LIMIT_OTHER.allow(ip)
+        if not ok:
+            return JSONResponse({"error": "rate_limited"}, status_code=429, headers={"Retry-After": "10"})
+
+    # 3. Never leak stack traces
+    try:
+        response = await call_next(request)
+    except Exception:
+        print("[ERROR] unhandled exception on", request.url.path)
+        response = JSONResponse({"error": "internal_error"}, status_code=500)
+
+    # 4. Security headers (JSON API: nothing should be framed, sniffed or cached by proxies)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000"
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+# CORS is added LAST so it is the outermost layer: preflights and 429/413 replies
+# from the security middleware still carry the correct CORS headers.
+# Exact origins only, no cookies/credentials needed by the website.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Geronimo-Token"],
+    max_age=600,
 )
 
 SERVERS = [
@@ -89,7 +221,8 @@ CACHE = {
     "data": None
 }
 MAP_START_TIMES: Dict[str, Dict[str, Any]] = {}
-THREAD_POOL = ThreadPoolExecutor(max_workers=24)
+THREAD_POOL = ThreadPoolExecutor(max_workers=16)
+REFRESH_LOCK = threading.Lock()  # only one full A2S sweep at a time (no thundering herd)
 
 def query_a2s_info(host: str, port: int, timeout: float = 1.2) -> Dict[str, Any]:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -99,23 +232,27 @@ def query_a2s_info(host: str, port: int, timeout: float = 1.2) -> Dict[str, Any]
         query = b"\xFF\xFF\xFF\xFF\x54Source Engine Query\x00"
         t0 = time.time()
         sock.sendto(query, (target_ip, port))
-        data, _ = sock.recvfrom(4096)
+        data, addr = sock.recvfrom(4096)
+        if addr[0] != target_ip:
+            raise ValueError("reply from unexpected address")
         rtt = int((time.time() - t0) * 1000)
 
         # Challenge
-        if len(data) >= 5 and data[4] == 0x41:
+        if len(data) >= 9 and data[4] == 0x41:
             challenge = data[5:9]
             sock.sendto(query + challenge, (target_ip, port))
-            data, _ = sock.recvfrom(4096)
+            data, addr = sock.recvfrom(4096)
+            if addr[0] != target_ip:
+                raise ValueError("reply from unexpected address")
             rtt = int((time.time() - t0) * 1000)
 
         if len(data) > 5 and data[4] == 0x49:
             idx = 6
             name_end = data.find(b"\x00", idx)
-            name = data[idx:name_end].decode("utf-8", errors="replace")
+            name = data[idx:name_end].decode("utf-8", errors="replace")[:128]
             idx = name_end + 1
             map_end = data.find(b"\x00", idx)
-            map_name = data[idx:map_end].decode("utf-8", errors="replace")
+            map_name = data[idx:map_end].decode("utf-8", errors="replace")[:64]
             idx = map_end + 1
             folder_end = data.find(b"\x00", idx)
             idx = folder_end + 1
@@ -124,6 +261,8 @@ def query_a2s_info(host: str, port: int, timeout: float = 1.2) -> Dict[str, Any]
             idx += 2
             players = data[idx]
             max_players = data[idx + 1]
+            bots = data[idx + 2] if len(data) > idx + 2 else 0
+            humans = max(0, int(players) - int(bots))
             return {
                 "online": True,
                 "status": "Online",
@@ -131,6 +270,8 @@ def query_a2s_info(host: str, port: int, timeout: float = 1.2) -> Dict[str, Any]
                 "map": map_name,
                 "players": f"{players}/{max_players}",
                 "curr_players": int(players),
+                "bots": int(bots),
+                "humans": humans,
                 "max_players": int(max_players),
                 "ping": f"{rtt} ms",
                 "rtt": rtt
@@ -146,6 +287,8 @@ def query_a2s_info(host: str, port: int, timeout: float = 1.2) -> Dict[str, Any]
         "map": "-",
         "players": "-/-",
         "curr_players": 0,
+        "bots": 0,
+        "humans": 0,
         "max_players": 0,
         "ping": "N/A",
         "rtt": 0
@@ -159,11 +302,15 @@ def query_a2s_players(host: str, port: int, timeout: float = 1.8) -> List[Dict[s
         target_ip = socket.gethostbyname(host)
         challenge_query = b"\xFF\xFF\xFF\xFF\x55\xFF\xFF\xFF\xFF"
         sock.sendto(challenge_query, (target_ip, port))
-        data, _ = sock.recvfrom(4096)
+        data, addr = sock.recvfrom(4096)
+        if addr[0] != target_ip:
+            raise ValueError("reply from unexpected address")
         if len(data) >= 9 and data[4] == 0x41:
             challenge = data[5:9]
             sock.sendto(b"\xFF\xFF\xFF\xFF\x55" + challenge, (target_ip, port))
-            data, _ = sock.recvfrom(8192)
+            data, addr = sock.recvfrom(8192)
+            if addr[0] != target_ip:
+                raise ValueError("reply from unexpected address")
 
         if len(data) > 5 and data[4] == 0x44:
             count = data[5]
@@ -245,6 +392,8 @@ def fetch_single_server(s: Dict[str, Any]) -> Dict[str, Any]:
         "map": current_map,
         "players": info["players"],
         "curr_players": info["curr_players"],
+        "bots": info.get("bots", 0),
+        "humans": info.get("humans", info["curr_players"]),
         "max_players": info["max_players"],
         "ping": info["ping"],
         "rtt": info["rtt"],
@@ -266,13 +415,27 @@ LOCAL_HEARTBEAT = {
 @app.get("/api/presence/heartbeat")
 @app.post("/api/presence/heartbeat")
 def presence_heartbeat(
+    request: Request,
     is_cs2_running: bool = False,
     is_steam_running: bool = False,
     in_menu: bool = True,
     game: str = "Counter-Strike 2"
 ):
-    """Accepts real-time presence heartbeat from local CS2 Command Center desktop app."""
+    """Accepts presence heartbeat ONLY from the owner's desktop app.
+
+    - No GERONIMO_PRESENCE_TOKEN configured on the server -> 503 (fail closed).
+    - Missing or wrong X-Geronimo-Token header             -> 401.
+    The token value is never logged or echoed.
+    """
     global LOCAL_HEARTBEAT
+    if not PRESENCE_TOKEN:
+        return JSONResponse({"error": "presence_updates_disabled"}, status_code=503)
+    supplied = request.headers.get("x-geronimo-token", "")
+    if not supplied or not hmac.compare_digest(supplied.encode("utf-8"), PRESENCE_TOKEN.encode("utf-8")):
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+    if len(game) > 64 or not re.fullmatch(r"[\w \-:.'!&()]*", game):
+        return JSONResponse({"error": "invalid_game"}, status_code=422)
+
     now = time.time()
     is_online = bool(is_cs2_running or is_steam_running)
     LOCAL_HEARTBEAT = {
@@ -312,14 +475,20 @@ def query_steam_profile_cached():
 
         if is_in_game:
             is_online = True
+            known = True
         elif is_online_now:
             is_online = True
             is_in_game = False
+            known = True
         elif is_offline_now:
             is_online = False
             is_in_game = False
+            known = True
         else:
-            is_online = ("profile_in_game" in html)
+            # Page loaded but no persona marker (Steam layout change, captcha, private
+            # profile...). We genuinely do not know -> never pretend "offline".
+            is_online = False
+            known = False
 
         game_text = ""
         in_game_name = re.search(r'profile_in_game_name.*?>(.*?)<', html, re.DOTALL)
@@ -334,29 +503,46 @@ def query_steam_profile_cached():
         res = {
             "is_in_game": is_in_game,
             "is_cs2": is_cs2,
-            "game_text": game_text,
-            "is_online": is_online
+            "game_text": game_text[:64],
+            "is_online": is_online,
+            "known": known and bool(html),
         }
         STEAM_PROFILE_CACHE["data"] = res
         STEAM_PROFILE_CACHE["timestamp"] = now
         return res
     except Exception:
-        if STEAM_PROFILE_CACHE.get("data"):
+        # Use the last good answer for up to 2 minutes, then admit we don't know.
+        if STEAM_PROFILE_CACHE.get("data") and now - STEAM_PROFILE_CACHE["timestamp"] < 120:
             return STEAM_PROFILE_CACHE["data"]
         return {
             "is_in_game": False,
             "is_cs2": False,
             "game_text": "",
-            "is_online": False
+            "is_online": False,
+            "known": False,
         }
 
 def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
-    # 1. Check if Geronimo is directly in any monitored server's active player list (Top priority)
-    for sid, sdata in server_results.items():
+    now = time.time()
+    has_recent_heartbeat = LOCAL_HEARTBEAT.get("timestamp", 0) > 0 and (now - LOCAL_HEARTBEAT["timestamp"] < 25)
+    # If the owner's authenticated app says CS2 is NOT running, a roster name match
+    # must be someone else using the same name.
+    heartbeat_denies_cs2 = has_recent_heartbeat and not LOCAL_HEARTBEAT.get("is_cs2")
+
+    # 1. Owner's exact in-game name in a monitored server roster (A2S gives names only,
+    #    not SteamIDs, so this is a best-effort match; see OWNER_PLAYER_NAMES).
+    # AUDIT 1b-R5: anyone can set their in-game name to "Geronimo". Only trust a
+    # roster name match when an owner-only signal also says CS2 is running:
+    # the authenticated heartbeat, or the owner's public Steam profile.
+    heartbeat_confirms_cs2 = has_recent_heartbeat and bool(LOCAL_HEARTBEAT.get("is_cs2"))
+    roster_trusted = (not heartbeat_denies_cs2) and (
+        heartbeat_confirms_cs2 or bool(query_steam_profile_cached().get("is_cs2"))
+    )
+    for sid, sdata in (server_results if roster_trusted else {}).items():
         plist = sdata.get("players_list", [])
         for p in plist:
             pname = p.get("name", "").strip().lower()
-            if "geronimo" in pname:
+            if pname in OWNER_PLAYER_NAMES:
                 return {
                     "online": True,
                     "in_game": True,
@@ -370,10 +556,7 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
                     "player_duration": int(p.get("seconds", 0))
                 }
 
-    # 2. Check local CS2 Command Center desktop app heartbeat (Sub-second real-time GSI detection)
-    now = time.time()
-    has_recent_heartbeat = LOCAL_HEARTBEAT.get("timestamp", 0) > 0 and (now - LOCAL_HEARTBEAT["timestamp"] < 25)
-
+    # 2. Owner's desktop app heartbeat (authenticated with GERONIMO_PRESENCE_TOKEN)
     if has_recent_heartbeat and LOCAL_HEARTBEAT.get("is_cs2"):
         return {
             "online": True,
@@ -388,7 +571,7 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
             "player_duration": 0
         }
 
-    # 3. Check public Steam profile status (Works 100% independently from the desktop app)
+    # 3. Check public Steam profile status (independent of the desktop app)
     st = query_steam_profile_cached()
 
     if st.get("is_in_game") and st.get("is_cs2"):
@@ -436,6 +619,22 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
             "player_duration": 0
         }
 
+    # Neither the app heartbeat nor the Steam profile gave a usable answer:
+    # report "unknown" (the website shows Standby), never a fake "offline".
+    if not st.get("known", True) and not has_recent_heartbeat:
+        return {
+            "online": False,
+            "in_game": False,
+            "state": "unknown",
+            "game": "Unknown",
+            "server_id": None,
+            "server_name": None,
+            "map": "Unknown",
+            "players": "N/A",
+            "connect_url": None,
+            "player_duration": 0
+        }
+
     # Geronimo is offline if Steam is closed and no games are running
     return {
         "online": False,
@@ -452,9 +651,8 @@ def get_geronimo_steam_status(server_results: Dict[str, Any]) -> Dict[str, Any]:
 
 import ssl
 
+# AUDIT 1b-R2: certificate checks stay ON (the old code turned them off).
 SSL_CTX = ssl.create_default_context()
-SSL_CTX.check_hostname = False
-SSL_CTX.verify_mode = ssl.CERT_NONE
 
 try:
     from curl_cffi import requests as cffi_requests
@@ -504,7 +702,12 @@ def fetch_gfl_intel(gfl_map: str):
             print(f"[ZEGRAPH_MATCH_ERROR] {e}")
 
     # 2. Musics for current active map
+    # AUDIT 1b-R3: the map name comes from a game server's reply. Only allow a
+    # normal map name and URL-encode it before it goes into a URL path.
     clean_map = gfl_map.strip() if gfl_map else ""
+    if not re.fullmatch(r"[A-Za-z0-9_.\-]{1,64}", clean_map):
+        clean_map = ""
+    clean_map = urllib.parse.quote(clean_map, safe="")
     if clean_map and clean_map != "-":
         if cffi_requests:
             try:
@@ -532,6 +735,57 @@ def fetch_gfl_intel(gfl_map: str):
     GFL_INTEL_CACHE["timestamp"] = now
     return match_data, musics_data
 
+# --------------------------------------------------------------------------- #
+# AUDIT P2-#2: ONE definition of "players online". This block is a byte-identical
+# copy of desktop-app/server_browser.py (test_phase2_bugs checks it). Humans only,
+# servers that answered within TOTALS_MAX_AGE_S, each (ip, port) once.
+# --------------------------------------------------------------------------- #
+TOTALS_MAX_AGE_S = 90
+
+
+def compute_player_totals(rows, now=None, max_age_s=TOTALS_MAX_AGE_S):
+    """rows: iterable of dicts with keys: id, host, port, ip (optional), online,
+    curr_players, bots (optional), max_players, sampled_at (unix time, optional).
+    Returns dict: humans, bots, online_servers, total_servers, stale_servers,
+    bots_unknown_servers, duplicates_dropped, rows (per-server table)."""
+    now = time.time() if now is None else float(now)
+    seen = set()
+    out_rows = []
+    humans = bots_total = online = stale = bots_unknown = dupes = 0
+    for r in rows:
+        key = (str(r.get("ip") or r.get("host") or "").lower(), int(r.get("port") or 0))
+        if key in seen:
+            dupes += 1
+            continue
+        seen.add(key)
+        sampled = r.get("sampled_at")
+        fresh = sampled is None or (now - float(sampled)) <= max_age_s
+        is_online = bool(r.get("online")) and fresh
+        curr = int(r.get("curr_players") or 0)
+        b = r.get("bots")
+        if b is None:
+            b_val, b_known = 0, False
+        else:
+            b_val, b_known = max(0, int(b)), True
+        h = max(0, curr - b_val) if is_online else 0
+        if bool(r.get("online")) and not fresh:
+            stale += 1
+        if is_online:
+            online += 1
+            humans += h
+            bots_total += b_val
+            if not b_known:
+                bots_unknown += 1
+        out_rows.append({"id": r.get("id"), "host": r.get("host"), "port": r.get("port"),
+                         "online": is_online, "humans": h, "bots": b_val if is_online else 0,
+                         "bots_known": b_known, "max_players": int(r.get("max_players") or 0),
+                         "stale": bool(r.get("online")) and not fresh})
+    return {"humans": humans, "bots": bots_total, "online_servers": online,
+            "total_servers": len(out_rows), "stale_servers": stale,
+            "bots_unknown_servers": bots_unknown, "duplicates_dropped": dupes,
+            "max_age_s": max_age_s, "rows": out_rows}
+
+
 def fetch_all_telemetry() -> Dict[str, Any]:
     futures = [THREAD_POOL.submit(fetch_single_server, s) for s in SERVERS]
     server_results = {}
@@ -546,11 +800,20 @@ def fetch_all_telemetry() -> Dict[str, Any]:
     gfl_map = server_results.get("gfl", {}).get("map", "")
     match_now, map_musics = fetch_gfl_intel(gfl_map)
 
+    sampled_at = time.time()
+    totals = compute_player_totals(
+        [{"id": r["id"], "host": r["host"], "port": r["port"], "online": r["online"],
+          "curr_players": r["curr_players"], "bots": r.get("bots"), "max_players": r["max_players"],
+          "sampled_at": sampled_at} for r in server_results.values()],
+        now=sampled_at)
+    totals.pop("rows", None)
+
     return {
         "timestamp": int(time.time()),
         "iso_time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "total_servers": len(SERVERS),
-        "online_servers": sum(1 for r in server_results.values() if r["online"]),
+        "online_servers": totals["online_servers"],
+        "totals": totals,  # AUDIT P2-#2: the ONE total the website and app display
         "geronimo_presence": geronimo_status,
         "gfl_match_now": match_now,
         "gfl_map_musics": map_musics,
@@ -573,16 +836,36 @@ def get_servers():
     if CACHE["data"] and (now - CACHE["timestamp"] < 3.5):
         return CACHE["data"]
 
-    fresh_data = fetch_all_telemetry()
-    CACHE["data"] = fresh_data
-    CACHE["timestamp"] = now
-    return fresh_data
+    # AUDIT 1b-R1: REFRESH_LOCK was defined but never used. Only one request runs
+    # the full A2S sweep; others wait and then reuse its fresh cache.
+    with REFRESH_LOCK:
+        now = time.time()
+        if CACHE["data"] and (now - CACHE["timestamp"] < 3.5):
+            return CACHE["data"]
+        fresh_data = fetch_all_telemetry()
+        CACHE["data"] = fresh_data
+        CACHE["timestamp"] = time.time()
+        return fresh_data
 
+
+
+DETAIL_CACHE: Dict[str, Dict[str, Any]] = {}
+DETAIL_LOCK = threading.Lock()
 
 
 @app.get("/api/servers/{server_id}")
 def get_server_detail(server_id: str):
+    # AUDIT 1b-R4: only ids from the fixed catalog (no user host:port), 404 for
+    # unknown ids, and a 5 s cache so callers cannot trigger a UDP query per request.
+    if not re.fullmatch(r"[a-z0-9_]{1,32}", server_id or ""):
+        return JSONResponse({"error": "server_not_found"}, status_code=404)
     target = next((s for s in SERVERS if s["id"] == server_id), None)
     if not target:
-        return {"error": "Server not found"}
-    return fetch_single_server(target)
+        return JSONResponse({"error": "server_not_found"}, status_code=404)
+    with DETAIL_LOCK:
+        hit = DETAIL_CACHE.get(server_id)
+        if hit and time.time() - hit["t"] < 5.0:
+            return hit["data"]
+        data = fetch_single_server(target)
+        DETAIL_CACHE[server_id] = {"t": time.time(), "data": data}
+        return data

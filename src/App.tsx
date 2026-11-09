@@ -1,17 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { RetroGridCanvas } from './components/RetroGridCanvas';
 import { CyberNavbar, scrollToSectionById } from './components/CyberNavbar';
 import { PepeHeroStage } from './components/PepeHeroStage';
 import { BananaHeroStage } from './components/BananaHeroStage';
 import { DownloadRamSection } from './components/DownloadRamSection';
-import { RoamingMemeGremlin } from './components/RoamingMemeGremlin';
 import { ServerRadarPreview } from './components/ServerRadarPreview';
 import { CS2AutoexecGeneratorSection } from './components/CS2AutoexecGeneratorSection';
 import { CS2CommandCenterPreview } from './components/CS2CommandCenterPreview';
-import { GeronimoDiscordPresence } from './components/GeronimoDiscordPresence';
 import { DeployHudFooter } from './components/DeployHudFooter';
-import { ChaosAnomalyEngine } from './components/ChaosAnomalyEngine';
 import { ChevronDown, PhoneCall, Radio, ShieldCheck } from 'lucide-react';
+
+// AUDIT P4: floating overlays (no navbar anchors inside) load as separate chunks after the
+// first paint, so the main bundle the visitor waits for is smaller.
+const RoamingMemeGremlin = lazy(() => import('./components/RoamingMemeGremlin').then((m) => ({ default: m.RoamingMemeGremlin })));
+const GeronimoDiscordPresence = lazy(() => import('./components/GeronimoDiscordPresence').then((m) => ({ default: m.GeronimoDiscordPresence })));
+const ChaosAnomalyEngine = lazy(() => import('./components/ChaosAnomalyEngine').then((m) => ({ default: m.ChaosAnomalyEngine })));
 
 const pickRandomBananaLoops = (): number => {
   const choices = [2, 3, 4];
@@ -25,9 +28,12 @@ export const App: React.FC = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const ipParam = urlParams.get('connect') || urlParams.get('ip') || (window.location.pathname.startsWith('/connect') ? (urlParams.get('server') || '74.91.124.21:27015') : null);
       if (ipParam) {
-        const cleanIp = ipParam.replace(/[^0-9a-zA-Z.:-]/g, '').trim();
-        if (cleanIp) {
-          window.location.href = `steam://connect/${cleanIp}`;
+        const cleanIp = ipParam.replace(/[^0-9a-zA-Z.:-]/g, '').trim().slice(0, 120);
+        if (cleanIp && !window.location.pathname.startsWith('/connect')) {
+          // AUDIT 1d-W1: never launch Steam straight from the home page. Hand off to
+          // /connect/, which validates host:port, only auto-connects to catalog
+          // servers, and asks the visitor to click for anything else.
+          window.location.replace(`/connect/?ip=${encodeURIComponent(cleanIp)}`);
         }
       }
     } catch {}
@@ -148,8 +154,13 @@ export const App: React.FC = () => {
         gridColor={theme === 'banana' ? '#FACC15' : '#27AE60'}
       />
 
+      {/* AUDIT P5: keyboard users can jump past the navbar */}
+      <a href="#main-content" className="skip-link">Skip to content</a>
+
       {/* Interactive Roaming Pepe / Banana Character */}
-      <RoamingMemeGremlin theme={theme} enabled={gremlinEnabled} />
+      <Suspense fallback={null}>
+        <RoamingMemeGremlin theme={theme} enabled={gremlinEnabled} />
+      </Suspense>
 
       {/* Unified Top Command Dock & Telemetry Strip */}
       <CyberNavbar
@@ -166,7 +177,7 @@ export const App: React.FC = () => {
       )}
 
       {/* Main Content Area */}
-      <main className="relative z-10 flex-grow flex flex-col items-center">
+      <main id="main-content" tabIndex={-1} className="relative z-10 flex-grow flex flex-col items-center outline-none">
         
         {/* ASYMMETRIC BENTO-GRID COMMAND HEADER */}
         <div id="hero-stage" className="w-full max-w-6xl mx-auto pt-6 pb-2 px-4 scroll-mt-32">
@@ -193,7 +204,7 @@ export const App: React.FC = () => {
                     <span>TACTICAL PEPE &amp; BANANA PHONE CYBER-DECK // SYS.CORE</span>
                   </span>
                   <span className={`tier-5-badge ${theme === "banana" ? "bg-[#FFE135]/15 text-[#FFE135] border border-[#FFE135]/40" : "bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40"}`}>
-                    ● UPLINK VERIFIED
+                    ● UPLINK ONLINE
                   </span>
                 </div>
 
@@ -207,7 +218,7 @@ export const App: React.FC = () => {
                 </div>
 
                 <p className="tier-4-body max-w-2xl">
-                  Unified retro-cyberpunk command deck for <strong className={theme === "banana" ? "text-[#FFE135]" : "text-[#E48716]"}>geronimohq.com</strong>. Blending interactive Pepe &amp; Rotary Banana Phone holo-chambers, live CS2 Zombie Escape satellite telemetry, VAC-safe Config Studio, and the standalone <strong className={theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"}>CS2 Command Center</strong> desktop utility.
+                  Unified retro-cyberpunk command deck for <strong className={theme === "banana" ? "text-[#FFE135]" : "text-[#E48716]"}>geronimohq.com</strong>. Blending interactive Pepe &amp; Rotary Banana Phone holo-chambers, live CS2 Zombie Escape server telemetry, a Config Studio, and the standalone <strong className={theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"}>CS2 Command Center</strong> desktop utility.
                 </p>
               </div>
 
@@ -252,16 +263,16 @@ export const App: React.FC = () => {
                   </div>
 
                   <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#070B09] border border-[#1E2E26]">
-                    <span className="tier-4-body">VAC Safety Protocol</span>
+                    <span className="tier-4-body">Game memory access</span>
                     <span className={`tier-5-badge ${theme === "banana" ? "bg-[#FFE135]/15 text-[#FFE135] border border-[#FFE135]/40" : "bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40"}`}>
-                      <ShieldCheck className="w-3 h-3" /> 100% VERIFIED
+                      <ShieldCheck className="w-3 h-3" /> NONE
                     </span>
                   </div>
                 </div>
               </div>
 
               <div className="mt-3 pt-2.5 border-t border-[#1E2E26] flex items-center justify-between text-[11px] font-code text-[#94A39E]">
-                <span>FREQ: 128-TICK SUB-SYNC</span>
+                <span>TICK: 64 + SUB-TICK</span>
                 <span className={`${theme === "banana" ? "text-[#FFE135]" : "text-[#2ECC71]"} font-bold`}>STATUS: OPTIMAL</span>
               </div>
             </div>
@@ -313,9 +324,13 @@ export const App: React.FC = () => {
       </main>
 
       {/* Floating Geronimo Discord-Style Live Presence (Fixed Lower-Left) */}
-      <GeronimoDiscordPresence />
+      <Suspense fallback={null}>
+        <GeronimoDiscordPresence />
+      </Suspense>
       {/* Interactive Random Chaos Anomaly Protocol Button */}
-      <ChaosAnomalyEngine />
+      <Suspense fallback={null}>
+        <ChaosAnomalyEngine />
+      </Suspense>
       {/* Clean Transmission / Contact Terminal Footer */}
       <DeployHudFooter />
     </div>

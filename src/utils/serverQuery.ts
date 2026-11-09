@@ -12,6 +12,11 @@ export interface LiveServerInfo {
   map: string;
   players: string;
   curr_players: number;
+  /** AUDIT P2-#2: bots on the server (A2S players include bots); absent on old backends */
+  bots?: number | null;
+  humans?: number;
+  host?: string;
+  port?: number;
   max_players: number;
   ping: string;
   rtt: number;
@@ -23,7 +28,7 @@ export interface LiveServerInfo {
 export interface GeronimoPresence {
   online: boolean;
   in_game: boolean;
-  state: 'in_server' | 'main_menu' | 'other_game' | 'online' | 'offline';
+  state: 'in_server' | 'main_menu' | 'other_game' | 'online' | 'offline' | 'unknown';
   game: string | null;
   server_id: string | null;
   server_name: string | null;
@@ -69,6 +74,8 @@ export interface LiveTelemetryPayload {
   iso_time: string;
   total_servers: number;
   online_servers: number;
+  /** AUDIT P2-#2: the shared total (humans only, fresh servers only) */
+  totals?: import('./playerTotals').PlayerTotals;
   geronimo_presence?: GeronimoPresence;
   gfl_match_now?: GflMatchNow | null;
   gfl_continents?: ZegraphContinentStats | null;

@@ -1,0 +1,6 @@
+# Desktop app (CS2 Command Center) - versions used for the audit build (2026-11-10)
+pillow==13.0.0
+cryptography==50.0.2
+pystray==0.19.5
+# build only
+pyinstaller==6.22.3

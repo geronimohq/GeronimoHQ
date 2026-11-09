@@ -1,0 +1,86 @@
+# Phase 2 tests - 2026-11-10T02:34:10+08:00 - Windows 11, Python 3.14.7
+# python desktop-app/test_phase2_bugs.py (config redirected to temp; registry/schtasks stubbed; no pop-ups)
+
+test_engine_tweaks_block_is_recognised (__main__.Bug1AutoexecStatus.test_engine_tweaks_block_is_recognised) ... ok
+test_in_app_editor_save_then_outside_edit (__main__.Bug1AutoexecStatus.test_in_app_editor_save_then_outside_edit) ... ok
+test_missing_file (__main__.Bug1AutoexecStatus.test_missing_file) ... ok
+test_user_file_then_app_ze_write_updates_without_restart (__main__.Bug1AutoexecStatus.test_user_file_then_app_ze_write_updates_without_restart) ... ok
+test_backend_and_ci_script_use_identical_function (__main__.Bug2Totals.test_backend_and_ci_script_use_identical_function) ... ok
+test_dashboard_and_servers_page_show_the_same_numbers (__main__.Bug2Totals.test_dashboard_and_servers_page_show_the_same_numbers) ... ok
+test_no_hard_coded_totals_left (__main__.Bug2Totals.test_no_hard_coded_totals_left) ... ok
+test_rule (__main__.Bug2Totals.test_rule) ... ok
+test_shared_totals_sources (__main__.Bug2Totals.test_shared_totals_sources) ... ok
+test_website_typescript_gives_same_numbers (__main__.Bug2Totals.test_website_typescript_gives_same_numbers) ... ok
+test_dns_label_is_real (__main__.Bug3StatusBar.test_dns_label_is_real) ... ok
+test_label_follows_real_sniper_even_when_withdrawn (__main__.Bug3StatusBar.test_label_follows_real_sniper_even_when_withdrawn) ... ok
+test_no_hard_coded_status_text_left (__main__.Bug3StatusBar.test_no_hard_coded_status_text_left) ... ok
+test_sniper_states (__main__.Bug3StatusBar.test_sniper_states) ... ok
+ok
+test_preview_ignores_placeholder_text_when_nothing_sent (__main__.Bug4DiscordPreview.test_preview_ignores_placeholder_text_when_nothing_sent) ... ok
+test_preview_shows_exactly_what_was_sent (__main__.Bug4DiscordPreview.test_preview_shows_exactly_what_was_sent) ... ok
+test_rpc_snapshot_cleared_on_close (__main__.Bug4DiscordPreview.test_rpc_snapshot_cleared_on_close) ... ok
+test_estimate_label_and_sample_size (__main__.Bug5Geo.test_estimate_label_and_sample_size) ... ok
+test_geo_never_takes_player_names (__main__.Bug5Geo.test_geo_never_takes_player_names) ... ok
+test_no_invented_percentages_left (__main__.Bug5Geo.test_no_invented_percentages_left) ... ok
+test_offline_fallback_uses_last_value_with_age (__main__.Bug5Geo.test_offline_fallback_uses_last_value_with_age) ... ok
+test_zero_players_and_no_data (__main__.Bug5Geo.test_zero_players_and_no_data) ... ok
+test_dialog_covers_every_setting (__main__.Bug6SettingsPersist.test_dialog_covers_every_setting) ... ok
+test_failed_write_is_reported_not_called_saved (__main__.Bug6SettingsPersist.test_failed_write_is_reported_not_called_saved) ... ok
+test_reset_keeps_secret_and_client_id (__main__.Bug6SettingsPersist.test_reset_keeps_secret_and_client_id) ... ok
+test_round_trip_every_setting (__main__.Bug6SettingsPersist.test_round_trip_every_setting) ... ok
+test_startup_entry_only_touched_when_changed (__main__.Bug6SettingsPersist.test_startup_entry_only_touched_when_changed) ... ok
+test_no_marketing_claims_left (__main__.Bug7Claims.test_no_marketing_claims_left) ... ok
+test_plain_fact_and_disclaimer_present (__main__.Bug7Claims.test_plain_fact_and_disclaimer_present) ... ok
+test_click_sets_active_first_and_bottom_forces_contact (__main__.Bug8NavbarSource.test_click_sets_active_first_and_bottom_forces_contact) ... ok
+test_blocks_have_undo_lines_and_no_writeconfig_or_camera_turn_binds (__main__.Bug9Autoexec.test_blocks_have_undo_lines_and_no_writeconfig_or_camera_turn_binds) ... ok
+test_old_block_without_end_marker_is_replaced_not_truncated (__main__.Bug9Autoexec.test_old_block_without_end_marker_is_replaced_not_truncated) ... ok
+test_reapply_engine_tweaks_keeps_ze_block_and_user_lines (__main__.Bug9Autoexec.test_reapply_engine_tweaks_keeps_ze_block_and_user_lines) ... ok
+test_restore_without_backup_removes_only_the_block (__main__.Bug9Autoexec.test_restore_without_backup_removes_only_the_block) ... ok
+test_website_generator_source (__main__.Bug9Autoexec.test_website_generator_source) ... ok
+
+----------------------------------------------------------------------
+Ran 36 tests in 5.151s
+
+OK
+
+[#4] after auto-check with CS2 closed: {'status': '○ Standby  |  CS2 Closed (No Presence)', 'dormant': '💤 NOTHING SENT TO DISCORD', 'details': '', 'btn1': '', 'active_shown': False}
+
+[#5] GFL geo line: 🌐 GEO (estimate, 37 of 64 players): Europe 41% · N. America 27% · Asia 19%
+
+[#6] round trip OK for: check_updates_on_startup, discord_presence_share, minimize_to_tray_on_close, open_on_page, server_refresh_speed, sniper_sound_enabled, sniper_sound_volume, start_minimized, start_with_windows
+
+[#9] ZE block header:
+// === [CS2 COMMAND CENTER: ZE VISUAL, HUD & AUDIO DUCKING STUDIO START] ===
+// Added by CS2 Command Center (hobby project, not affiliated with Valve).
+// UNDO: delete everything from START to END, then type in the CS2 console
+//       (common defaults - check your own): unbind F7; unbind F8;
+//       volume 1; snd_musicvolume 0.5; voice_modenable 1; viewmodel_presetpos 1;
+//       cl_hud_color 0; cl_hud_telemetry_frametime_show 0; cl_hud_telemetry_ping_show 0;
+//       cl_hud_telemetry_net_misdelivery_show 0
+
+# Same test file run against the ORIGINAL code (git worktree of c3cf474):
+Ran 36 tests in 5.586s
+FAILED (failures=14, errors=21)
+# (only Bug8NavbarSource passed on the old code: that fix already existed)
+
+# Full suite after Phase 2:
+== backend/test_api_security.py rc=0 :: Ran 15 tests in 0.441s OK 
+== desktop-app/test_banned_hues.py rc=0 :: Ran 3 tests in 0.831s OK 
+== desktop-app/test_comprehensive_audit.py rc=0 :: Ran 14 tests in 3.096s OK 
+== desktop-app/test_dashboard_clarity.py rc=0 :: Ran 2 tests in 0.987s OK 
+== desktop-app/test_diagnostics_redaction.py rc=0 :: Ran 1 test in 0.879s OK 
+== desktop-app/test_dialog_geometry.py rc=0 :: Ran 1 test in 1.258s OK 
+== desktop-app/test_dpi_table_scaling.py rc=0 :: Ran 1 test in 0.464s OK 
+== desktop-app/test_map_protection_dummy.py rc=0 :: Ran 1 test in 0.008s OK 
+== desktop-app/test_new_functionality.py rc=0 :: Ran 5 tests in 0.551s OK 
+== desktop-app/test_phase2_bugs.py rc=0 :: Ran 36 tests in 5.183s OK 
+== desktop-app/test_pills_calc.py rc=0 :: Ran 1 test OK (after wording update NODES->SERVERS ONLINE)
+== desktop-app/test_security_phase1c.py rc=0 :: Ran 18 tests in 0.386s OK (skipped=1) 
+== desktop-app/test_server_asset_protection.py rc=0 :: Ran 3 tests in 0.863s OK 
+== desktop-app/test_server_browser_telemetry.py rc=0 :: All tests passed! 
+== desktop-app/test_sidebar_architecture.py rc=0 :: Ran 3 tests in 1.845s OK 
+== desktop-app/test_token_parity.py rc=0 :: Ran 2 tests in 0.007s OK 
+== desktop-app/test_updater.py rc=0 :: Ran 7 tests in 6.934s OK 
+== desktop-app/test_user_feedback_fixes.py rc=0 :: Ran 5 tests in 0.310s OK 
+== desktop-app/test_version_consistency.py rc=0 :: Ran 2 tests in 0.818s OK 
+== desktop-app/test_website_feature_parity.py rc=0 :: Ran 5 tests in 1.459s OK 

@@ -25,6 +25,7 @@ except Exception:
 
 import time
 import threading
+import queue as _queue_mod
 from concurrent.futures import ThreadPoolExecutor
 import datetime
 import urllib.parse
@@ -52,6 +53,20 @@ import subprocess
 
 _single_instance_mutex = None
 
+_UNSAFE_URL_CHARS = set('&|<>^"`\r\n\t ')
+
+
+def _is_safe_launch_url(url: str) -> bool:
+    try:
+        url = str(url)
+    except Exception:
+        return False
+    low = url.lower()
+    if not (low.startswith("https://") or low.startswith("http://")):
+        return False
+    return not any(c in _UNSAFE_URL_CHARS for c in url) and len(url) < 2048
+
+
 def launch_url_in_browser(url: str) -> bool:
     """
     Universal, elevation-proof URL opener for Windows.
@@ -59,6 +74,10 @@ def launch_url_in_browser(url: str) -> bool:
     (Brave, Chrome, Edge, Firefox), with graceful fallbacks to cmd start, rundll32, and ShellExecute.
     """
     if not url:
+        return False
+    # AUDIT 1c-D2: only http(s) links, and no characters that cmd.exe treats
+    # as command separators (the "start" fallback below runs through cmd.exe).
+    if not _is_safe_launch_url(url):
         return False
 
     # 1. Direct browser binaries (Guaranteed execution even when running as Administrator)
@@ -81,9 +100,11 @@ def launch_url_in_browser(url: str) -> bool:
                 pass
 
     # 2. Windows shell 'start' command (delegates to Windows registered default web browser)
+    #    Skipped when the URL has '%' (cmd.exe would expand %VARIABLES% into it).
     try:
-        subprocess.Popen(["cmd.exe", "/c", "start", "", url])
-        return True
+        if "%" not in url:
+            subprocess.Popen(["cmd.exe", "/c", "start", "", url])
+            return True
     except Exception:
         pass
 
@@ -181,6 +202,20 @@ def play_calm_tone(kind="info"):
         except Exception:
             pass
     threading.Thread(target=_sound, daemon=True).start()
+
+def bind_escape_to_close(win):
+    """AUDIT P5 (keyboard): Esc closes a dialog the same way its [X] button does."""
+    def _on_escape(_event=None):
+        try:
+            cmd = win.protocol("WM_DELETE_WINDOW")
+            if cmd:
+                win.tk.call(cmd)
+            else:
+                win.destroy()
+        except Exception:
+            pass
+    win.bind("<Escape>", _on_escape)
+
 
 class PanoramaTooltip:
     """
@@ -549,8 +584,35 @@ class CustomMessageBox:
 messagebox = CustomMessageBox
 
 class CS2TruePanoramaApp(tk.Tk):
+    # AUDIT P4 (handle leak): every NEW thread that calls into Tcl (e.g. after() from a
+    # worker) leaks one Windows handle that is never freed. The server refresh starts a new
+    # thread every refresh, so the app leaked ~60 handles per minute (measured: 342 -> 939
+    # in 10 min). Calls from worker threads now go through a queue that the main thread
+    # drains, so worker threads never touch Tcl. Tested: 0 extra handles per thread.
+    def after(self, ms, func=None, *args):
+        if func is not None and threading.current_thread() is not threading.main_thread():
+            q = getattr(self, "_ui_queue", None)
+            if q is not None:
+                q.put((ms, func, args))
+                return None
+        return super().after(ms, func, *args)
+
+    def _pump_ui_queue(self):
+        try:
+            while True:
+                ms, func, args = self._ui_queue.get_nowait()
+                tk.Tk.after(self, ms, func, *args)
+        except _queue_mod.Empty:
+            pass
+        except Exception:
+            pass
+        if not getattr(self, "_quitting", False):
+            tk.Tk.after(self, 50, self._pump_ui_queue)
+
     def __init__(self):
         super().__init__()
+        self._ui_queue = _queue_mod.Queue()
+        tk.Tk.after(self, 50, self._pump_ui_queue)
         # Immediately withdraw to prevent Windows from registering the default Tk feather icon on the taskbar
         self.withdraw()
         self.title("CS2 Command Center")
@@ -623,6 +685,7 @@ class CS2TruePanoramaApp(tk.Tk):
         # Clicking [X] exits completely; clicking [-] minimizes to system tray
         self.protocol("WM_DELETE_WINDOW", self.exit_application)
         self.bind("<Unmap>", self._on_window_unmap)
+        self.bind("<FocusIn>", self._on_app_focus_in, add="+")  # AUDIT P2-#1
 
         # Configure Modern CS2 Panorama ttk Styles
         self.style = ttk.Style(self)
@@ -726,7 +789,7 @@ class CS2TruePanoramaApp(tk.Tk):
         self.gfl_score_var = tk.StringVar(value="🛡️ Humans: -  vs  🧟 Zombies: -")
         self.gfl_extends_var = tk.StringVar(value="⏱️ Extends: -/3")
         self.gfl_timer_var = tk.StringVar(value="⏱️ --:-- on map")
-        self.gfl_geo_var = tk.StringVar(value="🌐 GEO: 🇺🇸 US 54% • 🇨🇦 CA 26% • 🇲🇽 MX 11%")
+        self.gfl_geo_var = tk.StringVar(value="🌐 GEO: checking…")  # AUDIT P2-#5: was a fixed made-up split
         self.server_map_start_timestamps = {}
         self.server_last_known_maps = {}
         self.gfl_map_start_timestamp = 0
@@ -750,10 +813,12 @@ class CS2TruePanoramaApp(tk.Tk):
         self.active_sniper_target = None
         self.active_tracked_server = None  # (host, port, server_name)
         self.discord_session_start = int(time.time())
-        self.discord_preview_details = tk.StringVar(value="In Main Menu • Standby")
-        self.discord_preview_state = tk.StringVar(value="CS2 Command Center")
-        self.discord_preview_elapsed = tk.StringVar(value="⏱ 00:00 elapsed")
-        self.discord_preview_btn1 = tk.StringVar(value="🎮 Server: 74.91.124.21:27015")
+        # AUDIT P2-#4: no placeholder data that could look live (was "In Main Menu" + a GFL IP).
+        self.discord_preview_details = tk.StringVar(value="")
+        self.discord_preview_state = tk.StringVar(value="")
+        self.discord_preview_elapsed = tk.StringVar(value="")
+        self.discord_preview_btn1 = tk.StringVar(value="")
+        self._discord_preview_checked = False
         self.discord_preview_btn2 = tk.StringVar(value="")
 
         # Automatic CS2 GSI & Process State
@@ -769,7 +834,12 @@ class CS2TruePanoramaApp(tk.Tk):
                 pass
         self.gsi_server = cs2_gsi.get_gsi_server(on_state_update=self._on_gsi_state_update)
         try:
-            self.gsi_server.start()
+            if not self.gsi_server.start():
+                # AUDIT P3 (D-13): say so instead of failing silently.
+                self._gsi_start_error = getattr(self.gsi_server, "last_error", "") or "could not start"
+                self.after(1500, lambda: self.log(
+                    f"[GSI] Live game state is OFF: {self._gsi_start_error}. Map/in-game detection falls back to "
+                    "process checks. Close the other program using that port and restart this app."))
         except Exception:
             pass
 
@@ -800,6 +870,11 @@ class CS2TruePanoramaApp(tk.Tk):
     def safe_after(self, ms: int, func):
         """Thread-safe and shutdown-safe wrapper around tkinter after()."""
         try:
+            if threading.current_thread() is not threading.main_thread():
+                # AUDIT P4: no Tcl call from worker threads (winfo_exists leaked a handle per thread)
+                if not getattr(self, "_quitting", False):
+                    return self.after(ms, func)   # -> queued, see after()
+                return None
             if not getattr(self, "_quitting", False) and self.winfo_exists():
                 return self.after(ms, func)
         except Exception:
@@ -919,13 +994,23 @@ class CS2TruePanoramaApp(tk.Tk):
         """Completely terminates background processes and closes app."""
         global _single_instance_mutex
         self._quitting = True
+        try:  # AUDIT P3-01: remember the page for "Open on start: Last used page"
+            if getattr(self, "current_page_key", None):
+                self.config["last_page_key"] = self.current_page_key
+                app_config.save_config(self.config)
+        except Exception:
+            pass
+        # AUDIT 1c-D5: only the owner's install (presence_secret set) tells the
+        # website "offline" on exit. Other users' installs send nothing.
         try:
-            import urllib.request
-            req = urllib.request.Request(
-                "https://geronimohq-telemetry.onrender.com/api/presence/heartbeat?is_cs2_running=false&is_steam_running=false&in_menu=false",
-                headers={"User-Agent": "CS2CommandCenter/2.0"}
-            )
-            urllib.request.urlopen(req, timeout=1.5)
+            secret = str(self.config.get("presence_secret", "") or "").strip()
+            if secret:
+                import urllib.request
+                req = urllib.request.Request(
+                    "https://geronimohq-telemetry.onrender.com/api/presence/heartbeat?is_cs2_running=false&is_steam_running=false&in_menu=false",
+                    headers={"User-Agent": "CS2CommandCenter/2.0", "X-Geronimo-Token": secret}
+                )
+                urllib.request.urlopen(req, timeout=1.5)
         except Exception:
             pass
         try:
@@ -1015,7 +1100,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
         admin_txt = "ADMIN PERMISSIONS" if self.admin_status else "STANDARD PERMISSIONS"
         admin_col = ACCENT_GREEN if self.admin_status else FG_MUTED
-        admin_tip = "Running with Administrator privileges (Full access for system maintenance, TRIM, and latency diagnostics)." if self.admin_status else "Running with Standard user permissions (Safe CS2 autoexec and engine tweaks work 100%)."
+        admin_tip = "Running with Administrator privileges (Full access for system maintenance, TRIM, and latency diagnostics)." if self.admin_status else "Running as a standard user (autoexec and engine tweaks do not need Administrator)."
         self._create_header_pill(head_right, admin_txt, admin_col, tooltip=admin_tip)
 
         cs2_found = bool(self.paths["cs2_exe"])
@@ -1036,7 +1121,7 @@ class CS2TruePanoramaApp(tk.Tk):
         self.sidebar.pack(side="left", fill="y")
         self.sidebar.pack_propagate(False)
 
-        tk.Label(self.sidebar, text="NAVIGATION", font=("Segoe UI", 10, "bold"), fg="#4b5563", bg=BG_SIDEBAR, padx=16, pady=10).pack(anchor="w")
+        tk.Label(self.sidebar, text="NAVIGATION", font=("Segoe UI", 10, "bold"), fg=FG_MUTED, bg=BG_SIDEBAR, padx=16, pady=10).pack(anchor="w")
 
         # RIGHT CONTENT AREA
         self.main_content = tk.Frame(body, bg=BG_WINDOW, padx=16, pady=12)
@@ -1063,7 +1148,7 @@ class CS2TruePanoramaApp(tk.Tk):
                            tooltip="Dedicated GPU Multi-Plane Overlay (MPO) troubleshooter: May help resolve Alt-Tab black screens, driver timeouts, and display stutter.")
 
         self._add_nav_item("AUTOEXEC", "📝", "Autoexec & Binds", self._build_page_autoexec,
-                           tooltip="Inject sub-tick network rates, competitive audio clarity, and autoexec performance binds.")
+                           tooltip="Adds the app's marked performance block (fps_max, network rate, audio buffer, HUD graphs) and ZE binds to autoexec.cfg.")
         self._add_nav_item("LAUNCH", "🚀", "Launch Options", self._build_page_launch,
                            tooltip="Optimal CS2 launch options tuned specifically for your CPU architecture and thread topology.")
         self._add_nav_item("BOOST", "⚡", "Live Booster & DNS", self._build_page_boost,
@@ -1077,8 +1162,8 @@ class CS2TruePanoramaApp(tk.Tk):
         self._add_nav_item("FAQ", "📖", "Help & FAQ Guide", self._build_page_faq,
                            tooltip="Knowledge base and troubleshooting guide for all optimizer tweaks and competitive settings.")
 
-        # Set default active page
-        self._select_nav("DASHBOARD")
+        # Start page (AUDIT P3-01: the "Open on start" setting was saved but ignored)
+        self._select_nav(app_config.start_page_key(self.config, self.nav_items.keys()))
 
         # Open maximized (fullscreen) by default as requested by Geronimo
         if "--minimized" not in sys.argv:
@@ -1145,9 +1230,9 @@ class CS2TruePanoramaApp(tk.Tk):
 
         head = tk.Frame(console_box, bg=BG_WINDOW)
         head.pack(fill="x", pady=(0, 2))
-        tk.Label(head, text="SYSTEM ACTIVITY LOGS", font=("Segoe UI", 14, "bold"), fg="#64748b", bg=BG_WINDOW).pack(side="left")
+        tk.Label(head, text="SYSTEM ACTIVITY LOGS", font=("Segoe UI", 14, "bold"), fg=FG_MUTED, bg=BG_WINDOW).pack(side="left")
 
-        tk.Button(head, text="Clear", font=("Segoe UI", 9), fg="#64748b", bg=BG_WINDOW,
+        tk.Button(head, text="Clear", font=("Segoe UI", 9), fg=FG_MUTED, bg=BG_WINDOW,
                   relief="flat", cursor="hand2", command=self.clear_logs).pack(side="right")
 
         self.console = tk.Text(console_box, height=4, bg=BG_CONSOLE, fg=ACCENT_CYAN,
@@ -1166,14 +1251,23 @@ class CS2TruePanoramaApp(tk.Tk):
         self.status_cs2_lbl = tk.Label(self.status_bar, text=f"● {cs2_text}", font=("Segoe UI", 9, "bold"), fg=cs2_col, bg="#0a0d14")
         # Unpacked per A1: CS2 status is already prominent in top header
 
+        # AUDIT P2-#3: both indicators now show REAL state (they were fixed text before:
+        # "SLOT SNIPER: IDLE" never changed, "GAMING DNS: ACTIVE" was never checked).
         self.status_sniper_lbl = tk.Label(self.status_bar, text="● SLOT SNIPER: IDLE", font=("Segoe UI", 9, "bold"), fg=FG_MUTED, bg="#0a0d14")
         self.status_sniper_lbl.pack(side="left", padx=15)
+        add_tooltip(self.status_sniper_lbl, "Slot Sniper state: Idle, Armed (server and the player count it waits for), Triggered, or Cooldown. Updates every second, also while the app is in the tray.")
 
-        self.status_dns_lbl = tk.Label(self.status_bar, text="● GAMING DNS: ACTIVE", font=("Segoe UI", 9, "bold"), fg=ACCENT_CYAN, bg="#0a0d14")
+        self.status_dns_lbl = tk.Label(self.status_bar, text="● DNS: checking…", font=("Segoe UI", 9, "bold"), fg=FG_MUTED, bg="#0a0d14")
         self.status_dns_lbl.pack(side="left", padx=15)
+        add_tooltip(self.status_dns_lbl, "The DNS servers your active network adapter uses right now (read from Windows with netsh).")
 
-        self.status_vac_lbl = tk.Label(self.status_bar, text="● 100% VAC-SAFE", font=("Segoe UI", 9, "bold"), fg=ACCENT_GREEN, bg="#0a0d14")
+        # AUDIT P2-#7: was "100% VAC-SAFE" (a claim nobody can guarantee). Plain facts only.
+        self.status_vac_lbl = tk.Label(self.status_bar, text="Hobby project · not affiliated with Valve", font=("Segoe UI", 9), fg=FG_MUTED, bg="#0a0d14")
         self.status_vac_lbl.pack(side="right")
+        add_tooltip(self.status_vac_lbl, "Uses config files and standard Windows settings. Does not read or modify CS2 memory. Use at your own risk.")
+
+        self._status_bar_tick()
+        self.safe_after(1500, self._refresh_dns_interface_header)
 
     def _add_nav_item(self, key, icon, title, builder_func, is_alert=False, tooltip=None):
         item_frame = tk.Frame(self.sidebar, bg=BG_SIDEBAR, cursor="hand2")
@@ -1264,6 +1358,8 @@ class CS2TruePanoramaApp(tk.Tk):
             self._refresh_weekly_maint_banner()
         elif key == "SERVERS" and hasattr(self, "_start_server_auto_refresh_loop"):
             self._start_server_auto_refresh_loop()
+        elif key == "DASHBOARD":
+            self._refresh_dashboard_autoexec_status()  # AUDIT P2-#1
 
         for k, p in self.pages.items():
             if k == key:
@@ -1594,7 +1690,7 @@ class CS2TruePanoramaApp(tk.Tk):
         t1_box = tk.Frame(content, bg=BG_CARD)
         t1_box.pack(fill="x", pady=(4, 12))
         tk.Label(t1_box, text="⚡ SYSTEM READINESS & CYBERDECK DASHBOARD", font=("Segoe UI", 16, "bold"), fg=FG_WHITE, bg=BG_CARD).pack(anchor="w")
-        tk.Label(t1_box, text="Real-time Source 2 engine diagnostics, VAC-safe autoexec status, and live gaming telemetry.", font=("Segoe UI", 12), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(2, 0))
+        tk.Label(t1_box, text="CS2 install, autoexec status, drive space and live ZE server counts.", font=("Segoe UI", 12), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(2, 0))
 
         # Hero Banner: Tactical Performance Engine (Single One-Click button in header)
         hero = tk.Frame(content, bg="#11171D", highlightbackground=BG_BORDER, highlightthickness=1, padx=16, pady=12)
@@ -1604,11 +1700,12 @@ class CS2TruePanoramaApp(tk.Tk):
         hero_left.pack(side="left", fill="both", expand=True)
 
         tk.Label(hero_left, text="TACTICAL PERFORMANCE ENGINE", font=("Segoe UI", 13, "bold"), fg=ACCENT_CYAN, bg="#11171D").pack(anchor="w")
-        tk.Label(hero_left, text="One-click tunes CS2 sub-tick rates, low-latency sleep, CPU power profile, and competitive audio binds.", font=("Segoe UI", 11), fg="#cbd5e1", bg="#11171D").pack(anchor="w", pady=(2, 6))
+        tk.Label(hero_left, text="One click: autoexec performance block, Windows power plan, Game DVR and fullscreen settings.", font=("Segoe UI", 11), fg="#cbd5e1", bg="#11171D").pack(anchor="w", pady=(2, 6))
 
         pills = tk.Frame(hero_left, bg="#11171D")
         pills.pack(anchor="w")
-        for p_txt, p_col in [("100% VAC-SAFE", ACCENT_GREEN), ("SUB-TICK VERIFIED", ACCENT_CYAN), ("ZERO RUNTIME OVERHEAD", theme.COLOR_PRIMARY)]:
+        # AUDIT P2-#7: plain facts (were "100% VAC-SAFE", "SUB-TICK VERIFIED", "ZERO RUNTIME OVERHEAD": unprovable or false)
+        for p_txt, p_col in [("CONFIG FILES + WINDOWS SETTINGS", ACCENT_GREEN), ("NO GAME MEMORY ACCESS", ACCENT_CYAN), ("NOT AFFILIATED WITH VALVE", theme.COLOR_PRIMARY)]:
             pf = tk.Frame(pills, bg="#161E26", padx=8, pady=2, highlightbackground=BG_BORDER, highlightthickness=1)
             pf.pack(side="left", padx=(0, 6))
             tk.Label(pf, text=f"✔ {p_txt}", font=("Segoe UI", 10, "bold"), fg=p_col, bg="#161E26").pack()
@@ -1643,27 +1740,14 @@ class CS2TruePanoramaApp(tk.Tk):
             lbl_cs2_st.pack(anchor="w", pady=(4, 2))
             add_tooltip(lbl_cs2_st, "Counter-Strike 2 executable path could not be detected automatically.")
 
-        # Determine true autoexec status from disk
+        # AUDIT P2-#1: status is read from disk by one function and refreshed when the
+        # Dashboard is shown, after every autoexec write, and when the window gets focus.
         cfg_dir = self.paths.get("cfg_dir")
-        auto_file = self.paths.get("autoexec_cfg")
-        if auto_file and os.path.exists(auto_file):
-            try:
-                with open(auto_file, "r", encoding="utf-8", errors="ignore") as _f:
-                    _c_txt = _f.read()
-                has_app_block = ("// --- CS2 COMMAND CENTER" in _c_txt or "GERONIMOHQ" in _c_txt)
-            except Exception:
-                has_app_block = False
-            if has_app_block:
-                auto_st_text = "Autoexec: found (includes settings written by this app)"
-            else:
-                auto_st_text = "Autoexec: found (not edited by this app)"
-        else:
-            short_cfg_path = (f"...{cfg_dir[-18:]}\\autoexec.cfg" if cfg_dir and len(cfg_dir) > 22 else "cfg\\autoexec.cfg")
-            auto_st_text = f"Autoexec: not found at {short_cfg_path}"
-
-        lbl_auto_st = tk.Label(c1, text=auto_st_text, font=("Segoe UI", 10), fg=ACCENT_CYAN, bg=BG_CARD_ROW)
+        _st = core_logic.get_autoexec_status(cfg_dir, self.config.get("autoexec_last_app_save"))
+        lbl_auto_st = tk.Label(c1, text=_st["text"], font=("Segoe UI", 10), fg=ACCENT_CYAN, bg=BG_CARD_ROW)
         lbl_auto_st.pack(anchor="w", pady=(0, 4))
-        full_check_path = auto_file or (os.path.join(cfg_dir, "autoexec.cfg") if cfg_dir else "None")
+        self.lbl_dash_autoexec_status = lbl_auto_st
+        full_check_path = _st["path"] or "None"
         add_tooltip(lbl_auto_st, f"autoexec.cfg is a text file in CS2's cfg folder that CS2 runs at every launch to apply console settings. Config Studio can add settings to it with a backup. Path checked: {full_check_path}. The app works without it.")
 
         c1_btn_bar = tk.Frame(c1, bg=BG_CARD_ROW)
@@ -1710,10 +1794,14 @@ class CS2TruePanoramaApp(tk.Tk):
         c3 = tk.Frame(grid_r2, bg=BG_CARD_ROW, highlightbackground=BG_BORDER, highlightthickness=1, padx=14, pady=12)
         c3.pack(side="left", fill="both", expand=True, padx=(0, 4))
         tk.Label(c3, text="🌐 ZE GAME SERVERS", font=("Segoe UI", 12, "bold"), fg=theme.COLOR_PRIMARY, bg=BG_CARD_ROW).pack(anchor="w")
-        self.dash_ze_players_lbl = tk.Label(c3, text="646 players in-game", font=("Segoe UI", 10, "bold"), fg=ACCENT_GREEN, bg=BG_CARD_ROW)
+        # AUDIT P2-#2: was fixed text (a constant player count and server count), never updated.
+        _pl_txt, _sv_txt = server_browser.format_totals(getattr(self, "_ze_totals", None))
+        self.dash_ze_players_lbl = tk.Label(c3, text=_pl_txt, font=("Segoe UI", 10, "bold"), fg=ACCENT_GREEN, bg=BG_CARD_ROW)
         self.dash_ze_players_lbl.pack(anchor="w", pady=(4, 2))
-        self.dash_ze_nodes_lbl = tk.Label(c3, text="34 / 41 servers online", font=("Segoe UI", 10), fg=ACCENT_CYAN, bg=BG_CARD_ROW)
+        self.dash_ze_nodes_lbl = tk.Label(c3, text=_sv_txt, font=("Segoe UI", 10), fg=ACCENT_CYAN, bg=BG_CARD_ROW)
         self.dash_ze_nodes_lbl.pack(anchor="w", pady=(0, 4))
+        add_tooltip(self.dash_ze_players_lbl, "Human players only (bots not counted), on the 41 catalog servers that answered in the last 90 seconds. Same numbers as geronimohq.com.")
+        self.safe_after(300, self._refresh_ze_totals)
         b_srv_nav = tk.Button(c3, text="Launch ZE Browser →", font=("Segoe UI", 9, "bold"), fg=ACCENT_CYAN, bg="#161E26",
                               relief="flat", cursor="hand2", padx=8, pady=3, command=lambda: self._select_nav("SERVERS"))
         b_srv_nav.pack(anchor="w", pady=(2, 0))
@@ -1783,14 +1871,14 @@ class CS2TruePanoramaApp(tk.Tk):
             text=(
                 "These tools are NOT meant to magically inflate maximum FPS beyond your CPU/GPU hardware limits. "
                 "Instead, they eliminate OS bottlenecks to maximize Frame-Time Consistency (1% Lows), prevent micro-stutters "
-                "during 64-player Zombie Escape / smoke utility, fix Display/Alt-Tab freezes (MPO), optimize sub-tick & DNS "
-                "network responsiveness, and maintain peak SSD/OS health with 100% system safety."
+                "during 64-player Zombie Escape / smoke utility, fix Display/Alt-Tab freezes (MPO), change network rate settings & DNS "
+                "network responsiveness, and clean temporary files (each step can be undone or is a cache Windows rebuilds)."
             ),
             font=("Segoe UI", 9), fg="#cbd5e1", bg="#101826", justify="left", anchor="w", wraplength=760
         ).pack(anchor="w", fill="x", pady=(1, 0))
 
         tk.Label(content, text="ENGINE PERFORMANCE TWEAKS", font=("Segoe UI", -16, "bold"), fg=FG_WHITE, bg=BG_CARD).pack(anchor="w")
-        tk.Label(content, text="All modifications are 100% safe, non-destructive, and can be restored anytime.", font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(1, 6))
+        tk.Label(content, text="Each change has an undo: Restore Defaults, the autoexec backup, or the 'Restore ISP Default (DHCP)' button.", font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(1, 6))
 
         self._create_tweak_row(
             content,
@@ -2015,16 +2103,16 @@ class CS2TruePanoramaApp(tk.Tk):
         cfg_loc = f"Config directory: {self.paths.get('cfg_dir') or 'Not Found'}"
         tk.Label(content, text=cfg_loc, font=("Consolas", 10), fg=ACCENT_CYAN, bg=BG_CARD).pack(anchor="w", pady=(1, 4))
 
-        note = tk.Label(content, text="🛡️ Safety Guarantee: Your personal binds, scancodes, aliases, crosshairs, and viewmodels are NEVER deleted. Performance tweaks are appended at the bottom.", font=("Segoe UI", 10, "bold"), fg=ACCENT_GREEN, bg=BG_CARD, anchor="w", justify="left")
+        note = tk.Label(content, text="Your own lines are kept: the app only adds or replaces its own marked block at the bottom, and makes autoexec_backup.cfg the first time.", font=("Segoe UI", 10, "bold"), fg=ACCENT_GREEN, bg=BG_CARD, anchor="w", justify="left")
         note.pack(anchor="w", fill="x", pady=(0, 8))
 
         btn_bar = tk.Frame(content, bg=BG_CARD)
         btn_bar.pack(anchor="w", fill="x", pady=(0, 4))
 
-        b_apply_cfg = tk.Button(btn_bar, text="📥 1. Apply Engine & Sub-Tick Autoexec Tweaks", font=("Segoe UI", 10, "bold"), fg="#ffffff", bg=ACCENT_GREEN,
+        b_apply_cfg = tk.Button(btn_bar, text="📥 1. Apply Engine Autoexec Tweaks", font=("Segoe UI", 10, "bold"), fg="#ffffff", bg=ACCENT_GREEN,
                   relief="flat", padx=12, pady=4, cursor="hand2", command=self.install_autoexec)
         b_apply_cfg.pack(side="left", padx=(0, 8))
-        add_tooltip(b_apply_cfg, "Appends core Source 2 engine FPS, sub-tick network rates, and low-latency audio buffer tweaks.")
+        add_tooltip(b_apply_cfg, "Adds or replaces the app's marked performance block in autoexec.cfg (fps_max, rate, cl_net_buffer_ticks, audio buffer, HUD graphs). Your other lines are kept.")
 
         b_rev_cfg = tk.Button(btn_bar, text="⏪ Revert Autoexec to Original", font=("Segoe UI", 10), fg="#cbd5e1", bg="#242b3b",
                   relief="flat", padx=12, pady=4, cursor="hand2", command=self.restore_autoexec)
@@ -2045,7 +2133,7 @@ class CS2TruePanoramaApp(tk.Tk):
         zh_top = tk.Frame(ze_hud_card, bg=BG_CARD_ROW)
         zh_top.pack(fill="x")
         tk.Label(zh_top, text="🔦 2. ZE VISUAL CLUTTER, LASER VIEWMODEL & BOSS AUDIO DUCKING CUSTOMIZER", font=("Segoe UI", -13, "bold"), fg=ACCENT_CYAN, bg=BG_CARD_ROW).pack(side="left")
-        tk.Label(zh_top, text="100% VAC-SAFE CVARS", font=("Segoe UI", -11, "bold"), fg=ACCENT_GREEN, bg="#0d261d", padx=6, pady=1).pack(side="right")
+        tk.Label(zh_top, text="CONSOLE SETTINGS ONLY", font=("Segoe UI", -11, "bold"), fg=ACCENT_GREEN, bg="#0d261d", padx=6, pady=1).pack(side="right")
 
         tk.Label(
             ze_hud_card,
@@ -2213,7 +2301,7 @@ class CS2TruePanoramaApp(tk.Tk):
                 "ZE Visual & Audio Binds Added to autoexec.cfg",
                 f"✅ Successfully injected into autoexec.cfg!\n\n"
                 f"{res.get('message')}\n\n"
-                f"• Viewmodel Low Laser Preset: {'ON (FOV 68, X:+2, Y:+2, Z:-2)' if opts['ze_laser_viewmodel'] else 'OFF (Personal Config Viewmodel 100% Preserved)'}\n"
+                f"• Viewmodel Low Laser Preset: {'ON (FOV 68, X:+2, Y:+2, Z:-2)' if opts['ze_laser_viewmodel'] else 'OFF (your own viewmodel settings are kept)'}\n"
                                 f"• HUD Color: {self.ze_hud_color_var.get()}\n"
                 f"• Boss Audio Ducking Key: [{duck_k}] (22% <-> 100%)  |  Panic Voice Mute Key: [{mute_k}]\n\n"
                 f"Look at the Live Autoexec.cfg File Preview box below — it has automatically updated and scrolled to the bottom showing your new [CS2 COMMAND CENTER: ZE VISUAL, HUD & AUDIO DUCKING STUDIO] block!"
@@ -2258,6 +2346,15 @@ class CS2TruePanoramaApp(tk.Tk):
             with open(cfg_file, "w", encoding="utf-8") as f:
                 f.write(content)
 
+            # AUDIT P2-#1: remember that this app saved this exact file content.
+            self.config["autoexec_last_app_save"] = {
+                "path": cfg_file,
+                "sha256": core_logic.file_sha256(cfg_file),
+                "time": time.strftime("%Y-%m-%d %H:%M"),
+            }
+            app_config.save_config(self.config)
+            self._refresh_dashboard_autoexec_status()
+
             self.is_autoexec_editing = False
             self.btn_save_cfg.pack_forget()
             self.btn_edit_cfg.config(text="✏️ Edit Config", bg="#2563eb")
@@ -2272,7 +2369,31 @@ class CS2TruePanoramaApp(tk.Tk):
         except Exception as ex:
             messagebox.showerror("Save Error", f"Failed to save autoexec.cfg:\n\n{ex}")
 
+    def _refresh_dashboard_autoexec_status(self):
+        """AUDIT P2-#1: re-read autoexec.cfg and update the Dashboard label (main thread only)."""
+        lbl = getattr(self, "lbl_dash_autoexec_status", None)
+        try:
+            if lbl is None or not lbl.winfo_exists():
+                return None
+            st = core_logic.get_autoexec_status(self.paths.get("cfg_dir"), self.config.get("autoexec_last_app_save"))
+            if lbl.cget("text") != st["text"]:
+                lbl.config(text=st["text"])
+            return st
+        except Exception:
+            return None
+
+    def _on_app_focus_in(self, event=None):
+        # Only for the main window (FocusIn also fires for every child widget).
+        if event is not None and event.widget is not self:
+            return
+        self._refresh_dashboard_autoexec_status()
+
     def _refresh_autoexec_preview(self, scroll_to_bottom: bool = False):
+        # Writers may call this from worker threads: hop to the Tk thread for the Dashboard.
+        if threading.current_thread() is threading.main_thread():
+            self._refresh_dashboard_autoexec_status()
+        else:
+            self.safe_after(0, self._refresh_dashboard_autoexec_status)
         if getattr(self, "is_autoexec_editing", False):
             return  # Never overwrite active user typing in edit mode!
 
@@ -2469,7 +2590,7 @@ class CS2TruePanoramaApp(tk.Tk):
             dns_card,
             text=(
                 "Click ANY DNS provider row below (or enter your own Custom DNS IPs) to choose whichever DNS you prefer, "
-                "or run the live benchmark to see which resolver has the lowest latency & jitter for your region. 100% reversible to ISP Default (DHCP)."
+                "or run the live benchmark to see which resolver has the lowest latency & jitter for your region. One click restores automatic DNS (DHCP)."
             ),
             font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD_ROW, justify="left", anchor="w", wraplength=880
         ).pack(anchor="w", fill="x", pady=(2, 6))
@@ -2539,7 +2660,7 @@ class CS2TruePanoramaApp(tk.Tk):
             )
             use_btn.pack(side="right", padx=(6, 0))
 
-            res_lbl = tk.Label(rframe, text="Click row to select", font=("Consolas", 10, "bold"), fg="#64748b", bg=rframe["bg"], cursor="hand2")
+            res_lbl = tk.Label(rframe, text="Click row to select", font=("Consolas", 10, "bold"), fg=FG_MUTED, bg=rframe["bg"], cursor="hand2")
             res_lbl.pack(side="right", padx=4)
 
             for clickable in (rframe, ip_lbl, desc_lbl, res_lbl):
@@ -2581,7 +2702,7 @@ class CS2TruePanoramaApp(tk.Tk):
         l_top = tk.Frame(log_card, bg=BG_CARD_ROW)
         l_top.pack(fill="x")
         tk.Label(l_top, text="📊 Post-Session CS2 Frame-Time & Network Jitter Log Analyzer", font=("Segoe UI", 14, "bold"), fg=ACCENT_ORANGE, bg=BG_CARD_ROW).pack(side="left")
-        tk.Label(l_top, text="🛡️ 100% PASSIVE LOG PARSER (ZERO DLL HOOKS)", font=("Segoe UI", 14, "bold"), fg=ACCENT_GREEN, bg="#0d261d", padx=6, pady=1).pack(side="right")
+        tk.Label(l_top, text="🛡️ READS console.log ONLY (NO GAME HOOKS)", font=("Segoe UI", 14, "bold"), fg=ACCENT_GREEN, bg="#0d261d", padx=6, pady=1).pack(side="right")
 
         tk.Label(
             log_card,
@@ -2611,7 +2732,7 @@ class CS2TruePanoramaApp(tk.Tk):
         info_card.pack(fill="x", pady=4)
         self.boost_info_card = info_card
 
-        tk.Label(info_card, text="ℹ️ COMPLETE GUIDE: DNS PURPOSES, PROS & CONS, AND 100% SYSTEM SAFETY:", font=("Segoe UI", 14, "bold"), fg=ACCENT_ORANGE, bg="#11151e").pack(anchor="w", pady=(0, 6))
+        tk.Label(info_card, text="ℹ️ GUIDE: WHAT DNS CHANGES, PROS & CONS, AND HOW TO UNDO IT:", font=("Segoe UI", 14, "bold"), fg=ACCENT_ORANGE, bg="#11151e").pack(anchor="w", pady=(0, 6))
 
         explanations = [
             ("🌐 All Purposes of DNS (Gaming, Security, Privacy & Web Speed)",
@@ -2620,13 +2741,13 @@ class CS2TruePanoramaApp(tk.Tk):
              "• Faster initial handshakes with Steam API, Workshop FastDL custom map mirrors, Discord voice gateways, and everyday web browsing.\n"
              "• Eliminates ISP DNS lookup timeouts, regional DNS outages, and domain resolution jitter.\n"
              "• Optional zero-overhead security filtering (Quad9) or background telemetry/ad-tracker blocking (AdGuard).\n"
-             "• 100% Safe for Windows, Steam VAC, and all anti-cheat systems: uses official Windows 'netsh' commands and is 1-click reversible to ISP Default (DHCP)."),
+             "• Changes your network adapter's DNS with the standard Windows 'netsh' command (needs Administrator). One click restores automatic DNS (DHCP)."),
             ("⚠️ DNS Optimizer CONS & Honest Limitations (What To Know)",
              "• Does NOT lower raw in-game UDP ping once already connected: After your PC resolves a domain (or connects directly to a server IP like 74.91.124.21:27015), live game packets travel directly over UDP without querying DNS.\n"
              "• Unbenchmarked distant DNS can route to farther CDN mirrors: Picking a DNS server physically far from your region without benchmarking first can cause Steam/FastDL CDNs to pick a non-local download mirror. Always click '⚡ Benchmark All DNS Servers' first!\n"
              "• Hotel / School / Corporate Captive Portals: Public Wi-Fi login pages sometimes require the router's default local DNS. If a public Wi-Fi login page doesn't load, simply click '↺ Restore ISP Default (DHCP)'."),
-            ("🚫 Why We Strictly Avoid 'RAM Cleaners' & Prioritize 100% System Safety",
-             "Aggressive RAM cleaners (EmptyWorkingSet / Standby List purgers) forcibly evict active memory pages used by CS2, Discord, and browsers into slow disk pagefile.sys — causing Hard Page Fault stutters and random app/browser crashes. CS2 Command Center strictly avoids memory purging and instead uses safe Win32 HIGH_PRIORITY_CLASS thread scheduling so your system stays 100% stable.")
+            ("🚫 Why this app does not use 'RAM cleaners'",
+             "Aggressive RAM cleaners (EmptyWorkingSet / Standby List purgers) forcibly evict active memory pages used by CS2, Discord, and browsers into slow disk pagefile.sys — causing Hard Page Fault stutters and random app/browser crashes. CS2 Command Center strictly avoids memory purging and instead uses safe Win32 HIGH_PRIORITY_CLASS thread scheduling so other programs keep running normally.")
         ]
 
         self.boost_wrap_labels = []
@@ -2865,15 +2986,16 @@ class CS2TruePanoramaApp(tk.Tk):
 
         self.pill_srv_nodes = tk.Frame(telemetry_pills, bg="#161E26", padx=8, pady=3, highlightbackground=BG_BORDER, highlightthickness=1)
         self.pill_srv_nodes.pack(side="right", padx=(4, 0))
-        self.lbl_srv_nodes = tk.Label(self.pill_srv_nodes, text="📡 34 / 41 NODES ONLINE", font=("Segoe UI", 9, "bold"), fg=ACCENT_CYAN, bg="#161E26")
+        self.lbl_srv_nodes = tk.Label(self.pill_srv_nodes, text="📡 — SERVERS ONLINE", font=("Segoe UI", 9, "bold"), fg=ACCENT_CYAN, bg="#161E26")
         self.lbl_srv_nodes.pack()
-        add_tooltip(self.lbl_srv_nodes, "Number of operational community server nodes queried.")
+        add_tooltip(self.lbl_srv_nodes, "Catalog servers that answered in the last 90 seconds (same rule as the Dashboard and geronimohq.com).")
 
         self.pill_srv_players = tk.Frame(telemetry_pills, bg="#161E26", padx=8, pady=3, highlightbackground=BG_BORDER, highlightthickness=1)
         self.pill_srv_players.pack(side="right", padx=(4, 0))
-        self.lbl_srv_players = tk.Label(self.pill_srv_players, text="👥 646 PLAYERS IN-GAME", font=("Segoe UI", 9, "bold"), fg=ACCENT_GREEN, bg="#161E26")
+        self.lbl_srv_players = tk.Label(self.pill_srv_players, text="👥 — PLAYERS IN-GAME", font=("Segoe UI", 9, "bold"), fg=ACCENT_GREEN, bg="#161E26")
         self.lbl_srv_players.pack()
-        add_tooltip(self.lbl_srv_players, "Total real-time player count active across monitored Zombie Escape servers.")
+        add_tooltip(self.lbl_srv_players, "Human players only (bots not counted) on catalog servers that answered in the last 90 seconds.")
+        self.safe_after(300, self._refresh_ze_totals)
 
         head_btns = tk.Frame(self.list_head, bg=BG_CARD_ROW)
         head_btns.pack(side="right", padx=(8, 0))
@@ -3064,7 +3186,7 @@ class CS2TruePanoramaApp(tk.Tk):
             thumb_frame.pack(side="left", padx=(0, 6))
             thumb_frame.pack_propagate(False)
 
-            thumb_lbl = tk.Label(thumb_frame, text="MAP", font=("Segoe UI", 6, "bold"), fg="#4b5563", bg="#0d1117", cursor="hand2")
+            thumb_lbl = tk.Label(thumb_frame, text="MAP", font=("Segoe UI", 6, "bold"), fg=FG_MUTED, bg="#0d1117", cursor="hand2")
             thumb_lbl.pack(fill="both", expand=True)
             thumb_lbl.bind("<Button-1>", lambda e, sid=sid: self.open_3d_map(self.server_query_cache.get(sid, {}).get("map", "")))
             add_tooltip(thumb_lbl, "Click to inspect active map in 3D (maps.cybo.dev)!")
@@ -3130,7 +3252,7 @@ class CS2TruePanoramaApp(tk.Tk):
             # Row 3: Geo Radar Demographics
             r3 = tk.Frame(info_col, bg="#151a24")
             r3.pack(anchor="w", pady=(1, 0))
-            geo_init = server_browser.get_server_demographics_text(s.get("region", ""), c_curr if cached.get("online") else 0)
+            geo_init = server_browser.get_server_demographics_text(s.get("region", ""), max(0, int(c_curr or 0) - int(c_info.get("bots") or 0)) if cached.get("online") else 0)
             geo_lbl = tk.Label(r3, text=geo_init, font=("Segoe UI", -11), fg="#94a3b8", bg="#151a24")
             geo_lbl.pack(side="left")
 
@@ -3402,6 +3524,9 @@ class CS2TruePanoramaApp(tk.Tk):
         _tick(duration)
 
     def _on_sniper_success_ui(self, host: str, port: int, name: str, sid: str):
+        # AUDIT P3-01: the "sound when a slot opens" setting was saved but no sound existed.
+        if self.config.get("sniper_sound_enabled", True):
+            play_calm_tone("success")
         # Stop sniper immediately and start 10-second button cooldown
         self.sniper.stop()
         self.active_sniper_target = None
@@ -3450,7 +3575,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
 
         tk.Label(maint_content, text="SAFE SYSTEM & STORAGE MAINTENANCE", font=("Segoe UI", -16, "bold"), fg=FG_WHITE, bg=BG_CARD).pack(anchor="w")
-        tk.Label(maint_content, text="100% safe PC hygiene: Free up storage, clear cache bloat, inspect drive health, and flush DNS.", font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(1, 8))
+        tk.Label(maint_content, text="PC clean-up: free up storage, clear cache bloat, inspect drive health, and flush DNS.", font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(1, 8))
 
         # Weekly Maintenance & Optimization Reminder Banner
         self.maint_weekly_banner_box = tk.Frame(maint_content, bg=BG_CARD)
@@ -3484,7 +3609,7 @@ class CS2TruePanoramaApp(tk.Tk):
             ab_left.pack(side="left", fill="x", expand=True)
 
             tk.Label(ab_left, text="🛡️  STANDARD USER MODE (SAFE HYGIENE ACTIVE)", font=("Segoe UI", 10, "bold"), fg="#60a5fa", bg="#131d2e").pack(anchor="w")
-            tk.Label(ab_left, text="Disk cleanups (Cache, Temp Files, Custom Maps, DNS Flush) work 100%. Deep Windows repairs (SSD TRIM, SFC, DISM) require Administrator privileges.",
+            tk.Label(ab_left, text="Disk clean-ups (cache, temp files, custom maps, DNS flush) work without Administrator. Deep Windows repairs (SSD TRIM, SFC, DISM) require Administrator privileges.",
                      font=("Segoe UI", 10), fg="#cbd5e1", bg="#131d2e").pack(anchor="w", pady=(1, 0))
 
             b_elev = tk.Button(admin_banner, text="⚡ Relaunch as Administrator", font=("Segoe UI", 10, "bold"), fg="#ffffff", bg="#2563eb",
@@ -3688,7 +3813,7 @@ class CS2TruePanoramaApp(tk.Tk):
         else:
             messagebox.showinfo(
                 "Workshop VPK Health Verifier",
-                f"{res.get('message')}\n\nAll Workshop .vpk binary headers (0x55aa1234) are 100% healthy!"
+                f"{res.get('message')}\n\nAll Workshop .vpk binary headers (0x55aa1234) passed the header check."
             )
 
     def repair_workshop_vpks_ui(self):
@@ -3699,7 +3824,7 @@ class CS2TruePanoramaApp(tk.Tk):
         addons = scan.get("addons", [])
         bad = [a for a in addons if a.get("status") != "Healthy"]
         if not bad:
-            messagebox.showinfo("Workshop VPK Repair", "All scanned Workshop VPK addons are already 100% healthy! Nothing to purge.")
+            messagebox.showinfo("Workshop VPK Repair", "No damaged Workshop VPK files were found. Nothing to remove.")
             return
         if not messagebox.askyesno(
             "Confirm Corrupted VPK Repair",
@@ -3898,9 +4023,9 @@ class CS2TruePanoramaApp(tk.Tk):
             "Only proceed with disabling MPO if you have ALREADY performed a clean DDU driver wipe and you STILL continue to experience Alt-Tab black screens, multi-monitor refresh rate desync, or Discord/browser checkerboard glitches.\n\n"
             "WHY THIS TAB IS IN CS2 COMMAND CENTER:\n"
             "Many CS2 players blame game updates, config files, or their hardware for these crashes and black screens. This dedicated "
-            "troubleshooter provides 100% transparent live diagnostics for AMD, NVIDIA, and Intel GPUs, explains the exact symptoms, "
-            "and provides verified DIY registry commands and safe 1-click clipboard helpers.\n\n"
-            "🔒 100% READ-ONLY SAFETY: CS2 Command Center NEVER modifies your display driver or registry automatically. "
+            "troubleshooter shows live, read-only diagnostics for AMD, NVIDIA, and Intel GPUs, explains the exact symptoms, "
+            "and provides the registry commands to copy, with 1-click clipboard helpers.\n\n"
+            "🔒 READ-ONLY: CS2 Command Center does not modify your display driver or registry automatically. "
             "You have full visibility and control to decide whether disabling MPO is right for your PC setup."
         )
 
@@ -3947,7 +4072,7 @@ class CS2TruePanoramaApp(tk.Tk):
             self.os_diag_wrap_labels.append((lbl_st, 50))
 
             # 2. Live System / Registry Inspection
-            tk.Label(status_box, text="LIVE SYSTEM / REGISTRY INSPECTION:", font=("Segoe UI", -12, "bold"), fg="#64748b", bg="#11141c", anchor="w").pack(anchor="w", pady=(8, 2))
+            tk.Label(status_box, text="LIVE SYSTEM / REGISTRY INSPECTION:", font=("Segoe UI", -12, "bold"), fg=FG_MUTED, bg="#11141c", anchor="w").pack(anchor="w", pady=(8, 2))
             lbl_insp = tk.Label(status_box, text=inspection_detail, font=("Segoe UI", 10), fg="#94a3b8", bg="#11141c", justify="left", anchor="w")
             lbl_insp.pack(anchor="w", pady=(1, 0), fill="x", expand=True)
             self.os_diag_wrap_labels.append((lbl_insp, 50))
@@ -4044,7 +4169,7 @@ class CS2TruePanoramaApp(tk.Tk):
             summary_text=(
                 "• ⚠️ FIRST RECOMMENDATION: Always perform a clean GPU driver reinstall using DDU in Safe Mode first! Check if that resolves your stutter or black screen before modifying MPO.\n"
                 "• If your PC runs smoothly with zero black flickers or driver timeouts: Keeping Windows Default (Enabled) is completely normal.\n"
-                "• If you did DDU and still experience Alt-Tab black screens, Discord checkerboards, or multi-monitor refresh desync: Disabling MPO via the registry is an officially verified, safe workaround."
+                "• If you did DDU and still experience Alt-Tab black screens, Discord checkerboards, or multi-monitor refresh desync: Disabling MPO via the registry is the workaround NVIDIA documents for these symptoms (reversible)."
             ),
             diy_text=(
                 "METHOD 1: Safe 1-Click Clipboard Command (Administrator Command Prompt / PowerShell)\n"
@@ -4086,8 +4211,16 @@ class CS2TruePanoramaApp(tk.Tk):
     # --- ACTIONS & LOGS ---
 
     def log(self, text: str):
-        try:
+        if threading.current_thread() is not threading.main_thread():
+            # AUDIT P4: write to the console widget on the Tk thread only.
             timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+            self.after(0, lambda t=text, ts=timestamp: self._log_main(t, ts))
+            return
+        self._log_main(text, None)
+
+    def _log_main(self, text: str, timestamp=None):
+        try:
+            timestamp = timestamp or datetime.datetime.now().strftime("%H:%M:%S")
             if hasattr(self, "console") and self.console.winfo_exists():
                 self.console.config(state="normal")
                 self.console.insert("end", f"[{timestamp}] {text}\n")
@@ -4151,7 +4284,7 @@ class CS2TruePanoramaApp(tk.Tk):
         # Safe Badge Banner
         safe_frame = tk.Frame(discord_content, bg="#0d1f18", padx=10, pady=4, highlightbackground="#10b981", highlightthickness=1)
         safe_frame.pack(fill="x", pady=(0, 8))
-        tk.Label(safe_frame, text="● 100% VAC-Safe: Connects via local Windows Named Pipe IPC (\\\\.\\pipe\\discord-ipc-0). Zero interaction with cs2.exe memory or binaries.",
+        tk.Label(safe_frame, text="● Talks only to the Discord app on this PC (named pipe \\\\.\\pipe\\discord-ipc-0). Does not touch cs2.exe memory or files.",
                  font=("Segoe UI", 10, "bold"), fg="#34d399", bg="#0d1f18").pack(anchor="w")
 
         # Top 2-Column Row (Controls on Left, Live Preview on Right)
@@ -4166,9 +4299,9 @@ class CS2TruePanoramaApp(tk.Tk):
 
         auto_badge = tk.Frame(col_left, bg="#0e2338", padx=8, pady=4, highlightbackground="#38bdf8", highlightthickness=1)
         auto_badge.pack(fill="x", pady=(4, 6))
-        tk.Label(auto_badge, text="⚡ 100% AUTOMATIC DETECTION ACTIVE", font=("Segoe UI", 10, "bold"), fg="#38bdf8", bg="#0e2338").pack(anchor="w")
+        tk.Label(auto_badge, text="⚡ AUTOMATIC DETECTION ON", font=("Segoe UI", 10, "bold"), fg="#38bdf8", bg="#0e2338").pack(anchor="w")
         tk.Label(auto_badge,
-                 text="• CS2 Closed: Discord shows NOTHING (100% clean).\n• CS2 Running: Automatically turns ON & tracks status.\n• In Server: Auto-detects map & players via Valve GSI.\n• Zero manual buttons or setup needed!",
+                 text="• CS2 Closed: nothing is sent to Discord.\n• CS2 Running: Automatically turns ON & tracks status.\n• In Server: Auto-detects map & players via Valve GSI.\n• Zero manual buttons or setup needed!",
                  font=("Segoe UI", 9), fg="#cbd5e1", bg="#0e2338", justify="left").pack(anchor="w", pady=(2, 0))
 
         self.var_discord_enabled = tk.BooleanVar(value=self.config.get("discord_rpc_enabled", True))
@@ -4208,7 +4341,7 @@ class CS2TruePanoramaApp(tk.Tk):
         tk.Label(click_box, text="ℹ️ Why does clicking the card open CS2 Game Overview?", font=("Segoe UI", -14, "bold"), fg="#94a3b8", bg=BG_CARD_ROW).pack(anchor="w")
         tk.Label(click_box,
                  text="In Discord's desktop app, clicking any game activity card natively navigates to Discord's official CS2 Overview hub. Discord does not allow custom URLs on text lines.",
-                 font=("Segoe UI", 9), fg="#64748b", bg=BG_CARD_ROW, justify="left", wraplength=280, anchor="w").pack(anchor="w", fill="x")
+                 font=("Segoe UI", 9), fg=FG_MUTED, bg=BG_CARD_ROW, justify="left", wraplength=280, anchor="w").pack(anchor="w", fill="x")
 
         # Column Right: Live Discord Profile Preview
         col_right = tk.Frame(top_grid, bg="#1e1f22", padx=12, pady=10, highlightbackground="#2b2d31", highlightthickness=1)
@@ -4242,10 +4375,12 @@ class CS2TruePanoramaApp(tk.Tk):
         # Container A: DORMANT STATE (When CS2 is closed - accurate simulation!)
         self.preview_dormant = tk.Frame(self.preview_act_box, bg="#111214")
         self.preview_dormant.pack(fill="x")
-        tk.Label(self.preview_dormant, text="💤 NO ACTIVE CS2 PRESENCE BROADCASTED", font=("Segoe UI", 14, "bold"), fg="#949ba4", bg="#111214").pack(anchor="w")
-        tk.Label(self.preview_dormant,
-                 text="CS2 is closed. Rich Presence is completely dormant (Discord displays NO game on your profile).\nWhen CS2 is launched, your live game card automatically lights up here in real time.",
-                 font=("Segoe UI", 9), fg="#64748b", bg="#111214", justify="left", anchor="w").pack(anchor="w", fill="x", pady=(3, 0))
+        self.preview_dormant_title = tk.Label(self.preview_dormant, text="⏳ CHECKING…", font=("Segoe UI", 14, "bold"), fg="#949ba4", bg="#111214")
+        self.preview_dormant_title.pack(anchor="w")
+        self.preview_dormant_desc = tk.Label(self.preview_dormant,
+                 text="Checking whether CS2 is running and what is being sent to Discord.",
+                 font=("Segoe UI", 9), fg="#949ba4", bg="#111214", justify="left", anchor="w")
+        self.preview_dormant_desc.pack(anchor="w", fill="x", pady=(3, 0))
 
         # Container B: ACTIVE STATE (When CS2 is running)
         self.preview_active = tk.Frame(self.preview_act_box, bg="#111214")
@@ -4288,7 +4423,10 @@ class CS2TruePanoramaApp(tk.Tk):
         self.lbl_btn2.pack(anchor="center")
 
         _bind_discord_wheel_recursive(discord_content)
-        self._update_discord_preview_labels(self.discord_preview_details.get(), self.discord_preview_state.get())
+        # AUDIT P2-#4: open in a neutral "Checking…" state, then check automatically (no pop-ups).
+        self._discord_preview_checked = False
+        self._update_discord_preview_labels("", "")
+        self.safe_after(150, lambda: self._refresh_discord_presence(silent=True))
 
     def _build_page_faq(self, page):
         canvas = tk.Canvas(page, bg=BG_CARD, highlightthickness=0, yscrollincrement=1)
@@ -4346,7 +4484,7 @@ class CS2TruePanoramaApp(tk.Tk):
         head_card = tk.Frame(faq_content, bg=BG_CARD_ROW, padx=14, pady=10, highlightbackground=BG_BORDER, highlightthickness=1)
         head_card.pack(fill="x", pady=(0, 10))
         tk.Label(head_card, text="📖  CS2 COMMAND CENTER — HELP & DETAILED KNOWLEDGE BASE", font=("Segoe UI", -16, "bold"), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w")
-        tk.Label(head_card, text="Comprehensive technical documentation, anti-cheat safety verification, competitive engine mechanics, network troubleshooting & feature guides.",
+        tk.Label(head_card, text="What each feature changes, how to undo it, network troubleshooting and feature guides.",
                  font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD_ROW).pack(anchor="w", pady=(2, 0))
 
         # Helper to create FAQ section cards
@@ -4390,10 +4528,10 @@ class CS2TruePanoramaApp(tk.Tk):
 
         # Category 1: Safety & Anti-Cheat
         _create_faq_card(
-            "🛡️", "SAFETY & ANTI-CHEAT (VAC) INTEGRITY", "100% VAC-SAFE", ACCENT_GREEN,
+            "🛡️", "WHAT THIS APP CHANGES (AND WHAT IT DOES NOT)", "FACTS", ACCENT_GREEN,
             [
-                ("Is this tool safe to use? Can it get me banned by Valve Anti-Cheat (VAC)?",
-                 "The Command Center is 100% VAC-Safe. It performs zero DLL injection, zero game memory modification, zero debugger hooks, and zero patched binaries. Everything it adjusts uses official Windows registry keys, official Valve console/autoexec scripts, and Steam's official Game State Integration (GSI) HTTP API. It is completely compliant with Valve's terms of service and safe for Premier, Faceit, and community servers."),
+                ("Can this get me banned by Valve Anti-Cheat (VAC)?",
+                 "Only Valve decides what VAC acts on, so this app makes no promise about it. What the app does (checked in its source code): it edits CS2 config files (autoexec.cfg), changes standard Windows settings (power plan, Game DVR, fullscreen optimizations, DNS), reads game state through Valve's Game State Integration, can raise CS2's process priority, and can type a 'connect' command into the CS2 console for you. It does not read or modify CS2 memory, inject DLLs or patch game files. Hobby project, not affiliated with Valve. Use at your own risk."),
                 ("Can I undo all changes made by the application?",
                  "Yes! Clicking the [⏪ Restore Defaults] button on the top right instantly restores Windows Game DVR, restores your default Windows power plan, reenables fullscreen optimizations, and resets the autoexec configuration back to clean stock defaults."),
                 ("Does this app communicate with external servers or collect telemetry?",
@@ -4422,13 +4560,13 @@ class CS2TruePanoramaApp(tk.Tk):
         _create_faq_card(
             "🌐", "NETWORK OPTIMIZATION, GAMING DNS PROS & CONS & PACKET LOSS", "NETWORK & DNS", ACCENT_CYAN,
             [
-                ("What are all the purposes of the Gaming DNS Optimizer, and is it 100% safe?",
+                ("What does the DNS Optimizer change, and how do I undo it?",
                  "DNS (Domain Name System) translates domain names into IP addresses. Besides speeding up domain lookups for Steam SDR relays, Workshop FastDL map servers, Discord voice channels, and web browsing, custom DNS resolvers serve multiple purposes:\n"
                  "• Reliability: Bypasses congested or malfunctioning default ISP DNS servers.\n"
                  "• Security (Quad9 9.9.9.9): Automatically blocks known malware, phishing, and spyware domains before they can load.\n"
                  "• Ad & Telemetry Filtering (AdGuard 94.140.14.14): Blocks background ad-trackers and Windows/app telemetry domains that cause random bandwidth spikes.\n"
                  "• Privacy (Cloudflare 1.1.1.1): Prevents your ISP from logging or hijacking your DNS queries.\n"
-                 "• 100% Safety Guarantee: Uses official Microsoft Windows 'netsh' commands with zero kernel drivers or system modifications, and includes a 1-click 'Restore ISP Default (DHCP)' button."),
+                 "• How it works: the standard Windows 'netsh' command changes the DNS of your active network adapter (a Windows setting, needs Administrator). No drivers are installed. A 1-click 'Restore ISP Default (DHCP)' button undoes it."),
                 ("What are the honest Pros and Cons (Limitations) of changing DNS?",
                  "✅ PROS:\n"
                  "• Faster initial connections to Steam relays, FastDL custom map mirrors, Discord, and websites.\n"
@@ -4452,11 +4590,11 @@ class CS2TruePanoramaApp(tk.Tk):
             "📝", "AUTOEXEC & COMPETITIVE BINDS", "CONFIG & BINDS", ACCENT_ORANGE,
             [
                 ("What competitive settings are installed into autoexec.cfg?",
-                 "It configures optimal sub-tick network rates (rate 1000000, cl_interp 0.015625) for responsive hit registration, enables competitive audio clarity (crisp footstep frequencies), binds Jumpthrow (synchronized +jump and -attack), quick drop C4, and binds movement keys to instantly clear ragdolls and bullet impacts to remove visual clutter."),
+                 "It writes one marked block to autoexec.cfg: fps_max 0, engine_low_latency_sleep_after_client_tick, snd_mixahead 0.025, rate 1000000 (bytes per second; CS2 may cap it), cl_net_buffer_ticks 0, animated avatars off, and the frame-time / ping / packet-loss HUD graphs. It does not add jumpthrow, C4-drop or other gameplay binds."),
                 ("Why is snd_mixahead set to 0.025 instead of the default 0.05?",
                  "The default Source 2 audio buffer (0.05) creates 50ms of audio latency between gunshots/footsteps and your speakers. Setting snd_mixahead to 0.025 cuts audio processing latency in half (25ms), allowing you to hear enemy footsteps, zombie screams, and grenade bounces a full frame earlier."),
                 ("Will applying autoexec overwrite my custom bindings or crosshair?",
-                 "No! If an existing autoexec.cfg is present, the app backs it up and non-destructively appends or updates only the competitive performance blocks, keeping your personal binds, crosshair, sensitivity, and custom aliases 100% intact.")
+                 "No! If an existing autoexec.cfg is present, the app backs it up and non-destructively appends or updates only the competitive performance blocks, keeping your personal binds, crosshair, sensitivity, and custom aliases in place (only the app's own marked block is added or replaced).")
             ]
         )
 
@@ -4501,9 +4639,9 @@ class CS2TruePanoramaApp(tk.Tk):
                 ("If I play a different game, will it still show up? Does this custom presence only affect CS2?",
                  "This custom presence ONLY affects Counter-Strike 2! It will never interfere with other games. When CS2 is closed, the Command Center completely closes the Discord RPC session. When you play other games (Apex, Dota 2, Rust, etc.), Discord's native game detection or that game's own rich presence will show completely normally."),
                 ("Why does Discord show nothing when CS2 is closed?",
-                 "By design! We ensure zero fake or phantom presence. When CS2 is closed, nothing is broadcasted so your Discord profile stays 100% clean and accurate."),
+                 "By design. When CS2 is closed, nothing is sent, so Discord shows no game from this app."),
                 ("Do new users need to create or configure a Discord Application ID?",
-                 "No! The app is pre-configured with a universal verified Counter-Strike 2 Application ID. Rich Presence works completely out-of-the-box for all users with zero extra setup or developer portal steps."),
+                 "No. The app ships with its own Discord Application ID. Rich Presence works completely out-of-the-box for all users with zero extra setup or developer portal steps."),
                 ("Why don't the buttons [🎮 Server IP] and [💬 Community Discord] show when I view my own profile?",
                  "Discord's client intentionally hides Rich Presence action buttons on your OWN profile popout (Discord does this to prevent users from clicking links on their own profile). Rest assured, your friends, teammates, and server members CAN see and click both buttons directly on your profile!")
             ]
@@ -4516,7 +4654,7 @@ class CS2TruePanoramaApp(tk.Tk):
                 ("Why should I clean custom maps?",
                  "Custom Zombie Escape maps downloaded from community servers are stored as .vpk packages in csgo/maps/ and can range from 500MB to 2.5GB each. Over time, active ZE players accumulate 50GB to 150GB+ of stale map packages on their SSD. The cleaner lets you sort by file size or last played date, and safely delete obsolete or unpopular maps without touching base game files."),
                 ("What happens if I delete a map and later rejoin a server running that map?",
-                 "CS2 will automatically download the map fresh from the server's FastDL HTTP mirror before joining! You will never be banned, kicked, or encounter errors; deleting custom maps is 100% safe and reversible.")
+                 "CS2 will automatically download the map fresh from the server's FastDL HTTP mirror before joining! Deleting downloaded custom maps only removes files CS2 can download again; it does not affect your account.")
             ]
         )
 
@@ -4538,7 +4676,7 @@ class CS2TruePanoramaApp(tk.Tk):
                 ("Why is GPU MPO Diagnostics included in CS2 Command Center?",
                  "Multi-Plane Overlay (MPO) is one of the most common root causes of Alt-Tab black screens, display freezes, Discord/Chrome checkerboard glitches, and GPU driver crashes (such as AMD Driver Timeout or NVIDIA TDR) while playing CS2. CS2 Command Center provides this dedicated diagnostic tab so players can understand their MPO configuration, test for display issues, and access official AMD/NVIDIA resolution steps."),
                 ("Is the GPU MPO Diagnostics tab safe? Does it modify my registry automatically?",
-                 "The GPU MPO Diagnostics tab is strictly 100% READ-ONLY. It never makes registry edits and never alters your display driver automatically. It provides live hardware and registry inspection, clear technical explanations, and safe 1-click clipboard helpers for manual user review."),
+                 "The GPU MPO Diagnostics tab is read-only: it makes no registry edits and does not alter your display driver automatically. It provides live hardware and registry inspection, clear technical explanations, and safe 1-click clipboard helpers for manual user review."),
                 ("Should I disable Windows Multi-Plane Overlay (MPO)?",
                  "If your system runs smoothly with zero black screen flickers, driver timeouts, or dual-monitor stutter, keep MPO enabled (Windows default). If you suffer from 1-3 second Alt-Tab black screens, AMD driver timeouts, Discord checkerboard glitches, or G-Sync stutter with mixed refresh rates, disabling MPO via the registry is an officially verified, safe workaround."),
                 ("What should I do before disabling MPO? Should I use DDU or AMD Cleanup Utility?",
@@ -4696,12 +4834,27 @@ class CS2TruePanoramaApp(tk.Tk):
             {"label": "🌐 GeronimoHQ Portal", "url": "https://geronimohq.com"}
         ]
 
-    def _refresh_discord_presence(self):
+    def _refresh_discord_presence(self, silent: bool = False):
         if not self.config.get("discord_rpc_enabled", True):
-            messagebox.showwarning("Discord Disabled", "Discord Rich Presence is disabled. Enable the checkbox above first.")
+            self._discord_preview_checked = True
+            self._update_discord_preview_labels("", "")
+            if hasattr(self, "discord_status_lbl") and self.discord_status_lbl.winfo_exists():
+                self.discord_status_lbl.config(text="○ Presence is turned off", fg=FG_MUTED)
+            if not silent:
+                messagebox.showwarning("Discord Disabled", "Discord Rich Presence is disabled. Enable the checkbox above first.")
             return
 
         def _task():
+            try:
+                _task_inner()
+            finally:
+                # AUDIT P2-#4: whatever happened, the preview now reflects a finished check.
+                def _done():
+                    self._discord_preview_checked = True
+                    self._update_discord_preview_labels("", "")
+                self.safe_after(0, _done)
+
+        def _task_inner():
             cid = self.config.get("discord_client_id", app_config.DEFAULT_DISCORD_CLIENT_ID).strip() or app_config.DEFAULT_DISCORD_CLIENT_ID
             self.discord_rpc.set_client_id(cid)
 
@@ -4855,7 +5008,22 @@ class CS2TruePanoramaApp(tk.Tk):
         if hasattr(self, "lbl_broadcast_active") and self.lbl_broadcast_active.winfo_exists():
             self.lbl_broadcast_active.config(text="● Current Tracking: Standby / Main Menu", fg="#94a3b8")
 
-    def _update_discord_preview_labels(self, details: str, state: str, btn1: str = None, btn2: str = None):
+    def _update_discord_preview_labels(self, details: str = "", state: str = "", btn1: str = None, btn2: str = None):
+        """AUDIT P2-#4: the preview shows ONLY what Discord really receives
+        (discord_rpc.broadcast_snapshot()). The arguments are kept for old callers but no
+        longer decide anything: before, placeholder text like "In Main Menu" made the card
+        show "Online" while CS2 was closed and nothing was sent."""
+        snap = self.discord_rpc.broadcast_snapshot() if getattr(self, "discord_rpc", None) else None
+        is_active = bool(snap)
+        checked = getattr(self, "_discord_preview_checked", True)
+        if snap:
+            details = snap.get("details", "")
+            state = snap.get("state", "")
+            btns = [b.get("label", "") for b in (snap.get("buttons") or [])]
+            btn1 = btns[0] if len(btns) > 0 else None
+            btn2 = btns[1] if len(btns) > 1 else None
+        else:
+            details, state, btn1, btn2 = "", "", None, None
         if hasattr(self, "discord_preview_details"):
             self.discord_preview_details.set(details)
         if hasattr(self, "discord_preview_state"):
@@ -4865,16 +5033,28 @@ class CS2TruePanoramaApp(tk.Tk):
         if hasattr(self, "preview_username_lbl") and self.preview_username_lbl.winfo_exists():
             self.preview_username_lbl.config(text=user_persona)
 
-        is_active = (details not in ("CS2 is not running", "Discord Presence Inactive (Nothing Shown)", "Offline / Disabled", "Offline / Cleared"))
+        if hasattr(self, "preview_dormant_title") and self.preview_dormant_title.winfo_exists():
+            if not checked:
+                self.preview_dormant_title.config(text="⏳ CHECKING…")
+                self.preview_dormant_desc.config(text="Checking whether CS2 is running and what is being sent to Discord.")
+            elif not self.config.get("discord_rpc_enabled", True):
+                self.preview_dormant_title.config(text="💤 PRESENCE TURNED OFF")
+                self.preview_dormant_desc.config(text="Nothing is sent to Discord. Your profile shows no game from this app.")
+            else:
+                self.preview_dormant_title.config(text="💤 NOTHING SENT TO DISCORD")
+                self.preview_dormant_desc.config(text="CS2 is not running (or Discord is closed), so your profile shows no game from this app. When CS2 runs, this card shows exactly what is sent.", wraplength=420)
 
         if hasattr(self, "preview_status_lbl") and self.preview_status_lbl.winfo_exists():
-            if is_active:
-                if "Main Menu" in details or "Standby" in details:
-                    self.preview_status_lbl.config(text="● Online  |  In Main Menu", fg="#23a55a")
-                else:
-                    self.preview_status_lbl.config(text="● In-Game  |  Playing Counter-Strike 2", fg="#23a55a")
+            if not checked:
+                self.preview_status_lbl.config(text="○ Checking…", fg="#949ba4")
                 if hasattr(self, "preview_ava") and self.preview_ava.winfo_exists():
-                    self.preview_ava.config(highlightbackground="#23a55a")
+                    self.preview_ava.config(highlightbackground="#4e5058")
+            elif is_active:
+                # AUDIT P2-#4: #57d98a on #232428 = 8.6:1 contrast (was #23a55a, 4.9:1 at 9 pt).
+                label = "● Online  |  In Main Menu" if "Main Menu" in details else "● In-Game  |  Playing Counter-Strike 2"
+                self.preview_status_lbl.config(text=label, fg="#57d98a")
+                if hasattr(self, "preview_ava") and self.preview_ava.winfo_exists():
+                    self.preview_ava.config(highlightbackground="#57d98a")
             else:
                 self.preview_status_lbl.config(text="○ Standby  |  CS2 Closed (No Presence)", fg="#949ba4")
                 if hasattr(self, "preview_ava") and self.preview_ava.winfo_exists():
@@ -4929,9 +5109,11 @@ class CS2TruePanoramaApp(tk.Tk):
             return
         try:
             if hasattr(self, "discord_preview_elapsed") and hasattr(self, "discord_session_start"):
-                is_cs2_open = bool(core_logic.is_cs2_running())
-                if is_cs2_open and self.discord_session_start > 0:
-                    elapsed = max(0, int(time.time() - self.discord_session_start))
+                # AUDIT P2-#4: elapsed time comes from the start time really sent to Discord.
+                snap = self.discord_rpc.broadcast_snapshot() if getattr(self, "discord_rpc", None) else None
+                sent_start = int(((snap or {}).get("timestamps") or {}).get("start") or 0)
+                if sent_start > 0:
+                    elapsed = max(0, int(time.time() - sent_start))
                     m, s = divmod(elapsed, 60)
                     h, m = divmod(m, 60)
                     if h > 0:
@@ -5035,6 +5217,11 @@ class CS2TruePanoramaApp(tk.Tk):
         return None
 
     def _send_web_presence_heartbeat(self, is_cs2: bool, is_steam: bool = False):
+        # AUDIT 1c-D5: owner-only. A fresh install (no presence_secret) sends NOTHING
+        # to the owner's backend, so it cannot change the owner's presence card and
+        # does not report anyone else's CS2/Steam status.
+        if not str(self.config.get("presence_secret", "") or "").strip():
+            return
         def _req():
             try:
                 import urllib.request
@@ -5050,8 +5237,8 @@ class CS2TruePanoramaApp(tk.Tk):
         threading.Thread(target=_req, daemon=True).start()
 
     def _start_presence_heartbeat(self):
-        """100% Automatic CS2 Lifecycle & Presence Manager.
-        - When CS2 is CLOSED: Discord presence is 100% CLEARED (Nothing shown).
+        """Automatic CS2 lifecycle & presence manager.
+        - When CS2 is CLOSED: Discord presence is cleared (nothing shown).
         - When CS2 is RUNNING: Automatically detects state, map, and server."""
         def _loop():
             was_running = False
@@ -5268,6 +5455,8 @@ class CS2TruePanoramaApp(tk.Tk):
                 self._refresh_autoexec_preview()
             if self.opt_power.get():
                 plan = self.selected_power_plan.get()
+                core_logic.remember_power_plan(self.config)  # AUDIT P6: for a real undo
+                app_config.save_config(self.config)
                 for l in core_logic.set_power_plan(plan):
                     self.log(l)
             if self.opt_shaders.get():
@@ -5288,7 +5477,22 @@ class CS2TruePanoramaApp(tk.Tk):
 
         threading.Thread(target=task, daemon=True).start()
 
-    def run_revert_all(self):
+    REVERT_ALL_SUMMARY = (
+        "This undoes:\n"
+        "- Game DVR and fullscreen-optimization settings\n"
+        "- autoexec.cfg: replaced by autoexec_backup.cfg (your file from before the app's first change;\n"
+        "  later edits are lost), or only the app's block is removed if there is no backup\n"
+        "- power plan: back to the plan you had before the app changed it\n\n"
+        "Not changed here: DNS (use 'Restore ISP Default (DHCP)'), Steam launch options\n"
+        "(the original is kept as localconfig.vdf.backup), deleted cache files."
+    )
+
+    def run_revert_all(self, confirm: bool = True):
+        # AUDIT P6: ask first and say exactly what is undone (it said "All settings ... restored").
+        if confirm and not messagebox.askyesno("Restore Defaults?", self.REVERT_ALL_SUMMARY + "\n\nContinue?"):
+            self.log("[RESTORE] Cancelled by user.")
+            return
+
         def task():
             self.log("--- Reverting All Optimizations to Defaults ---")
             for l in core_logic.revert_windows_game_dvr():
@@ -5301,11 +5505,13 @@ class CS2TruePanoramaApp(tk.Tk):
                 for l in logs:
                     self.log(l)
                 self._refresh_autoexec_preview()
-            for l in core_logic.set_power_plan("balanced"):
+            for l in core_logic.restore_previous_power_plan(self.config):  # AUDIT P6 (was: always Balanced)
                 self.log(l)
+            app_config.save_config(self.config)
 
-            self.log("--- ALL TWEAKS REVERTED TO DEFAULTS ---")
-            messagebox.showinfo("Reverted", "All settings and configs have been restored back to defaults!")
+            self.log("--- RESTORE DEFAULTS FINISHED (see the log lines above for each step) ---")
+            messagebox.showinfo("Restore Defaults finished",
+                                "Done. Each step is listed in the log.\n\nDNS and Steam launch options were not changed.")
 
         threading.Thread(target=task, daemon=True).start()
 
@@ -5318,10 +5524,82 @@ class CS2TruePanoramaApp(tk.Tk):
         else:
             messagebox.showwarning("Live CPU Priority Boost", msg)
 
+    def _refresh_ze_totals(self, force: bool = False):
+        """AUDIT P2-#2: ONE source for the Dashboard card and the ZE Game Servers pills
+        (server_browser.get_shared_totals: backend /api/servers, cached 60 s, offline
+        fallback = direct A2S of the catalog). Network only while one of those two pages
+        is open and the window is visible; re-checks every 60 s."""
+        if getattr(self, "_quitting", False):
+            return
+        if getattr(self, "_ze_totals_running", False):
+            return
+        try:
+            visible = self.winfo_viewable() and self.state() not in ("iconic", "withdrawn")
+        except Exception:
+            visible = False
+        page = getattr(self, "current_page_key", "")
+        if not force and not (visible and page in ("DASHBOARD", "SERVERS")):
+            self._ze_totals_job = self.safe_after(60000, self._refresh_ze_totals)
+            return
+        self._ze_totals_running = True
+
+        def _bg():
+            try:
+                t = server_browser.get_shared_totals()
+            except Exception:
+                t = None
+            self.safe_after(0, lambda: self._apply_ze_totals(t))
+
+        threading.Thread(target=_bg, daemon=True).start()
+
+    def _apply_ze_totals(self, t):
+        self._ze_totals_running = False
+        if t:
+            self._ze_totals = t
+        pl, sv = server_browser.format_totals(getattr(self, "_ze_totals", None))
+        src = (getattr(self, "_ze_totals", None) or {}).get("source")
+        for attr, txt in (("dash_ze_players_lbl", pl), ("dash_ze_nodes_lbl", sv + (" (direct query)" if src == "direct" and (getattr(self, "_ze_totals", None) or {}).get("online_servers") else "")),
+                          ("lbl_srv_players", "👥 " + pl.upper()), ("lbl_srv_nodes", "📡 " + sv.upper())):
+            w = getattr(self, attr, None)
+            try:
+                if w is not None and w.winfo_exists():
+                    w.config(text=txt)
+            except Exception:
+                pass
+        job = getattr(self, "_ze_totals_job", None)
+        if job:
+            try:
+                self.after_cancel(job)
+            except Exception:
+                pass
+        self._ze_totals_job = self.safe_after(60000, self._refresh_ze_totals)
+
+    def _status_bar_tick(self):
+        """AUDIT P2-#3: refresh the Slot Sniper indicator from the sniper's real state, once a
+        second. Tk timers keep running while the window is withdrawn to the tray."""
+        try:
+            lbl = getattr(self, "status_sniper_lbl", None)
+            if lbl is not None and lbl.winfo_exists():
+                text, state = server_browser.sniper_status_bar(self.sniper.get_status())
+                col = {"armed": ACCENT_ORANGE, "triggered": ACCENT_GREEN, "cooldown": ACCENT_CYAN}.get(state, FG_MUTED)
+                if lbl.cget("text") != text or str(lbl.cget("fg")) != col:
+                    lbl.config(text=text, fg=col)
+        except Exception:
+            pass
+        self._status_bar_job = self.safe_after(1000, self._status_bar_tick)
+
+    def _apply_dns_status_bar(self, current_dns):
+        lbl = getattr(self, "status_dns_lbl", None)
+        if lbl is None or not lbl.winfo_exists():
+            return
+        text, state = core_logic.dns_status_bar(current_dns)
+        lbl.config(text=text, fg=ACCENT_CYAN if state == "provider" else FG_MUTED)
+
     def _refresh_dns_interface_header(self):
         def _bg():
             try:
                 iface_info = core_logic.get_active_network_interface()
+                self.safe_after(0, lambda: self._apply_dns_status_bar(iface_info.get("current_dns", "")))  # AUDIT P2-#3
                 txt = f"Adapter: {iface_info['interface_name']}  |  Active DNS: {iface_info['current_dns']}"
                 self.active_dns_raw = iface_info.get("current_dns", "")
                 self.active_iface_name = iface_info.get("interface_name", "Ethernet")
@@ -5586,7 +5864,31 @@ class CS2TruePanoramaApp(tk.Tk):
 
         threading.Thread(target=task, daemon=True).start()
 
-    def run_pc_maintenance(self):
+    def maintenance_plan(self):
+        """AUDIT P3 (D-12): plain list of what Run Maintenance will delete, from the ticked boxes."""
+        items = [
+            (self.maint_temp, "Windows temp files (%TEMP% and Windows\\Temp)"),
+            (self.maint_win_update, "Windows Update download cache (SoftwareDistribution\\Download)"),
+            (self.maint_discord_steam, "Discord and Steam web caches"),
+            (self.maint_thumb, "Explorer thumbnail cache"),
+            (self.maint_recycle, "everything in the Recycle Bin (cannot be undone)"),
+            (self.maint_dns, "Windows DNS cache (nothing is deleted from disk)"),
+        ]
+        return [label for var, label in items if var.get()]
+
+    def run_pc_maintenance(self, confirm: bool = True):
+        # AUDIT P3 (D-12): it deleted files with no question. Ask first, listing what is ticked.
+        plan = self.maintenance_plan()
+        if not plan:
+            messagebox.showinfo("PC Maintenance", "Nothing is ticked, so there is nothing to clean.")
+            return
+        if confirm and not messagebox.askyesno(
+                "Run PC Maintenance?",
+                "This permanently deletes (it does not go to the Recycle Bin):\n\n- " + "\n- ".join(plan)
+                + "\n\nFiles that are in use are skipped. Continue?"):
+            self.log("[MAINTENANCE] Cancelled by user.")
+            return
+
         def task():
             self.log("--- Starting Safe PC Maintenance ---")
             total_freed = 0
@@ -5798,8 +6100,8 @@ class CS2TruePanoramaApp(tk.Tk):
             self.autoexec_live_status_var.set(f"✅ Updated @ {time.strftime('%H:%M:%S')} — Scrolled to injected Engine Tweaks block!")
         if success:
             messagebox.showinfo(
-                "Engine & Sub-Tick Autoexec Tweaks Applied",
-                "Core Source 2 Engine & Sub-Tick Performance Tweaks have been appended to autoexec.cfg while keeping all your personal binds and ZE Customizer binds intact!\n\n"
+                "Autoexec Tweaks Applied",
+                "The app's performance block was added to (or replaced in) autoexec.cfg. Your other lines, including the ZE Studio block, were kept.\n\n"
                 "The live preview box has scrolled to show your updated autoexec.cfg."
             )
 
@@ -5878,12 +6180,14 @@ class CS2TruePanoramaApp(tk.Tk):
                         el = max(0, now - s_ts)
                         em = el // 60
                         es = el % 60
+                        # AUDIT P3-02: "≥" when the start was not seen (lower bound only)
+                        pre = "" if getattr(self, "server_map_start_exact", {}).get(sid) else "≥ "
                         if em >= 60:
                             eh = em // 60
                             em = em % 60
-                            s_str = f"⏱️ {eh}:{em:02d}:{es:02d} on map"
+                            s_str = f"⏱️ {pre}{eh}:{em:02d}:{es:02d} on map"
                         else:
-                            s_str = f"⏱️ {em:02d}:{es:02d} on map"
+                            s_str = f"⏱️ {pre}{em:02d}:{es:02d} on map"
                         try:
                             w_data["timer_lbl"].config(text=s_str)
                         except Exception:
@@ -5992,6 +6296,7 @@ class CS2TruePanoramaApp(tk.Tk):
             return
 
         dlg = tk.Toplevel(self)
+        bind_escape_to_close(dlg)  # AUDIT P5
         dlg.title(f"Soundtrack Intel - {clean}")
         dlg.minsize(680, 480)
         dlg.configure(bg="#070B09")
@@ -6276,7 +6581,9 @@ class CS2TruePanoramaApp(tk.Tk):
                         players_disp = info.get("players") or f"{curr_gfl_p}/{info.get('max_players', 64)}"
                         gfl_txt = f"● Online | {players_disp} Players | Map: {gfl_map} | {info.get('ping', 'N/A')}"
                         self.safe_after(0, lambda t=gfl_txt: self.gfl_status_text.set(t))
-                        gfl_geo = server_browser.get_server_demographics_text("Chicago, US", curr_gfl_p)
+                        # AUDIT P2-#5: humans only + measured ZEGraph continents (same source as the website)
+                        gfl_humans = max(0, int(curr_gfl_p or 0) - int(info.get("bots") or 0))
+                        gfl_geo = server_browser.get_server_demographics_text("Chicago, US", gfl_humans, server_browser.fetch_gfl_continents() if gfl_humans > 0 else None)
                         self.safe_after(0, lambda g=gfl_geo: self.gfl_geo_var.set(g))
                         self.server_query_cache["gfl"] = {"display": gfl_txt, "online": True, "map": gfl_map, "info": info}
                         self.server_query_cache["74.91.124.21_27015"] = self.server_query_cache["gfl"]
@@ -6329,9 +6636,14 @@ class CS2TruePanoramaApp(tk.Tk):
                         if last_m != srv_map or sid not in getattr(self, "server_map_start_timestamps", {}):
                             if not hasattr(self, "server_last_known_maps"):
                                 self.server_last_known_maps = {}
+                            # AUDIT P3-02: was "now - (hash(id) % 900 + 120)", an invented start time.
+                            # First sighting: we only know the map has run AT LEAST since now.
+                            # A map change seen by the app gives a real start time.
+                            if not hasattr(self, "server_map_start_exact"):
+                                self.server_map_start_exact = {}
+                            self.server_map_start_exact[sid] = last_m is not None
                             self.server_last_known_maps[sid] = srv_map
-                            offset = abs(hash(sid)) % 900 + 120
-                            self.server_map_start_timestamps[sid] = int(time.time()) - offset
+                            self.server_map_start_timestamps[sid] = int(time.time())
 
                         if hasattr(self, "server_row_widgets") and sid in self.server_row_widgets:
                             w_dict = self.server_row_widgets[sid]
@@ -6347,7 +6659,7 @@ class CS2TruePanoramaApp(tk.Tk):
                                 self.safe_after(0, lambda w=w_dict["players_lbl"], p=p_str: w.config(text=f"👥 {p} Players"))
                             # Update geo radar demographics
                             if "geo_lbl" in w_dict:
-                                g_text = server_browser.get_server_demographics_text(s.get("region", ""), curr_p)
+                                g_text = server_browser.get_server_demographics_text(s.get("region", ""), max(0, int(curr_p or 0) - int(info.get("bots") or 0)))
                                 self.safe_after(0, lambda w=w_dict["geo_lbl"], g=g_text: w.config(text=g))
                     else:
                         disp = "● Ready to Join"
@@ -6405,7 +6717,8 @@ class CS2TruePanoramaApp(tk.Tk):
                 next_delay_ms = 30000
             else:
                 is_servers_tab = getattr(self, "current_page_key", "") == "SERVERS"
-                next_delay_ms = 1000 if is_servers_tab else 15000
+                # AUDIT P3-01: honour the 'Server query speed' setting (was always 1 s)
+                next_delay_ms = app_config.refresh_interval_ms(self.config) if is_servers_tab else 15000
 
             def _schedule_next():
                 if not getattr(self, "_quitting", False):
@@ -6434,6 +6747,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
     def open_add_server_dialog(self):
         dlg = tk.Toplevel(self)
+        bind_escape_to_close(dlg)  # AUDIT P5
         dlg.title("Add Custom Community Server")
         dlg.resizable(False, False)
         dlg.configure(bg=BG_WINDOW)
@@ -6485,10 +6799,12 @@ class CS2TruePanoramaApp(tk.Tk):
                 messagebox.showerror("Validation Error", "Please provide at least a Server Name and Host/IP.")
                 return
 
-            try:
-                port = int(port_s)
-            except ValueError:
-                port = 27015
+            # AUDIT 1c-D1: only a plain IPv4/hostname and port 1-65535 are accepted.
+            checked = server_browser.validate_server_address(host, port_s or "27015")
+            if not checked:
+                messagebox.showerror("Validation Error", "Host must be an IPv4 address or host name (letters, digits, dots, dashes) and Port must be 1-65535.")
+                return
+            host, port = checked
 
             new_server = {
                 "id": f"custom_{int(time.time())}",
@@ -6534,6 +6850,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
     def open_players_dialog(self, host: str, port: int, server_name: str):
         dlg = tk.Toplevel(self)
+        bind_escape_to_close(dlg)  # AUDIT P5
         dlg.title(f"Active Players — {server_name}")
         dlg.minsize(600, 480)
         dlg.configure(bg="#070B09")
@@ -6771,6 +7088,7 @@ class CS2TruePanoramaApp(tk.Tk):
     def open_custom_map_cleaner_dialog(self):
         """Displays rich table of downloaded workshop maps with interactive column sorting, server pack detection, and dark mode."""
         dlg = tk.Toplevel(self)
+        bind_escape_to_close(dlg)  # AUDIT P5
         dlg.title("CS2 & Zombie Escape Custom Map Cleaner")
         dlg.configure(bg="#070B09")
         dlg.transient(self)
@@ -6900,7 +7218,7 @@ class CS2TruePanoramaApp(tk.Tk):
         btn_filter_dupe.pack(side="left")
 
         add_tooltip(btn_filter_all, "Show all custom community maps and server packages.")
-        add_tooltip(btn_filter_temp, "Show only temporary downloaded maps from servers you visited. 100% safe to delete.")
+        add_tooltip(btn_filter_temp, "Show only temporary maps downloaded from servers you visited. CS2 downloads them again if you rejoin.")
         add_tooltip(btn_filter_sub, "Show maps belonging to your subscribed Steam Workshop collections (e.g. GFL ZE Map Pack).")
         add_tooltip(btn_filter_assets, "Show essential community server content packs (player skins, zombie models, sounds) for GFL, Possession, cOLa, Mapeadores.")
         add_tooltip(btn_filter_dupe, "Show duplicate copies of maps across your library.")
@@ -7177,7 +7495,7 @@ class CS2TruePanoramaApp(tk.Tk):
         filter_actions.pack(fill="x", padx=10, pady=(0, 6))
 
         def select_temp_safe():
-            """One-click selects ALL temporary downloaded maps (leaving 100% of subscribed server pack maps and server assets untouched)."""
+            """One-click selects ALL temporary downloaded maps (subscribed server pack maps and server assets are left untouched)."""
             selected_ids.clear()
             for m in all_maps:
                 if not m.get("is_subscribed") and not m.get("is_server_asset") and not m.get("is_protected") and m.get("is_workshop"):
@@ -7301,7 +7619,7 @@ class CS2TruePanoramaApp(tk.Tk):
                     "Confirm Map Deletion",
                     f"Are you sure you want to delete {len(sel_items)} temporary custom map(s)?\n\n"
                     f"Reclaimed Space: {sel_gb:.2f} GB\n\n"
-                    "• Subscribed Server Map Pack maps are 100% protected and excluded.\n"
+                    "• Subscribed Server Map Pack maps are excluded.\n"
                     "• Official Valve competitive maps are protected.\n"
                     "• If you visit servers playing these maps in the future, CS2 will re-download them automatically."
                 )
@@ -7452,6 +7770,7 @@ class CS2TruePanoramaApp(tk.Tk):
     def open_settings_dialog(self):
         """Settings modal for Windows Startup, System Tray, Discord Rich Presence, and System Diagnostics."""
         dlg = tk.Toplevel(self)
+        bind_escape_to_close(dlg)  # AUDIT P5
         dlg.title("CS2 Command Center Settings")
         dlg.configure(bg=BG_WINDOW)
         dlg.transient(self)
@@ -7609,17 +7928,8 @@ class CS2TruePanoramaApp(tk.Tk):
         cb_snd.pack(anchor="w", pady=(0, 4))
         add_tooltip(cb_snd, "Plays an audio chime when a monitored server slot becomes available.")
 
-        # Volume slider row
-        row_vol = tk.Frame(sec_srv, bg=BG_CARD)
-        row_vol.pack(fill="x", padx=4, pady=(0, 4))
-        tk.Label(row_vol, text="Notification volume:", font=("Segoe UI", 10), fg=FG_WHITE, bg=BG_CARD).pack(side="left", padx=(0, 8))
-        var_sniper_vol = tk.IntVar(value=self.config.get("sniper_sound_volume", 100))
-        scale_vol = ttk.Scale(row_vol, from_=0, to=100, orient="horizontal", variable=var_sniper_vol)
-        scale_vol.pack(side="left", fill="x", expand=True, padx=(0, 8))
-        lbl_vol_val = tk.Label(row_vol, text=f"{var_sniper_vol.get()}%", font=("Segoe UI", 9), fg=FG_MUTED, bg=BG_CARD, width=4)
-        lbl_vol_val.pack(side="left")
-        scale_vol.configure(command=lambda val: lbl_vol_val.config(text=f"{int(float(val))}%"))
-        add_tooltip(scale_vol, "Adjusts notification audio volume level.")
+        # AUDIT P3-01: volume slider removed - Windows' simple sound API cannot set a volume,
+        # so the slider was saved but changed nothing.
 
         # Refresh speed row
         row_ref = tk.Frame(sec_srv, bg=BG_CARD)
@@ -7635,14 +7945,14 @@ class CS2TruePanoramaApp(tk.Tk):
         sec_priv.pack(fill="x", pady=(0, 8))
         tk.Label(sec_priv, text="PRIVACY", font=("Segoe UI", 10, "bold"), fg=theme.COLOR_PRIMARY, bg=BG_CARD).pack(anchor="w", pady=(0, 6))
 
-        var_disc_share = tk.BooleanVar(value=self.config.get("discord_presence_share", True))
+        var_disc_share = tk.BooleanVar(value=self.config.get("discord_rpc_enabled", True))
         cb_disc = tk.Checkbutton(sec_priv, text=" Share game telemetry with Discord Rich Presence", variable=var_disc_share,
                                  font=("Segoe UI", 10), fg=FG_WHITE, bg=BG_CARD, activebackground=BG_CARD, selectcolor=BG_WINDOW)
         cb_disc.pack(anchor="w", pady=(0, 4))
         add_tooltip(cb_disc, "Shares active CS2 server and map details with local Discord client.")
 
         lbl_disc_desc = tk.Label(sec_priv,
-                 text="Discord Presence features automatic CS2 detection, real-time profile preview, and live map & player broadcaster. Universal setup is 100% pre-configured.",
+                 text="Discord Presence features automatic CS2 detection, real-time profile preview, and live map & player broadcaster. No setup needed: the app ships with its own Discord Application ID.",
                  font=("Segoe UI", 10), fg=FG_MUTED, bg=BG_CARD, justify="left", wraplength=480)
         lbl_disc_desc.pack(anchor="w", padx=4, pady=(0, 6))
         wrap_labels.append(lbl_disc_desc)
@@ -7696,32 +8006,14 @@ class CS2TruePanoramaApp(tk.Tk):
         add_tooltip(b_appdata, "Opens the CS2 Command Center local configuration directory in Explorer.")
 
         def reset_app_settings():
-            confirm = messagebox.askyesno("Reset App Settings", "Are you sure you want to restore default configuration settings?")
+            confirm = messagebox.askyesno("Reset App Settings", "Are you sure you want to restore default configuration settings?", parent=dlg)
             if confirm:
-                try:
-                    default_cfg = {
-                        "start_with_windows": False,
-                        "start_minimized": False,
-                        "minimize_to_tray_on_close": True,
-                        "open_on_page": "Dashboard",
-                        "sniper_sound_enabled": True,
-                        "sniper_sound_volume": 100,
-                        "server_refresh_speed": "Normal (5s)",
-                        "discord_presence_share": True
-                    }
-                    self.config = default_cfg
-                    app_config.save_config(self.config)
-                    var_startup.set(False)
-                    var_minimized.set(False)
-                    var_tray.set(True)
-                    var_start_page.set("Dashboard")
-                    var_sniper_sound.set(True)
-                    var_sniper_vol.set(100)
-                    var_refresh_speed.set("Normal (5s)")
-                    var_disc_share.set(True)
-                    self.log("[SETTINGS] Reset configuration to default values.")
-                except Exception as ex:
-                    self.log(f"[SETTINGS] Reset error: {ex}")
+                # AUDIT P2-#6: reset only the Settings-dialog keys (old code replaced the whole
+                # config and deleted presence_secret, discord_client_id, timestamps, ...).
+                # Like other changes in this dialog, it is written when you click Save.
+                for key, var in settings_vars.items():
+                    var.set(app_config.SETTINGS_DEFAULTS[key])
+                self.log("[SETTINGS] Defaults restored in the dialog. Click Save to keep them.")
 
         b_reset = tk.Button(row_data_btns, text="↺ Reset App Settings", font=("Segoe UI", 9),
                             fg="#F26D6D", bg="#161E26", activebackground="#243241", relief="flat", padx=10, pady=4, cursor="hand2",
@@ -7803,22 +8095,66 @@ class CS2TruePanoramaApp(tk.Tk):
         add_tooltip(b_sha, "Copies the executable SHA-256 checksum to the clipboard.")
 
         # SAVE SETTINGS LOGIC
+        # AUDIT P2-#6: one map of every setting shown in this dialog (check_updates_on_startup
+        # was missing from the save, so the tick was lost on reopen).
+        settings_vars = {
+            "start_with_windows": var_startup,
+            "start_minimized": var_minimized,
+            "minimize_to_tray_on_close": var_tray,
+            "open_on_page": var_start_page,
+            "sniper_sound_enabled": var_sniper_sound,
+            "server_refresh_speed": var_refresh_speed,
+            "discord_rpc_enabled": var_disc_share,
+            "check_updates_on_startup": var_check_upd,
+        }
+        self._settings_dialog_vars = settings_vars  # used by tests
+
         def save_settings():
-            self.config["start_with_windows"] = var_startup.get()
-            self.config["start_minimized"] = var_minimized.get()
-            self.config["minimize_to_tray_on_close"] = var_tray.get()
-            self.config["open_on_page"] = var_start_page.get()
-            self.config["sniper_sound_enabled"] = var_sniper_sound.get()
-            self.config["sniper_sound_volume"] = var_sniper_vol.get()
-            self.config["server_refresh_speed"] = var_refresh_speed.get()
-            self.config["discord_presence_share"] = var_disc_share.get()
+            before = (bool(self.config.get("start_with_windows", False)), bool(self.config.get("start_minimized", False)))
+            discord_before = bool(self.config.get("discord_rpc_enabled", True))
+            values = {}
+            for key, var in settings_vars.items():
+                try:
+                    values[key] = var.get()
+                except Exception:
+                    values[key] = app_config.SETTINGS_DEFAULTS[key]
+            app_config.apply_settings(self.config, values)
 
-            app_config.set_windows_startup(var_startup.get(), var_minimized.get())
-            app_config.save_config(self.config)
+            startup_ok = True
+            after = (self.config["start_with_windows"], self.config["start_minimized"])
+            if after != before:
+                # Only touch the Windows startup entry when that option really changed.
+                startup_ok = app_config.set_windows_startup(*after)
+            saved_ok = app_config.save_config(self.config)
 
-            self.log(f"[SETTINGS] Saved! Windows Startup: {var_startup.get()} (minimized: {var_minimized.get()}) | Tray on [-]: {var_tray.get()}")
+            if not saved_ok:
+                self.log(f"[SETTINGS] ERROR: could not write {app_config.CONFIG_FILE}")
+                messagebox.showerror("Settings not saved",
+                                     "Could not write the settings file:\n" + str(app_config.CONFIG_FILE)
+                                     + "\n\nCheck that the folder is not read-only and try again.",
+                                     parent=dlg)
+                return False
+            self.log(f"[SETTINGS] Saved to {app_config.CONFIG_FILE}")
+            if bool(self.config.get("discord_rpc_enabled", True)) != discord_before:
+                # Same effect as the Discord tab's switch (clears the activity when turned off).
+                if hasattr(self, "var_discord_enabled"):
+                    self.var_discord_enabled.set(self.config["discord_rpc_enabled"])
+                    self._on_discord_toggle()
+                elif not self.config["discord_rpc_enabled"] and self.discord_rpc:
+                    try:
+                        self.discord_rpc.clear_activity(); self.discord_rpc.close()
+                    except Exception:
+                        pass
             _close_settings()
-            self.after(50, lambda: messagebox.showinfo("Settings Saved", "Preferences updated successfully!"))
+            if not startup_ok:
+                self.after(50, lambda: messagebox.showwarning("Settings saved",
+                                                             "Settings saved, but the Windows startup entry could not be changed.",
+                                                             parent=self))
+            else:
+                self.after(50, lambda: messagebox.showinfo("Settings saved", "Settings saved.", parent=self))
+            return True
+
+        self._settings_dialog_save = save_settings  # used by tests
 
         dlg.bind("<Return>", lambda e: save_settings())
 

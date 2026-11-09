@@ -25,7 +25,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
     const sanitizedFps = Math.max(0, Math.min(999, parseInt(fpsMax || '0', 10) || 0));
     const lines: string[] = [
       '// ============================================================================',
-      '// GERONIMOHQ.COM // CS2 & ZOMBIE ESCAPE PRO AUTOEXEC.CFG',
+      '// GERONIMOHQ.COM // CS2 & ZOMBIE ESCAPE AUTOEXEC.CFG (hobby project, not affiliated with Valve)',
       '// Engine CVars & Settings • Place in: steamapps/common/Counter-Strike Global Offensive/game/csgo/cfg/',
       '// ============================================================================',
       '',
@@ -43,7 +43,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
         'snd_mixahead "0.025"                        // Low audio buffer (0.025s) reduces sound delay & spikes',
         'snd_headphone_eq "0"                        // Disables headphone EQ DSP for lowest CPU overhead',
         'snd_spatialize_lerp "1"',
-        'rate "1000000"                              // 1 Mbps max bandwidth',
+        'rate "1000000"                              // max bytes/s (about 8 Mbps; CS2 may cap it lower)',
         'cl_net_buffer_ticks "0"                     // Minimum interpolation delay (fastest packet processing)',
         'cl_allow_animated_avatars "0"               // Disables animated Steam avatars (fixes scoreboard FPS drop)',
         'r_player_visibility_mode "1"                // Enhances enemy contrast',
@@ -164,9 +164,14 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
     const muteK = (muteKey || 'F8').trim();
     const radarK = (radarZoomKey || 'v').trim();
 
-    lines.push(
+    // AUDIT P2-#9: the undo guide now sits in the file HEADER (it was at the very bottom).
+    const undoLines: string[] = [];
+    undoLines.push(
       '// ============================================================================',
-      '// HOW TO REVERT ALL SETTINGS & BINDS TO DEFAULTS (COMPLETE REVERT / UNDO GUIDE):',
+      '// HOW TO UNDO (read before you use this file):',
+      '// 1) Delete this autoexec.cfg (or the lines you added from it).',
+      '// 2) CS2 remembers most of these values after a restart, so also type the',
+      '//    commands below in the CS2 console. Defaults are common values - check yours.',
       '// Restart CS2 to clear memory-resident aliases (ze_duck_toggle, etc.).',
       '// Note: unverified defaults are labeled (typical, check yours).',
       '//',
@@ -202,8 +207,29 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
       '// ============================================================================',
       ''
     );
-    lines.push('echo "[GeronimoHQ] CS2 & ZE Autoexec Loaded Successfully!"');
-    return lines.join('\n');
+
+    // AUDIT P2-#9: each console variable appears once. Before, options repeated the same
+    // cvar with different values (rate 1000000 then 786432, snd_headphone_eq 0 then 1,
+    // fps_max twice ...). CS2 applies the LAST one, so keeping only the last keeps the
+    // same result without contradictions in the file.
+    const NOT_CVARS = new Set(['alias', 'bind', 'unbind', 'echo', 'exec']);
+    const cvarOf = (l: string): string | null => {
+      const m = /^([A-Za-z_][A-Za-z0-9_]*)\s/.exec(l);
+      return m && !NOT_CVARS.has(m[1].toLowerCase()) ? m[1].toLowerCase() : null;
+    };
+    const lastIndex = new Map<string, number>();
+    lines.forEach((l, i) => {
+      const c = cvarOf(l);
+      if (c) lastIndex.set(c, i);
+    });
+    const body = lines.filter((l, i) => {
+      const c = cvarOf(l);
+      return !c || lastIndex.get(c) === i;
+    });
+    const header = body.splice(0, 4);
+    const out = [...header, ...undoLines, ...body];
+    out.push('echo "[GeronimoHQ] autoexec.cfg loaded"');
+    return out.join('\n');
   }, [
     zeLowViewmodel,
     disableTracers,
@@ -258,7 +284,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
               </span>
               <span className="px-2 py-0.5 text-[10px] font-code rounded bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 flex items-center gap-1 font-bold">
                 <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                100% VAC-SAFE CVARS
+                CONSOLE SETTINGS ONLY
               </span>
             </div>
             <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-2.5">
@@ -266,7 +292,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
               <span>CS2 AUTOEXEC &amp; ZE LASER BINDS STUDIO</span>
             </h2>
             <p className="text-sm font-tech text-slate-300 mt-1 max-w-3xl">
-              Customize your Zombie Escape Laser-Jump Viewmodel, Boss Audio Ducking keybind, First-Person Tracer clutter reducer, and Sub-Tick network rates right in your browser, then download a ready-to-use <code className="text-cyan-300">autoexec.cfg</code> in 1 click.
+              Customize your Zombie Escape Laser-Jump Viewmodel, Boss Audio Ducking keybind, First-Person Tracer clutter reducer, and network rate settings right in your browser, then download a ready-to-use <code className="text-cyan-300">autoexec.cfg</code> in 1 click.
             </p>
           </div>
 
@@ -326,10 +352,10 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
               <span>1. ZOMBIE ESCAPE VISUAL &amp; AUDIO PRESETS</span>
             </div>
 
-            {/* In-App Engine & Sub-Tick Performance Tweaks */}
+            {/* In-App Engine Performance Tweaks */}
             <div className="p-3 rounded-xl bg-slate-950/80 border border-cyan-500/30">
               <label 
-                title="Applies CS2 FPS Optimizer engine & sub-tick tweaks: engine_low_latency_sleep, snd_mixahead 0.025, 1 Mbps bandwidth, and animated avatar fix."
+                title="Adds the same performance block as the desktop app: engine_low_latency_sleep, snd_mixahead 0.025, rate 1000000 (bytes/s), and animated avatars off."
                 className="flex items-start gap-2.5 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input
@@ -341,10 +367,10 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
                 <div>
                   <span className="font-bold text-white flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                    CS2 FPS Optimizer Engine &amp; Sub-Tick Performance Tweaks
+                    CS2 FPS Optimizer Engine Performance Tweaks
                   </span>
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    Low-latency tick sleep (<code className="text-cyan-300">engine_low_latency_sleep_after_client_tick true</code>), 0.025s sound buffer, 1 Mbps bandwidth, and animated avatar fix.
+                    Low-latency tick sleep (<code className="text-cyan-300">engine_low_latency_sleep_after_client_tick true</code>), 0.025 s sound buffer, rate 1000000 (bytes/s, about 8 Mbps), and animated avatars off.
                   </p>
                 </div>
               </label>
@@ -435,7 +461,7 @@ export const CS2AutoexecGeneratorSection: React.FC = () => {
 
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950/80 border border-slate-800/90 rounded-lg p-2.5">
               <label 
-                title="Single-key toggle to zoom CS2 radar between 0.40 (map overview) and 0.80 (close-up radar) - 100% Valve Safe"
+                title="Single-key toggle to zoom CS2 radar between 0.40 (map overview) and 0.80 (close-up radar) using standard console commands"
                 className="flex items-center gap-2 text-xs font-tech text-slate-200 cursor-pointer select-none"
               >
                 <input

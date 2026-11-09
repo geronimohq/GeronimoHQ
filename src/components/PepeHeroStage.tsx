@@ -301,7 +301,7 @@ export const PepeHeroStage: React.FC<PepeHeroStageProps> = ({
         </div>
 
         {/* Bottom Stage Telemetry Bar */}
-        <div className="absolute bottom-2 inset-x-4 flex items-center justify-between text-[10px] font-code text-slate-500 border-t border-slate-800/80 pt-2">
+        <div className="absolute bottom-2 inset-x-4 flex items-center justify-between text-[10px] font-code text-slate-400 border-t border-slate-800/80 pt-2">
           <div className="flex items-center gap-3">
             <span className="text-cyan-400 flex items-center gap-1">
               <Activity className="w-3 h-3" /> STABILITY: 99.8%

@@ -1,4 +1,7 @@
-import zeMapCatalog from './zeMapCatalog.json';
+// AUDIT P4: only the mapper names are used. zeMapCatalog.json (466 kB, with image URLs and
+// addon ids) was bundled whole into the main JS. zeMapMappers.json is generated from it
+// (same keys, same order: { map: mapper }); regenerate with scripts/build_map_mappers.py.
+import zeMapMappers from './zeMapMappers.json';
 
 export interface S2ZEMapMeta {
   mapper: string;
@@ -6,7 +9,9 @@ export interface S2ZEMapMeta {
   addon?: string;
 }
 
-export const S2ZE_OFFICIAL_MAPS_CATALOG: Record<string, S2ZEMapMeta> = zeMapCatalog as Record<string, S2ZEMapMeta>;
+export const S2ZE_OFFICIAL_MAPS_CATALOG: Record<string, S2ZEMapMeta> = Object.fromEntries(
+  Object.entries(zeMapMappers as Record<string, string>).map(([k, mapper]) => [k, { mapper }]),
+);
 
 /**
  * Look up exact real mapper name for any CS2 map from the official database.

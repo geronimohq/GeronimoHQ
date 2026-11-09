@@ -1,0 +1,25 @@
+# Windows test run (Claude, session 3) - 2026-11-10T02:07:46+08:00
+# Host: Windows 11, Python 3.14.7; real-FastAPI run uses scratch venv with fastapi 0.162.2
+# Each file run directly: python <file> (240 s timeout). rc = exit code.
+
+== backend/test_api_security.py rc=0 :: Ran 15 tests in 0.349s OK 
+== desktop-app/test_banned_hues.py rc=0 :: Ran 3 tests in 0.806s OK 
+== desktop-app/test_comprehensive_audit.py rc=0 :: Ran 14 tests in 3.050s OK 
+== desktop-app/test_dashboard_clarity.py rc=0 :: Ran 2 tests in 0.963s OK 
+== desktop-app/test_diagnostics_redaction.py rc=0 :: Ran 1 test in 0.860s OK 
+== desktop-app/test_dialog_geometry.py rc=0 :: Ran 1 test in 1.245s OK 
+== desktop-app/test_dpi_table_scaling.py rc=0 :: Ran 1 test in 0.456s OK 
+== desktop-app/test_map_protection_dummy.py rc=0 :: Ran 1 test in 0.008s OK 
+== desktop-app/test_new_functionality.py rc=0 :: Ran 5 tests in 0.650s OK 
+== desktop-app/test_pills_calc.py rc=0 :: Ran 1 test in 1.309s OK 
+== desktop-app/test_security_phase1c.py rc=0 :: Ran 18 tests in 0.837s OK (skipped=1) 
+== desktop-app/test_server_asset_protection.py rc=0 :: Ran 3 tests in 0.301s OK 
+== desktop-app/test_server_browser_telemetry.py rc=0 :: All tests passed! 
+== desktop-app/test_sidebar_architecture.py rc=0 :: Ran 3 tests in 1.836s OK 
+== desktop-app/test_token_parity.py rc=0 :: Ran 2 tests in 0.000s OK 
+== desktop-app/test_updater.py rc=0 :: Ran 7 tests in 1.806s OK 
+== desktop-app/test_user_feedback_fixes.py rc=0 :: Ran 5 tests in 0.293s OK 
+== desktop-app/test_version_consistency.py rc=0 :: Ran 2 tests in 0.822s OK 
+== desktop-app/test_website_feature_parity.py rc=0 :: Ran 5 tests in 0.871s OK 
+== backend/test_api_security.py (REAL fastapi) rc=0 :: Ran 15 tests in 0.396s OK fastapi stubbed: False 
+== flakiness: desktop-app/test_security_phase1c.py x20 -> 0 failed (before GSI fix: 3 of 10 failed)

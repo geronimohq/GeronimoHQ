@@ -42,11 +42,17 @@ try {
 }
 
 function safeCopyPublicPlugin() {
+  // AUDIT P7: copy into the configured outDir (was hard-coded 'dist'), so a build
+  // with --outDir scratch/dist can never overwrite dist/CS2_Command_Center.exe.
+  let outDir = path.resolve('dist')
   return {
     name: 'safe-copy-public',
+    configResolved(config: { root: string; build: { outDir: string } }) {
+      outDir = path.resolve(config.root, config.build.outDir)
+    },
     closeBundle() {
       const publicDir = path.resolve('public')
-      const distDir = path.resolve('dist')
+      const distDir = outDir
       if (!fs.existsSync(publicDir)) return
 
       function copyRecursive(src: string, dest: string) {
@@ -71,6 +77,38 @@ function safeCopyPublicPlugin() {
   }
 }
 
+// AUDIT P6 (W-06): Content-Security-Policy as a <meta> tag (GitHub Pages cannot send headers).
+// Build only: the dev server needs inline scripts that this policy blocks.
+// Tested on a production build: 0 violations on load, 40 Chaos effects and a full scroll.
+// worker-src blob: is needed by canvas-confetti's worker.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: https:",
+  "connect-src 'self' https://geronimohq-telemetry.onrender.com https://zegraph.xyz",
+  "media-src 'self' https: blob:",
+  "worker-src 'self' blob:",
+  "frame-src steam:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ')
+
+function cspMetaPlugin() {
+  return {
+    name: 'csp-meta',
+    apply: 'build' as const,
+    transformIndexHtml(html: string) {
+      const tag = `<meta http-equiv="Content-Security-Policy" content="${CSP}" />`
+      return html.includes('<meta charset="UTF-8" />')
+        ? html.replace('<meta charset="UTF-8" />', `<meta charset="UTF-8" />\n    ${tag}`)
+        : html.replace('<head>', `<head>\n    ${tag}`)
+    },
+  }
+}
+
 export default defineConfig({
   define: {
     __APP_EXE_SHA256__: JSON.stringify(calculatedExeHash),
@@ -79,6 +117,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     safeCopyPublicPlugin(),
+    cspMetaPlugin(),
   ],
   server: {
     host: true,

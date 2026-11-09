@@ -32,6 +32,7 @@ from cryptography.hazmat.primitives import serialization
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import updater
+import _test_isolation  # noqa: E402,F401  (AUDIT: temp config, no registry; must come before app)
 import app
 import version
 
@@ -271,4 +272,8 @@ class TestUpdaterEngine(unittest.TestCase):
             server.server_close()
 
 if __name__ == "__main__":
-    unittest.main()
+    # AUDIT: the app starts non-daemon threads, so a plain unittest.main() hung after
+    # the tests finished. Exit with the real pass/fail code instead.
+    _res = unittest.main(exit=False)
+    sys.stdout.flush(); sys.stderr.flush()
+    os._exit(0 if _res.result.wasSuccessful() else 1)

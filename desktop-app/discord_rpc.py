@@ -1,7 +1,7 @@
 """
 Discord Rich Presence (IPC) Client for CS2 Command Center
 Connects directly to the Discord Desktop App via local Windows Named Pipe (\\\\.\\pipe\\discord-ipc-0)
-100% VAC-Safe: Pure external local IPC pipe with zero interaction with cs2.exe memory or binaries.
+Talks only to the local Discord client over its named pipe; does not touch cs2.exe memory or files.
 """
 
 import os
@@ -165,6 +165,7 @@ class DiscordRPC:
                 return True
             except Exception:
                 self.connected = False
+                self.current_activity = None  # AUDIT P2-#4: pipe broke -> Discord shows nothing
                 if self.pipe:
                     try:
                         self.pipe.close()
@@ -198,6 +199,7 @@ class DiscordRPC:
                 return True
             except Exception:
                 self.connected = False
+                self.current_activity = None
                 return False
 
     def close(self):
@@ -210,6 +212,17 @@ class DiscordRPC:
                     pass
                 self.pipe = None
             self.connected = False
+            # AUDIT P2-#4: Discord drops the activity when our pipe closes.
+            self.current_activity = None
+
+    def broadcast_snapshot(self) -> Optional[Dict[str, Any]]:
+        """AUDIT P2-#4: the activity Discord is REALLY showing (last successful send on an
+        open pipe), or None. The in-app preview is drawn only from this."""
+        # No lock: called from the UI thread, and set_activity can hold the lock ~1 s.
+        act = self.current_activity
+        if self.connected and act:
+            return dict(act)
+        return None
 
 # Global singleton helper
 _global_rpc: Optional[DiscordRPC] = None

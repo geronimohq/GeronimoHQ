@@ -13,6 +13,7 @@ import {
 } from '../utils/serverQuery';
 import { ServerGeoDemographics } from './ServerGeoDemographics';
 import { getMapTierAndMapper } from '../data/zeMapTiers';
+import { getDisplayTotals } from '../utils/playerTotals';
 import { 
   Play, 
   Copy, 
@@ -247,15 +248,9 @@ export const ServerRadarPreview: React.FC = () => {
     }
   }, [telemetry, slotWatcherServerId, gflSlotPriority, commSlotPriority]);
 
-  // Total live players across all queried servers
-  const totalOnlinePlayers = useMemo(() => {
-    if (!telemetry?.servers) return 0;
-    return Object.values(telemetry.servers).reduce((acc, s) => {
-      if (!s?.online || !s?.players) return acc;
-      const curr = parseInt(s.players.split('/')[0], 10);
-      return acc + (isNaN(curr) ? 0 : curr);
-    }, 0);
-  }, [telemetry]);
+  // AUDIT P2-#2: one shared rule (humans only, fresh servers only, no double counting).
+  // Uses the backend's `totals` when present, else the same rule in utils/playerTotals.ts.
+  const liveTotals = useMemo(() => getDisplayTotals(telemetry, Date.now()), [telemetry]);
 
   const handlePlayerSort = (field: PlayerSortField) => {
     if (playerSortField === field) {
@@ -419,7 +414,7 @@ export const ServerRadarPreview: React.FC = () => {
               LIVE RADAR
             </span>
             <span className="text-xs font-code text-slate-400">
-              COMMUNITY SERVERS // 128 TICK
+              COMMUNITY SERVERS // 64 TICK + SUB-TICK
             </span>
           </div>
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider">
@@ -432,19 +427,26 @@ export const ServerRadarPreview: React.FC = () => {
 
         {/* Global Live Stats */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {totalOnlinePlayers > 0 && (
-            <div className="flex items-center gap-2 bg-slate-950/80 border border-emerald-500/40 px-3.5 py-2 rounded-xl text-xs font-code text-slate-300 shadow-md">
+          {liveTotals && (
+            <div
+              className="flex items-center gap-2 bg-slate-950/80 border border-emerald-500/40 px-3.5 py-2 rounded-xl text-xs font-code text-slate-300 shadow-md"
+              title="Human players only (bots not counted), on servers that answered in the last 90 seconds."
+            >
               <Users className="w-3.5 h-3.5 text-emerald-400" />
               <span>
-                <strong className="text-emerald-300">{totalOnlinePlayers}</strong> PLAYERS IN-GAME
+                <strong className="text-emerald-300">{liveTotals.humans}</strong> PLAYERS IN-GAME
+                {liveTotals.bots_unknown_servers > 0 && <span className="text-slate-400"> (bots unknown)</span>}
               </span>
             </div>
           )}
 
           <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3.5 py-2 rounded-xl text-xs font-code text-slate-300 shadow-md">
-            <Radio className="w-3.5 h-3.5 text-lime-400 animate-pulse" />
+            <Radio className={`w-3.5 h-3.5 text-lime-400 ${liveTotals && !liveTotals.isSnapshot ? 'animate-pulse' : ''}`} />
             <span>
-              <strong className="text-lime-300">{telemetry?.online_servers ?? 33}</strong> / {ZE_SERVERS.length} NODES ONLINE
+              <strong className="text-lime-300">{liveTotals ? liveTotals.online_servers : '–'}</strong> / {liveTotals ? liveTotals.total_servers : '–'} SERVERS ONLINE
+              {liveTotals?.isSnapshot && (
+                <span className="text-slate-400"> · as of {Math.round(liveTotals.ageSeconds / 60)} min ago</span>
+              )}
             </span>
           </div>
         </div>
@@ -524,7 +526,7 @@ export const ServerRadarPreview: React.FC = () => {
               GLOBAL SERVER
             </span>
             <span className="text-[10px] font-code px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold">
-              128 TICK
+              64 TICK
             </span>
           </div>
 
@@ -584,7 +586,7 @@ export const ServerRadarPreview: React.FC = () => {
                         href={`https://steamcommunity.com/workshop/browse/?appid=730&searchtext=${encodeURIComponent((gflMap || 'ze_escape').replace(/(_p|_v\d+.*)/, ''))}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-slate-500 hover:text-amber-300 ml-0.5 transition-colors"
+                        className="text-slate-400 hover:text-amber-300 ml-0.5 transition-colors"
                         title={`Search ${gflMapTier.mapper}'s map on Steam Workshop ↗`}
                       >
                         <ExternalLink className="w-2.5 h-2.5" />
@@ -640,7 +642,7 @@ export const ServerRadarPreview: React.FC = () => {
                 <span className="text-emerald-400 font-bold flex items-center gap-1">
                   🛡️ Humans: {telemetry?.gfl_match_now ? telemetry.gfl_match_now.human_score : 0}
                 </span>
-                <span className="text-slate-500">vs</span>
+                <span className="text-slate-400">vs</span>
                 <span className="text-rose-400 font-bold flex items-center gap-1">
                   🧟 Zombies: {telemetry?.gfl_match_now ? telemetry.gfl_match_now.zombie_score : 0}
                 </span>
@@ -793,7 +795,7 @@ export const ServerRadarPreview: React.FC = () => {
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
           
           {/* Clean 2-Tab Navigation (Strictly One-Liner) */}
-          <div className="flex items-center gap-1.5 bg-slate-950/90 p-1 rounded-xl border border-slate-800 backdrop-blur-md flex-shrink-0">
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-950/90 p-1 rounded-xl border border-slate-800 backdrop-blur-md flex-shrink-0">
             {/* Global Servers Tab */}
             <button
               onClick={() => setSelectedTab('global')}
@@ -873,7 +875,7 @@ export const ServerRadarPreview: React.FC = () => {
             </span>
             <button
               onClick={() => setSelectedChinaFilter('all')}
-              title={`Show all ${chinaServers.length} verified Chinese Zombie Escape servers across all clusters`}
+              title={`Show all ${chinaServers.length} listed Chinese Zombie Escape servers across all clusters`}
               className={`min-h-[36px] px-2.5 py-1 text-xs font-code rounded-lg transition-all cursor-pointer touch-manipulation ${
                 selectedChinaFilter === 'all'
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-400/50'
@@ -947,7 +949,7 @@ export const ServerRadarPreview: React.FC = () => {
       {/* ==================================================================== */}
       {/* SERVER GRID                                                          */}
       {/* ==================================================================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 [&>*]:min-w-0">
         {filteredServers.map((server) => {
           const isCopied = copiedId === server.id;
           const liveInfo = telemetry?.servers?.[server.id];
@@ -984,7 +986,7 @@ export const ServerRadarPreview: React.FC = () => {
                       </span>
                     )}
                     <span className="tier-5-badge bg-[#2ECC71]/15 text-[#2ECC71] border border-[#2ECC71]/40">
-                      128T
+                      64T
                     </span>
                   </div>
 
@@ -994,7 +996,7 @@ export const ServerRadarPreview: React.FC = () => {
                       <a
                         href={server.discord}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="text-[11px] font-code text-[#94A39E] hover:text-[#00F0FF] flex items-center gap-1 transition-colors"
                       >
                         Discord <ExternalLink className="w-3 h-3" />
@@ -1004,7 +1006,7 @@ export const ServerRadarPreview: React.FC = () => {
                       <a
                         href={server.website}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="text-[11px] font-code text-[#94A39E] hover:text-[#FFE135] flex items-center gap-1 transition-colors"
                       >
                         Portal <ExternalLink className="w-3 h-3" />
@@ -1107,7 +1109,7 @@ export const ServerRadarPreview: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 6. Dedicated Lower Row: Geographic Demographics Radar HUD (Zero Overlap Guaranteed) */}
+                {/* 6. Dedicated Lower Row: Geographic Demographics Radar HUD (no overlap with the row above) */}
                 <div className="w-full mb-3">
                   <ServerGeoDemographics
                     serverRegion={server.region}
@@ -1119,7 +1121,7 @@ export const ServerRadarPreview: React.FC = () => {
               </div>
 
               {/* 7. Uniform Action Buttons Bar (34px, 44px mobile touch) */}
-              <div className="pt-3 border-t border-[#1E2E26] flex items-center gap-2">
+              <div className="pt-3 border-t border-[#1E2E26] flex flex-wrap items-center gap-2">
                 {/* 1-Click Steam Connect */}
                 <button
                   onClick={() => handleOpenConnect(server, false)}
@@ -1266,7 +1268,7 @@ export const ServerRadarPreview: React.FC = () => {
               <table className="w-full min-w-[480px] text-left text-xs font-code">
                 <thead className="bg-slate-900 border-b border-slate-800 text-slate-400 sticky top-0">
                   <tr>
-                    <th className="py-2.5 px-3 w-12 text-center text-slate-500">#</th>
+                    <th className="py-2.5 px-3 w-12 text-center text-slate-400">#</th>
                     <th 
                       onClick={() => handlePlayerSort('name')}
                       className="py-2.5 px-3 cursor-pointer hover:text-cyan-300 transition-colors select-none group"
@@ -1277,7 +1279,7 @@ export const ServerRadarPreview: React.FC = () => {
                         {playerSortField === 'name' ? (
                           playerSortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-cyan-400" /> : <ChevronDown className="w-3.5 h-3.5 text-cyan-400" />
                         ) : (
-                          <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                          <ArrowUpDown className="w-3 h-3 text-slate-400 group-hover:text-slate-400 transition-colors" />
                         )}
                       </div>
                     </th>
@@ -1291,7 +1293,7 @@ export const ServerRadarPreview: React.FC = () => {
                         {playerSortField === 'score' ? (
                           playerSortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-emerald-400" /> : <ChevronDown className="w-3.5 h-3.5 text-emerald-400" />
                         ) : (
-                          <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                          <ArrowUpDown className="w-3 h-3 text-slate-400 group-hover:text-slate-400 transition-colors" />
                         )}
                       </div>
                     </th>
@@ -1305,7 +1307,7 @@ export const ServerRadarPreview: React.FC = () => {
                         {playerSortField === 'duration' ? (
                           playerSortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-cyan-400" /> : <ChevronDown className="w-3.5 h-3.5 text-cyan-400" />
                         ) : (
-                          <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                          <ArrowUpDown className="w-3 h-3 text-slate-400 group-hover:text-slate-400 transition-colors" />
                         )}
                       </div>
                     </th>
@@ -1315,7 +1317,7 @@ export const ServerRadarPreview: React.FC = () => {
                   {activePlayersList.length > 0 ? (
                     activePlayersList.map((player, idx) => (
                       <tr key={idx} className="hover:bg-cyan-950/20 transition-colors">
-                        <td className="py-2 px-3 text-center text-slate-500">
+                        <td className="py-2 px-3 text-center text-slate-400">
                           {idx === 0 ? <Trophy className="w-3.5 h-3.5 text-amber-400 inline" /> : idx + 1}
                         </td>
                         <td className="py-2 px-3 font-semibold text-white">
@@ -1325,14 +1327,14 @@ export const ServerRadarPreview: React.FC = () => {
                           {player.score.toLocaleString()}
                         </td>
                         <td className="py-2 px-3 text-center text-slate-400 flex items-center justify-center gap-1">
-                          <Clock className="w-3 h-3 text-slate-500" />
+                          <Clock className="w-3 h-3 text-slate-400" />
                           <span>{player.time}</span>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4} className="py-8 text-center text-slate-500">
+                      <td colSpan={4} className="py-8 text-center text-slate-400">
                         {modalSearch ? `No players match "${modalSearch}"` : 'No active player data currently available.'}
                       </td>
                     </tr>
@@ -1408,7 +1410,7 @@ export const ServerRadarPreview: React.FC = () => {
                             {song.name}
                           </div>
                           <div className="flex items-center gap-2 text-[11px] font-tech text-slate-400 mt-0.5">
-                            <Clock className="w-3 h-3 text-slate-500" />
+                            <Clock className="w-3 h-3 text-slate-400" />
                             <span>{formatMapElapsed(Math.floor(song.duration || 0))}</span>
                           </div>
                         </div>
@@ -1425,7 +1427,7 @@ export const ServerRadarPreview: React.FC = () => {
                           <span>YouTube ↗</span>
                         </a>
                       ) : (
-                        <span className="text-[11px] font-tech text-slate-600">No stream link</span>
+                        <span className="text-[11px] font-tech text-slate-400">No stream link</span>
                       )}
                     </div>
                   );

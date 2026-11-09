@@ -38,6 +38,72 @@ DEFAULT_CONFIG = {
     "gfl_sniper_tier": "mapper"
 }
 
+# AUDIT P2-#6: every user-facing setting in the Settings dialog, with its default.
+# One list used by Save, Reset and the round-trip test, so a setting can no longer be
+# shown in the dialog but left out of the save (that was the "check for updates" bug).
+SETTINGS_DEFAULTS: Dict[str, Any] = {
+    "start_with_windows": False,
+    "start_minimized": False,
+    "minimize_to_tray_on_close": True,
+    "open_on_page": "Dashboard",
+    "sniper_sound_enabled": True,
+    "server_refresh_speed": "Normal (5s)",
+    # AUDIT P3-01: the Settings "Share with Discord" tick now drives the REAL switch
+    # (discord_rpc_enabled, also on the Discord tab). The old key discord_presence_share
+    # and the sniper volume slider were saved but never used by anything.
+    "discord_rpc_enabled": True,
+    "check_updates_on_startup": True,
+}
+
+# Server query interval on the ZE Game Servers page, per the "Server query speed" setting.
+REFRESH_SPEED_MS = {"Live (1s)": 1000, "Normal (5s)": 5000, "Eco (15s)": 15000}
+
+
+def refresh_interval_ms(cfg: Dict[str, Any]) -> int:
+    return REFRESH_SPEED_MS.get(str(cfg.get("server_refresh_speed", "Normal (5s)")), 5000)
+
+
+START_PAGES = {"Dashboard", "Last used page"}
+
+
+def start_page_key(cfg: Dict[str, Any], valid_keys) -> str:
+    """Page to open at start: Dashboard, or the page used last time (if it still exists)."""
+    if cfg.get("open_on_page") == "Last used page":
+        last = cfg.get("last_page_key")
+        if last in valid_keys:
+            return last
+    return "DASHBOARD"
+
+
+def apply_settings(cfg: Dict[str, Any], values: Dict[str, Any]) -> Dict[str, Any]:
+    """Copies known settings from `values` into `cfg` (unknown keys are ignored)."""
+    for key, default in SETTINGS_DEFAULTS.items():
+        if key in values:
+            val = values[key]
+            if key == "open_on_page" and val not in START_PAGES:
+                val = default
+            if key == "server_refresh_speed" and val not in REFRESH_SPEED_MS:
+                val = default
+            if isinstance(default, bool):
+                val = bool(val)
+            elif isinstance(default, int):
+                try:
+                    val = max(0, min(100, int(round(float(val)))))
+                except (TypeError, ValueError):
+                    val = default
+            cfg[key] = val
+    return cfg
+
+
+def reset_settings(cfg: Dict[str, Any]) -> Dict[str, Any]:
+    """Restores Settings-dialog defaults IN PLACE, keeping everything else
+    (presence_secret, discord_client_id, timestamps, sniper targets...).
+    The old reset replaced the whole dict and silently deleted those keys."""
+    for key, default in SETTINGS_DEFAULTS.items():
+        cfg[key] = default
+    return cfg
+
+
 def load_config() -> Dict[str, Any]:
     cfg = dict(DEFAULT_CONFIG)
     if os.path.exists(CONFIG_FILE):
@@ -57,11 +123,22 @@ def load_config() -> Dict[str, Any]:
     return cfg
 
 def save_config(cfg: Dict[str, Any]) -> bool:
+    # AUDIT 1c-D6: atomic write (temp file + replace) so a crash or a full disk can
+    # never leave a half-written config that silently resets every setting.
+    tmp = CONFIG_FILE + ".tmp"
     try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, CONFIG_FILE)
         return True
     except Exception:
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        except Exception:
+            pass
         return False
 
 def get_days_since_maintenance(cfg: Dict[str, Any]) -> int:

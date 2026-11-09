@@ -42,7 +42,6 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
 }) => {
   const isBanana = theme === 'banana';
   const [timeStr, setTimeStr] = useState<string>('');
-  const [ping, setPing] = useState<number>(12);
   const [activeSection, setActiveSection] = useState<string>('hero-stage');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
@@ -69,12 +68,17 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
     return () => clearInterval(interval);
   }, []);
 
+  // AUDIT P3-03: removed a random 10-18 ms "ping" that was shown like a live measurement.
+
+  // AUDIT P5 (keyboard): Esc closes the mobile menu.
   useEffect(() => {
-    const pingInterval = setInterval(() => {
-      setPing(Math.floor(10 + Math.random() * 8));
-    }, 4000);
-    return () => clearInterval(pingInterval);
-  }, []);
+    if (!mobileMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileMenuOpen]);
 
   const isManualScrollingRef = useRef<boolean>(false);
   const scrollTimeoutRef = useRef<number | null>(null);
@@ -194,7 +198,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
                   ● ONLINE
                 </span>
               </div>
-              <div className="text-[10px] font-code tracking-widest uppercase text-[#94A39E] flex items-center gap-1">
+              <div className="text-[10px] font-code tracking-widest uppercase text-[#94A39E] hidden min-[420px]:flex items-center gap-1">
                 <span>CYBER-DECK OS</span>
                 <span className={isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}>//</span>
                 <span className={isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}>{isBanana ? 'ROTARY.HOTLINE' : 'PEPE.MATRIX'}</span>
@@ -333,7 +337,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             </span>
             <span className={`flex items-center gap-1 font-bold ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`}>
               <span className={`w-1.5 h-1.5 rounded-full inline-block animate-pulse ${isBanana ? 'bg-[#FFE135]' : 'bg-[#2ECC71]'}`} />
-              {ping}ms
+              LOCAL
             </span>
           </div>
         </div>

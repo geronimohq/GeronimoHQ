@@ -6,6 +6,7 @@ import tkinter as tk
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import server_browser
 from server_browser import query_zegraph_match_now, query_zegraph_soundtrack, CHINA_CLUSTERS, DEFAULT_SERVERS
+import _test_isolation  # noqa: E402,F401  (AUDIT: temp config, no registry; must come before app)
 import app
 
 class TestWebsiteFeatureParity(unittest.TestCase):

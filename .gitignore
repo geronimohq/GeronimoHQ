@@ -43,3 +43,6 @@ desktop-app/**/__pycache__/
 scratch/
 *.key
 strings_*.txt
+
+# Local Claude Code preview config
+.claude/

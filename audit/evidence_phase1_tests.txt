@@ -1,0 +1,50 @@
+# Phase 1b re-check + 1c tests, run 2026-11-09T17:18:44Z in a Linux sandbox (Python 3.13.18); FastAPI and winreg replaced by stand-ins
+
+$ python backend/test_api_security.py
+test_cors_exact_origins_only (__main__.CorsAndIpTests.test_cors_exact_origins_only) ... ok
+test_rate_limiter (__main__.CorsAndIpTests.test_rate_limiter) ... ok
+test_spoofed_xff_ignored (__main__.CorsAndIpTests.test_spoofed_xff_ignored) ... ok
+test_detail_unknown_id_404_and_catalog_only (__main__.NoArbitraryHostTests.test_detail_unknown_id_404_and_catalog_only) ... ok
+test_no_route_takes_host_or_port (__main__.NoArbitraryHostTests.test_no_route_takes_host_or_port) ... ok
+test_map_name_cannot_inject_url (__main__.OutboundTests.test_map_name_cannot_inject_url) ... ok
+test_tls_verification_on (__main__.OutboundTests.test_tls_verification_on) ... ok
+test_name_impersonation_ignored (__main__.PresenceStateTests.test_name_impersonation_ignored) ... ok
+test_name_match_trusted_when_owner_signal_says_cs2 (__main__.PresenceStateTests.test_name_match_trusted_when_owner_signal_says_cs2) ... ok
+test_steam_offline_gives_offline (__main__.PresenceStateTests.test_steam_offline_gives_offline) ... ok
+test_steam_unknown_gives_unknown_not_offline (__main__.PresenceStateTests.test_steam_unknown_gives_unknown_not_offline) ... ok
+test_correct_token_accepted (__main__.TokenTests.test_correct_token_accepted) ... ok
+test_missing_or_wrong_token_rejected (__main__.TokenTests.test_missing_or_wrong_token_rejected) ... ok
+test_no_secret_configured_fails_closed (__main__.TokenTests.test_no_secret_configured_fails_closed) ... ok
+test_uses_compare_digest (__main__.TokenTests.test_uses_compare_digest) ... ok
+Ran 15 tests in 0.119s
+OK
+
+$ python desktop-app/test_security_phase1c.py
+test_atomic_round_trip (__main__.ConfigTests.test_atomic_round_trip) ... ok
+test_binds_localhost_only (__main__.GsiTests.test_binds_localhost_only) ... ok
+test_browser_origin_rejected (__main__.GsiTests.test_browser_origin_rejected) ... ok
+test_oversize_rejected (__main__.GsiTests.test_oversize_rejected) ... ok
+test_valid_payload (__main__.GsiTests.test_valid_payload) ... ok
+test_delete_outside_blocked_inside_ok (__main__.MapCleanerTests.test_delete_outside_blocked_inside_ok) ... ok
+test_shapes (__main__.MapCleanerTests.test_shapes) ... ok
+test_symlink_refused (__main__.MapCleanerTests.test_symlink_refused) ... ok
+test_no_process_memory_or_injection_apis (__main__.NoMemoryAccessTests.test_no_process_memory_or_injection_apis) ... ok
+test_no_unsafe_deserialization (__main__.NoMemoryAccessTests.test_no_unsafe_deserialization) ... ok
+test_exit_ping_is_owner_only (__main__.OwnerOnlyHeartbeatTests.test_exit_ping_is_owner_only) ... ok
+test_fresh_install_sends_nothing (__main__.OwnerOnlyHeartbeatTests.test_fresh_install_sends_nothing) ... ok
+test_owner_install_sends_token (__main__.OwnerOnlyHeartbeatTests.test_owner_install_sends_token) ... ok
+test_bad_saved_custom_server_dropped (__main__.ServerAddressTests.test_bad_saved_custom_server_dropped) ... ok
+test_connect_functions_refuse_bad_host (__main__.ServerAddressTests.test_connect_functions_refuse_bad_host) ... ok
+test_invalid (__main__.ServerAddressTests.test_invalid) ... ok
+test_valid (__main__.ServerAddressTests.test_valid) ... ok
+test_only_plain_web_links (__main__.UrlOpenerTests.test_only_plain_web_links) ... ok
+Ran 18 tests in 0.726s
+OK
+
+$ node syntax check (typescript transpile) of changed TS/TSX
+syntax OK: 4 file(s)
+
+$ python -m py_compile (changed .py files)
+py_compile OK: 7 files
+
+BEFORE (same tests on original code): backend 4 of 15 fail; desktop 13 of 18 fail/error.

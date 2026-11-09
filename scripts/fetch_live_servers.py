@@ -9,7 +9,9 @@ import json
 import time
 import socket
 import struct
+import re
 import urllib.request
+import urllib.parse
 import ssl
 from typing import Dict, Any, List
 
@@ -18,9 +20,8 @@ try:
 except ImportError:
     cffi_requests = None
 
+# AUDIT 1d-W3: keep certificate checks ON (the old code turned them off).
 SSL_CTX = ssl.create_default_context()
-SSL_CTX.check_hostname = False
-SSL_CTX.verify_mode = ssl.CERT_NONE
 
 ZEGRAPH_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -55,7 +56,11 @@ def fetch_gfl_intel(gfl_map: str):
             pass
 
     # 2. Musics
+    # AUDIT 1d-W3: map name comes from a game server reply -> allow-list + URL-encode.
     clean_map = gfl_map.strip() if gfl_map else ""
+    if not re.fullmatch(r"[A-Za-z0-9_.\-]{1,64}", clean_map):
+        clean_map = ""
+    clean_map = urllib.parse.quote(clean_map, safe="")
     if clean_map and clean_map != "-":
         if cffi_requests:
             try:
@@ -140,11 +145,14 @@ def query_a2s_info(host: str, port: int, timeout: float = 1.4) -> Dict[str, Any]
             # Steam AppID (2 bytes)
             idx += 2
             
-            # Players, Max Players
+            # Players, Max Players, Bots (AUDIT P2-#2: players byte includes bots)
             players = data[idx]
             max_players = data[idx + 1]
-            
+            bots = data[idx + 2] if len(data) > idx + 2 else 0
+
             return {
+                "bots": int(bots),
+                "humans": max(0, int(players) - int(bots)),
                 "online": True,
                 "status": "Online",
                 "name": name,
@@ -226,6 +234,54 @@ def query_a2s_players(host: str, port: int, timeout: float = 2.0) -> List[Dict[s
     finally:
         sock.close()
     return players
+
+# AUDIT P2-#2: byte-identical copy of desktop-app/server_browser.py compute_player_totals
+# (test_phase2_bugs checks it). Humans only, fresh servers only, each (ip, port) once.
+TOTALS_MAX_AGE_S = 90
+
+
+def compute_player_totals(rows, now=None, max_age_s=TOTALS_MAX_AGE_S):
+    """rows: iterable of dicts with keys: id, host, port, ip (optional), online,
+    curr_players, bots (optional), max_players, sampled_at (unix time, optional).
+    Returns dict: humans, bots, online_servers, total_servers, stale_servers,
+    bots_unknown_servers, duplicates_dropped, rows (per-server table)."""
+    now = time.time() if now is None else float(now)
+    seen = set()
+    out_rows = []
+    humans = bots_total = online = stale = bots_unknown = dupes = 0
+    for r in rows:
+        key = (str(r.get("ip") or r.get("host") or "").lower(), int(r.get("port") or 0))
+        if key in seen:
+            dupes += 1
+            continue
+        seen.add(key)
+        sampled = r.get("sampled_at")
+        fresh = sampled is None or (now - float(sampled)) <= max_age_s
+        is_online = bool(r.get("online")) and fresh
+        curr = int(r.get("curr_players") or 0)
+        b = r.get("bots")
+        if b is None:
+            b_val, b_known = 0, False
+        else:
+            b_val, b_known = max(0, int(b)), True
+        h = max(0, curr - b_val) if is_online else 0
+        if bool(r.get("online")) and not fresh:
+            stale += 1
+        if is_online:
+            online += 1
+            humans += h
+            bots_total += b_val
+            if not b_known:
+                bots_unknown += 1
+        out_rows.append({"id": r.get("id"), "host": r.get("host"), "port": r.get("port"),
+                         "online": is_online, "humans": h, "bots": b_val if is_online else 0,
+                         "bots_known": b_known, "max_players": int(r.get("max_players") or 0),
+                         "stale": bool(r.get("online")) and not fresh})
+    return {"humans": humans, "bots": bots_total, "online_servers": online,
+            "total_servers": len(out_rows), "stale_servers": stale,
+            "bots_unknown_servers": bots_unknown, "duplicates_dropped": dupes,
+            "max_age_s": max_age_s, "rows": out_rows}
+
 
 def main():
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -346,6 +402,10 @@ def main():
             "map": current_map,
             "players": info.get("players", "-/-"),
             "curr_players": info.get("curr_players", 0),
+            "bots": info.get("bots") if info.get("online") else None,
+            "humans": info.get("humans", 0),
+            "host": s["host"],
+            "port": s["port"],
             "max_players": info.get("max_players", 0),
             "ping": info.get("ping", "N/A"),
             "rtt": info.get("rtt", 0),
@@ -359,11 +419,19 @@ def main():
     gfl_map = results.get("gfl", {}).get("map", "")
     match_now, map_musics = fetch_gfl_intel(gfl_map)
 
+    _now = time.time()
+    _totals = compute_player_totals(
+        [{"id": k, "host": v["host"], "port": v["port"], "online": v["online"], "curr_players": v["curr_players"],
+          "bots": v.get("bots"), "max_players": v["max_players"], "sampled_at": _now} for k, v in results.items()],
+        now=_now)
+    _totals.pop("rows", None)
+
     payload = {
         "timestamp": int(time.time()),
         "iso_time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "total_servers": len(servers),
-        "online_servers": sum(1 for r in results.values() if r["online"]),
+        "online_servers": _totals["online_servers"],
+        "totals": _totals,  # AUDIT P2-#2: same rule as backend /api/servers
         "catalog_targets": sorted(list(set([f"{s['host']}:{s['port']}" for s in servers] + ["rsscs2.kr:27015"]))),
         "gfl_match_now": match_now,
         "gfl_map_musics": map_musics,

@@ -3,6 +3,7 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _test_isolation  # noqa: E402,F401  (AUDIT: temp config, no registry; must come before app)
 import app
 
 class TestSidebarArchitecture(unittest.TestCase):
@@ -14,7 +15,11 @@ class TestSidebarArchitecture(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.root.exit_application()
+            # AUDIT: exit_application() ends with os._exit(0), which killed the test run
+            # before unittest printed its result (failures were invisible, exit code 0).
+            from unittest import mock
+            with mock.patch.object(app.os, "_exit", lambda code=0: None):
+                cls.root.exit_application()
         except Exception:
             pass
 
@@ -48,4 +53,8 @@ class TestSidebarArchitecture(unittest.TestCase):
         self.assertTrue(hasattr(self.root, "status_sniper_lbl"))
 
 if __name__ == "__main__":
-    unittest.main()
+    # AUDIT: the app starts non-daemon threads (tray, GSI), so a plain unittest.main()
+    # can hang after the tests finish. Exit with the real pass/fail code instead.
+    _res = unittest.main(exit=False)
+    sys.stdout.flush(); sys.stderr.flush()
+    os._exit(0 if _res.result.wasSuccessful() else 1)
