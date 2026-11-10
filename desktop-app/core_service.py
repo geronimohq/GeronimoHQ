@@ -73,14 +73,15 @@ class Core:
             "cfg_dir": self.paths.get("cfg_dir"),
             "persona": persona,
             "days_since_optimization": days,
-            "refresh_seconds": int(self.config.get("web_refresh_seconds", 5) or 5),
+            "refresh_seconds": self._refresh_seconds(),
         }
 
     def config_set(self, key: str, value: Any) -> bool:
-        allowed = {"web_refresh_seconds": (1, 5, 15)}
-        if key not in allowed or value not in allowed[key]:
+        """Only the list refresh speed can be set from the page (1, 5 or 15 seconds); it shares the classic app's setting."""
+        names = {1: "Live (1s)", 5: "Normal (5s)", 15: "Eco (15s)"}
+        if key != "web_refresh_seconds" or value not in names:
             return False
-        self.config[key] = value
+        self.config["server_refresh_speed"] = names[value]
         return bool(app_config.save_config(self.config))
 
     # ---------- servers ----------
@@ -531,3 +532,39 @@ class Core:
         for l in logs:
             self.log(l)
         return {"ok": bool(ok)}
+
+    # ---------- GPU / MPO ----------
+    def mpo_state(self) -> Dict[str, Any]:
+        import hardware_info
+        gpu = hardware_info.get_gpu_info()
+        diag = hardware_info.get_mpo_diagnostic(gpu.get("name", ""))
+        return {"gpu": gpu.get("name"), "vendor": "NVIDIA" if gpu.get("is_nvidia") else "AMD" if gpu.get("is_amd") else "Intel" if gpu.get("is_intel") else "Other",
+                "disabled": bool(diag.get("disabled")), "badge": str(diag.get("badge") or "").strip("[]"), "detail": diag.get("detail"), "reg_path": diag.get("reg_path")}
+
+    # ---------- settings ----------
+    SETTING_KEYS = tuple(app_config.SETTINGS_DEFAULTS.keys())
+
+    def settings_get(self) -> Dict[str, Any]:
+        vals = {k: self.config.get(k, d) for k, d in app_config.SETTINGS_DEFAULTS.items()}
+        vals["speeds"] = list(app_config.REFRESH_SPEED_MS.keys())
+        vals["pages"] = sorted(app_config.START_PAGES)
+        return vals
+
+    def settings_save(self, values: Dict[str, Any]) -> Dict[str, Any]:
+        app_config.apply_settings(self.config, values or {})
+        try:
+            app_config.set_windows_startup(bool(self.config.get("start_with_windows")), bool(self.config.get("start_minimized")))
+        except Exception as e:
+            self.log(f"[SETTINGS] Windows startup could not be updated: {e}")
+        ok = bool(app_config.save_config(self.config))
+        self.log("Settings saved" if ok else "[SETTINGS] Settings could not be saved")
+        return {"ok": ok, "refresh_seconds": self._refresh_seconds()}
+
+    def settings_reset(self) -> Dict[str, Any]:
+        app_config.reset_settings(self.config)
+        ok = bool(app_config.save_config(self.config))
+        self.log("Settings reset to defaults")
+        return {"ok": ok}
+
+    def _refresh_seconds(self) -> int:
+        return max(1, int(app_config.refresh_interval_ms(self.config) / 1000))

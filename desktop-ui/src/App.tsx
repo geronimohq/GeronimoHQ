@@ -11,6 +11,9 @@ import Maintenance from './views/Maintenance';
 import Launch from './views/Launch';
 import Booster from './views/Booster';
 import Autoexec from './views/Autoexec';
+import Faq from './views/Faq';
+import Mpo from './views/Mpo';
+import Settings from './components/Settings';
 import type { AppInfo, LogLine, SniperStatus } from './types';
 
 const NAV = [
@@ -56,6 +59,7 @@ function Shell() {
   const [opts, setOpts] = useState<Opts>(ALL_ON);
   const [sound, setSound] = useState(sfx.on);
   const [busy, setBusy] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [sniper, setSniper] = useState<SniperStatus | null>(null);
   const [tier, setTierState] = useState<number>(() => { try { return Number(localStorage.getItem('sniperTier')) || 62; } catch { return 62; } });
   const setTier = (n: number) => { setTierState(n); try { localStorage.setItem('sniperTier', String(n)); } catch { /* ignore */ } };
@@ -125,6 +129,7 @@ function Shell() {
           <span className="pill"><i className="dot" />PERM: {info ? (info.admin ? 'ADMIN' : 'STANDARD') : '...'}</span>
           <span className="pill"><i className={`dot ${info?.cs2_found ? 'cy' : 'am'}`} />CS2: {info ? (info.cs2_found ? 'FOUND' : 'NOT FOUND') : '...'}</span>
           <span className="pill"><i className="dot am" />ENGINE: {engineAge == null ? 'NEVER RUN' : engineAge === 0 ? 'OPTIMIZED TODAY' : `${engineAge}D AGO`}</span>
+          <button className="sfx" onClick={() => { sfx.click(); setSettingsOpen(true); }} title="Settings">SETTINGS</button>
           <button className="sfx" aria-pressed={sound} onClick={() => { const v = !sound; sfx.set(v); setSound(v); if (v) sfx.click(); }} title="Interface sounds on or off">{sound ? 'SFX ON' : 'SFX OFF'}</button>
         </div>
         <div className="winctl">
@@ -157,10 +162,12 @@ function Shell() {
               {view === 'launch' && <Launch />}
               {view === 'booster' && <Booster />}
               {view === 'autoexec' && <Autoexec />}
+              {view === 'faq' && <Faq />}
+              {view === 'mpo' && <Mpo />}
               {view === 'servers' && <Servers info={info} log={addLog} sniper={sniper} tier={tier} setTier={setTier} />}
               {view === 'engine' && <Engine opts={opts} setOpts={setOpts} onApplied={runApply} log={addLog} />}
-              {!['servers', 'engine', 'dashboard', 'maintenance', 'launch', 'booster', 'autoexec'].includes(view) && (
-                <div className="glass card ph brk"><div className="big">{NAV.find((n) => n.id === view)?.label.toUpperCase()}</div><div>This screen is not in the new app yet. It is still in the classic app.</div><div className="decal" style={{ marginTop: 8 }}>Built so far: Dashboard, Engine, Autoexec, Launch Options, Booster &amp; DNS, Servers, Maintenance</div></div>
+              {!['servers', 'engine', 'dashboard', 'maintenance', 'launch', 'booster', 'autoexec', 'faq', 'mpo'].includes(view) && (
+                <div className="glass card ph brk"><div className="big">{NAV.find((n) => n.id === view)?.label.toUpperCase()}</div><div>This screen is not in the new app yet. It is still in the classic app.</div><div className="decal" style={{ marginTop: 8 }}>Still to come: Discord Presence</div></div>
               )}
             </motion.div>
           </AnimatePresence>
@@ -176,6 +183,7 @@ function Shell() {
           <div ref={logEnd} />
         </div>
       </section>
+      <AnimatePresence>{settingsOpen && <Settings onClose={() => setSettingsOpen(false)} onSaved={() => addLog('SYSTEM', 'Settings saved')} />}</AnimatePresence>
       <footer className="statusbar">
         <span className={`sn ${sniper?.state ?? 'idle'}`}>{sniper?.text ?? '\u25CF SLOT SNIPER: IDLE'}</span>
         <span className="decal">Hobby project · not affiliated with Valve</span>

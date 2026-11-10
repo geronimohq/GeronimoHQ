@@ -1,4 +1,4 @@
-import type { AppInfo, AutoexecState, DashboardData, DnsState, EngineState, LogLine, LaunchState, MaintState, Match, PlayerRow, SniperStatus, Srv, Status } from './types';
+import type { AppInfo, AutoexecState, MpoState, SettingsValues, DashboardData, DnsState, EngineState, LogLine, LaunchState, MaintState, Match, PlayerRow, SniperStatus, Srv, Status } from './types';
 
 type Fn = (...a: unknown[]) => Promise<unknown>;
 declare global {
@@ -67,6 +67,10 @@ export const api = {
   autoexecInstall: () => call<{ ok: boolean; error?: string }>('autoexec_install'),
   autoexecRestore: () => call<{ ok: boolean; error?: string }>('autoexec_restore'),
   autoexecFps: (n: number) => call<{ ok: boolean; error?: string }>('autoexec_fps', n),
+  mpo: () => call<MpoState>('mpo_state'),
+  settingsGet: () => call<SettingsValues>('settings_get'),
+  settingsSave: (v: Partial<SettingsValues>) => call<{ ok: boolean; refresh_seconds: number }>('settings_save', v),
+  settingsReset: () => call<{ ok: boolean }>('settings_reset'),
   winMin: () => call<void>('win_minimize'),
   winMax: () => call<void>('win_maximize'),
   winClose: () => call<void>('win_close'),
@@ -111,6 +115,10 @@ async function mock(name: string, ...args: unknown[]): Promise<unknown> {
     case 'dns_state': return { interface: 'Ethernet', current: 'Automatic (ISP / DHCP)', found: true, admin: false, providers: [{ id: 'cloudflare', name: 'Cloudflare Gaming (1.1.1.1)', primary: '1.1.1.1', secondary: '1.0.0.1', desc: 'Ultra-fast global edge network.' }] };
     case 'dns_benchmark': setTimeout(() => { window.__emit?.('dns_results', [{ name: 'Cloudflare Gaming (1.1.1.1)', primary: '1.1.1.1', secondary: '1.0.0.1', avg_ms: 12.4, jitter_ms: 1.1, reachable: true, fastest: true, rank: 1 }]); window.__emit?.('job', { name: 'dns_benchmark', ok: true }); }, 900); return { ok: true };
     case 'autoexec_state': return { state: 'app_block', status: 'Autoexec: found', path: 'C:/cs2/cfg/autoexec.cfg', text: '// sample\nrate 786432\nsnd_mixahead 0.025\nbind "F7" "say hi"\n', cfg: true };
+    case 'mpo_state': return { gpu: 'AMD Radeon RX 6600 (sample)', vendor: 'AMD', disabled: true, badge: 'AMD RADEON \u2022 MPO DISABLED', detail: 'DisableOverlays = 0x1', reg_path: 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers' };
+    case 'settings_get': return { start_with_windows: false, start_minimized: false, minimize_to_tray_on_close: true, open_on_page: 'Dashboard', sniper_sound_enabled: true, server_refresh_speed: 'Normal (5s)', discord_rpc_enabled: true, check_updates_on_startup: true, speeds: ['Live (1s)', 'Normal (5s)', 'Eco (15s)'], pages: ['Dashboard', 'Last used page'] };
+    case 'settings_save': return { ok: true, refresh_seconds: 5 };
+    case 'settings_reset': return { ok: true };
     case 'restore_summary': return 'This undoes the app\'s engine changes.';
     default: return undefined;
   }

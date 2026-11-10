@@ -211,3 +211,16 @@ class Api:
 
     def autoexec_fps(self, fps: int) -> Dict[str, Any]:
         return self.core.autoexec_fps(int(fps))
+
+    # GPU / MPO and settings
+    def mpo_state(self) -> Dict[str, Any]:
+        return self.core.mpo_state()
+
+    def settings_get(self) -> Dict[str, Any]:
+        return self.core.settings_get()
+
+    def settings_save(self, values: Dict[str, Any]) -> Dict[str, Any]:
+        return self.core.settings_save(values)
+
+    def settings_reset(self) -> Dict[str, Any]:
+        return self.core.settings_reset()

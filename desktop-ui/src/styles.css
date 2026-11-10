@@ -240,3 +240,8 @@ body{display:flex;flex-direction:column}
 .editor{max-height:340px;overflow:auto;border-radius:10px;border:1px solid var(--line);background:var(--inset);padding:8px 0;font:12px/1.7 var(--f-mono);user-select:text}
 .ln{display:flex}.ln .no{width:44px;flex:none;text-align:right;padding-right:12px;color:var(--tx3)}
 .cl{white-space:pre;color:var(--tx)}.cl .k{color:var(--cyan)}.cl .s{color:var(--amber)}.cl .n{color:var(--violet)}.cl.c{color:var(--tx3)}
+
+.faqq{border-top:1px solid var(--line)}.faqq:first-of-type{border-top:0}
+.faqq>button{display:flex;width:100%;gap:12px;align-items:center;padding:10px 4px;text-align:left}
+.faqa{padding:0 4px 12px 24px;color:var(--tx2);white-space:pre-line;user-select:text}
+.btn.dng{color:var(--bad)}

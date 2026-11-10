@@ -126,12 +126,34 @@ class Engine(unittest.TestCase):
 
 
 class Settings(unittest.TestCase):
-    def test_refresh_rate_is_limited_to_1_5_15(self):
+    def test_refresh_rate_is_limited_to_1_5_15_and_shares_the_classic_setting(self):
         core, _ = make_core()
         with mock.patch("app_config.save_config", return_value=True):
             self.assertTrue(core.config_set("web_refresh_seconds", 1))
+            self.assertEqual(core.config["server_refresh_speed"], "Live (1s)")
+            self.assertEqual(core._refresh_seconds(), 1)
             self.assertFalse(core.config_set("web_refresh_seconds", 2))
             self.assertFalse(core.config_set("something_else", 5))
+
+    def test_settings_roundtrip_ignores_unknown_keys_and_never_touches_the_registry(self):
+        core, _ = make_core()
+        with mock.patch("app_config.save_config", return_value=True), mock.patch("app_config.set_windows_startup", return_value=True) as startup:
+            r = core.settings_save({"start_minimized": True, "server_refresh_speed": "Eco (15s)", "presence_secret": "x", "bogus": 1})
+        self.assertTrue(r["ok"])
+        self.assertEqual(r["refresh_seconds"], 15)
+        self.assertTrue(core.config["start_minimized"])
+        self.assertNotEqual(core.config.get("presence_secret"), "x")      # secrets cannot be set from the page
+        startup.assert_called_once()
+        vals = core.settings_get()
+        self.assertEqual(vals["server_refresh_speed"], "Eco (15s)")
+        self.assertIn("Live (1s)", vals["speeds"])
+
+    def test_reset_keeps_the_presence_secret(self):
+        core, _ = make_core()
+        core.config["presence_secret"] = "keepme"
+        with mock.patch("app_config.save_config", return_value=True):
+            core.settings_reset()
+        self.assertEqual(core.config["presence_secret"], "keepme")
 
 
 if __name__ == "__main__":

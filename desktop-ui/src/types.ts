@@ -27,3 +27,8 @@ export interface DnsProvider { id: string; name: string; primary: string; second
 export interface DnsState { interface: string; current: string; found: boolean; providers: DnsProvider[]; admin: boolean }
 export interface DnsResult { name: string; primary: string; secondary: string; avg_ms: number; jitter_ms: number; reachable: boolean; fastest: boolean; rank: number }
 export interface AutoexecState { state: string; status: string; path: string | null; text: string; cfg: boolean }
+export interface MpoState { gpu: string; vendor: string; disabled: boolean; badge: string; detail: string; reg_path: string }
+export interface SettingsValues {
+  start_with_windows: boolean; start_minimized: boolean; minimize_to_tray_on_close: boolean; open_on_page: string; sniper_sound_enabled: boolean;
+  server_refresh_speed: string; discord_rpc_enabled: boolean; check_updates_on_startup: boolean; speeds: string[]; pages: string[];
+}

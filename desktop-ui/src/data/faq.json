@@ -1,0 +1,239 @@
+[
+ {
+  "icon": "🛡️",
+  "title": "WHAT THIS APP CHANGES (AND WHAT IT DOES NOT)",
+  "tag": "FACTS",
+  "qa": [
+   {
+    "q": "Can this get me banned by Valve Anti-Cheat (VAC)?",
+    "a": "Only Valve decides what VAC acts on, so this app makes no promise about it. What the app does (checked in its source code): it edits CS2 config files (autoexec.cfg), changes standard Windows settings (power plan, Game DVR, fullscreen optimizations, DNS), reads game state through Valve's Game State Integration, can raise CS2's process priority, and can type a 'connect' command into the CS2 console for you. It does not read or modify CS2 memory, inject DLLs or patch game files. Hobby project, not affiliated with Valve. Use at your own risk."
+   },
+   {
+    "q": "Can I undo all changes made by the application?",
+    "a": "Yes! Clicking the [⏪ Restore Defaults] button on the top right instantly restores Windows Game DVR, restores your default Windows power plan, reenables fullscreen optimizations, and resets the autoexec configuration back to clean stock defaults."
+   },
+   {
+    "q": "Does this app communicate with external servers or collect telemetry?",
+    "a": "No. The Command Center is completely privacy-respecting and contains zero third-party telemetry, ads, or tracking. The only network calls are lightweight UDP A2S queries sent directly to game servers to retrieve live player counts, and local named pipes for Discord RPC."
+   }
+  ]
+ },
+ {
+  "icon": "⚙️",
+  "title": "ENGINE TWEAKS & 1-CLICK OPTIMIZER",
+  "tag": "FPS & LATENCY",
+  "qa": [
+   {
+    "q": "What does disabling Windows Game DVR do?",
+    "a": "Windows Game DVR continuously runs background video capture hooks inside the Windows Desktop Window Manager (DWM). Disabling it frees up GPU/CPU encoding pipelines, directly eliminating micro-stutters and sudden FPS drops during heavy combat and smoke grenades."
+   },
+   {
+    "q": "What does 'Disable Fullscreen Optimizations' (Direct-Flip) do?",
+    "a": "Windows 10/11 forces games into a hybrid borderless presentation mode that routes frames through the Windows compositor. Disabling fullscreen optimizations on cs2.exe grants the game exclusive hardware display access (Direct-Flip mode), eliminating DWM compositor latency and reducing click-to-photon mouse input lag."
+   },
+   {
+    "q": "Why does the app select AMD Balanced for Ryzen 3D V-Cache (X3D) processors?",
+    "a": "If you have an AMD Ryzen 5700X3D, 5800X3D, 7800X3D, or 9800X3D, setting power to generic Ultimate Performance can interfere with AMD's Collaborative Processor Performance Control (CPPC). AMD Balanced allows CPPC to correctly schedule CS2 threads onto the ultra-fast 3D V-Cache cores, giving you maximum 1% low FPS."
+   },
+   {
+    "q": "What happens on standard non-X3D CPUs and Intel hybrid processors?",
+    "a": "For standard AMD processors (e.g., Ryzen 5600X, 7600), the app applies High Performance to ensure clocks never downthrottle. For Intel 12th/13th/14th Gen hybrid CPUs with P-cores and E-cores, High Performance combined with High Process Priority ensures the Windows kernel schedules CS2's render loop exclusively on physical Performance cores."
+   },
+   {
+    "q": "Why should I purge DirectX & Vulkan shader caches?",
+    "a": "After GPU driver updates (NVIDIA/AMD) or CS2 game patches, old compiled shader caches can become corrupted or misaligned, leading to severe stutter when rendering smokes, fire, and particle effects. Purging the cache allows the driver to recompile fresh, optimized shaders on clean launch."
+   }
+  ]
+ },
+ {
+  "icon": "🌐",
+  "title": "NETWORK OPTIMIZATION, GAMING DNS PROS & CONS & PACKET LOSS",
+  "tag": "NETWORK & DNS",
+  "qa": [
+   {
+    "q": "What does the DNS Optimizer change, and how do I undo it?",
+    "a": "DNS (Domain Name System) translates domain names into IP addresses. Besides speeding up domain lookups for Steam SDR relays, Workshop FastDL map servers, Discord voice channels, and web browsing, custom DNS resolvers serve multiple purposes:\n• Reliability: Bypasses congested or malfunctioning default ISP DNS servers.\n• Security (Quad9 9.9.9.9): Automatically blocks known malware, phishing, and spyware domains before they can load.\n• Ad & Telemetry Filtering (AdGuard 94.140.14.14): Blocks background ad-trackers and Windows/app telemetry domains that cause random bandwidth spikes.\n• Privacy (Cloudflare 1.1.1.1): Prevents your ISP from logging or hijacking your DNS queries.\n• How it works: the standard Windows 'netsh' command changes the DNS of your active network adapter (a Windows setting, needs Administrator). No drivers are installed. A 1-click 'Restore ISP Default (DHCP)' button undoes it."
+   },
+   {
+    "q": "What are the honest Pros and Cons (Limitations) of changing DNS?",
+    "a": "✅ PROS:\n• Faster initial connections to Steam relays, FastDL custom map mirrors, Discord, and websites.\n• Lower lookup jitter and protection against ISP DNS outages.\n• Optional built-in malware protection (Quad9) or telemetry/ad blocking (AdGuard).\n\n⚠️ CONS / LIMITATIONS:\n• Does NOT reduce raw in-game UDP ping once already connected to a server IP (because active game traffic sends UDP packets directly to the server IP without querying DNS).\n• Choosing a physically distant DNS server without benchmarking first can cause CDNs (like Steam downloads) to route you to a farther download mirror — always click '⚡ Benchmark All DNS Servers' first!\n• Hotel, school, or airport Wi-Fi login portals sometimes require default DHCP DNS to display their sign-in page (if needed, click '↺ Restore ISP Default (DHCP)')."
+   },
+   {
+    "q": "Can standalone PC software eliminate ISP packet loss without multi-path VPN routing tunnels?",
+    "a": "While standalone local software cannot physically reroute undersea ISP fiber cables, CS2 Command Center applies all safe, official Windows and CS2 network optimizations: 1) Benchmarks and configures low-jitter DNS resolvers and flushes stale DNS cache; 2) Disables Windows Network Throttling Index (MMCSS) so Windows never throttles non-multimedia game UDP packets; 3) Configures optimal sub-tick packet rates in autoexec (rate 1000000); 4) Guides you on using CS2's built-in packet buffering to smooth out ISP jitter."
+   },
+   {
+    "q": "What does CS2's 'Buffering to smooth over packet loss' (cl_net_buffer_ticks) do?",
+    "a": "Under Settings -> Game -> Telemetry: Setting 'Buffering to smooth packet loss' to 'None' (cl_net_buffer_ticks 0) provides the absolute lowest latency on flawless fiber connections. If your ISP suffers from packet loss or jitter, set it to '1 Packet' (cl_net_buffer_ticks 1) or '2 Packets' (cl_net_buffer_ticks 2). This creates a 15-30ms jitter buffer that reassembles missing packets before rendering, completely preventing rubberbanding and micro-teleports during heavy gunfights."
+   },
+   {
+    "q": "Why do Zombie Escape & 64-player servers experience choke or stutter?",
+    "a": "In 64-player community servers, the server broadcasts massive amounts of entity updates, particle data, and zombie positions every tick. Setting 'rate 1000000' (maximum 8 Mbps bandwidth allocation) prevents your client from dropping entity packets when 60 players shoot and throw grenades simultaneously."
+   }
+  ]
+ },
+ {
+  "icon": "📝",
+  "title": "AUTOEXEC & COMPETITIVE BINDS",
+  "tag": "CONFIG & BINDS",
+  "qa": [
+   {
+    "q": "What competitive settings are installed into autoexec.cfg?",
+    "a": "It writes one marked block to autoexec.cfg: fps_max 0, engine_low_latency_sleep_after_client_tick, snd_mixahead 0.025, rate 1000000 (bytes per second; CS2 may cap it), cl_net_buffer_ticks 0, animated avatars off, and the frame-time / ping / packet-loss HUD graphs. It does not add jumpthrow, C4-drop or other gameplay binds."
+   },
+   {
+    "q": "Why is snd_mixahead set to 0.025 instead of the default 0.05?",
+    "a": "The default Source 2 audio buffer (0.05) creates 50ms of audio latency between gunshots/footsteps and your speakers. Setting snd_mixahead to 0.025 cuts audio processing latency in half (25ms), allowing you to hear enemy footsteps, zombie screams, and grenade bounces a full frame earlier."
+   },
+   {
+    "q": "Will applying autoexec overwrite my custom bindings or crosshair?",
+    "a": "No! If an existing autoexec.cfg is present, the app backs it up and non-destructively appends or updates only the competitive performance blocks, keeping your personal binds, crosshair, sensitivity, and custom aliases in place (only the app's own marked block is added or replaced)."
+   }
+  ]
+ },
+ {
+  "icon": "🚀",
+  "title": "LAUNCH OPTIONS & MODERN SUB-TICK ARCHITECTURE",
+  "tag": "LAUNCH FLAGS",
+  "qa": [
+   {
+    "q": "Which launch options are recommended and why?",
+    "a": "Recommended flags: -novid (skips intro video for faster game startup), -high (launches with High CPU priority), -threads <N> (matches engine worker threads to physical CPU cores), -nojoy (disables joystick polling overhead to save CPU cycles), and +fps_max 0 (uncaps framerate for minimum input delay)."
+   },
+   {
+    "q": "Why shouldn't obsolete CS:GO launch options (-tickrate 128, -d3d9ex, +mat_queue_mode) be used in CS2?",
+    "a": "Counter-Strike 2 runs on Valve's modern Source 2 engine with a sub-tick network model and DirectX 11 / Vulkan graphics. Legacy Source 1 options like -tickrate 128, -d3d9ex, and +mat_queue_mode no longer exist in the engine; using them can generate engine console warnings and cause unstable thread scheduling."
+   },
+   {
+    "q": "What does the Live Booster & Gaming DNS Optimizer do?",
+    "a": "The Live Booster safely elevates cs2.exe CPU thread priority to High (Win32 HIGH_PRIORITY_CLASS) without using risky 'RAM Cleaners' that cause browser/Discord crashes and page-fault stutters. The Gaming DNS Optimizer benchmarks 6 global gaming DNS providers (Cloudflare, Google, Quad9, OpenDNS, Level3, AdGuard) in parallel for real latency and jitter, letting you apply the fastest DNS or restore ISP defaults in 1 click."
+   },
+   {
+    "q": "Are the Optimizer and PC Maintenance meant to increase my max FPS?",
+    "a": "They are NOT meant to artificially inflate maximum FPS beyond your physical CPU/GPU limits. Instead, they are engineered for System Stability, Frame-Time Consistency (1% Lows), Micro-Stutter Prevention during 64-player Zombie Escape & heavy utility, Display/Alt-Tab Reliability (MPO), Sub-Tick & DNS Network Responsiveness, and SSD/OS Health."
+   }
+  ]
+ },
+ {
+  "icon": "🎯",
+  "title": "ZE SERVERS & FAST SLOT SNIPER",
+  "tag": "SLOT SNIPER",
+  "qa": [
+   {
+    "q": "How does the Slot Sniper function and how does it detect open slots?",
+    "a": "The Slot Sniper runs a high-speed 0.25s background polling loop that queries the server directly via standard Steam A2S_INFO UDP protocol. It checks live player counts against your selected slot threshold (e.g., ≤ 62 for public players). The instant a player leaves or disconnects, the sniper detects the open slot within milliseconds, executes the in-game console connect immediately, and starts a 10-second cooldown!"
+   },
+   {
+    "q": "Why doesn't the Slot Sniper continuously spam 'connect' in the CS2 console while waiting?",
+    "a": "While it is technically possible to spam 'connect' in the CS2 console every second, doing so causes Counter-Strike 2's networking subsystem (Steam Datagram Relay) and Source 2's unmanaged heap allocator to hold undrained connection sessions and console string buffers. This causes CS2's RAM usage to stack up, climbing higher and higher (4GB -> 6GB -> 8GB+), which is neither safe nor appropriate for PC stability. Instead, the Slot Sniper uses True Silent Sniping: it watches the server silently via external UDP A2S queries at 0.25s (taking 0 CS2 RAM and 0 clipboard usage), and the exact millisecond a player disconnects, it executes the in-game console connect immediately with a 10-second cooldown."
+   },
+   {
+    "q": "What happens if someone connects faster than me?",
+    "a": "On popular 64/64 servers like GFL, multiple players may be attempting to join simultaneously. If another player connects a split-second faster, CS2 displays the standard server full notification. The Command Center recognizes that you have not entered the server yet; you can re-arm the sniper with a single click or leave it armed to immediately catch the very next open slot!"
+   },
+   {
+    "q": "How does the Command Center know when I am already in the server?",
+    "a": "The app combines two automatic systems: Valve Game State Integration (GSI) via local HTTP events, and live A2S player roster matching using your active Steam persona. When your player connects to the server, the app automatically transitions to tracking mode and disarms the sniper so it never spams or fires duplicate connections."
+   },
+   {
+    "q": "What are the Slot Sniper Priority Tiers (VIP / Mapper / Normal)?",
+    "a": "On 64-player community servers like GFL ZE, the server holds 64 players, but 2 slots (63 and 64) are reserved for VIPs, Mappers, and Supporters. If you are a standard player, select '≤ 62' so the sniper only attempts to join when a public slot opens, avoiding the 'Server is reserved for VIPs' kick. If you have VIP or Supporter status, select '≤ 64'."
+   },
+   {
+    "q": "What is the 'Launch Delay' setting for?",
+    "a": "When CS2 is closed and you click 'Connect to GFL', the Command Center launches the game via Steam and waits for the configured Launch Delay (default: 15 seconds) so CS2 can load its main menu and establish Steam network credentials before executing the direct server connection."
+   }
+  ]
+ },
+ {
+  "icon": "🎮",
+  "title": "DISCORD RICH PRESENCE (RPC)",
+  "tag": "DISCORD RPC",
+  "qa": [
+   {
+    "q": "If I play a different game, will it still show up? Does this custom presence only affect CS2?",
+    "a": "This custom presence ONLY affects Counter-Strike 2! It will never interfere with other games. When CS2 is closed, the Command Center completely closes the Discord RPC session. When you play other games (Apex, Dota 2, Rust, etc.), Discord's native game detection or that game's own rich presence will show completely normally."
+   },
+   {
+    "q": "Why does Discord show nothing when CS2 is closed?",
+    "a": "By design. When CS2 is closed, nothing is sent, so Discord shows no game from this app."
+   },
+   {
+    "q": "Do new users need to create or configure a Discord Application ID?",
+    "a": "No. The app ships with its own Discord Application ID. Rich Presence works completely out-of-the-box for all users with zero extra setup or developer portal steps."
+   },
+   {
+    "q": "Why don't the buttons [🎮 Server IP] and [💬 Community Discord] show when I view my own profile?",
+    "a": "Discord's client intentionally hides Rich Presence action buttons on your OWN profile popout (Discord does this to prevent users from clicking links on their own profile). Rest assured, your friends, teammates, and server members CAN see and click both buttons directly on your profile!"
+   }
+  ]
+ },
+ {
+  "icon": "📦",
+  "title": "CUSTOM ZE MAP CLEANER & STORAGE HYGIENE",
+  "tag": "STORAGE CLEANER",
+  "qa": [
+   {
+    "q": "Why should I clean custom maps?",
+    "a": "Custom Zombie Escape maps downloaded from community servers are stored as .vpk packages in csgo/maps/ and can range from 500MB to 2.5GB each. Over time, active ZE players accumulate 50GB to 150GB+ of stale map packages on their SSD. The cleaner lets you sort by file size or last played date, and safely delete obsolete or unpopular maps without touching base game files."
+   },
+   {
+    "q": "What happens if I delete a map and later rejoin a server running that map?",
+    "a": "CS2 will automatically download the map fresh from the server's FastDL HTTP mirror before joining! Deleting downloaded custom maps only removes files CS2 can download again; it does not affect your account."
+   }
+  ]
+ },
+ {
+  "icon": "🧹",
+  "title": "PC MAINTENANCE & SYSTEM HYGIENE",
+  "tag": "MAINTENANCE",
+  "qa": [
+   {
+    "q": "What do SSD TRIM, SFC, and DISM do?",
+    "a": "SSD TRIM instructs your solid-state drive controller to reclaim unused memory blocks, maintaining peak NAND write speeds and low read latency. SFC (System File Checker) scans and repairs corrupted Windows core system files. DISM repairs the Windows Component Store image using official Microsoft files."
+   },
+   {
+    "q": "Does clearing Discord & Steam web cache log me out of my accounts?",
+    "a": "No! The cleaner specifically targets cached images, stickers, and Chromium/CEF web data in the Cache folders. It never touches login tokens, saved passwords, or session cookies."
+   }
+  ]
+ },
+ {
+  "icon": "???",
+  "title": "GPU MPO DIAGNOSTICS & TROUBLESHOOTER (AMD, NVIDIA & INTEL)",
+  "tag": "DIAGNOSTICS",
+  "qa": [
+   {
+    "q": "Why is GPU MPO Diagnostics included in CS2 Command Center?",
+    "a": "Multi-Plane Overlay (MPO) is one of the most common root causes of Alt-Tab black screens, display freezes, Discord/Chrome checkerboard glitches, and GPU driver crashes (such as AMD Driver Timeout or NVIDIA TDR) while playing CS2. CS2 Command Center provides this dedicated diagnostic tab so players can understand their MPO configuration, test for display issues, and access official AMD/NVIDIA resolution steps."
+   },
+   {
+    "q": "Is the GPU MPO Diagnostics tab safe? Does it modify my registry automatically?",
+    "a": "The GPU MPO Diagnostics tab is read-only: it makes no registry edits and does not alter your display driver automatically. It provides live hardware and registry inspection, clear technical explanations, and safe 1-click clipboard helpers for manual user review."
+   },
+   {
+    "q": "Should I disable Windows Multi-Plane Overlay (MPO)?",
+    "a": "If your system runs smoothly with zero black screen flickers, driver timeouts, or dual-monitor stutter, keep MPO enabled (Windows default). If you suffer from 1-3 second Alt-Tab black screens, AMD driver timeouts, Discord checkerboard glitches, or G-Sync stutter with mixed refresh rates, disabling MPO via the registry is an officially verified, safe workaround."
+   },
+   {
+    "q": "What should I do before disabling MPO? Should I use DDU or AMD Cleanup Utility?",
+    "a": "Before touching MPO registry settings, you should ALWAYS first perform a clean display driver wipe and reinstall using Display Driver Uninstaller (DDU) by Wagnardsoft in Windows Safe Mode, and check if that solved your problem. Many black screens and timeouts are fixed by a fresh driver install alone!\n\n⚠️ Why avoid AMD Cleanup Utility: Manufacturer cleanup tools like AMD Cleanup Utility often remove critical Windows chipset drivers, USB root hubs, and PCIe bus drivers, which can cause broken mouse/keyboard input or Safe Mode boot loops. DDU is isolated specifically to graphics display drivers."
+   }
+  ]
+ },
+ {
+  "icon": "🖥️",
+  "title": "SYSTEM TRAY & BACKGROUND WINDOW CONTROLS",
+  "tag": "SYSTEM TRAY",
+  "qa": [
+   {
+    "q": "How do the Minimize [-] and Close [X] buttons work?",
+    "a": "Clicking the [-] Minimize button hides the application completely from the Windows taskbar and tucks it quietly into the system tray near the clock (~15MB RAM). Clicking the [X] Close button completely terminates and shuts down the application."
+   },
+   {
+    "q": "How do I restore the app from the system tray?",
+    "a": "Simply left-click or right-click the orange CS2 icon in your Windows system tray near the clock, or launch the app shortcut again. You can also right-click the tray icon to quick-connect to GFL, toggle the Slot Sniper, or click [❌ Exit Completely]."
+   }
+  ]
+ }
+]
