@@ -4,7 +4,7 @@ import { RefreshCw, ShieldAlert } from 'lucide-react';
 import { api } from '../api';
 import { sfx } from '../sound';
 import { Info, WeeklyBanner } from '../components/Info';
-import { useModal } from '../components/Modal';
+import { useAdminPrompt, useModal } from '../components/Modal';
 import MapCleaner from '../components/MapCleaner';
 import PAGES from '../data/pages.json';
 import type { MaintState } from '../types';
@@ -33,6 +33,7 @@ export default function Maintenance({ busy, setBusy, go }: { busy: boolean; setB
   const [mapStat, setMapStat] = useState('Scanning maps & workshop content...');
   const [sel, setSel] = useState<Record<string, boolean>>({ temp: true, win_update: true, discord_steam: true, thumb: true, recycle: false, dns: true });
   const openModal = useModal();
+  const adminPrompt = useAdminPrompt();
   const [cleaner, setCleaner] = useState(false);
   const load = () => { void api.maintState().then(setSt); };
   useEffect(() => {
@@ -51,7 +52,7 @@ export default function Maintenance({ busy, setBusy, go }: { busy: boolean; setB
     });
   };
   const tool = async (key: string, label: string, admin: boolean) => {
-    if (admin && st && !st.admin) { openModal({ kind: 'warn', label: 'Administrator needed', title: label, body: 'This repair tool needs Administrator. Use Relaunch as Administrator above.' }); return; }
+    if (admin && st && !st.admin) { adminPrompt(label, 'maintenance'); return; }
     sfx.click();
     const r = await api.maintTool(key);
     if (!r.ok) openModal({ kind: 'warn', label: 'Problem', title: label, body: r.error });
@@ -80,7 +81,7 @@ export default function Maintenance({ busy, setBusy, go }: { busy: boolean; setB
         <div className="glass card" style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
           <ShieldAlert size={20} color="var(--cyan)" />
           <div style={{ flex: 1, minWidth: 220 }}><div className="t">{M.standard.replace(/^[^A-Za-z]*/, '')}</div><div className="d" style={{ color: 'var(--tx2)' }}>{M.standard_desc}</div></div>
-          <button className="btn cut ghost sm" title={M.relaunch_tip} onClick={() => { sfx.click(); void api.relaunchAdmin(); }}>Relaunch as Administrator</button>
+          <button className="btn cut ghost sm" title={M.relaunch_tip} onClick={() => { sfx.click(); adminPrompt('Relaunch as Administrator', 'maintenance'); }}>Relaunch as Administrator</button>
         </div>
       )}
 

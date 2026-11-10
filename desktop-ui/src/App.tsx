@@ -17,6 +17,7 @@ import Mpo from './views/Mpo';
 import Discord from './views/Discord';
 import Settings from './components/Settings';
 import { Reactor } from './components/Reactor';
+import { TooltipLayer } from './components/TooltipLayer';
 import type { HwInfo } from './types';
 import type { AppInfo, LogLine, SniperStatus, UpdateInfo } from './types';
 
@@ -49,9 +50,9 @@ function useNative(): boolean {
   return n;
 }
 
-function ResizeEdges() {
+function ResizeEdges({ disabled }: { disabled: boolean }) {
   const native = useNative();
-  if (!native) return null;
+  if (!native || disabled) return null;
   return <>{EDGES.map((e) => <div key={e} className={`edge e-${e}`} onMouseDown={(ev) => { if (ev.button === 0) void api.winResize(e); }} />)}</>;
 }
 
@@ -69,8 +70,9 @@ function Shell() {
   const [power, setPower] = useState<{ on: boolean; plan: 'balanced' | 'high' }>({ on: false, plan: 'balanced' });
   const [days, setDays] = useState<{ opt: number | null; maint: number | null }>({ opt: null, maint: null });
   const [sniper, setSniper] = useState<SniperStatus | null>(null);
-  const [tier, setTierState] = useState<number>(() => { try { return Number(localStorage.getItem('sniperTier')) || 62; } catch { return 62; } });
-  const setTier = (n: number) => { setTierState(n); try { localStorage.setItem('sniperTier', String(n)); } catch { /* ignore */ } };
+  const [maxed, setMaxed] = useState(false);
+  const hist = useRef<NavId[]>([]);
+  const pos = useRef(-1);
   const openModal = useModal();
   const native = useNative();
   const logEnd = useRef<HTMLDivElement>(null);
@@ -91,6 +93,7 @@ function Shell() {
     const sniperTimer = setInterval(pollSniper, 1500);
     const offS = on<SniperStatus>('sniper', setSniper);
     const offU = on<UpdateInfo>('update', setUpdate);
+    const offM = on<boolean>('maximized', setMaxed);
     const off1 = on<LogLine>('log', (l) => setLogs((p) => [...p.slice(-399), l]));
     const off2 = on<{ name: string; ok: boolean }>('job', (j) => {
       setBusy(false);
@@ -105,7 +108,7 @@ function Shell() {
         openModal({ kind: 'ok', label: 'Notification', title: 'Restore finished', body: 'Each step is listed in the log. DNS and Steam launch options were not changed.' });
       }
     });
-    return () => { off1(); off2(); offS(); offU(); clearInterval(sniperTimer); };
+    return () => { off1(); off2(); offS(); offU(); offM(); clearInterval(sniperTimer); };
   }, [openModal]);
 
   useEffect(() => { logEnd.current?.scrollIntoView({ block: 'end' }); }, [logs, drawer]);
@@ -117,7 +120,27 @@ function Shell() {
   }, [addLog]);
   useEffect(() => { const h = () => { const n = NAV.find((x) => x.id === location.hash.slice(1)); if (n) setView(n.id); }; window.addEventListener('hashchange', h); return () => window.removeEventListener('hashchange', h); }, []);
 
-  const go = (id: NavId) => { sfx.click(); setView(id); try { history.replaceState(null, '', `#${id}`); } catch { location.hash = id; } };
+  const show = useCallback((id: NavId) => { setView(id); try { history.replaceState(null, '', `#${id}`); } catch { location.hash = id; } }, []);
+  const go = (id: NavId) => {
+    sfx.click();
+    if (hist.current[pos.current] !== id) { hist.current = [...hist.current.slice(0, pos.current + 1), id]; pos.current = hist.current.length - 1; }
+    show(id);
+  };
+  // Mouse 4 = back, Mouse 5 = forward (also Alt+Left / Alt+Right), through the tabs you visited
+  const step = useCallback((d: -1 | 1) => {
+    const n = pos.current + d;
+    if (n < 0 || n >= hist.current.length) return;
+    pos.current = n; sfx.click(); show(hist.current[n]);
+  }, [show]);
+  useEffect(() => { if (pos.current < 0) { hist.current = [view]; pos.current = 0; } }, [view]);
+  useEffect(() => {
+    const block = (e: MouseEvent) => { if (e.button === 3 || e.button === 4) { e.preventDefault(); e.stopPropagation(); } };
+    const up = (e: MouseEvent) => { if (e.button === 3) { block(e); step(-1); } else if (e.button === 4) { block(e); step(1); } };
+    const key = (e: KeyboardEvent) => { if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); step(-1); } else if (e.altKey && e.key === 'ArrowRight') { e.preventDefault(); step(1); } };
+    window.addEventListener('mousedown', block, true); window.addEventListener('auxclick', block, true); window.addEventListener('mouseup', up, true); window.addEventListener('keydown', key);
+    return () => { window.removeEventListener('mousedown', block, true); window.removeEventListener('auxclick', block, true); window.removeEventListener('mouseup', up, true); window.removeEventListener('keydown', key); };
+  }, [step]);
+  useEffect(() => { document.documentElement.classList.toggle('max', maxed); }, [maxed]);
 
   const runApply = () => {
     openModal({
@@ -140,9 +163,9 @@ function Shell() {
   return (
     <div className="app">
       <header className="glass titlebar">
-        <div className="cut badge pywebview-drag-region" style={{ ['--fill' as string]: 'rgba(10,14,19,.95)' }}><span className="in">CS2 // COMMAND CENTER</span></div>
+        <div className="cut badge pywebview-drag-region" onDoubleClick={() => void api.winMax().then(setMaxed)} style={{ ['--fill' as string]: 'rgba(10,14,19,.95)' }}><span className="in">CS2 // COMMAND CENTER</span></div>
         <span className="decal pywebview-drag-region">v{info?.version ?? '...'} {native ? '' : '· browser preview'}</span>
-        <div className="drag pywebview-drag-region" />
+        <div className="drag pywebview-drag-region" onDoubleClick={() => void api.winMax().then(setMaxed)} />
         <div className="ind">
           <span className="pill"><i className="dot" />PERM: {info ? (info.admin ? 'ADMIN' : 'STANDARD') : '...'}</span>
           <span className="pill"><i className={`dot ${info?.cs2_found ? 'cy' : 'am'}`} />CS2: {info ? (info.cs2_found ? 'FOUND' : 'NOT FOUND') : '...'}</span>
@@ -152,7 +175,7 @@ function Shell() {
         </div>
         <div className="winctl">
           <button aria-label="Minimize" onClick={() => void api.winMin()}><Minus size={14} /></button>
-          <button aria-label="Maximize" onClick={() => void api.winMax()}><Square size={11} /></button>
+          <button aria-label="Maximize" onClick={() => void api.winMax().then(setMaxed)}><Square size={11} /></button>
           <button aria-label="Close" className="x" onClick={() => void api.winClose()}><X size={14} /></button>
         </div>
       </header>
@@ -195,7 +218,7 @@ function Shell() {
               {view === 'faq' && <Faq />}
               {view === 'mpo' && <Mpo />}
               {view === 'discord' && <Discord />}
-              {view === 'servers' && <Servers info={info} log={addLog} sniper={sniper} tier={tier} setTier={setTier} />}
+              {view === 'servers' && <Servers info={info} log={addLog} sniper={sniper} />}
               {view === 'engine' && <Engine opts={opts} setOpts={setOpts} onApplied={runApply} log={addLog} power={power} setPower={setPower} daysOpt={days.opt} daysMaint={days.maint} go={go} />}
               {!['servers', 'engine', 'dashboard', 'maintenance', 'launch', 'booster', 'autoexec', 'faq', 'mpo', 'discord'].includes(view) && (
                 <div className="glass card ph brk"><div className="big">{NAV.find((n) => n.id === view)?.label.toUpperCase()}</div><div>This screen is not in the new app yet. It is still in the classic app.</div><div className="decal" style={{ marginTop: 8 }}>Still to come: Discord Presence</div></div>
@@ -224,5 +247,5 @@ function Shell() {
 }
 
 export default function App() {
-  return <ModalHost><Reactor /><Shell /><ResizeEdges /></ModalHost>;
+  return <ModalHost><Reactor /><Shell /><ResizeEdges disabled={false} /><TooltipLayer /></ModalHost>;
 }

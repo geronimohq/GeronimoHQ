@@ -34,20 +34,52 @@ class Api:
 
     # window controls
     def win_minimize(self) -> None:
-        if self._window:
-            self._window.minimize()
-
-    def win_maximize(self) -> None:
+        """[-]: hides to the tray when "Minimize to the system tray" is on, otherwise a normal minimize to the taskbar."""
         if not self._window:
             return
         try:
-            if getattr(self, "_max", False):
-                self._window.restore()
+            if self.core.config.get("minimize_to_tray_on_close", True) and getattr(self, "tray", None) and self.tray.icon:
+                self._window.hide()
+                self.core.log("Window hidden to the tray")
             else:
-                self._window.maximize()
-            self._max = not getattr(self, "_max", False)
+                self._window.minimize()
         except Exception:
             pass
+
+    def _hwnd(self) -> int:
+        return int(self._window.native.Handle.ToInt64())
+
+    def win_maximize(self) -> bool:
+        """Maximize into the monitor's WORK area (the taskbar stays visible); a second call restores the old size."""
+        if not self._window:
+            return False
+        try:
+            user32 = ctypes.windll.user32
+            hwnd = self._hwnd()
+            if getattr(self, "_max_rect", None):
+                l, t, r, b = self._max_rect
+                self._max_rect = None
+                user32.SetWindowPos(hwnd, 0, l, t, r - l, b - t, 0x0004 | 0x0010)
+                self._emit("maximized", False)
+                return False
+
+            class MONITORINFO(ctypes.Structure):
+                _fields_ = [("cbSize", wintypes.DWORD), ("rcMonitor", wintypes.RECT), ("rcWork", wintypes.RECT), ("dwFlags", wintypes.DWORD)]
+
+            rect = wintypes.RECT()
+            user32.GetWindowRect(hwnd, ctypes.byref(rect))
+            self._max_rect = (rect.left, rect.top, rect.right, rect.bottom)
+            mon = user32.MonitorFromWindow(hwnd, 2)             # MONITOR_DEFAULTTONEAREST
+            info = MONITORINFO()
+            info.cbSize = ctypes.sizeof(MONITORINFO)
+            user32.GetMonitorInfoW(mon, ctypes.byref(info))
+            w = info.rcWork
+            user32.SetWindowPos(hwnd, 0, w.left, w.top, w.right - w.left, w.bottom - w.top, 0x0004 | 0x0010)
+            self._emit("maximized", True)
+            return True
+        except Exception as e:
+            self.core.log(f"[WINDOW] maximize failed: {e}")
+            return False
 
     def win_resize(self, edge: str) -> None:
         """Called on mouse-down on a resize handle (n s e w ne nw se sw). A frameless Windows form has no native
@@ -94,13 +126,8 @@ class Api:
                 pass
 
     def win_close(self) -> None:
-        """[X]: hide to the tray when that setting is on (and a tray icon exists), otherwise quit."""
-        if self.core.config.get("minimize_to_tray_on_close", True) and getattr(self, "tray", None) and self.tray.icon:
-            if self._window:
-                self._window.hide()
-            self.core.log("Window hidden to the tray")
-        else:
-            self.quit()
+        """[X] always closes the application completely (the tray is for [-])."""
+        self.quit()
 
     def quit(self) -> None:
         self.core.shutdown()
@@ -181,8 +208,17 @@ class Api:
     def server_players(self, sid: str) -> Dict[str, Any]:
         return self.core.server_players(sid)
 
-    def sniper_start(self, sid: str, max_players: int) -> Dict[str, Any]:
-        return self.core.sniper_start(sid, int(max_players))
+    def sniper_start(self, sid: str, max_players: int = 0) -> Dict[str, Any]:
+        return self.core.sniper_start(sid)
+
+    def sniper_tiers(self) -> Dict[str, Any]:
+        return self.core.sniper_tiers()
+
+    def sniper_set_tier(self, kind: str, value: str) -> Dict[str, Any]:
+        return self.core.sniper_set_tier(kind, value)
+
+    def map_thumb(self, map_name: str) -> str:
+        return self.core.map_thumb(map_name)
 
     def sniper_stop(self) -> Dict[str, Any]:
         return self.core.sniper_stop()
@@ -200,8 +236,17 @@ class Api:
     def open_url(self, url: str) -> bool:
         return self.core.open_url(url)
 
-    def relaunch_admin(self) -> Dict[str, Any]:
-        return self.core.relaunch_admin()
+    def relaunch_admin(self, page: str = "") -> Dict[str, Any]:
+        r = self.core.relaunch_admin(page)
+        if r.get("ok"):
+            try:
+                if self._window:
+                    self._window.hide()
+                if getattr(self, "tray", None):
+                    self.tray.stop()
+            finally:
+                threading.Timer(0.8, lambda: os._exit(0)).start()
+        return r
 
     # PC maintenance
     def maint_state(self) -> Dict[str, Any]:

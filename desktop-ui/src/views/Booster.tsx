@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, on } from '../api';
 import { sfx } from '../sound';
 import { Info } from '../components/Info';
-import { useModal } from '../components/Modal';
+import { useAdminPrompt, useModal } from '../components/Modal';
 import PAGES from '../data/pages.json';
 import type { AnalyzerResult, DnsResult, DnsState } from '../types';
 
@@ -18,6 +18,7 @@ export default function Booster() {
   const [an, setAn] = useState<AnalyzerResult | null>(null);
   const [boostMsg, setBoostMsg] = useState('Ready to boost');
   const openModal = useModal();
+  const adminPrompt = useAdminPrompt();
   const loadDns = () => { void api.dnsState().then(setDns); };
   useEffect(() => {
     void api.cs2Running().then(setRunning);
@@ -40,18 +41,19 @@ export default function Booster() {
     if (!r.ok) { setBench(false); openModal({ kind: 'warn', label: 'Problem', title: 'Not started', body: r.error }); }
   };
   const done = (x: { ok: boolean; error?: string }, title: string) => {
+    if (!x.ok && /administrator/i.test(x.error ?? '')) { adminPrompt('Changing DNS', 'booster'); loadDns(); return; }
     openModal(x.ok ? { kind: 'ok', label: 'Notification', title } : { kind: 'warn', label: 'Problem', title: 'DNS not changed', body: x.error ?? 'See the log.' });
     loadDns();
   };
-  const apply = (name: string, primary: string, secondary: string) => openModal({
+  const apply = (name: string, primary: string, secondary: string) => dns && !dns.admin ? adminPrompt(`Use ${name}`, 'booster') : openModal({
     kind: 'q', label: 'Confirm', title: `Use ${name}?`, body: `Sets DNS ${primary} / ${secondary} on your active network adapter. Undo any time with Restore ISP default.`,
     confirm: { text: 'Apply DNS', run: async () => done(await api.dnsApply(primary, secondary, name), 'DNS updated') },
   });
-  const restore = () => openModal({
+  const restore = () => dns && !dns.admin ? adminPrompt('Restore ISP default DNS', 'booster') : openModal({
     kind: 'q', label: 'Confirm', title: 'Restore ISP default DNS?', body: 'Switches the adapter back to automatic (DHCP) and flushes the DNS cache.',
     confirm: { text: 'Restore', run: async () => done(await api.dnsRestore(), 'DNS restored to automatic') },
   });
-  const custom = () => openModal({
+  const custom = () => dns && !dns.admin ? adminPrompt('Apply custom DNS', 'booster') : openModal({
     kind: 'q', label: 'Confirm', title: 'Apply custom DNS?', body: `Sets DNS ${p1} / ${p2 || '(none)'} on your active network adapter.`,
     confirm: { text: 'Apply custom DNS', run: async () => done(await api.dnsCustom(p1, p2), 'Custom DNS applied') },
   });
@@ -86,7 +88,7 @@ export default function Booster() {
           <button className="btn cut ghost sm" title={B.bench_tip} disabled={bench} onClick={() => void runBench()}>{bench ? 'Benchmarking…' : 'Benchmark all DNS servers'}</button>
           <button className="btn cut ghost sm" title={B.restore_tip} onClick={() => { sfx.click(); restore(); }}>Restore ISP default (DHCP)</button>
         </div>
-        {dns && !dns.admin && <div className="decal" style={{ marginBottom: 6, textTransform: 'none', letterSpacing: 0 }}>Benchmarks work as a standard user. Applying a DNS needs Administrator (Relaunch as Administrator on the PC Maintenance tab).</div>}
+        {dns && !dns.admin && <div className="decal" style={{ marginBottom: 6, textTransform: 'none', letterSpacing: 0 }}>Benchmarks work as a standard user. Applying a DNS needs Administrator: the app offers to restart as Administrator and come back to this tab.</div>}
         {rows.map((r) => (
           <div className={`row dnsrow${sel === r.name ? ' sel' : ''}`} key={r.name} onClick={() => { sfx.click(); setSel(r.name); }}>
             <div className="grow"><div className="t">{r.name}{r.fastest && <span className="tag" style={{ marginLeft: 8 }}>FASTEST</span>}</div>

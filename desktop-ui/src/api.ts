@@ -45,13 +45,16 @@ export const api = {
   restoreSummary: () => call<string>('restore_summary'),
   connect: (id: string) => call<{ ok: boolean; error?: string }>('server_connect', id),
   players: (id: string) => call<{ success: boolean; players: PlayerRow[]; error?: string; name?: string }>('server_players', id),
-  sniperStart: (id: string, max: number) => call<{ ok: boolean }>('sniper_start', id, max),
+  sniperStart: (id: string, max: number) => call<{ ok: boolean; error?: string }>('sniper_start', id, max),
   sniperStop: () => call<{ ok: boolean }>('sniper_stop'),
   sniperStatus: () => call<SniperStatus>('sniper_status'),
   dashboard: () => call<DashboardData>('dashboard'),
   openPath: (kind: string) => call<boolean>('open_path', kind),
   openUrl: (url: string) => call<boolean>('open_url', url),
-  relaunchAdmin: () => call<{ ok: boolean }>('relaunch_admin'),
+  relaunchAdmin: (page: string) => call<{ ok: boolean }>('relaunch_admin', page),
+  sniperTiers: () => call<{ gfl: string; community: string }>('sniper_tiers'),
+  sniperSetTier: (kind: 'gfl' | 'community', value: string) => call<{ gfl: string; community: string; ok: boolean }>('sniper_set_tier', kind, value),
+  mapThumb: (map: string) => call<string>('map_thumb', map),
   maintState: () => call<MaintState>('maint_state'),
   maintRun: (opts: Record<string, boolean>) => call<{ ok: boolean; error?: string }>('maint_run', opts),
   maintTool: (name: string) => call<{ ok: boolean; error?: string }>('maint_tool', name),
@@ -96,7 +99,7 @@ export const api = {
   mapStats: () => call<{ count: number; gb: number }>('maps_quick_stats'),
   presenceRefresh: () => call<import('./types').PresenceState>('presence_refresh'),
   winMin: () => call<void>('win_minimize'),
-  winMax: () => call<void>('win_maximize'),
+  winMax: () => call<boolean>('win_maximize'),
   winClose: () => call<void>('win_close'),
   winResize: (edge: string) => call<void>('win_resize', edge),
 };
@@ -165,6 +168,10 @@ async function mock(name: string, ...args: unknown[]): Promise<unknown> {
     case 'vpk_repair': return { ok: true, count: 0, message: 'No damaged Workshop VPK files were found. Nothing to remove.' };
     case 'maps_quick_stats': return { count: 373, gb: 87.6 };
     case 'presence_refresh': return { enabled: true, connected: false, status: 'Standby (CS2 closed)', details: '', state: '', buttons: [], cs2_running: false, tracked: '' };
+    case 'sniper_tiers': return { gfl: 'mapper', community: '63' };
+    case 'sniper_set_tier': return { gfl: 'mapper', community: String(args[1]), ok: true };
+    case 'map_thumb': return '';
+    case 'win_maximize': return false;
     case 'restore_summary': return 'This undoes the app\'s engine changes.';
     default: return undefined;
   }

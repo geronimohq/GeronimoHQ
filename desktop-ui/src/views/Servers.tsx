@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Play, Plus, Search } from 'lucide-react';
-import { api } from '../api';
+import { api, on } from '../api';
 import { sfx } from '../sound';
 import { Geo } from '../components/Geo';
 import { useModal } from '../components/Modal';
@@ -33,12 +33,12 @@ function MapTimer({ since, exact }: { since: number; exact: boolean }) {
   return <span className="cell">&#9201; {exact ? '' : '≥ '}{m}:{String(s).padStart(2, '0')} on map</span>;
 }
 
-const Row = memo(function Row({ srv, st, mode, onMode, since, armed, onConnect, onPlayers, onSniper }: { srv: Srv; st?: Status; mode: GeoMode; onMode: (m: GeoMode) => void; since?: number; armed: boolean; onConnect: () => void; onPlayers: () => void; onSniper: () => void }) {
+const Row = memo(function Row({ srv, st, mode, onMode, since, armed, onConnect, onPlayers, onSniper, onCopy, thumb }: { srv: Srv; st?: Status; mode: GeoMode; onMode: (m: GeoMode) => void; since?: number; armed: boolean; onConnect: () => void; onPlayers: () => void; onSniper: () => void; onCopy: () => void; thumb?: string }) {
   const humans = st?.humans ?? 0;
   const fp = useFlash(humans), fg = useFlash(st?.ping);
   return (
     <article className="glass srv">
-      <div style={{ minWidth: 0 }}>
+      <div className="srvmain"><div className="thumb" style={thumb ? { backgroundImage: `url(${thumb})` } : undefined} aria-hidden="true" /><div style={{ minWidth: 0, flex: 1 }}>
         <div className="nm"><span className="cc">{srv.flag.replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase() || '--'}</span>{srv.name}</div>
         <div className="cells">
           {st?.online
@@ -51,12 +51,13 @@ const Row = memo(function Row({ srv, st, mode, onMode, since, armed, onConnect, 
             : <span className="cell">{st ? '● Offline / not answering' : 'Querying…'}</span>}
         </div>
         <div className="decal" style={{ marginTop: 7 }}>{srv.region || srv.cluster || 'Custom'}{st?.map ? ` · ${st.map}` : ''}</div>
-      </div>
+      </div></div>
       <Geo countries={st?.geo?.countries ?? []} regions={st?.geo?.regions ?? []} mode={mode} onMode={onMode} humans={humans} />
       <div className="dock">
         <button className={`btn cut amber pri sm${st?.online ? '' : ' dim'}`} onClick={onConnect}>Connect</button>
         <button className={`btn cut ${armed ? 'armed' : 'ghost'} sm`} aria-pressed={armed} onClick={onSniper}>{armed ? 'Sniper armed' : 'Sniper'}</button>
         <button className="btn cut ghost sm" onClick={onPlayers}>Players</button>
+        <button className="btn cut ghost sm" onClick={onCopy}>Copy IP</button>
       </div>
     </article>
   );
@@ -87,8 +88,20 @@ function AddServer({ onClose, onSaved }: { onClose: () => void; onSaved: () => v
   );
 }
 
-export default function Servers({ info, log, sniper, tier, setTier }: { info: AppInfo | null; log: (tag: string, msg: string) => void; sniper: SniperStatus | null; tier: number; setTier: (n: number) => void }) {
+const GFL_TIERS: [string, string][] = [['mapper', 'Mapper / Supporter (\u2264 62)'], ['normal', 'Normal Player (\u2264 61)'], ['vip', 'VIP / Admin (\u2264 63)']];
+
+export default function Servers({ info, log, sniper }: { info: AppInfo | null; log: (tag: string, msg: string) => void; sniper: SniperStatus | null }) {
   const openModal = useModal();
+  const [tiers, setTiers] = useState<{ gfl: string; community: string }>({ gfl: 'mapper', community: '63' });
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const asked = useRef<Set<string>>(new Set());
+  useEffect(() => { void api.sniperTiers().then(setTiers); const off = on<{ map: string; uri: string }>('thumb', (t) => setThumbs((p) => ({ ...p, [t.map]: t.uri }))); return off; }, []);
+  const wantThumb = useCallback((map?: string | null) => {
+    if (!map || asked.current.has(map)) return;
+    asked.current.add(map);
+    void api.mapThumb(map).then((uri) => { if (uri) setThumbs((p) => ({ ...p, [map]: uri })); });
+  }, []);
+  const setTier = (kind: 'gfl' | 'community', v: string) => { sfx.click(); void api.sniperSetTier(kind, v).then((r) => setTiers({ gfl: r.gfl, community: r.community })); };
   const [catalog, setCatalog] = useState<Srv[]>([]);
   const [st, setSt] = useState<Record<string, Status>>({});
   const rate = info?.refresh_seconds ?? 5;      // set in Settings (Server query speed)
@@ -175,10 +188,17 @@ export default function Servers({ info, log, sniper, tier, setTier }: { info: Ap
   const toggleSniper = (s: Srv) => {
     sfx.click();
     if (sniper?.active && sniper.target === s.name) { void api.sniperStop(); return; }
-    void api.sniperStart(s.id, tier);
+    void api.sniperStart(s.id, 0).then((r) => { if (!r.ok && r.error) openModal({ kind: 'warn', label: 'CS2 required', title: 'CS2 must be running to arm the Slot Sniper', body: r.error }); });
   };
   const isArmed = (s: Srv) => !!sniper?.active && sniper.target === s.name;
+  const copyIp = (s: Srv) => {
+    sfx.toggle();
+    try { void navigator.clipboard.writeText(`${s.host}:${s.port}`); } catch { /* ignore */ }
+    log('SERVERS', `Copied ${s.host}:${s.port}`);
+  };
   const f = featured ? st[featured.id] : undefined;
+  useEffect(() => { wantThumb(f?.map); }, [f?.map, wantThumb]);
+  useEffect(() => { list.forEach((s) => wantThumb(st[s.id]?.map)); }, [list, st, wantThumb]);
   const fHumans = f?.humans ?? 0;
   const ringDash = f?.online && f.max ? Math.min(1, (f.players ?? 0) / f.max) : 0;
   const featSince = match.started_sec && match.started_sec > 0 ? match.started_sec : seen.current[featured?.id ?? '']?.since;
@@ -196,7 +216,7 @@ export default function Servers({ info, log, sniper, tier, setTier }: { info: Ap
         <div className="featwrap">
           <article className="glass feat cut" style={{ ['--c' as string]: '18px', ['--fill' as string]: 'rgba(12,17,23,.9)' }}>
             <div className="hero">
-              <div className="map">
+              <div className="map" style={f?.map && thumbs[f.map] ? { backgroundImage: `linear-gradient(180deg,rgba(7,9,11,.05),rgba(7,9,11,.78)),url(${thumbs[f.map]})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}>
                 <div className="meta"><span className="tag">PREMIER FEATURED</span><span className="pill" style={{ fontSize: 10 }}>{featured.region.toUpperCase()}</span></div>
                 <div className="mname">{f?.map ?? '…'}</div>
               </div>
@@ -219,11 +239,12 @@ export default function Servers({ info, log, sniper, tier, setTier }: { info: Ap
                 </div>
                 <div className="stat"><span>Humans <b style={{ color: 'var(--cyan)' }}>{match.human_score ?? '-'}</b></span><span>Zombies <b style={{ color: 'var(--bad)' }}>{match.zombie_score ?? '-'}</b></span><span>Extends <b>{match.extend_count ?? '-'}/3</b></span></div>
                 <Geo countries={f?.geo?.countries ?? []} regions={f?.geo?.regions ?? []} mode={modes[featured.id] ?? 'country'} onMode={setMode(featured.id)} humans={fHumans} />
+                <div className="prio"><span className="sect">GFL slot priority:</span><select className="sel" value={tiers.gfl} aria-label="GFL slot priority" title="Sets the player count at which the Slot Sniper joins GFL (for example up to 62 for a Supporter or Mapper reserved slot)." onChange={(e) => setTier('gfl', e.target.value)}>{GFL_TIERS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
                 <div className="dock">
                   <button className="btn cut amber pri sm" onClick={() => connect(featured)}><Play size={13} /> Connect</button>
                   <button className={`btn cut ${isArmed(featured) ? 'armed' : 'ghost'} sm`} aria-pressed={isArmed(featured)} onClick={() => toggleSniper(featured)}>{isArmed(featured) ? 'Sniper armed' : 'Sniper'}</button>
                   <button className="btn cut ghost sm" onClick={() => void players(featured)}>Players</button>
-                  <button className="btn cut ghost sm" onClick={() => { sfx.toggle(); try { void navigator.clipboard.writeText(`${featured.host}:${featured.port}`); } catch { /* ignore */ } }}>Copy IP</button>
+                  <button className="btn cut ghost sm" onClick={() => copyIp(featured)}>Copy IP</button>
                 </div>
               </div>
             </div>
@@ -238,8 +259,8 @@ export default function Servers({ info, log, sniper, tier, setTier }: { info: Ap
         </div>
         <div className="search"><Search size={15} style={{ color: 'var(--tx3)' }} /><label className="sr" htmlFor="q">Filter servers</label>
           <input id="q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter by name, map or region" /></div>
-        <div className="seg" role="group" aria-label="Sniper target" title="The Slot Sniper joins when the player count falls to this number or lower">
-          {[61, 62, 63].map((n) => <button key={n} aria-pressed={tier === n} onClick={() => { sfx.click(); setTier(n); }}>{'\u2264'}{n}</button>)}
+        <div className="seg" role="group" aria-label="Sniper target for the other servers" title="Sniper target for every server except GFL: the Slot Sniper joins when the player count falls to this number or lower">
+          {['61', '62', '63'].map((n) => <button key={n} aria-pressed={tiers.community === n} onClick={() => setTier('community', n)}>{'\u2264'}{n}</button>)}
         </div>
         {totals.humans !== undefined && <span className="pill" title="Human players on the catalog servers that answered recently"><i className="dot cy" />{totals.humans} PLAYERS IN-GAME</span>}
         {totals.online !== undefined && <span className="pill">{totals.online} / {totals.total} SERVERS ONLINE</span>}
@@ -247,7 +268,7 @@ export default function Servers({ info, log, sniper, tier, setTier }: { info: Ap
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {list.map((s) => <Row key={s.id} srv={s} st={st[s.id]} mode={modes[s.id] ?? 'country'} onMode={setMode(s.id)} since={seen.current[s.id]?.since} armed={isArmed(s)} onConnect={() => connect(s)} onPlayers={() => void players(s)} onSniper={() => toggleSniper(s)} />)}
+        {list.map((s) => <Row key={s.id} thumb={thumbs[st[s.id]?.map ?? '']} onCopy={() => copyIp(s)} srv={s} st={st[s.id]} mode={modes[s.id] ?? 'country'} onMode={setMode(s.id)} since={seen.current[s.id]?.since} armed={isArmed(s)} onConnect={() => connect(s)} onPlayers={() => void players(s)} onSniper={() => toggleSniper(s)} />)}
         {!list.length && <div className="glass card ph">No servers match.</div>}
       </div>
       <AnimatePresence>{adding && <AddServer onClose={() => setAdding(false)} onSaved={() => { log('SERVERS', 'Server saved'); loadCatalog(); }} />}</AnimatePresence>

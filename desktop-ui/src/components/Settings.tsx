@@ -8,7 +8,7 @@ import type { SettingsValues } from '../types';
 const BOOLS: [keyof SettingsValues, string, string][] = [
   ['start_with_windows', 'Start CS2 Command Center with Windows', 'Starts the app as a normal user when you log in. Untick to remove it.'],
   ['start_minimized', 'Start minimized to the system tray', 'When starting with Windows, start hidden in the tray.'],
-  ['minimize_to_tray_on_close', 'Closing the window hides it to the tray', 'Clicking minimize hides to the taskbar; clicking close hides to the tray instead of quitting. Untick to quit on close.'],
+  ['minimize_to_tray_on_close', 'Minimize to the system tray when [-] is clicked', 'Clicking [-] hides the window to the tray; clicking [X] closes the application completely.'],
   ['check_updates_on_startup', 'Check for updates at startup', 'Checks geronimohq.com once. Nothing is installed without your click.'],
   ['sniper_sound_enabled', 'Slot Sniper audio notifications', 'Plays a sound when the sniper fires.'],
   ['discord_rpc_enabled', 'Share game status with Discord Rich Presence', 'Shows your CS2 map and server on your Discord profile.'],

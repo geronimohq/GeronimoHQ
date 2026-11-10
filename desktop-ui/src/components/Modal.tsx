@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { sfx } from '../sound';
+import { api } from '../api';
 
 type Kind = 'ok' | 'q' | 'warn';
 export interface ModalSpec {
@@ -46,4 +47,17 @@ export function ModalHost({ children }: { children: ReactNode }) {
       </AnimatePresence>
     </Ctx.Provider>
   );
+}
+
+/** "This needs Administrator": offers a relaunch that comes back to the same tab (page = the tab id). */
+export function useAdminPrompt() {
+  const open = useModal();
+  return (title: string, page: string) => open({
+    kind: 'q', label: 'Administrator needed', title,
+    body: 'This action needs Administrator rights. The app can restart as Administrator and open on this same tab.\n\nRelaunch as Administrator now?',
+    confirm: { text: 'Relaunch as Administrator', run: async () => {
+      const r = await api.relaunchAdmin(page);
+      if (!r.ok) open({ kind: 'warn', label: 'Cancelled', title: 'Still running as a standard user', body: 'The Windows permission request was cancelled or declined.' });
+    } },
+  });
 }

@@ -301,15 +301,44 @@ class Core:
         r = server_browser.query_server_players(s["host"], int(s["port"]))
         return {"success": bool(r.get("success")), "players": r.get("players", []), "error": r.get("error", ""), "name": s.get("name")}
 
-    def sniper_start(self, sid: str, max_players: int) -> Dict[str, Any]:
+    GFL_TIERS = {"normal": 61, "mapper": 62, "vip": 63}
+
+    def sniper_tiers(self) -> Dict[str, Any]:
+        raw = str(self.config.get("community_sniper_slot_target", "63"))
+        comm = next((n for n in ("61", "62", "63") if n in raw), "63")
+        gfl = self.config.get("gfl_sniper_tier", "mapper")
+        return {"gfl": gfl if gfl in self.GFL_TIERS else "mapper", "community": comm}
+
+    def sniper_set_tier(self, kind: str, value: str) -> Dict[str, Any]:
+        if kind == "gfl" and value in self.GFL_TIERS:
+            self.config["gfl_sniper_tier"] = value
+        elif kind == "community" and str(value) in ("61", "62", "63"):
+            self.config["community_sniper_slot_target"] = str(value)
+        else:
+            return {"ok": False}
+        app_config.save_config(self.config)
+        self.log(f"[SNIPER] {'GFL slot priority' if kind == 'gfl' else 'Sniper target'} set to {value}", "SERVERS")
+        return self.sniper_tiers() | {"ok": True}
+
+    def sniper_start(self, sid: str, max_players: Optional[int] = None) -> Dict[str, Any]:
         s = self._find_server(sid)
         if not s:
             return {"ok": False}
+        tiers = self.sniper_tiers()
+        max_players = self.GFL_TIERS[tiers["gfl"]] if sid == "gfl" else int(tiers["community"])
+        if not core_logic.is_cs2_running():       # same rule as the classic app
+            return {"ok": False, "error": "Counter-Strike 2 must be running to arm the Slot Sniper.\n\nLaunch CS2 first (or click Connect to open it), then arm the sniper. It watches the server and joins the moment a player leaves."}
         info = server_browser.query_server_info(s["host"], int(s["port"]))
         full = bool(info.get("online")) and int(info.get("curr_players") or 0) >= int(info.get("max_players") or 64)
         server_browser.get_slot_sniper().start(
             s["host"], int(s["port"]), s.get("name") or sid, target_max_players=int(max_players), tier_label="",
-            status_cb=lambda state, text: self.emit("sniper", self.sniper_status()), initial_is_full=full)
+            status_cb=lambda state, text: self.emit("sniper", self.sniper_status()),
+            success_cb=lambda h, p, n, cur, mx: self._sniper_fired(h, p, n, cur, mx, max_players), initial_is_full=full)
+        try:
+            if self.config.get("discord_rpc_enabled", True) and self.presence.rpc.connected:
+                self.presence.rpc.set_activity(details=f"Sniping {s.get('name') or sid}", state=f"Active (Target: <={max_players})", start_timestamp=int(time.time()), large_image=None)
+        except Exception:
+            pass
         self.log(f"Slot Sniper armed for {s.get('name')} (join at <= {int(max_players)})", "SERVERS")
         return {"ok": True}
 
@@ -362,16 +391,25 @@ class Core:
         except Exception:
             return False
 
-    def relaunch_admin(self) -> Dict[str, Any]:
+    def relaunch_admin(self, page: str = "") -> Dict[str, Any]:
+        """Asks Windows (UAC) to start an elevated copy that opens on `page`. The caller closes this copy when ok is true."""
         import ctypes
         import os
+        import re
         import sys
-        exe, params = sys.executable, ""
-        if not getattr(sys, "frozen", False):
-            params = '"' + os.path.join(os.path.dirname(os.path.abspath(__file__)), "web_main.py") + '"'
+        page = page if re.fullmatch(r"[a-z]{3,12}", str(page or "")) else ""
+        extra = f"--elevated --page={page}" if page else "--elevated"
+        exe = sys.executable
+        if getattr(sys, "frozen", False):
+            params = extra
+        else:
+            params = '"' + os.path.join(os.path.dirname(os.path.abspath(__file__)), "web_main.py") + '" ' + extra
+        try:
+            app_config.save_config(self.config)
+        except Exception:
+            pass
         ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", exe, params, None, 1)
         if ret > 32:
-            threading.Timer(0.6, lambda: os._exit(0)).start()
             return {"ok": True}
         self.log("[ADMIN] Elevation request was cancelled or declined. Continuing in standard mode.")
         return {"ok": False}
@@ -589,6 +627,12 @@ class Core:
             self.config["last_page_key"] = key
 
     def start_page(self) -> str:
+        import re
+        import sys
+        for a in sys.argv[1:]:                       # an elevated relaunch resumes the tab you were on
+            m = re.fullmatch(r"--page=([a-z]{3,12})", a)
+            if m and m.group(1) in self.PAGE_KEYS:
+                return m.group(1)
         if self.config.get("open_on_page") == "Last used page":
             inv = {v: k for k, v in self.PAGE_KEYS.items()}
             return inv.get(self.config.get("last_page_key"), "dashboard")
@@ -869,3 +913,49 @@ class Core:
     def presence_refresh(self) -> Dict[str, Any]:
         self.presence.wake.set()
         return self.presence.snapshot()
+
+    # ---------- map thumbnails ----------
+    def map_thumb(self, map_name: str) -> str:
+        """data: URI of the cached map picture, or '' while it downloads (a 'thumb' event follows when it is ready)."""
+        import base64
+        if not map_name or map_name in ("-", "unknown", "none"):
+            return ""
+
+        def to_uri(path: str) -> str:
+            try:
+                with open(path, "rb") as f:
+                    return "data:image/jpeg;base64," + base64.b64encode(f.read()).decode("ascii")
+            except Exception:
+                return ""
+
+        def done(name, path):
+            uri = to_uri(path)
+            if uri:
+                self.emit("thumb", {"map": map_name, "uri": uri})
+
+        path = server_browser.get_or_download_map_thumbnail(map_name, callback=done)
+        return to_uri(path) if path else ""
+
+    def _sniper_fired(self, host: str, port: int, name: str, cur: int, mx: int, target: int) -> None:
+        """A slot opened: the sniper already connected. Play the chime (if enabled) and let Discord show where you are going."""
+        self.log(f"[SNIPER] Open slot detected on {name} ({cur}/{mx}, target <= {target}). Connected through the in-game console; 10 s cooldown started.", "SERVERS")
+        if self.config.get("sniper_sound_enabled", True):
+            def tone():
+                try:
+                    import os
+                    import winsound
+                    f = os.path.join(r"C:\Windows\Media", "Windows Information Bar.wav")
+                    if os.path.exists(f):
+                        winsound.PlaySound(f, winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT)
+                    else:
+                        winsound.MessageBeep(winsound.MB_OK)
+                except Exception:
+                    pass
+            threading.Thread(target=tone, daemon=True).start()
+        try:
+            self.presence.tracked, self.presence.tracked_since, self.presence.session_start = (host, port, name), time.time(), int(time.time())
+            if self.config.get("discord_rpc_enabled", True) and self.presence.rpc.connected:
+                self.presence.rpc.set_activity(details=name, state="Connected via Slot Sniper", start_timestamp=self.presence.session_start, large_image=None)
+        except Exception:
+            pass
+        self.emit("sniper", self.sniper_status())

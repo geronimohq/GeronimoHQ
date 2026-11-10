@@ -280,6 +280,79 @@ class NoTkinter(unittest.TestCase):
         self.assertIn("ALL_OK", r.stdout, r.stderr[-800:])
 
 
+class AdminTrayWindow(unittest.TestCase):
+    def test_relaunch_admin_passes_the_tab_and_rejects_odd_values(self):
+        core, _ = make_core()
+        with mock.patch("ctypes.windll.shell32.ShellExecuteW", return_value=42) as sh, mock.patch("app_config.save_config", return_value=True):
+            self.assertTrue(core.relaunch_admin("booster")["ok"])
+            params = sh.call_args[0][3]
+            self.assertIn("--elevated", params)
+            self.assertIn("--page=booster", params)
+            core.relaunch_admin('x" & calc & "')
+            self.assertNotIn("calc", sh.call_args[0][3])           # nothing the page sends can reach the command line
+        with mock.patch("ctypes.windll.shell32.ShellExecuteW", return_value=5), mock.patch("app_config.save_config", return_value=True):
+            self.assertFalse(core.relaunch_admin("booster")["ok"])    # UAC declined
+
+    def test_elevated_start_resumes_the_tab(self):
+        core, _ = make_core()
+        with mock.patch.object(sys, "argv", ["x", "--elevated", "--page=booster"]):
+            self.assertEqual(core.start_page(), "booster")
+        with mock.patch.object(sys, "argv", ["x", "--page=nonsense"]):
+            self.assertEqual(core.start_page(), "dashboard")
+
+    def test_minimize_hides_to_tray_and_close_always_quits(self):
+        import web_api
+        api = web_api.Api()
+        api._window = mock.Mock()
+        api.tray = mock.Mock(icon=object())
+        api.core.config["minimize_to_tray_on_close"] = True
+        api.win_minimize()
+        api._window.hide.assert_called_once()
+        api._window.minimize.assert_not_called()
+        api.core.config["minimize_to_tray_on_close"] = False
+        api.win_minimize()
+        api._window.minimize.assert_called_once()
+        with mock.patch.object(api, "quit") as quit_:
+            api.win_close()
+        quit_.assert_called_once()                                   # [X] closes completely, tray or not
+
+
+class ServerExtras(unittest.TestCase):
+    def test_gfl_has_its_own_priority_and_other_servers_use_the_community_target(self):
+        core, _ = make_core()
+        started = []
+        sniper = mock.Mock()
+        sniper.start.side_effect = lambda host, port, name, **kw: started.append((host, kw["target_max_players"]))
+        with mock.patch.object(server_browser, "get_slot_sniper", return_value=sniper), mock.patch.object(server_browser, "query_server_info", return_value={"online": False}), \
+             mock.patch("app_config.save_config", return_value=True), mock.patch.object(core_logic, "is_cs2_running", return_value=True):
+            core.sniper_set_tier("gfl", "vip")
+            core.sniper_set_tier("community", "61")
+            core.sniper_start("gfl")
+            core.sniper_start("possession")
+        self.assertEqual(started, [("74.91.124.21", 63), ("103.62.49.55", 61)])
+        self.assertFalse(core.sniper_set_tier("gfl", "bogus")["ok"])
+        with mock.patch.object(core_logic, "is_cs2_running", return_value=False), mock.patch.object(server_browser, "get_slot_sniper", return_value=sniper):
+            r = core.sniper_start("gfl")
+        self.assertFalse(r["ok"])                                    # CS2 must be running, like the classic app
+        self.assertIn("must be running", r["error"])
+        core.config["community_sniper_slot_target"] = "<= 62 (Priority Slot)"
+        self.assertEqual(core.sniper_tiers()["community"], "62")      # values the classic app saved still work
+
+    def test_thumbnail_returns_a_data_uri_or_waits_for_the_download(self):
+        import tempfile
+        core, events = make_core()
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            f.write(b"\xff\xd8\xff" + b"0" * 2000)
+        try:
+            with mock.patch.object(server_browser, "get_or_download_map_thumbnail", return_value=f.name):
+                self.assertTrue(core.map_thumb("ze_x").startswith("data:image/jpeg;base64,"))
+            with mock.patch.object(server_browser, "get_or_download_map_thumbnail", return_value=None):
+                self.assertEqual(core.map_thumb("ze_y"), "")
+            self.assertEqual(core.map_thumb("-"), "")
+        finally:
+            os.unlink(f.name)
+
+
 if __name__ == "__main__":
     _res = unittest.main(exit=False, verbosity=2)
     sys.stdout.flush(); sys.stderr.flush()
