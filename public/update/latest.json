@@ -1,9 +1,9 @@
 {
-  "version": "1.6.0",
+  "version": "2.0.0",
   "build_date": "2026-11-10",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "6F82ED3E23775E23CA1C366F1DC4D2306D068CF0C8AFC2852B816ED9ABC6DC3A",
-  "size": 37089663,
-  "notes": "New dark retro look, per-server Country/Region geo view, bot-count fix with a MOSTLY BOTS badge, Engine Tweaks fits without scrolling, consistent Map Cleaner colors.",
-  "signature": "d6caa44b82b39a625992a00a05f97a9f5a43ce915ae8e704e14b62d4e540478b6e760b227411223d5cb18abbfed6214ed7021b7a9fc70967902237a637327d0f"
+  "sha256": "3126C03AB0BF622BB31BF6C497A4D6A4C657CAD094AD0E0E2E3EC72B328B92D6",
+  "size": 27329735,
+  "notes": "Brand new dark glass interface with the reactor backdrop, all features kept. Faster, smoother window, per-server time on map, Planet China cluster picker, Discord card finds your server from the game log, and many fixes.",
+  "signature": "9431a12870d83f8cb2776ec9889b218e954a62fb0c62b546249e4960f516832265eca8f98fb1d025815f8b2aebd72e994efdf4a8b68cfcc93487ca1e75c4c70e"
 }

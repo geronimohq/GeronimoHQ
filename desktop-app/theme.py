@@ -13,9 +13,14 @@ Design rules (owner brief, 2026-11-10; adjusted so every text color reaches 4.5:
   * team colors reserved: CT blue = links / secondary actions / humans, T gold = zombies
 Contrast: see tests/test_theme_contrast.py (prints the full table).
 """
+from __future__ import annotations   # annotations stay strings, so this module also imports where Tk is not bundled (web-window build)
+
 import os
-import tkinter as tk
-from tkinter import ttk
+try:
+    import tkinter as tk
+    from tkinter import ttk
+except Exception:   # the packaged web-window app has no Tk; only the classic Tk skin functions need it
+    tk = ttk = None
 
 # ---------------------------------------------------------------- surfaces
 SURFACE_BASE = "#1C2119"     # window background (dark olive-black, CRT phosphor feel)

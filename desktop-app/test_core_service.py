@@ -1,0 +1,503 @@
+"""Headless core used by the web-window front end: no real game servers, no real Windows changes, temp config."""
+import os
+import sys
+import threading
+import unittest
+from unittest import mock
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _test_isolation  # noqa: E402,F401  (temp config; must come first)
+import core_logic  # noqa: E402
+import core_service  # noqa: E402
+import server_browser  # noqa: E402
+
+
+def make_core():
+    events = []
+    with mock.patch.object(core_logic, "find_cs2_paths", return_value={"steam_path": "S", "cs2_dir": "D", "cs2_exe": "E", "cfg_dir": "C", "autoexec_cfg": None}):
+        core = core_service.Core(emit=lambda ev, data: events.append((ev, data)))
+    return core, events
+
+
+class Servers(unittest.TestCase):
+    def test_catalog_has_global_and_china_groups(self):
+        core, _ = make_core()
+        cat = core.servers_catalog()
+        self.assertEqual(sum(1 for s in cat if s["group"] == "china"), 35)
+        self.assertTrue(any(s["featured"] and s["id"] == "gfl" for s in cat))
+        self.assertEqual(len({s["id"] for s in cat}), len(cat))          # ids are unique
+
+    def test_status_counts_humans_and_builds_both_geo_views(self):
+        core, _ = make_core()
+        info = {"online": True, "map": "ze_x", "curr_players": 20, "bots": 15, "max_players": 65, "rtt": 141, "server_name": "n"}
+        with mock.patch.object(server_browser, "query_server_info", return_value=info), \
+             mock.patch.object(server_browser, "backend_player_names", return_value=[]):
+            st = core.server_status("net4all")
+        self.assertEqual((st["players"], st["bots"], st["humans"]), (20, 15, 5))
+        self.assertTrue(st["geo"]["countries"] and st["geo"]["regions"])
+        self.assertLessEqual(len(st["geo"]["regions"]), len(st["geo"]["countries"]))
+
+    def test_all_bots_means_no_geo_estimate(self):
+        core, _ = make_core()
+        info = {"online": True, "map": "m", "curr_players": 16, "bots": 16, "max_players": 65, "rtt": 100}
+        with mock.patch.object(server_browser, "query_server_info", return_value=info):
+            st = core.server_status("net4all")
+        self.assertEqual(st["humans"], 0)
+        self.assertEqual(st["geo"], {"countries": [], "regions": []})
+
+    def test_offline_and_unknown_servers_do_not_raise(self):
+        core, _ = make_core()
+        with mock.patch.object(server_browser, "query_server_info", return_value={"online": False}):
+            self.assertFalse(core.server_status("gfl")["online"])
+        self.assertFalse(core.server_status("nope")["online"])
+        with mock.patch.object(server_browser, "query_server_info", side_effect=RuntimeError("boom")):
+            rows = core.servers_status_many(["gfl", "possession"])
+        self.assertEqual([r["online"] for r in rows], [False, False])      # one failure never breaks the refresh
+
+    def test_add_server_validates_address(self):
+        core, _ = make_core()
+        self.assertFalse(core.servers_add("", "1.2.3.4", 27015)["ok"])
+        self.assertFalse(core.servers_add("x", "not a host!", 27015)["ok"])
+        with mock.patch.object(server_browser, "save_servers", return_value=True) as save:
+            self.assertTrue(core.servers_add("My ZE", "1.2.3.4", 27015)["ok"])
+        self.assertTrue(save.call_args[0][0][-1]["is_custom"])
+
+
+class Engine(unittest.TestCase):
+    def _patches(self):
+        names = ["optimize_windows_game_dvr", "disable_fullscreen_optimizations", "install_autoexec", "clean_shader_caches",
+                 "clean_cs2_temp_dumps", "set_power_plan", "remember_power_plan", "revert_windows_game_dvr",
+                 "revert_fullscreen_optimizations", "restore_autoexec_backup", "restore_previous_power_plan"]
+        ps = {}
+        for n in names:
+            ps[n] = mock.patch.object(core_logic, n, return_value=[f"{n} ok"]).start()
+        ps["install_autoexec"].return_value = (True, ["autoexec ok"])
+        ps["clean_shader_caches"].return_value = (3, 1024 * 1024, ["shaders ok"])
+        ps["clean_cs2_temp_dumps"].return_value = (1, 10, ["dumps ok"])
+        ps["restore_autoexec_backup"].return_value = (True, ["restored"])
+        self.addCleanup(mock.patch.stopall)
+        return ps
+
+    def _wait_job(self, events, name):
+        for _ in range(200):
+            if any(e[0] == "job" and e[1]["name"] == name for e in events):
+                return
+            threading.Event().wait(0.02)
+        self.fail("job did not finish")
+
+    def test_apply_runs_only_the_selected_tweaks_and_emits_done(self):
+        ps = self._patches()
+        core, events = make_core()
+        with mock.patch("app_config.save_config", return_value=True), mock.patch("app_config.update_optimization_timestamp", return_value=True):
+            self.assertTrue(core.engine_apply({"shaders": True, "gamedvr": True})["ok"])
+            self._wait_job(events, "engine_apply")
+        ps["clean_shader_caches"].assert_called_once()
+        ps["optimize_windows_game_dvr"].assert_called_once()
+        ps["install_autoexec"].assert_not_called()
+        ps["clean_cs2_temp_dumps"].assert_not_called()
+        self.assertIn(("job", {"name": "engine_apply", "ok": True}), events)
+        self.assertTrue(any(e[0] == "log" for e in events))
+
+    def test_second_job_is_refused_while_one_runs(self):
+        self._patches()
+        core, events = make_core()
+        gate = threading.Event()
+        with mock.patch.object(core_logic, "optimize_windows_game_dvr", side_effect=lambda: (gate.wait(2), ["slow"])[1]), \
+             mock.patch("app_config.update_optimization_timestamp", return_value=True):
+            self.assertTrue(core.engine_apply({"gamedvr": True})["ok"])
+            second = core.engine_apply({"shaders": True})
+            gate.set()
+            self._wait_job(events, "engine_apply")
+        self.assertFalse(second["ok"])
+
+    def test_restore_calls_every_revert(self):
+        ps = self._patches()
+        core, events = make_core()
+        with mock.patch("app_config.save_config", return_value=True):
+            core.engine_restore()
+            self._wait_job(events, "engine_restore")
+        for n in ("revert_windows_game_dvr", "revert_fullscreen_optimizations", "restore_autoexec_backup", "restore_previous_power_plan"):
+            ps[n].assert_called_once()
+
+    def test_power_plan_only_accepts_known_values(self):
+        self._patches()
+        core, _ = make_core()
+        self.assertFalse(core.power_set("ultimate")["ok"])
+
+
+class Settings(unittest.TestCase):
+    def test_refresh_rate_is_limited_to_1_5_15_and_shares_the_classic_setting(self):
+        core, _ = make_core()
+        with mock.patch("app_config.save_config", return_value=True):
+            self.assertTrue(core.config_set("web_refresh_seconds", 1))
+            self.assertEqual(core.config["server_refresh_speed"], "Live (1s)")
+            self.assertEqual(core._refresh_seconds(), 1)
+            self.assertFalse(core.config_set("web_refresh_seconds", 2))
+            self.assertFalse(core.config_set("something_else", 5))
+
+    def test_settings_roundtrip_ignores_unknown_keys_and_never_touches_the_registry(self):
+        core, _ = make_core()
+        with mock.patch("app_config.save_config", return_value=True), mock.patch("app_config.set_windows_startup", return_value=True) as startup:
+            r = core.settings_save({"start_minimized": True, "server_refresh_speed": "Eco (15s)", "presence_secret": "x", "bogus": 1})
+        self.assertTrue(r["ok"])
+        self.assertEqual(r["refresh_seconds"], 15)
+        self.assertTrue(core.config["start_minimized"])
+        self.assertNotEqual(core.config.get("presence_secret"), "x")      # secrets cannot be set from the page
+        startup.assert_called_once()
+        vals = core.settings_get()
+        self.assertEqual(vals["server_refresh_speed"], "Eco (15s)")
+        self.assertIn("Live (1s)", vals["speeds"])
+
+    def test_reset_keeps_the_presence_secret(self):
+        core, _ = make_core()
+        core.config["presence_secret"] = "keepme"
+        with mock.patch("app_config.save_config", return_value=True):
+            core.settings_reset()
+        self.assertEqual(core.config["presence_secret"], "keepme")
+
+
+class Presence(unittest.TestCase):
+    def test_buttons_use_the_server_discord_or_the_portal(self):
+        core, _ = make_core()
+        gfl = core.presence.buttons("74.91.124.21", 27015)
+        self.assertEqual(len(gfl), 2)
+        self.assertIn("GFL", gfl[1]["label"])
+        other = core.presence.buttons("9.9.9.9", 27015)
+        self.assertIn("geronimohq.com", other[1]["url"])      # never another community's Discord
+        self.assertTrue(gfl[0]["url"].startswith("https://geronimohq.com/connect?ip="))
+
+    def test_snapshot_is_empty_when_nothing_was_sent_to_discord(self):
+        core, _ = make_core()
+        with mock.patch.object(core.presence.rpc, "broadcast_snapshot", return_value=None), mock.patch.object(core_logic, "is_cs2_running", return_value=False):
+            snap = core.presence_state()
+        self.assertEqual((snap["details"], snap["state"], snap["buttons"]), ("", "", []))
+        self.assertFalse(snap["cs2_running"])
+
+    def test_match_by_map_picks_the_server_playing_that_map(self):
+        core, _ = make_core()
+
+        def fake_info(host, port, timeout=1.8):
+            return {"online": True, "map": "ze_target" if host == "103.62.49.55" else "ze_other"}
+        with mock.patch.object(server_browser, "query_server_info", side_effect=fake_info):
+            hit = core.presence._match_by_map("maps/ze_target")
+        self.assertEqual(hit[0], "103.62.49.55")
+
+    def test_toggle_off_clears_the_presence_and_saves(self):
+        core, _ = make_core()
+        with mock.patch("app_config.save_config", return_value=True), mock.patch.object(core.presence, "clear") as clear:
+            core.presence_toggle(False)
+        clear.assert_called_once()
+        self.assertFalse(core.config["discord_rpc_enabled"])
+
+
+class MapCleaner(unittest.TestCase):
+    ROWS = [{"id": "111", "name": "ze_a", "path": "X:/w/111", "size_bytes": 5, "status_label": "Temp", "status_type": "temp", "is_workshop": True},
+            {"id": "222", "name": "ze_b", "path": "X:/w/222", "size_bytes": 7, "status_label": "Temp", "status_type": "temp", "is_workshop": True}]
+
+    def _scan(self, core, events):
+        import custom_map_cleaner
+        with mock.patch.object(custom_map_cleaner, "scan_custom_maps", return_value=list(self.ROWS)), mock.patch("app_config.save_config", return_value=True):
+            self.assertTrue(core.maps_scan(["gfl"], True)["ok"])
+            for _ in range(200):
+                if any(e[0] == "job" and e[1]["name"] == "maps_scan" for e in events):
+                    break
+                threading.Event().wait(0.02)
+
+    def test_scan_emits_rows_without_paths(self):
+        core, events = make_core()
+        self._scan(core, events)
+        rows = next(d for e, d in events if e == "maps")
+        self.assertEqual([r["id"] for r in rows], ["111", "222"])
+        self.assertTrue(all("path" not in r for r in rows))     # the page never learns or sends filesystem paths
+
+    def test_delete_only_acts_on_scanned_items(self):
+        import custom_map_cleaner
+        core, events = make_core()
+        self._scan(core, events)
+        self.assertFalse(core.maps_delete(["999", "../../windows"])["ok"])        # unknown ids are refused
+        with mock.patch.object(custom_map_cleaner, "delete_custom_maps", return_value=(1, 5, ["[CLEANED]"])) as dele:
+            self.assertTrue(core.maps_delete(["111", "999"])["ok"])
+            for _ in range(200):
+                if any(e[0] == "maps_deleted" for e in events):
+                    break
+                threading.Event().wait(0.02)
+        sent = dele.call_args[0][0]
+        self.assertEqual([m["id"] for m in sent], ["111"])
+
+
+class Updates(unittest.TestCase):
+    MANIFEST = {"version": "9.9.9", "notes": "n", "size": 1, "url": "https://geronimohq.com/x.exe", "sha256": "0" * 64, "signature": "0" * 128}
+
+    def test_available_update_is_reported_and_remembered(self):
+        import updater
+        core, _ = make_core()
+        with mock.patch.object(updater, "fetch_update_manifest", return_value=(True, dict(self.MANIFEST), "ok")), mock.patch("app_config.save_config", return_value=True):
+            r = core.update_check(manual=True)
+        self.assertTrue(r["available"])
+        self.assertEqual(r["version"], "9.9.9")
+
+    def test_skipped_version_is_not_announced_at_startup_but_is_on_manual_check(self):
+        import updater
+        core, _ = make_core()
+        core.config["skipped_update_version"] = "9.9.9"
+        with mock.patch.object(updater, "fetch_update_manifest", return_value=(True, dict(self.MANIFEST), "ok")), mock.patch("app_config.save_config", return_value=True):
+            self.assertFalse(core.update_check(manual=False)["available"])
+            self.assertTrue(core.update_check(manual=True)["available"])
+
+    def test_startup_check_respects_the_setting_and_network_errors(self):
+        import updater
+        core, _ = make_core()
+        core.config["check_updates_on_startup"] = False
+        with mock.patch.object(updater, "fetch_update_manifest") as f:
+            self.assertFalse(core.update_check(manual=False)["available"])
+            f.assert_not_called()
+        core.config["check_updates_on_startup"] = True
+        with mock.patch.object(updater, "fetch_update_manifest", side_effect=OSError("offline")):
+            self.assertFalse(core.update_check(manual=True)["available"])
+
+    def test_install_needs_a_checked_update_and_the_packaged_app(self):
+        core, _ = make_core()
+        self.assertFalse(core.update_install()["ok"])               # nothing pending
+        core._pending_manifest = dict(self.MANIFEST)
+        self.assertFalse(core.update_install()["ok"])               # not frozen (running from source)
+
+
+class NoTkinter(unittest.TestCase):
+    def test_every_read_api_works_where_tkinter_is_not_bundled(self):
+        """The packaged web-window app has no Tk. A module that imports it at the top (theme.py did) silently broke the MPO and Launch pages."""
+        import subprocess
+        code = (
+            "import sys; sys.modules['tkinter'] = None; sys.modules['tkinter.ttk'] = None\n"
+            "import web_api\n"
+            "a = web_api.Api()\n"
+            "for n in ('app_info','hw_info','servers_catalog','engine_state','dashboard','maint_state','launch_state','dns_state','autoexec_state',"
+            "'mpo_state','settings_get','maps_settings','presence_state','sniper_status','start_page','restore_summary'):\n"
+            "    getattr(a, n)()\n"
+            "print('ALL_OK')\n"
+        )
+        env = dict(os.environ, PYTHONUTF8="1", PYTHONPATH=os.path.dirname(os.path.abspath(__file__)))
+        r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120, env=env, cwd=os.path.dirname(os.path.abspath(__file__)))
+        self.assertIn("ALL_OK", r.stdout, r.stderr[-800:])
+
+
+class AdminTrayWindow(unittest.TestCase):
+    def test_relaunch_admin_passes_the_tab_and_rejects_odd_values(self):
+        core, _ = make_core()
+        with mock.patch("ctypes.windll.shell32.ShellExecuteW", return_value=42) as sh, mock.patch("app_config.save_config", return_value=True):
+            self.assertTrue(core.relaunch_admin("booster")["ok"])
+            params = sh.call_args[0][3]
+            self.assertIn("--elevated", params)
+            self.assertIn("--page=booster", params)
+            core.relaunch_admin('x" & calc & "')
+            self.assertNotIn("calc", sh.call_args[0][3])           # nothing the page sends can reach the command line
+        with mock.patch("ctypes.windll.shell32.ShellExecuteW", return_value=5), mock.patch("app_config.save_config", return_value=True):
+            self.assertFalse(core.relaunch_admin("booster")["ok"])    # UAC declined
+
+    def test_elevated_start_resumes_the_tab(self):
+        core, _ = make_core()
+        with mock.patch.object(sys, "argv", ["x", "--elevated", "--page=booster"]):
+            self.assertEqual(core.start_page(), "booster")
+        with mock.patch.object(sys, "argv", ["x", "--page=nonsense"]):
+            self.assertEqual(core.start_page(), "dashboard")
+
+    def test_minimize_hides_to_tray_and_close_always_quits(self):
+        import web_api
+        api = web_api.Api()
+        api._window = mock.Mock()
+        api.tray = mock.Mock(icon=object())
+        api.core.config["minimize_to_tray_on_close"] = True
+        api.win_minimize()
+        api._window.hide.assert_called_once()
+        api._window.minimize.assert_not_called()
+        api.core.config["minimize_to_tray_on_close"] = False
+        api.win_minimize()
+        api._window.minimize.assert_called_once()
+        with mock.patch.object(api, "quit") as quit_:
+            api.win_close()
+        quit_.assert_called_once()                                   # [X] closes completely, tray or not
+
+
+class ServerExtras(unittest.TestCase):
+    def test_gfl_has_its_own_priority_and_other_servers_use_the_community_target(self):
+        core, _ = make_core()
+        started = []
+        sniper = mock.Mock()
+        sniper.start.side_effect = lambda host, port, name, **kw: started.append((host, kw["target_max_players"]))
+        with mock.patch.object(server_browser, "get_slot_sniper", return_value=sniper), mock.patch.object(server_browser, "query_server_info", return_value={"online": False}), \
+             mock.patch("app_config.save_config", return_value=True), mock.patch.object(core_logic, "is_cs2_running", return_value=True):
+            core.sniper_set_tier("gfl", "vip")
+            core.sniper_set_tier("community", "61")
+            core.sniper_start("gfl")
+            core.sniper_start("possession")
+        self.assertEqual(started, [("74.91.124.21", 63), ("103.62.49.55", 61)])
+        self.assertFalse(core.sniper_set_tier("gfl", "bogus")["ok"])
+        with mock.patch.object(core_logic, "is_cs2_running", return_value=False), mock.patch.object(server_browser, "get_slot_sniper", return_value=sniper):
+            r = core.sniper_start("gfl")
+        self.assertFalse(r["ok"])                                    # CS2 must be running, like the classic app
+        self.assertIn("must be running", r["error"])
+        core.config["community_sniper_slot_target"] = "<= 62 (Priority Slot)"
+        self.assertEqual(core.sniper_tiers()["community"], "62")      # values the classic app saved still work
+
+    def test_thumbnail_returns_a_data_uri_or_waits_for_the_download(self):
+        import tempfile
+        core, events = make_core()
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            f.write(b"\xff\xd8\xff" + b"0" * 2000)
+        try:
+            with mock.patch.object(server_browser, "get_or_download_map_thumbnail", return_value=f.name):
+                self.assertTrue(core.map_thumb("ze_x").startswith("data:image/jpeg;base64,"))
+            with mock.patch.object(server_browser, "get_or_download_map_thumbnail", return_value=None):
+                self.assertEqual(core.map_thumb("ze_y"), "")
+            self.assertEqual(core.map_thumb("-"), "")
+        finally:
+            os.unlink(f.name)
+
+
+class Gaps(unittest.TestCase):
+    def test_add_server_keeps_the_region(self):
+        core, _ = make_core()
+        with mock.patch.object(server_browser, "save_servers", return_value=True) as save:
+            self.assertTrue(core.servers_add("My ZE", "1.2.3.4", 27015, "Europe (Germany)")["ok"])
+        self.assertEqual(save.call_args[0][0][-1]["region"], "Europe (Germany)")
+
+    def test_catalog_carries_discord_and_website_links(self):
+        core, _ = make_core()
+        gfl = next(s for s in core.servers_catalog() if s["id"] == "gfl")
+        self.assertTrue(gfl["discord"] and gfl["website"])
+
+    def test_soundtrack_is_reshaped_for_the_page(self):
+        core, _ = make_core()
+        fake = [{"name": "Song A", "duration_str": "03:10", "tags": ["stage 1"], "youtube_url": "https://www.youtube.com/watch?v=x"}]
+        with mock.patch.object(server_browser, "query_zegraph_soundtrack", return_value=fake):
+            r = core.soundtrack("ze_x")
+        self.assertEqual(r["tracks"], [{"name": "Song A", "duration": "03:10", "tags": ["stage 1"], "url": "https://www.youtube.com/watch?v=x"}])
+
+    def test_3d_map_url_and_youtube_search_are_built_safely(self):
+        core, _ = make_core()
+        with mock.patch.object(core, "open_url", return_value=True) as ou:
+            core.open_3d_map("ze_Some_Map_v2")
+            self.assertTrue(ou.call_args[0][0].startswith("https://maps.cybo.dev/?map="))
+            core.open_youtube_search('a b&c="x"')
+            self.assertIn("search_query=a%20b%26c%3D%22x%22", ou.call_args[0][0])
+
+    def test_dns_status_is_cached_for_30_seconds(self):
+        core, _ = make_core()
+        with mock.patch.object(core_logic, "get_active_network_interface", return_value={"current_dns": "Cloudflare Gaming (1.1.1.1) [1.1.1.1, 1.0.0.1]"}) as g:
+            a, b = core.dns_status(), core.dns_status()
+        self.assertEqual(a, b)
+        self.assertEqual(g.call_count, 1)
+        self.assertEqual(a["state"], "provider")
+
+    def test_diagnostics_hide_the_user_name_and_addresses(self):
+        core, _ = make_core()
+        with mock.patch.dict(os.environ, {"USERNAME": "SecretUser"}):
+            text = core.diagnostics()
+        self.assertNotIn("SecretUser", text)
+        self.assertNotRegex(text, r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b")
+
+    def test_clear_log_empties_the_history(self):
+        core, _ = make_core()
+        core.log("x")
+        self.assertTrue(core.log_history())
+        core.log_clear()
+        self.assertEqual(core.log_history(), [])
+
+
+class AnalyzerHint(unittest.TestCase):
+    def test_condebug_already_set_is_recognised(self):
+        import hardware_info
+        core, _ = make_core()
+        missing = {"found": False, "message": "console.log not found in game/csgo/console.log (Add -condebug in Launch Options).", "log_path": "X:/csgo/console.log"}
+        with mock.patch.object(core_logic, "analyze_cs2_session_logs", return_value=dict(missing)),              mock.patch.object(hardware_info, "get_current_launch_options", return_value=("-novid -condebug +exec autoexec.cfg", "vdf")):
+            r = core.log_analyze()
+        self.assertTrue(r["condebug"])
+        self.assertIn("already in your Steam launch options", r["message"])
+        with mock.patch.object(core_logic, "analyze_cs2_session_logs", return_value=dict(missing)),              mock.patch.object(hardware_info, "get_current_launch_options", return_value=("-novid", "vdf")):
+            r2 = core.log_analyze()
+        self.assertFalse(r2.get("condebug"))
+        self.assertIn("Add -condebug", r2["message"])
+
+
+if __name__ == "__main__":
+    _res = unittest.main(exit=False, verbosity=2)
+    sys.stdout.flush(); sys.stderr.flush()
+    os._exit(0 if _res.result.wasSuccessful() else 1)
+
+
+class MapClock(unittest.TestCase):
+    def test_each_server_has_its_own_clock_and_it_survives_between_calls(self):
+        core, _ = make_core()
+        with mock.patch("time.time", return_value=1000.0):
+            a = core._map_clock("s1", "ze_a")
+        with mock.patch("time.time", return_value=1500.0):
+            b = core._map_clock("s2", "ze_b")
+            a2 = core._map_clock("s1", "ze_a")
+        self.assertEqual(a, (1000.0, False))               # first sighting: a lower bound
+        self.assertEqual(b, (1500.0, False))               # not synchronized with the other server
+        self.assertEqual(a2, (1000.0, False))              # does not reset on later calls
+        with mock.patch("time.time", return_value=1700.0):
+            self.assertEqual(core._map_clock("s1", "ze_c"), (1700.0, True))   # a seen map change is exact
+
+    def test_gfl_uses_the_zegraph_start_time(self):
+        core, _ = make_core()
+        m = {"success": True, "started_timestamp": 4242, "map": "ze_x"}
+        with mock.patch.object(server_browser, "query_zegraph_match_now", return_value=m):
+            self.assertEqual(core._map_clock("gfl", "ze_x"), (4242, True))
+            self.assertEqual(core.gfl_match()["started_sec"], 4242)
+
+
+class TrayFallback(unittest.TestCase):
+    def test_minimize_retries_the_tray_before_falling_back(self):
+        import web_api
+        api = web_api.Api()
+        api._window = mock.Mock()
+        api.core.config["minimize_to_tray_on_close"] = True
+        tray = mock.Mock(icon=None)
+        tray.start.side_effect = lambda: setattr(tray, "icon", object())
+        api.tray = tray
+        api.win_minimize()
+        tray.start.assert_called_once()
+        api._window.hide.assert_called_once()
+
+
+class MapClockRoster(unittest.TestCase):
+    def test_longest_player_session_sets_the_map_start(self):
+        core, _ = make_core()
+        c = {"map": "m", "start": 10_000.0, "exact": False, "probed": 0.0, "probing": True}
+        players = {"success": True, "players": [{"seconds": 90}, {"seconds": 1500}, {"seconds": 0}]}
+        with mock.patch.object(server_browser, "query_server_players", return_value=players), mock.patch("time.time", return_value=20_000.0):
+            core._probe_map_start(c, "h", 1)
+        self.assertEqual(c["start"], 18_500.0)
+        self.assertTrue(c["exact"])
+        self.assertFalse(c["probing"])
+
+
+class PresenceDetection(unittest.TestCase):
+    def test_map_match_prefers_gfl_and_skips_empty_servers(self):
+        core, _ = make_core()
+        p = core.presence
+        servers = [{"id": "gfl", "host": "1.1.1.1", "port": 1, "name": "GFL"}, {"id": "x", "host": "2.2.2.2", "port": 2, "name": "X"}]
+        infos = {"1.1.1.1": {"online": True, "map": "ze_a", "curr_players": 0}, "2.2.2.2": {"online": True, "map": "workshop/1/ze_a", "curr_players": 20}}
+        with mock.patch.object(p, "_servers", return_value=servers), mock.patch.object(server_browser, "query_server_info", side_effect=lambda h, po, timeout=1: infos[h]):
+            self.assertEqual(p._match_by_map("ze_a"), ("2.2.2.2", 2, "X"))
+            infos["1.1.1.1"]["curr_players"] = 5
+            self.assertEqual(p._match_by_map("ze_a"), ("1.1.1.1", 1, "GFL"))
+
+
+class ConsoleLogDetection(unittest.TestCase):
+    def test_last_host_activate_line_decides_the_server(self):
+        import tempfile
+        core, _ = make_core()
+        with tempfile.TemporaryDirectory() as d:
+            cfg = os.path.join(d, "cfg"); os.makedirs(cfg)
+            log = os.path.join(d, "console.log")
+            with mock.patch.dict(core.paths, {"cfg_dir": cfg}):
+                with open(log, "w", encoding="utf-8") as fh:
+                    fh.write("x\n[HostStateManager] Host activate: Remote Connect (74.91.124.21:27015)\n")
+                self.assertEqual(core.presence._from_console_log()[:2], ("74.91.124.21", 27015))
+                with open(log, "a", encoding="utf-8") as fh:
+                    fh.write("[HostStateManager] Host activate: Remote Connect (9.9.9.9:27016)\n")
+                self.assertEqual(core.presence._from_console_log(), ("9.9.9.9", 27016, "Server 9.9.9.9:27016"))
+                with open(log, "a", encoding="utf-8") as fh:
+                    fh.write("[HostStateManager] Host activate: Idle (levelload)\n")
+                self.assertIsNone(core.presence._from_console_log())

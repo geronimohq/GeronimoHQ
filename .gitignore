@@ -46,3 +46,6 @@ strings_*.txt
 
 # Local Claude Code preview config
 .claude/
+
+# built web UI (npm run build in desktop-ui)
+desktop-app/web/
