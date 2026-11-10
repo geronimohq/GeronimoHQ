@@ -1052,7 +1052,7 @@ class Core:
         self._vpk_scan = res
         self.log(f"[VPK] {res.get('message')}")
         return {"message": res.get("message"), "healthy": res.get("healthy_count", 0), "corrupted": res.get("corrupted_count", 0),
-                "total_gb": res.get("total_gb", 0), "bad": [a.get("name") or a.get("id") for a in res.get("addons", []) if a.get("status") != "Healthy"][:30]}
+                "total_gb": res.get("total_gb", 0), "bad": [f"{a.get('name') or a.get('workshop_id')} ({a.get('detail') or a.get('status')})" for a in res.get("addons", []) if a.get("status") != "Healthy"][:30]}
 
     def vpk_repair(self) -> Dict[str, Any]:
         scan = core_logic.scan_workshop_vpk_addons(self.paths.get("steam_path"), self.paths.get("cs2_exe"))
@@ -1060,8 +1060,10 @@ class Core:
         if not bad:
             return {"ok": True, "count": 0, "message": "No damaged Workshop VPK files were found. Nothing to remove."}
         res = core_logic.repair_corrupted_workshop_addons(bad)
+        for line in res.get("logs", []):
+            self.log(line)
         self.log(f"[VPK] {res.get('message')}")
-        return {"ok": True, "count": len(bad), "message": res.get("message", "")}
+        return {"ok": True, "count": res.get("repaired", 0), "skipped": res.get("skipped", 0), "message": res.get("message", "")}
 
     def maps_quick_stats(self) -> Dict[str, Any]:
         import custom_map_cleaner

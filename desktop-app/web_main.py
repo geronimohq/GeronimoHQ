@@ -137,6 +137,12 @@ def selftest(window, api) -> None:
             out.append(f"ok   {n}")
         except Exception:
             out.append(f"FAIL {n}: {traceback.format_exc(limit=2).strip().splitlines()[-1]}")
+    for n in ("vpk_verify", "log_analyze"):            # read-only; the message is recorded so an empty or failed scan is visible, not just a crash
+        try:
+            r = getattr(api, n)()
+            out.append(f"info {n}: {r.get('message') if isinstance(r, dict) else r}")
+        except Exception:
+            out.append(f"FAIL {n}: {traceback.format_exc(limit=2).strip().splitlines()[-1]}")
     with open(os.path.join(os.environ.get("TEMP", "."), "cs2cc_selftest.txt"), "w", encoding="utf-8") as fh:
         fh.write(chr(10).join(out) + chr(10))
     window.destroy()

@@ -137,7 +137,7 @@
    },
    {
     "q": "How does the Command Center know when I am already in the server?",
-    "a": "The app combines automatic signals: the connection line CS2 writes to console.log (needs -condebug, which the Launch Options tab can add), Valve Game State Integration (GSI) via local HTTP events, the map name matched against the server list, and your Steam name found in a live A2S player roster. When you connect, the app switches to tracking mode and disarms the sniper so it never fires duplicate connections."
+    "a": "The app combines automatic signals: the connection line CS2 writes to console.log (needs -condebug in your launch options, which you can type in the Launch Options tab), Valve Game State Integration (GSI) via local HTTP events, the map name matched against the server list, and your Steam name found in a live A2S player roster. When you connect, the app switches to tracking mode and disarms the sniper so it never fires duplicate connections."
    },
    {
     "q": "What are the Slot Sniper Priority Tiers (VIP / Mapper / Normal)?",
@@ -184,7 +184,7 @@
    },
    {
     "q": "How does the app know which server I am on?",
-    "a": "In this order: the connection line CS2 writes to console.log (needs -condebug, which the Launch Options tab can add), the map the game reports matched against the servers, and your Steam name found in a server's player roster. If none of these identify the server yet, Discord shows the generic card 'Zombie Escape Server' with the map and a GeronimoHQ Portal button, then switches to the full card as soon as the server is known. The activity log lists every card sent."
+    "a": "In this order: the connection line CS2 writes to console.log (needs -condebug in your launch options, which you can type in the Launch Options tab), the map the game reports matched against the servers, and your Steam name found in a server's player roster. If none of these identify the server yet, Discord shows the generic card 'Zombie Escape Server' with the map and a GeronimoHQ Portal button, then switches to the full card as soon as the server is known. The activity log lists every card sent."
    },
    {
     "q": "Do new users need to create or configure a Discord Application ID?",
@@ -227,6 +227,10 @@
    {
     "q": "Does clearing Discord & Steam web cache log me out of my accounts?",
     "a": "No! The cleaner specifically targets cached images, stickers, and Chromium/CEF web data in the Cache folders. It never touches login tokens, saved passwords, or session cookies."
+   },
+   {
+    "q": "What do 'Verify Workshop VPK health' and 'Repair corrupted VPKs' check, and what can they miss?",
+    "a": "Verify reads every workshop pack under steamapps/workshop/content/730 (all your Steam libraries that hold CS2) and checks the pack's index and that every data part it points to is on disk and long enough. That finds downloads that stopped half way, missing or short archive parts, empty or unreadable files, wrong file signatures and folders with leftover temporary files. It cannot see changed bytes inside a file that is complete and the right size, because that would mean reading every file in full. Repair removes only the packs Verify flagged. It refuses anything that is not a plain workshop item folder, never follows links, and skips a pack that changed in the last 15 minutes because Steam may still be downloading it. Removed packs are not sent to the recycle bin. A subscribed map is downloaded again by Steam on its next check, or when you join a server that needs it; maps you only played once are asked for again with a download dialog."
    }
   ]
  },

@@ -7,12 +7,14 @@ import crypto from 'node:crypto'
 
 // Compute exact SHA-256 of the desktop app binary at build time to prevent hash drift
 let calculatedExeHash = '66B78485C7C1F5622C12B702D07C83B7CEC781E344DC7AFE35B0272B494E7A01'
+let calculatedExeSizeMb = 26
 try {
   const exePath = path.resolve('public', 'CS2_Command_Center.exe')
   const distExePath = path.resolve('dist', 'CS2_Command_Center.exe')
   if (fs.existsSync(exePath)) {
     const buf = fs.readFileSync(exePath)
     calculatedExeHash = crypto.createHash('sha256').update(buf).digest('hex').toUpperCase()
+    calculatedExeSizeMb = Math.round(buf.length / (1024 * 1024))
 
     // Safety check: ensure dist/ and public/ binaries have not diverged locally
     // In CI or fresh checkouts where dist/ does not exist, this check is safely skipped.
@@ -112,6 +114,7 @@ function cspMetaPlugin() {
 export default defineConfig({
   define: {
     __APP_EXE_SHA256__: JSON.stringify(calculatedExeHash),
+    __APP_EXE_SIZE_MB__: JSON.stringify(calculatedExeSizeMb),
   },
   plugins: [
     react(),

@@ -318,7 +318,7 @@ export const App: React.FC = () => {
         {/* MODULE 2: INTERACTIVE WEB CS2 AUTOEXEC & ZE BINDS GENERATOR (#cfg-studio) */}
         <CS2AutoexecGeneratorSection />
 
-        {/* MODULE 3: CS2 COMMAND CENTER DESKTOP SUITE (1-Click App Download v2.0.3) */}
+        {/* MODULE 3: CS2 COMMAND CENTER DESKTOP SUITE (1-Click App Download v2.0.4) */}
         <CS2CommandCenterPreview />
 
       </main>
