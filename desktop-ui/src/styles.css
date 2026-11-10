@@ -318,3 +318,9 @@ html.max .statusbar{padding-bottom:8px}
 .srv{content-visibility:auto;contain-intrinsic-size:auto 128px}
 .spin,.core{will-change:transform}
 html.idle *,html.idle *::before,html.idle *::after{animation-play-state:paused!important}
+
+/* CPU: the backdrop sits under every glass panel, so each animation frame re-blurs all of them. Same motion, far fewer frames. */
+.spin{animation-timing-function:steps(240)}
+.core{animation-timing-function:steps(5)}
+.led{animation-timing-function:steps(3)}
+.dot{animation-timing-function:steps(2)}

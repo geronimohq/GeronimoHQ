@@ -42,10 +42,12 @@ function useNative(): boolean {
   const [n, setN] = useState(isNative());
   useEffect(() => {
     // pause the background animation while the window is hidden or minimized
-    const set = () => document.documentElement.classList.toggle('idle', document.hidden);
+    const set = () => { document.documentElement.classList.toggle('idle', document.hidden); void api.memTrim(document.hidden); };
     set();
+    const back = () => { void api.memTrim(false); };      // restored from the taskbar: leave low-memory mode
     document.addEventListener('visibilitychange', set);
-    return () => document.removeEventListener('visibilitychange', set);
+    window.addEventListener('focus', back);
+    return () => { document.removeEventListener('visibilitychange', set); window.removeEventListener('focus', back); };
   }, []);
   useEffect(() => {
     if (n) return;

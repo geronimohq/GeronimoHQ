@@ -108,6 +108,7 @@ export const api = {
   mapStats: () => call<{ count: number; gb: number }>('maps_quick_stats'),
   presenceRefresh: () => call<import('./types').PresenceState>('presence_refresh'),
   winMin: () => call<void>('win_minimize'),
+  memTrim: (low: boolean) => call<void>('mem_trim', low),
   winMax: () => call<boolean>('win_maximize'),
   winClose: () => call<void>('win_close'),
   winResize: (edge: string) => call<void>('win_resize', edge),
