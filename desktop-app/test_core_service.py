@@ -422,3 +422,39 @@ if __name__ == "__main__":
     _res = unittest.main(exit=False, verbosity=2)
     sys.stdout.flush(); sys.stderr.flush()
     os._exit(0 if _res.result.wasSuccessful() else 1)
+
+
+class MapClock(unittest.TestCase):
+    def test_each_server_has_its_own_clock_and_it_survives_between_calls(self):
+        core, _ = make_core()
+        with mock.patch("time.time", return_value=1000.0):
+            a = core._map_clock("s1", "ze_a")
+        with mock.patch("time.time", return_value=1500.0):
+            b = core._map_clock("s2", "ze_b")
+            a2 = core._map_clock("s1", "ze_a")
+        self.assertEqual(a, (1000.0, False))               # first sighting: a lower bound
+        self.assertEqual(b, (1500.0, False))               # not synchronized with the other server
+        self.assertEqual(a2, (1000.0, False))              # does not reset on later calls
+        with mock.patch("time.time", return_value=1700.0):
+            self.assertEqual(core._map_clock("s1", "ze_c"), (1700.0, True))   # a seen map change is exact
+
+    def test_gfl_uses_the_zegraph_start_time(self):
+        core, _ = make_core()
+        m = {"success": True, "started_timestamp": 4242, "map": "ze_x"}
+        with mock.patch.object(server_browser, "query_zegraph_match_now", return_value=m):
+            self.assertEqual(core._map_clock("gfl", "ze_x"), (4242, True))
+            self.assertEqual(core.gfl_match()["started_sec"], 4242)
+
+
+class TrayFallback(unittest.TestCase):
+    def test_minimize_retries_the_tray_before_falling_back(self):
+        import web_api
+        api = web_api.Api()
+        api._window = mock.Mock()
+        api.core.config["minimize_to_tray_on_close"] = True
+        tray = mock.Mock(icon=None)
+        tray.start.side_effect = lambda: setattr(tray, "icon", object())
+        api.tray = tray
+        api.win_minimize()
+        tray.start.assert_called_once()
+        api._window.hide.assert_called_once()

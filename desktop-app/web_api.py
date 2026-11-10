@@ -38,11 +38,15 @@ class Api:
         if not self._window:
             return
         try:
-            if self.core.config.get("minimize_to_tray_on_close", True) and getattr(self, "tray", None) and self.tray.icon:
-                self._window.hide()
-                self.core.log("Window hidden to the tray")
-            else:
-                self._window.minimize()
+            tray = getattr(self, "tray", None)
+            if self.core.config.get("minimize_to_tray_on_close", True):
+                if tray and not tray.icon:
+                    tray.start()                  # the icon failed earlier: try once more before giving up on the tray
+                if tray and tray.icon:
+                    self._window.hide()
+                    self.core.log("Window hidden to the tray")
+                    return
+            self._window.minimize()
         except Exception:
             pass
 

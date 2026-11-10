@@ -236,7 +236,7 @@ function Shell() {
       <section className={`glass log${drawer ? '' : ' shut'}`}>
         <button className="btn cut ghost sm logclear" onClick={() => { sfx.click(); void api.logClear(); setLogs([]); }}>Clear</button>
         <button className="loghead" onClick={() => { sfx.click(); setDrawer(!drawer); }} aria-expanded={drawer}>
-          <span className="sect">System activity log</span><span className="decal">// {last ? last.msg.slice(0, 70) : 'idle'}</span><span style={{ marginLeft: 'auto', color: 'var(--tx3)' }}><ChevronDown size={14} /></span>
+          <span className="sect">System activity log</span>{last && <span className="decal">// {last.msg.slice(0, 70)}</span>}<span style={{ marginLeft: 'auto', color: 'var(--tx3)' }}><ChevronDown size={14} /></span>
         </button>
         <div className="body">
           {logs.map((l, i) => <div key={i}><span style={{ color: 'var(--tx3)' }}>[{l.t}] </span><span className={`lt ${TAGCLS[l.tag] ?? 's'}`}>[{l.tag}]</span> {l.msg}</div>)}

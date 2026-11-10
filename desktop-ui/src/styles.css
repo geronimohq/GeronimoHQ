@@ -306,3 +306,7 @@ html.max .statusbar{padding-bottom:8px}
 .toplinks .r1,.toplinks .r2{display:flex;gap:6px}
 .logclear{width:auto!important;padding:5px 12px!important;right:56px;top:7px}
 .pl{max-width:100%}
+
+.geo .plmirror{position:absolute;visibility:hidden;pointer-events:none;height:0;overflow:hidden;white-space:nowrap}
+.geo .plmirror span{flex:none}
+.geo{position:relative}

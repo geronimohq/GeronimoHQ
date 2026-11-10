@@ -137,9 +137,32 @@ class Core:
                 geo = {"countries": self._geo_rows(items), "regions": self._geo_rows(geo_estimate.estimate_regions(items))}
             except Exception:
                 pass
-        return {"id": sid, "online": online, "map": info.get("map") if online else None, "players": total, "bots": bots,
+        cur_map = info.get("map") if online else None
+        since, exact = self._map_clock(sid, cur_map)
+        return {"id": sid, "online": online, "map": cur_map, "players": total, "bots": bots,
                 "humans": humans, "max": int(info.get("max_players") or 0), "ping": info.get("rtt") if online else None,
-                "name_live": info.get("server_name") if online else None, "geo": geo, "at": time.time()}
+                "name_live": info.get("server_name") if online else None, "geo": geo, "at": time.time(),
+                "map_since": since, "map_exact": exact}
+
+    def _map_clock(self, sid: str, cur_map: Optional[str]):
+        """Per-server map start, kept for the life of the app (like 1.6.0): exact once a map change was seen,
+        otherwise a lower bound from the first sighting. GFL uses the ZE Graph start time."""
+        clocks = self.__dict__.setdefault("_map_clocks", {})
+        if not cur_map:
+            return 0, False
+        c = clocks.get(sid)
+        if c is None or c["map"] != cur_map:
+            c = {"map": cur_map, "start": time.time(), "exact": c is not None}
+            clocks[sid] = c
+        if sid == "gfl":
+            try:
+                m = server_browser.query_zegraph_match_now()
+                ts = int(m.get("started_timestamp") or 0)
+                if m.get("success") and ts > 0 and m.get("map") == cur_map:
+                    return ts, True
+            except Exception:
+                pass
+        return c["start"], c["exact"]
 
     def servers_status_many(self, ids: List[str]) -> List[Dict[str, Any]]:
         return list(self._pool.map(lambda i: self._safe_status(i), ids))
@@ -154,7 +177,7 @@ class Core:
         try:
             m = server_browser.query_zegraph_match_now()
             return {"human_score": m.get("human_score", 0), "zombie_score": m.get("zombie_score", 0),
-                    "extend_count": m.get("extend_count", 0), "started_sec": m.get("started_sec", 0), "map": m.get("map", "")}
+                    "extend_count": m.get("extend_count", 0), "started_sec": m.get("started_timestamp", 0) if m.get("success") else 0, "map": m.get("map", "")}
         except Exception:
             return {}
 

@@ -35,7 +35,7 @@ function MapTimer({ since, exact }: { since: number; exact: boolean }) {
   return <span className="cell">&#9201; {exact ? '' : '≥ '}{m}:{String(s).padStart(2, '0')} on map</span>;
 }
 
-const Row = memo(function Row({ srv, st, mode, onMode, since, armed, onConnect, onPlayers, onSniper, onCopy, thumb, onLink, onRemove, cooldown }: { srv: Srv; st?: Status; mode: GeoMode; onMode: (m: GeoMode) => void; since?: number; armed: boolean; onConnect: () => void; onPlayers: () => void; onSniper: () => void; onCopy: () => void; thumb?: string; onLink: (k: '3d' | 'discord' | 'portal' | 'sound') => void; onRemove?: () => void; cooldown?: number }) {
+const Row = memo(function Row({ srv, st, mode, onMode, since, exact, armed, onConnect, onPlayers, onSniper, onCopy, thumb, onLink, onRemove, cooldown }: { srv: Srv; st?: Status; mode: GeoMode; onMode: (m: GeoMode) => void; since?: number; exact?: boolean; armed: boolean; onConnect: () => void; onPlayers: () => void; onSniper: () => void; onCopy: () => void; thumb?: string; onLink: (k: '3d' | 'discord' | 'portal' | 'sound') => void; onRemove?: () => void; cooldown?: number }) {
   const humans = st?.humans ?? 0;
   const fp = useFlash(humans), fg = useFlash(st?.ping);
   return (
@@ -48,14 +48,14 @@ const Row = memo(function Row({ srv, st, mode, onMode, since, armed, onConnect, 
                 <span className={`cell ${fp}`}>&#9679; <b>{humans}</b>/{st.max} humans</span>
                 {botsMostly(st) && <span className="cell bots" title={`${st.bots} of the ${st.players} players are bots (about ${humans} real). Totals exclude them.`}>&#129302; MOSTLY BOTS ({st.bots}/{st.players})</span>}
                 <span className={`cell cy ${fg}`}>{st.ping ?? '-'} ms</span>
-                {since ? <MapTimer since={since} exact={false} /> : null}
+                {since ? <MapTimer since={since} exact={!!exact} /> : null}
               </>
             : <span className="cell">{st ? '● Offline / not answering' : 'Querying…'}</span>}
         </div>
         <div className="decal" style={{ marginTop: 7 }}>{[srv.cluster || (srv.custom ? 'Custom' : ''), st?.map].filter(Boolean).join(' \u00B7 ')}</div>
         <div className="links">{st?.map && <button className="lnk" onClick={() => onLink('3d')}>3D map</button>}{st?.map && <button className="lnk" onClick={() => onLink('sound')}>Soundtrack</button>}{srv.discord && <button className="lnk" onClick={() => onLink('discord')}>Discord</button>}{srv.website && <button className="lnk" onClick={() => onLink('portal')}>Portal</button>}{onRemove && <button className="lnk bad" onClick={onRemove}>Remove server</button>}</div>
       </div></div>
-      <Geo countries={st?.geo?.countries ?? []} regions={st?.geo?.regions ?? []} mode={mode} onMode={onMode} humans={humans} max={7} />
+      <Geo countries={st?.geo?.countries ?? []} regions={st?.geo?.regions ?? []} mode={mode} onMode={onMode} humans={humans} />
       <div className="dock">
         <button className={`btn cut amber pri sm${st?.online ? '' : ' dim'}`} onClick={onConnect}>Connect</button>
         <button className={`btn cut ${armed ? 'armed' : 'ghost'} sm`} aria-pressed={armed} disabled={!!cooldown} onClick={onSniper}>{cooldown ? `Cooldown ${cooldown}s` : armed ? 'Sniper armed' : 'Sniper'}</button>
@@ -118,17 +118,12 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
   const [match, setMatch] = useState<Match>({});
   const [totals, setTotals] = useState<{ humans?: number; online?: number; total?: number }>({});
   const [adding, setAdding] = useState(false);
-  const seen = useRef<Record<string, { map: string; since: number }>>({});
   const busy = useRef({ list: false, feat: false });
 
   const loadCatalog = useCallback(() => { void api.catalog().then(setCatalog); }, []);
   useEffect(loadCatalog, [loadCatalog]);
 
   const merge = useCallback((rows: Status[]) => {
-    const now = Date.now() / 1000;
-    for (const r of rows) {
-      if (r.online && r.map && seen.current[r.id]?.map !== r.map) seen.current[r.id] = { map: r.map, since: now };
-    }
     setSt((p) => { const n = { ...p }; for (const r of rows) n[r.id] = r; return n; });
   }, []);
 
@@ -210,7 +205,8 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
   useEffect(() => { list.forEach((s) => wantThumb(st[s.id]?.map)); }, [list, st, wantThumb]);
   const fHumans = f?.humans ?? 0;
   const ringDash = f?.online && f.max ? Math.min(1, (f.players ?? 0) / f.max) : 0;
-  const featSince = match.started_sec && match.started_sec > 0 ? match.started_sec : seen.current[featured?.id ?? '']?.since;
+  const fst = st[featured?.id ?? ''];
+  const featSince = fst?.map_since;
   const setMode = (id: string) => (m: GeoMode) => setModes((p) => ({ ...p, [id]: m }));
   const fp = useFlash(fHumans), fg = useFlash(f?.ping);
 
@@ -250,14 +246,14 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
                     </svg>
                     <div className="v"><div>{f?.players ?? '--'}/{f?.max ?? '--'}<small>PLAYERS</small></div></div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+                  <div className="cells" style={{ minWidth: 0, flex: 1 }}>
                     <span className={`cell ${fp}`}>&#9679; <b>{fHumans}</b> humans</span>
                     <span className={`cell cy ${fg}`}>{f?.ping ?? '-'} ms</span>
-                    {featSince ? <MapTimer since={featSince} exact={!!match.started_sec} /> : null}
+                    {featSince ? <MapTimer since={featSince} exact={!!fst?.map_exact} /> : null}
                   </div>
                 </div>
                 <div className="stat"><span>Humans <b style={{ color: 'var(--cyan)' }}>{match.human_score ?? '-'}</b></span><span>Zombies <b style={{ color: 'var(--bad)' }}>{match.zombie_score ?? '-'}</b></span><span>Extends <b>{match.extend_count ?? '-'}/3</b></span></div>
-                <Geo countries={f?.geo?.countries ?? []} regions={f?.geo?.regions ?? []} mode={modes[featured.id] ?? 'country'} onMode={setMode(featured.id)} humans={fHumans} max={9} />
+                <Geo countries={f?.geo?.countries ?? []} regions={f?.geo?.regions ?? []} mode={modes[featured.id] ?? 'country'} onMode={setMode(featured.id)} humans={fHumans} />
                 <div className="prio"><span className="sect">GFL slot priority:</span><select className="sel" value={tiers.gfl} aria-label="GFL slot priority" title="Sets the player count at which the Slot Sniper joins GFL (for example up to 62 for a Supporter or Mapper reserved slot)." onChange={(e) => setTier('gfl', e.target.value)}>{GFL_TIERS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
                 <div className="dock">
                   <button className="btn cut amber pri sm" onClick={() => connect(featured)}><Play size={13} /> Connect</button>
@@ -288,7 +284,7 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {list.map((s) => <Row key={s.id} onLink={(k) => link(s, k)} onRemove={s.custom ? () => remove(s) : undefined} cooldown={cd(s)} thumb={thumbs[st[s.id]?.map ?? '']} onCopy={() => copyIp(s)} srv={s} st={st[s.id]} mode={modes[s.id] ?? 'country'} onMode={setMode(s.id)} since={seen.current[s.id]?.since} armed={isArmed(s)} onConnect={() => connect(s)} onPlayers={() => void players(s)} onSniper={() => toggleSniper(s)} />)}
+        {list.map((s) => <Row key={s.id} onLink={(k) => link(s, k)} onRemove={s.custom ? () => remove(s) : undefined} cooldown={cd(s)} thumb={thumbs[st[s.id]?.map ?? '']} onCopy={() => copyIp(s)} srv={s} st={st[s.id]} mode={modes[s.id] ?? 'country'} onMode={setMode(s.id)} since={st[s.id]?.map_since} exact={!!st[s.id]?.map_exact} armed={isArmed(s)} onConnect={() => connect(s)} onPlayers={() => void players(s)} onSniper={() => toggleSniper(s)} />)}
         {!list.length && <div className="glass card ph">No servers match.</div>}
       </div>
       <AnimatePresence>{playersFor && <PlayersDialog srv={playersFor} onClose={() => setPlayersFor(null)} onConnect={() => connect(playersFor)} />}</AnimatePresence>
