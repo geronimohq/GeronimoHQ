@@ -45,8 +45,10 @@ class Api:
                 if tray and tray.icon:
                     self._window.hide()
                     self.core.log("Window hidden to the tray")
+                    self.mem_trim(True)
                     return
             self._window.minimize()
+            self.mem_trim(True)
         except Exception:
             pass
 
@@ -121,12 +123,64 @@ class Api:
         except Exception as e:  # never break the UI; leave a trace for debugging
             self.core.log(f"[WINDOW] resize failed: {e}")
 
+    def mem_trim(self, low: bool = True) -> None:
+        """While the window is hidden or minimized: ask WebView2 for its low-memory mode and hand unused pages back to Windows
+        (they come back on demand). Normal mode again as soon as the window is shown."""
+        def work():
+            try:
+                import System
+                from Microsoft.Web.WebView2.Core import CoreWebView2MemoryUsageTargetLevel as L
+
+                def setlevel():
+                    self._window.native.webview.CoreWebView2.MemoryUsageTargetLevel = L.Low if low else L.Normal
+                self._window.native.Invoke(System.Action(setlevel))
+            except Exception:
+                pass
+            if low:
+                time.sleep(2.0)
+                self._empty_working_sets()
+        threading.Thread(target=work, daemon=True, name="mem-trim").start()
+
+    @staticmethod
+    def _empty_working_sets() -> None:
+        """EmptyWorkingSet on this process and every process it started (the WebView2 helpers)."""
+        try:
+            k32, psapi = ctypes.windll.kernel32, ctypes.windll.psapi
+
+            class PE(ctypes.Structure):
+                _fields_ = [("dwSize", wintypes.DWORD), ("cntUsage", wintypes.DWORD), ("th32ProcessID", wintypes.DWORD), ("th32DefaultHeapID", ctypes.c_void_p),
+                            ("th32ModuleID", wintypes.DWORD), ("cntThreads", wintypes.DWORD), ("th32ParentProcessID", wintypes.DWORD),
+                            ("pcPriClassBase", ctypes.c_long), ("dwFlags", wintypes.DWORD), ("szExeFile", ctypes.c_wchar * 260)]
+            snap = k32.CreateToolhelp32Snapshot(0x2, 0)
+            pairs, e = [], PE()
+            e.dwSize = ctypes.sizeof(PE)
+            ok = k32.Process32FirstW(snap, ctypes.byref(e))
+            while ok:
+                pairs.append((e.th32ProcessID, e.th32ParentProcessID))
+                ok = k32.Process32NextW(snap, ctypes.byref(e))
+            k32.CloseHandle(snap)
+            mine, grew = {os.getpid()}, True
+            while grew:
+                grew = False
+                for pid, parent in pairs:
+                    if parent in mine and pid not in mine:
+                        mine.add(pid)
+                        grew = True
+            for pid in mine:
+                h = k32.OpenProcess(0x0500, False, pid)       # PROCESS_SET_QUOTA | PROCESS_QUERY_INFORMATION
+                if h:
+                    psapi.EmptyWorkingSet(h)
+                    k32.CloseHandle(h)
+        except Exception:
+            pass
+
     def show_window(self) -> None:
         if self._window:
             try:
                 self._window.show()
                 self._window.restore()
                 self.fix_window_style()
+                self.mem_trim(False)
             except Exception:
                 pass
 
