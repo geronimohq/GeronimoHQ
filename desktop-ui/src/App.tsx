@@ -41,6 +41,13 @@ const EDGES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'] as const;
 function useNative(): boolean {
   const [n, setN] = useState(isNative());
   useEffect(() => {
+    // pause the background animation while the window is hidden or minimized
+    const set = () => document.documentElement.classList.toggle('idle', document.hidden);
+    set();
+    document.addEventListener('visibilitychange', set);
+    return () => document.removeEventListener('visibilitychange', set);
+  }, []);
+  useEffect(() => {
     if (n) return;
     const f = () => setN(isNative());
     window.addEventListener('pywebviewready', f);

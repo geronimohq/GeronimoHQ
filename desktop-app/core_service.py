@@ -139,7 +139,7 @@ class Core:
             except Exception:
                 pass
         cur_map = info.get("map") if online else None
-        since, exact = self._map_clock(sid, cur_map, s["host"], int(s["port"]), humans)
+        since, exact = self._map_clock(sid, cur_map, None if s.get("group") == "china" else s["host"], int(s["port"]), humans)
         return {"id": sid, "online": online, "map": cur_map, "players": total, "bots": bots,
                 "humans": humans, "max": int(info.get("max_players") or 0), "ping": info.get("rtt") if online else None,
                 "name_live": info.get("server_name") if online else None, "geo": geo, "at": time.time(),

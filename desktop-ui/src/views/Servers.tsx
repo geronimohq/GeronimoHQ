@@ -48,6 +48,7 @@ const Row = memo(function Row({ srv, st, mode, onMode, since, exact, armed, onCo
                 <span className={`cell ${fp}`}>&#9679; <b>{humans}</b>/{st.max} humans</span>
                 {botsMostly(st) && <span className="cell bots" title={`${st.bots} of the ${st.players} players are bots (about ${humans} real). Totals exclude them.`}>&#129302; MOSTLY BOTS ({st.bots}/{st.players})</span>}
                 <span className={`cell cy ${fg}`}>{st.ping ?? '-'} ms</span>
+                {(st.bots ?? 0) > 0 && !botsMostly(st) && <span className="cell" title={`${st.bots} of the ${st.players} players are bots. They are not counted as humans.`}>&#129302; {st.bots} bot{st.bots === 1 ? '' : 's'} excluded</span>}
                 {since ? <MapTimer since={since} exact={!!exact} /> : null}
               </>
             : <span className="cell">{st ? '● Offline / not answering' : 'Querying…'}</span>}
@@ -59,7 +60,7 @@ const Row = memo(function Row({ srv, st, mode, onMode, since, exact, armed, onCo
       <div className="dock">
         <button className={`btn cut amber pri sm${st?.online ? '' : ' dim'}`} onClick={onConnect}>Connect</button>
         <button className={`btn cut ${armed ? 'armed' : 'ghost'} sm`} aria-pressed={armed} disabled={!!cooldown} onClick={onSniper}>{cooldown ? `Cooldown ${cooldown}s` : armed ? 'Sniper armed' : 'Sniper'}</button>
-        <button className="btn cut ghost sm" onClick={onPlayers}>Players</button>
+        {srv.group !== 'china' && <button className="btn cut ghost sm" onClick={onPlayers}>Players</button>}
         <button className="btn cut ghost sm" onClick={onCopy}>Copy IP</button>
       </div>
     </article>
@@ -124,7 +125,9 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
   useEffect(loadCatalog, [loadCatalog]);
 
   const merge = useCallback((rows: Status[]) => {
-    setSt((p) => { const n = { ...p }; for (const r of rows) n[r.id] = r; return n; });
+    // keep the old object when nothing visible changed, so unchanged rows do not repaint on every refresh
+    const same = (a: Status, b: Status) => a.online === b.online && a.map === b.map && a.players === b.players && a.bots === b.bots && a.humans === b.humans && a.max === b.max && a.ping === b.ping && a.map_since === b.map_since && a.map_exact === b.map_exact && JSON.stringify(a.geo) === JSON.stringify(b.geo);
+    setSt((p) => { let n = p; for (const r of rows) { const o = p[r.id]; if (!o || !same(o, r)) { if (n === p) n = { ...p }; n[r.id] = r; } } return n; });
   }, []);
 
   const featured = catalog.find((s) => s.featured);
