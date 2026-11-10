@@ -154,3 +154,9 @@ Branch `ui-retro-skin`. Run `python desktop-apppp.py` (or build an exe), then l
 7. **Open the five windows**: Settings, Add Server, Players, Soundtrack, Custom Map Cleaner.
 8. **Keyboard**: Tab through a page; the focused control shows a thin light outline.
 Send me screenshots or a list of what looks off; I will fix those (items in UI_RETRO_SKIN.md section 5 are known).
+
+## I. Bot count fix (needs a backend redeploy)
+Net4All and one FYS server report `bots=0` but count their bots inside "players" (Net4All showed 16 players, 1 real).
+The desktop app is fixed (it asks the player list and treats the difference as bots). The same fix is in `backend/api.py`
+(`query_a2s_roster_count` + `fetch_single_server`); **geronimohq.com only shows the corrected numbers after the backend is redeployed.**
+Backend tests could not run on this PC (no `fastapi` installed); the desktop-side logic is covered by `test_bots_and_geo.py`.

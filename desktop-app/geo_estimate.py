@@ -162,3 +162,23 @@ def estimate_countries(server_region: str, total_players: int, player_names: Opt
                           "count": max(1, _js_round((pct / 100) * total_players))})
     items.sort(key=lambda it: -it["percentage"])
     return items
+
+
+REGION_METAS = {"NA": ("North America", "🌎"), "EU": ("Europe", "🌍"), "ASIA": ("Asia", "🌏"),
+                "LATAM": ("Latin America", "🌎"), "OTHER": ("Other Regions", "🌐")}
+
+
+def estimate_regions(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Country estimate rows -> continent rows (same shape), sorted by share. Mirrors the website's Region view."""
+    agg: Dict[str, Dict[str, Any]] = {}
+    for it in items or []:
+        cont = COUNTRY_METAS.get(it["code"], COUNTRY_METAS["OTHER"])["continent"]
+        a = agg.setdefault(cont, {"percentage": 0, "count": 0})
+        a["percentage"] += it["percentage"]
+        a["count"] += it["count"]
+    out = []
+    for cont, a in agg.items():
+        name, flag = REGION_METAS.get(cont, REGION_METAS["OTHER"])
+        out.append({"code": cont, "name": name, "flag": flag, "percentage": a["percentage"], "count": a["count"]})
+    out.sort(key=lambda r: -r["percentage"])
+    return out

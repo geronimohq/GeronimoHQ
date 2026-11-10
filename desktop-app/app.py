@@ -1686,6 +1686,46 @@ class CS2TruePanoramaApp(tk.Tk):
             setattr(self, timer_id, self.after(70, _apply))
         canvas.bind("<Configure>", _on_configure)
 
+    geo_mode = "country"
+
+    def _geo_render(self, sid):
+        """Redraws one server row's GEO line + tooltip for the current Country/Region mode."""
+        try:
+            w = self.server_row_widgets.get(sid)
+            if not w or "geo_args" not in w or not w["geo_lbl"].winfo_exists():
+                return
+            text, tip = server_browser.get_server_demographics(*w["geo_args"], mode=self.geo_mode)
+            w["geo_lbl"].config(text=text)
+            if w.get("geo_tooltip"):
+                w["geo_tooltip"].text = tip
+            for m, b in w.get("geo_btns", {}).items():
+                on = m == self.geo_mode
+                b.config(relief="sunken" if on else "raised", bg=theme.SURFACE_INSET if on else theme.SURFACE_RAISED,
+                         font=(theme.FONT_UI, theme.FS_11, "bold" if on else "normal"))
+        except Exception:
+            pass
+
+    def _gfl_geo_render(self):
+        try:
+            args = getattr(self, "_gfl_geo_args", None)
+            if args:
+                text, tip = server_browser.get_server_demographics(*args, mode=self.geo_mode)
+                self.gfl_geo_var.set(text)
+                if getattr(self, "gfl_geo_tooltip", None):
+                    self.gfl_geo_tooltip.text = tip
+            for m, b in getattr(self, "gfl_geo_btns", {}).items():
+                on = m == self.geo_mode
+                b.config(relief="sunken" if on else "raised", bg=theme.SURFACE_INSET if on else theme.SURFACE_RAISED,
+                         font=(theme.FONT_UI, theme.FS_11, "bold" if on else "normal"))
+        except Exception:
+            pass
+
+    def _set_geo_mode(self, mode):
+        self.geo_mode = mode
+        for sid in list(getattr(self, "server_row_widgets", {})):
+            self._geo_render(sid)
+        self._gfl_geo_render()
+
     def _sync_canvas_scroll(self, canvas, scrollbar):
         """Auto-hides scrollbar when content fits within visible canvas height with hysteresis."""
         try:
@@ -1698,7 +1738,11 @@ class CS2TruePanoramaApp(tk.Tk):
                 view_h = canvas.winfo_reqheight()
 
             is_mapped = scrollbar.winfo_ismapped()
-            if not is_mapped and content_h > view_h + 8:
+            if scrollbar is getattr(self, "engine_scrollbar", None):
+                # Engine Tweaks: no visible scrollbar (the page nearly fits); the mouse wheel still scrolls the small overflow
+                if is_mapped:
+                    scrollbar.pack_forget()
+            elif not is_mapped and content_h > view_h + 8:
                 scrollbar.pack(side="right", fill="y", before=canvas)
             elif is_mapped and content_h <= view_h:
                 scrollbar.pack_forget()
@@ -3246,7 +3290,19 @@ class CS2TruePanoramaApp(tk.Tk):
         Label(telemetry_row, text="vs", font=(theme.FONT_UI, theme.FS_12), fg=theme.TEXT_SECONDARY, bg=theme.SURFACE_INSET).pack(side="left", padx=(0, 4))
         Label(telemetry_row, textvariable=self.gfl_zombies_var, font=(theme.FONT_UI, theme.FS_12, "bold"), fg=theme.T_GOLD_TEXT, bg=theme.SURFACE_INSET).pack(side="left", padx=(0, 12))
         Label(telemetry_row, textvariable=self.gfl_extends_var, font=(theme.FONT_UI, theme.FS_12, "bold"), fg=theme.CT_BLUE_TEXT, bg=theme.SURFACE_INSET).pack(side="left", padx=(0, 12))
-        Label(telemetry_row, textvariable=self.gfl_geo_var, font=(theme.FONT_UI, theme.FS_11), fg=theme.TEXT_SECONDARY, bg=theme.SURFACE_INSET).pack(side="left", padx=(0, 12))
+        _gfl_geo_lbl = Label(telemetry_row, textvariable=self.gfl_geo_var, font=(theme.FONT_UI, theme.FS_11), fg=theme.TEXT_SECONDARY, bg=theme.SURFACE_INSET)
+        _gfl_geo_lbl.pack(side="left", padx=(0, 6))
+        self.gfl_geo_tooltip = add_tooltip(_gfl_geo_lbl, "Live geographic demographics (estimate). Updates when the server answers.")
+        self.gfl_geo_btns = {}
+        for _mode, _txt, _tt in (("country", "Country", "Show the estimate by individual countries."),
+                                 ("region", "Region", "Show the estimate by world region (North America, Europe, Asia...).")):
+            _b = Button(telemetry_row, text=_txt, font=(theme.FONT_UI, theme.FS_11), padx=5, pady=0, cursor="hand2",
+                        fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_RAISED, command=lambda m=_mode: self._set_geo_mode(m))
+            _b.pack(side="left", padx=(0 if _mode == "country" else 2, 0))
+            add_tooltip(_b, _tt)
+            self.gfl_geo_btns[_mode] = _b
+        self.gfl_geo_btns["region"].pack_configure(padx=(2, 12))
+        self.after_idle(self._gfl_geo_render)
 
         b_soundtrack = Button(telemetry_row, text="🎵 Soundtrack (Intel)", font=(theme.FONT_UI, theme.FS_12, "bold"),
                                  fg=theme.CT_BLUE_TEXT, bg=theme.SURFACE_INSET, activebackground=theme.SURFACE_INSET, relief="flat", padx=8, pady=4, cursor="hand2",
@@ -3565,12 +3621,22 @@ class CS2TruePanoramaApp(tk.Tk):
             # Row 3: Geo Radar Demographics
             r3 = Frame(info_col, bg=theme.SURFACE_INSET)
             r3.pack(anchor="w", pady=(1, 0))
-            geo_init = server_browser.get_server_demographics_text(
-                s.get("region") or self._region_for_server(s.get("id", "")),
-                max(0, int(c_curr or 0) - int(c_info.get("bots") or 0)) if cached.get("online") else 0,
-                names=server_browser.backend_player_names(s.get("id", "")))
+            _geo_args = (s.get("region") or self._region_for_server(s.get("id", "")),
+                         max(0, int(c_curr or 0) - int(c_info.get("bots") or 0)) if cached.get("online") else 0,
+                         None, server_browser.backend_player_names(s.get("id", "")))
+            geo_init, geo_tip = server_browser.get_server_demographics(*_geo_args, mode=self.geo_mode)
             geo_lbl = Label(r3, text=geo_init, font=(theme.FONT_UI, theme.FS_11), fg=theme.TEXT_SECONDARY, bg=theme.SURFACE_INSET)
             geo_lbl.pack(side="left")
+            geo_tooltip = add_tooltip(geo_lbl, geo_tip)
+            geo_btns = {}
+            for _mode, _txt, _tt in (("country", "Country", "Show the estimate by individual countries."),
+                                     ("region", "Region", "Show the estimate by world region (North America, Europe, Asia...).")):
+                _b = Button(r3, text=_txt, font=(theme.FONT_UI, theme.FS_11), padx=5, pady=0, cursor="hand2",
+                            fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_RAISED,
+                            command=lambda m=_mode: self._set_geo_mode(m))
+                _b.pack(side="left", padx=(6 if _mode == "country" else 2, 0))
+                add_tooltip(_b, _tt)
+                geo_btns[_mode] = _b
 
             self.server_row_widgets[sid] = {
                 "row_frame": row,
@@ -3578,6 +3644,9 @@ class CS2TruePanoramaApp(tk.Tk):
                 "players_lbl": players_lbl,
                 "timer_lbl": timer_lbl,
                 "geo_lbl": geo_lbl,
+                "geo_tooltip": geo_tooltip,
+                "geo_btns": geo_btns,
+                "geo_args": _geo_args,
                 "thumb_lbl": thumb_lbl,
                 "cached_map": cached_map,
                 "server": s
@@ -3587,6 +3656,8 @@ class CS2TruePanoramaApp(tk.Tk):
         bottom_spacer = Frame(self.server_list_frame, bg=BG_CARD, height=36)
         bottom_spacer.pack(fill="x", pady=(4, 12))
 
+        for _sid in list(self.server_row_widgets):
+            self._geo_render(_sid)
         self.server_list_frame.update_idletasks()
         self._sync_canvas_scroll(self.server_canvas, self.server_scrollbar)
 
@@ -6932,11 +7003,10 @@ class CS2TruePanoramaApp(tk.Tk):
                         self.safe_after(0, lambda t=gfl_txt: self.gfl_status_text.set(t))
                         # AUDIT P2-#5: humans only + measured ZEGraph continents (same source as the website)
                         gfl_humans = max(0, int(curr_gfl_p or 0) - int(info.get("bots") or 0))
-                        gfl_geo = server_browser.get_server_demographics_text(
-                            "North America (Chicago, US)", gfl_humans,
-                            server_browser.fetch_gfl_continents() if gfl_humans > 0 else None,
-                            names=server_browser.backend_player_names("gfl"))
-                        self.safe_after(0, lambda g=gfl_geo: self.gfl_geo_var.set(g))
+                        self._gfl_geo_args = ("North America (Chicago, US)", gfl_humans,
+                                              server_browser.fetch_gfl_continents() if gfl_humans > 0 else None,
+                                              server_browser.backend_player_names("gfl"))
+                        self.safe_after(0, self._gfl_geo_render)
                         self.server_query_cache["gfl"] = {"display": gfl_txt, "online": True, "map": gfl_map, "info": info}
                         self.server_query_cache["74.91.124.21_27015"] = self.server_query_cache["gfl"]
 
@@ -7013,11 +7083,10 @@ class CS2TruePanoramaApp(tk.Tk):
                                 self.safe_after(0, lambda w=w_dict["players_lbl"], p=p_str: w.config(text=f"👥 {p} Players"))
                             # Update geo radar demographics
                             if "geo_lbl" in w_dict:
-                                g_text = server_browser.get_server_demographics_text(
-                                    s.get("region") or self._region_for_server(sid),
-                                    max(0, int(curr_p or 0) - int(info.get("bots") or 0)),
-                                    names=server_browser.backend_player_names(sid))
-                                self.safe_after(0, lambda w=w_dict["geo_lbl"], g=g_text: w.config(text=g))
+                                w_dict["geo_args"] = (s.get("region") or self._region_for_server(sid),
+                                                      max(0, int(curr_p or 0) - int(info.get("bots") or 0)),
+                                                      None, server_browser.backend_player_names(sid))
+                                self.safe_after(0, lambda i=sid: self._geo_render(i))
                     else:
                         disp = "● Ready to Join"
                         self.server_query_cache[sid] = {"display": disp, "online": False, "map": None, "info": None}
@@ -7028,8 +7097,8 @@ class CS2TruePanoramaApp(tk.Tk):
                             if "timer_lbl" in w_dict:
                                 self.safe_after(0, lambda w=w_dict["timer_lbl"]: w.config(text="⏱️ --:-- on map"))
                             if "geo_lbl" in w_dict:
-                                g_idle = server_browser.get_server_demographics_text(s.get("region", ""), 0)
-                                self.safe_after(0, lambda w=w_dict["geo_lbl"], g=g_idle: w.config(text=g))
+                                w_dict["geo_args"] = (s.get("region", ""), 0, None, [])
+                                self.safe_after(0, lambda i=sid: self._geo_render(i))
 
                     target_key = f"{s['host']}:{s['port']}"
                     if not (self.sniper.is_active and self.active_sniper_target == target_key):
@@ -7521,7 +7590,7 @@ class CS2TruePanoramaApp(tk.Tk):
             update_filter_button_labels()
             render_maps()
 
-        cb_gfl = Checkbutton(prot_bar, text="GFL (355+ ZE)", variable=var_prot_gfl, font=(theme.FONT_UI, theme.FS_13),
+        cb_gfl = Checkbutton(prot_bar, text="GFL", variable=var_prot_gfl, font=(theme.FONT_UI, theme.FS_13),
                                 fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET, selectcolor=theme.SURFACE_INSET, activebackground=theme.SURFACE_INSET,
                                 activeforeground=theme.GOOD_TEXT, cursor="hand2", command=_on_prot_changed)
         cb_gfl.pack(side="left", padx=(0, 6))

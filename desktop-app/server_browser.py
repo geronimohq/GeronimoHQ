@@ -388,24 +388,37 @@ def _get_s2ze_map_meta(clean_map: str):
         return _S2ZE_CACHE_MAPS[stripped]
     return None
 
-def get_server_demographics_text(region_name: str, total_players: int, geo: Optional[Dict[str, Any]] = None,
-                                 names: Optional[List[str]] = None, max_items: int = 4) -> str:
-    """GEO line, same method as geronimohq.com (owner request 2026-11-10): an ESTIMATE from
+def get_server_demographics(region_name: str, total_players: int, geo: Optional[Dict[str, Any]] = None,
+                            names: Optional[List[str]] = None, max_items: int = 4, mode: str = "country"):
+    """GEO line + tooltip, same method as geronimohq.com (owner request 2026-11-10): an ESTIMATE from
     player-name signals + a time-of-day model per region, aligned to ZEGraph's measured
     continents for GFL. See geo_estimate.py (a line-by-line port of serverDemographics.ts;
-    a test checks both give the same numbers). Only counts/names the servers already
-    publish are used; no player is shown."""
+    a test checks both give the same numbers). mode = "country" or "region". Only counts/names the
+    servers already publish are used; no player is shown. Returns (text, tooltip)."""
     if total_players <= 0:
-        return "🌐 GEO: server empty"
+        return "🌐 GEO: server empty", "No players on the server right now."
     import geo_estimate
     raw = (geo or {}).get("raw") if isinstance(geo, dict) else None
     items = geo_estimate.estimate_countries(region_name, total_players, names or [], raw)
     if not items:
-        return "🌐 GEO: no estimate"
+        return "🌐 GEO: no estimate", "Not enough data for an estimate."
+    if mode == "region":
+        items = geo_estimate.estimate_regions(items)
+    label = "By Region" if mode == "region" else "By Country"
     parts = [f"{it['code']} {it['percentage']}%" for it in items[:max_items]]
     more = len(items) - max_items
     tail = f" · +{more} more" if more > 0 else ""
-    return "🌐 GEO (estimate): " + " · ".join(parts) + tail
+    text = "🌐 GEO (estimate): " + " · ".join(parts) + tail
+    lines = [f"{it['name']}: {it['percentage']}% (~{it['count']} players)" for it in items]
+    tip = (f"Live geographic demographics ({label}), an estimate:" + chr(10) + chr(10).join(lines) + chr(10)
+           + "Based on player-name signals and the time-of-day activity of each region." + chr(10)
+           + "No individual player is identified.")
+    return text, tip
+
+
+def get_server_demographics_text(region_name: str, total_players: int, geo: Optional[Dict[str, Any]] = None,
+                                 names: Optional[List[str]] = None, max_items: int = 4, mode: str = "country") -> str:
+    return get_server_demographics(region_name, total_players, geo, names, max_items, mode)[0]
 
 
 _CONTINENT_SHORT = {"North America": "N. America", "South America": "S. America"}
@@ -667,7 +680,16 @@ def query_server_info(host: str, port: int, timeout: float = 1.8) -> Dict[str, A
             players = data[idx]
             max_players = data[idx + 1]
             bots = data[idx + 2]
-            
+            # Some servers (Net4All, FYS) report bots=0 but count bots in "players". A2S_PLAYER lists humans
+            # only, so when its roster is smaller than players - bots, the difference is bots.
+            if players > 0 and bots == 0:
+                try:
+                    roster = query_server_players(host, port, timeout=1.5)
+                    if roster.get("success") and roster.get("count", 0) < players:
+                        bots = players - roster["count"]
+                except Exception:
+                    pass
+
             return {
                 "online": True,
                 "status": "Online",

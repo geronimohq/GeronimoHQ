@@ -346,12 +346,43 @@ def query_a2s_players(host: str, port: int, timeout: float = 1.8) -> List[Dict[s
         sock.close()
     return players
 
+def query_a2s_roster_count(host: str, port: int, timeout: float = 1.5):
+    """Number of entries in the A2S_PLAYER reply (humans only), or None if the server did not answer."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.settimeout(timeout)
+    try:
+        target_ip = socket.gethostbyname(host)
+        sock.sendto(b"\xFF\xFF\xFF\xFF\x55\xFF\xFF\xFF\xFF", (target_ip, port))
+        data, addr = sock.recvfrom(4096)
+        if addr[0] != target_ip:
+            return None
+        if len(data) >= 9 and data[4] == 0x41:
+            sock.sendto(b"\xFF\xFF\xFF\xFF\x55" + data[5:9], (target_ip, port))
+            data, addr = sock.recvfrom(8192)
+            if addr[0] != target_ip:
+                return None
+        if len(data) > 5 and data[4] == 0x44:
+            return int(data[5])
+    except Exception:
+        return None
+    finally:
+        sock.close()
+    return None
+
 def fetch_single_server(s: Dict[str, Any]) -> Dict[str, Any]:
     sid = s["id"]
     info = query_a2s_info(s["host"], s["port"])
     player_list = []
     if s["allow_players"] and info["online"]:
         player_list = query_a2s_players(s["host"], s["port"])
+
+    # Some servers (Net4All, FYS) report bots=0 but count their bots in "players"; A2S_PLAYER lists humans
+    # only. If the roster is smaller than players - bots, the difference is bots.
+    if info["online"] and info.get("curr_players", 0) > 0 and info.get("bots", 0) == 0:
+        roster_count = query_a2s_roster_count(s["host"], s["port"])
+        if roster_count is not None and roster_count < info["curr_players"]:
+            info["bots"] = info["curr_players"] - roster_count
+            info["humans"] = roster_count
 
     now_ts = int(time.time())
     current_map = info["map"]
