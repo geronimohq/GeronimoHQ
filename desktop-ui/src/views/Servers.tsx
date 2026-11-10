@@ -52,7 +52,7 @@ const Row = memo(function Row({ srv, st, mode, onMode, since, armed, onConnect, 
               </>
             : <span className="cell">{st ? '● Offline / not answering' : 'Querying…'}</span>}
         </div>
-        <div className="decal" style={{ marginTop: 7 }}>{srv.cluster || 'Custom'}{st?.map ? ` \u00B7 ${st.map}` : ''}</div>
+        <div className="decal" style={{ marginTop: 7 }}>{[srv.cluster || (srv.custom ? 'Custom' : ''), st?.map].filter(Boolean).join(' \u00B7 ')}</div>
         <div className="links">{st?.map && <button className="lnk" onClick={() => onLink('3d')}>3D map</button>}{st?.map && <button className="lnk" onClick={() => onLink('sound')}>Soundtrack</button>}{srv.discord && <button className="lnk" onClick={() => onLink('discord')}>Discord</button>}{srv.website && <button className="lnk" onClick={() => onLink('portal')}>Portal</button>}{onRemove && <button className="lnk bad" onClick={onRemove}>Remove server</button>}</div>
       </div></div>
       <Geo countries={st?.geo?.countries ?? []} regions={st?.geo?.regions ?? []} mode={mode} onMode={onMode} humans={humans} />
