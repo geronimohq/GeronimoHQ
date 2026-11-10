@@ -1,9 +1,9 @@
 {
-  "version": "2.0.1",
-  "build_date": "2026-11-10",
+  "version": "2.0.2",
+  "build_date": "2026-11-11",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "7A60FC7382D8DE8859891173BA6A2A78EE24A902C1957C75DAE3CBDFCBFCD1C1",
-  "size": 27331203,
-  "notes": "Smoother and lighter: the reactor backdrop uses about half the CPU, the app trims its memory while minimized or in the tray, and the Discord card now finds your server from the game log.",
-  "signature": "36dc93f4e57c9c9b9f92964d1142f26bd2fe443a37896de96c83b0015d6c521fe7a5d70e0748d4b6d29134be617c51938d902408775005432a676086c896ba02"
+  "sha256": "8CDFF61502EF63819426F0B97F33CC6F5A8B66C794F1C031E12CC71588814463",
+  "size": 27338160,
+  "notes": "Missing-map warning with a one-click Steam workshop link, confirm boxes now appear above the Map Cleaner, Discord card tidy-up, CS2 pill removed from the top bar, and a fully refreshed Help & FAQ.",
+  "signature": "c626b87f4540e3b7eafcd5c8898f6619c8b36d37f86db57a4e832889457bdb87a5f110ea80c577c19681b569a26ce0106331e906e3ace03325f766fed09ce602"
 }
