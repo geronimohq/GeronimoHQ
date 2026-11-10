@@ -1,9 +1,9 @@
 {
-  "version": "2.0.2",
+  "version": "2.0.3",
   "build_date": "2026-11-11",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "8CDFF61502EF63819426F0B97F33CC6F5A8B66C794F1C031E12CC71588814463",
-  "size": 27338160,
-  "notes": "Missing-map warning with a one-click Steam workshop link, confirm boxes now appear above the Map Cleaner, Discord card tidy-up, CS2 pill removed from the top bar, and a fully refreshed Help & FAQ.",
-  "signature": "c626b87f4540e3b7eafcd5c8898f6619c8b36d37f86db57a4e832889457bdb87a5f110ea80c577c19681b569a26ce0106331e906e3ace03325f766fed09ce602"
+  "sha256": "36D323E6131ABEE419D30DA7EA647BFC1604780379F42FEC33135534DC9E5ED7",
+  "size": 27339127,
+  "notes": "Fixes the in-app updater: the app now closes and restarts into the new version by itself, with no duplicate or stuck copy. Keeps all 2.0.2 features.",
+  "signature": "ba1cf83c6cf2f6c7aad3b8f19db22457939ac8c818209d3e70564526fa4a3e560fca6bc0a46f794a86a74e451380f79dc5e059093de71a5284f5659646484309"
 }
