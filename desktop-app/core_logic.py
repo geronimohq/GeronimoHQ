@@ -7,6 +7,7 @@ Universal hardware safety, custom binds preservation, and safe PC maintenance to
 import os
 import sys
 import shutil
+import datetime
 import winreg
 import subprocess
 import ctypes
@@ -1379,6 +1380,74 @@ def _extract_vpk_hint_name(vpk_path: str) -> str:
         pass
     return "CS2 Workshop Addon Pack"
 
+def check_vpk_integrity(vpk_path: str) -> Tuple[bool, str]:
+    """Deep check of a VPK v2 index file (a single <id>.vpk or a <id>_dir.vpk): parses the directory tree and verifies that the data it points to
+    is really on disk. Header size fields must fit the file, and every archive part (<id>_000.vpk, ...) must exist and be at least as long as the
+    furthest byte the tree needs. A download that stopped half way keeps a valid header, so the 4-byte magic check alone cannot see it."""
+    try:
+        size = os.path.getsize(vpk_path)
+        with open(vpk_path, "rb") as fh:
+            head = fh.read(28)
+            if len(head) < 28:
+                return False, "file shorter than a VPK header"
+            sig, ver = struct.unpack("<II", head[:8])
+            if sig != 0x55AA1234:
+                return False, "invalid VPK signature"
+            if ver != 2:
+                return True, ""                                  # other versions: signature check only
+            tree, fds, amd5, omd5, sigsec = struct.unpack("<IIIII", head[8:28])
+            if 28 + tree > size:
+                return False, "directory tree is cut off"
+            data = fh.read(tree)
+        pos = 0
+        extents: Dict[int, int] = {}
+
+        def cstr() -> bytes:
+            nonlocal pos
+            end = data.index(b"\x00", pos)
+            val = data[pos:end]
+            pos = end + 1
+            return val
+
+        while True:
+            if not cstr():
+                break                                            # empty extension: end of tree
+            while True:
+                if not cstr():
+                    break                                        # empty path: next extension
+                while True:
+                    if not cstr():
+                        break                                    # empty filename: next path
+                    _crc, preload, arch, off, ln, term = struct.unpack_from("<IHHIIH", data, pos)
+                    pos += 18 + preload
+                    if term != 0xFFFF:
+                        return False, "directory entry is damaged"
+                    if ln:
+                        extents[arch] = max(extents.get(arch, 0), off + ln)
+        base = vpk_path[:-8] if vpk_path.lower().endswith("_dir.vpk") else None
+        for arch, need in extents.items():
+            if arch == 0x7FFF:                                   # data stored inside this same file, after the tree
+                if 28 + tree + need > size:
+                    return False, "file data is cut off (file is shorter than its index says)"
+            else:
+                if base is None:
+                    return False, "index points to archive parts that do not exist"
+                part = f"{base}_{arch:03d}.vpk"
+                if not os.path.isfile(part):
+                    return False, f"missing archive part {os.path.basename(part)}"
+                if os.path.getsize(part) < need:
+                    return False, f"{os.path.basename(part)} is shorter than its index says (incomplete download)"
+        if 0x7FFF in extents or fds:
+            total = 28 + tree + fds + amd5 + omd5 + sigsec
+            if size < total:
+                return False, "file is shorter than its header says"
+        return True, ""
+    except (ValueError, struct.error, IndexError):
+        return False, "directory index cannot be read"
+    except OSError as e:
+        return False, f"read error ({e.__class__.__name__})"
+
+
 def scan_workshop_vpk_addons(steam_path: Optional[str], cs2_exe: Optional[str]) -> Dict[str, Any]:
     """Scans Steam Workshop content folders (steamapps/workshop/content/730) and verifies VPK header integrity."""
     candidate_dirs = []
@@ -1402,9 +1471,14 @@ def scan_workshop_vpk_addons(steam_path: Optional[str], cs2_exe: Optional[str]) 
     healthy_count = 0
     corrupted_count = 0
 
+    scan_errors = 0
     for ws_root in candidate_dirs:
         try:
-            for entry in os.scandir(ws_root):
+            entries = list(os.scandir(ws_root))
+        except Exception:
+            continue
+        for entry in entries:
+            try:
                 if not entry.is_dir():
                     continue
                 ws_id = entry.name
@@ -1433,20 +1507,23 @@ def scan_workshop_vpk_addons(steam_path: Optional[str], cs2_exe: Optional[str]) 
                 total_bytes += folder_size
                 status = "Healthy"
                 status_label = "✅ Healthy VPK"
+                detail = ""
                 hint_name = KNOWN_ZE_WORKSHOP_PACKS.get(ws_id, "")
 
                 if temp_files or not vpk_files:
                     status = "Incomplete / Temp Lock"
                     status_label = "⚠️ Incomplete / Temp Lock"
+                    detail = "leftover temporary download files" if temp_files else "no .vpk file in the folder"
                     corrupted_count += 1
                 else:
                     # Check VPK magic bytes (0x55aa1234 -> \x34\x12\xaa\x55) on main VPK
                     dir_vpks = [p for p, sz in vpk_files if p.lower().endswith("_dir.vpk")] or [vpk_files[0][0]]
                     for vp in dir_vpks:
                         try:
-                            if os.path.getsize(vp) < 64:
+                            if os.path.getsize(vp) < 28:
                                 status = "Corrupted (Empty / Truncated)"
                                 status_label = "🔴 Empty / Truncated VPK"
+                                detail = f"{os.path.basename(vp)} is only {os.path.getsize(vp)} bytes"
                                 corrupted_count += 1
                                 break
                             with open(vp, "rb") as vf:
@@ -1454,6 +1531,14 @@ def scan_workshop_vpk_addons(steam_path: Optional[str], cs2_exe: Optional[str]) 
                             if magic != b"\x34\x12\xaa\x55":
                                 status = "Corrupted (Invalid Header)"
                                 status_label = "🔴 Invalid VPK Header"
+                                detail = f"{os.path.basename(vp)} does not start with the VPK signature"
+                                corrupted_count += 1
+                                break
+                            ok_deep, why = check_vpk_integrity(vp)
+                            if not ok_deep:
+                                status = "Corrupted (Incomplete Data)"
+                                status_label = "🔴 Incomplete data"
+                                detail = f"{os.path.basename(vp)}: {why}"
                                 corrupted_count += 1
                                 break
                             if not hint_name:
@@ -1461,6 +1546,7 @@ def scan_workshop_vpk_addons(steam_path: Optional[str], cs2_exe: Optional[str]) 
                         except Exception:
                             status = "Corrupted (Read Error)"
                             status_label = "🔴 Read Error / Locked"
+                            detail = f"{os.path.basename(vp)} could not be read"
                             corrupted_count += 1
                             break
 
@@ -1481,13 +1567,17 @@ def scan_workshop_vpk_addons(steam_path: Optional[str], cs2_exe: Optional[str]) 
                     "date": date_str,
                     "status": status,
                     "status_label": status_label,
+                    "detail": detail,
+                    "mtime": latest_mtime,
                 })
-        except Exception:
-            pass
+            except Exception:
+                scan_errors += 1                       # one unreadable folder must not hide the other packs
 
     addons.sort(key=lambda x: (x["status"] == "Healthy", -x["size_bytes"]))
     total_gb = round(total_bytes / (1024 ** 3), 2)
     msg = f"Verified {len(addons)} Workshop VPK packs ({total_gb} GB): {healthy_count} Healthy, {corrupted_count} Corrupted/Incomplete."
+    if scan_errors:
+        msg += f" {scan_errors} folder(s) could not be read and were skipped."
     return {
         "addons": addons,
         "total_count": len(addons),
@@ -1495,33 +1585,72 @@ def scan_workshop_vpk_addons(steam_path: Optional[str], cs2_exe: Optional[str]) 
         "corrupted_count": corrupted_count,
         "total_gb": total_gb,
         "workshop_dirs": candidate_dirs,
+        "scan_errors": scan_errors,
         "message": msg,
     }
 
-def repair_corrupted_workshop_addons(addons: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Safely purges only corrupted or stuck incomplete Workshop folders so Steam redownloads them cleanly."""
+def _is_reparse_point(path: str) -> bool:
+    """True for symlinks and junctions: repair must never follow those out of the workshop folder."""
+    try:
+        if os.path.islink(path):
+            return True
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(str(path))
+        return attrs != -1 and bool(attrs & 0x400)
+    except Exception:
+        return False
+
+
+def repair_corrupted_workshop_addons(addons: List[Dict[str, Any]], recent_seconds: float = 900.0) -> Dict[str, Any]:
+    """Removes only damaged or stuck-incomplete Workshop folders so Steam can download them cleanly again.
+    Safety rules: the folder must be exactly <library>/steamapps/workshop/content/730/<numeric id>, must not be a link or junction,
+    and must not have changed in the last 15 minutes (Steam may still be downloading it)."""
+    import time as _time
     repaired = 0
+    skipped = 0
     freed_bytes = 0
     logs: List[str] = []
     for item in addons:
-        if item.get("status") != "Healthy":
-            p = item.get("path", "")
-            if p and os.path.isdir(p) and "730" in p:
-                try:
-                    sz = item.get("size_bytes", 0)
-                    shutil.rmtree(p, ignore_errors=False)
-                    repaired += 1
-                    freed_bytes += sz
-                    logs.append(f"[VPK REPAIR] Removed broken Workshop pack {item.get('workshop_id')} ({item.get('name')}) — Steam will redownload cleanly.")
-                except Exception as e:
-                    logs.append(f"[WARN] Could not remove {p}: {e}")
-    if repaired == 0:
+        if item.get("status") == "Healthy":
+            continue
+        p = item.get("path", "")
+        norm = os.path.normpath(p) if p else ""
+        parent = os.path.dirname(norm)
+        ok_shape = (bool(norm) and os.path.basename(norm).isdigit() and os.path.basename(parent) == "730"
+                    and os.path.basename(os.path.dirname(parent)).lower() == "content"
+                    and os.path.basename(os.path.dirname(os.path.dirname(parent))).lower() == "workshop")
+        if not ok_shape or not os.path.isdir(norm):
+            logs.append(f"[WARN] Skipped {p!r}: not a Steam workshop item folder.")
+            skipped += 1
+            continue
+        if _is_reparse_point(norm):
+            logs.append(f"[WARN] Skipped {p}: it is a link, not a real folder.")
+            skipped += 1
+            continue
+        if _time.time() - float(item.get("mtime") or 0) < recent_seconds:
+            logs.append(f"[VPK REPAIR] Skipped {item.get('workshop_id')}: changed in the last 15 minutes, Steam may still be downloading it.")
+            skipped += 1
+            continue
+        try:
+            sz = item.get("size_bytes", 0)
+            shutil.rmtree(norm, ignore_errors=False)
+            repaired += 1
+            freed_bytes += sz
+            logs.append(f"[VPK REPAIR] Removed broken Workshop pack {item.get('workshop_id')} ({item.get('name')}). Steam can download it again.")
+        except Exception as e:
+            logs.append(f"[WARN] Could not remove {p}: {e}")
+            skipped += 1
+    if repaired == 0 and skipped == 0:
         msg = "All installed Workshop VPK packs passed header & integrity checks! Zero corrupted packs found."
         logs.append(f"[VPK VERIFIER] {msg}")
     else:
-        msg = f"Repaired {repaired} corrupted Workshop VPK folder(s) ({round(freed_bytes / (1024 * 1024), 1)} MB freed). Steam will cleanly re-download them."
+        msg = f"Repaired {repaired} corrupted Workshop VPK folder(s) ({round(freed_bytes / (1024 * 1024), 1)} MB freed)."
+        if repaired:
+            msg += " Steam downloads a subscribed map again on its next check or when you join a server that needs it."
+        if skipped:
+            msg += f" {skipped} left alone (recently changed, not a plain workshop folder, or could not be removed)."
     return {
         "repaired": repaired,
+        "skipped": skipped,
         "freed_bytes": freed_bytes,
         "logs": logs,
         "message": msg,

@@ -30,6 +30,7 @@ interface AppFeatureModule {
 }
 
 declare const __APP_EXE_SHA256__: string;
+declare const __APP_EXE_SIZE_MB__: number;
 
 export const CS2CommandCenterPreview: React.FC = () => {
   const downloadUrl = '/CS2_Command_Center.exe?v=2.0.3';
@@ -45,10 +46,10 @@ export const CS2CommandCenterPreview: React.FC = () => {
       shortTag: 'TACTICAL COMMAND OS',
       badge: 'NEW TACTICAL CONSOLE',
       icon: <Terminal className="w-5 h-5 text-amber-400" />,
-      summary: 'Centralized executive command hub featuring 1-click total optimization, balanced CPU/GPU hardware diagnostics, persistent bottom telemetry, and instant server jumping.',
+      summary: 'Central hub with 1-click optimize, hardware detection, a persistent status bar and quick links to every tab, including the live server list.',
       details: [
-        '1-Click Total Optimization: Automatically verifies and applies recommended Source 2 CVARs, power plans, and autoexec binds in a single click.',
-        'Hardware Architecture Telemetry: Real-time detection of AMD 3D V-Cache, Intel P/E-Core topologies, and discrete GPU drivers.',
+        '1-Click Optimize: applies the engine tweaks you selected (shader cache purge, low-latency autoexec block, crash-dump cleanup, Game DVR off, fullscreen optimizations off) and your chosen Windows power plan. Restore Defaults reverts them.',
+        'Hardware detection: reads your CPU and GPU, recognises AMD 3D V-Cache (X3D) and laptop CPUs, and recommends a matching Windows power plan.',
         'Persistent CyberDeck Status Bar: Live slot sniper state and the DNS your adapter really uses. The Dashboard shows whether CS2 was found and where it is installed.',
         'New dark-glass interface with a reactor-core backdrop on every tab, left-rail navigation, and mouse back/forward buttons for moving between tabs.'
       ],
@@ -91,60 +92,62 @@ export const CS2CommandCenterPreview: React.FC = () => {
       icon: <Sliders className="w-5 h-5 text-fuchsia-400" />,
       summary: 'Comprehensive autoexec studio: (1) Core Engine Tweaks, (2) ZE Visual & Audio Binds, and (3) Manual In-App CFG Editor with direct save capabilities.',
       details: [
-        'NEW: In-App Manual CFG Editor — Safe read-only mode by default; toggling manual edit unlocks full in-app editing with a direct "Save CFG" button.',
+        'NEW: In-App Manual CFG Editor — read-only preview by default; Edit config unlocks the text box and Save writes autoexec.cfg after making a backup.',
         'Block 1 — Engine Tweaks: Appends [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS] (fps_max 0, rate 1000000, low-latency sleep) without touching personal binds.',
         'Block 2 — ZE Visual & Audio Binds: Appends [CS2 COMMAND CENTER - ZE VISUAL & AUDIO CUSTOMIZER] independently.',
         'Real-Time Live Preview: Automatically refreshes and scrolls to the bottom of autoexec.cfg with timestamp banner & confirmation.',
-        'ZE Laser-Jump Low Viewmodel (FOV 68, X:+2, Y:+2, Z:-2) & First-Person Bullet Tracer Clutter Reducer (r_drawtracers_firstperson 0).',
-        '1-Key Boss/Laser Audio Ducking Toggle (F7 switches game volume between 22% and 100%) & Panic Voice Mute key (F8).'
+        'ZE Low Viewmodel preset (FOV 68, X:+2, Y:+2, Z:-2) that keeps the screen centre clear for crouch lasers, plus HUD colour and the frame-time / ping / packet-loss HUD graphs.',
+        '1-key Boss/Laser audio ducking toggle (F7 switches game volume between 22% and 100%) and a voice mute toggle on F8. Both keys can be changed.'
       ],
       parameters: [
         { name: 'viewmodel_offset_z', value: '-2.0 (FOV 68)', desc: 'Clears center screen for crouch/ankle lasers' },
-        { name: 'bind "F7" "ze_duck_toggle"', value: 'volume 0.22 <-> 1.00', desc: 'Instant Boss/Laser audio ducking keybind' },
-        { name: 'r_drawtracers_firstperson', value: '0 (Disabled)', desc: 'Eliminates 64-player Negev tracer clutter' }
+        { name: 'bind "F7" "ze_focus_Key"', value: 'volume 0.22 <-> 1.00', desc: 'Instant Boss/Laser audio ducking keybind' },
+        { name: 'bind "F8" "voice_modenable_toggle"', value: 'Voice on / off', desc: 'Quick voice mute toggle' }
       ],
       proTip: 'Engine Tweaks and ZE Visual/Audio Binds are stored as two separate tagged sections inside autoexec.cfg—updating one never overwrites the other, and the live preview scrolls directly to your newly injected block!',
       noMemoryAccess: true
     },
     {
       id: 'engine',
-      name: 'Engine & CPU Affinity Tuning',
+      name: 'Engine Tweaks & Live Booster',
       shortTag: 'SOURCE 2 OPTIMIZER',
-      badge: 'FPS STABILIZER',
+      badge: 'FRAME-TIME STABILITY',
       icon: <Cpu className="w-5 h-5 text-cyan-400" />,
-      summary: 'Raises cs2.exe to High process priority while it runs, so background apps get CPU time after the game.',
+      summary: 'Five selectable engine and Windows tweaks, a power plan chosen for your CPU, and a Live Booster that raises cs2.exe to High priority while it runs.',
       details: [
-        'Elevates cs2.exe OS scheduling priority above background Discord/Chrome processes.',
-        'Changes nothing inside the game process: only its Windows priority (reverts when CS2 closes).'
+        'Shader pre-caching: purges fragmented DirectX/GPU shader caches, useful after game or driver updates.',
+        'Low-latency autoexec block: fps_max 0, rate 1000000, low-latency sleep, snd_mixahead 0.025 and the frame-time / ping HUD graphs, in one marked block with a backup.',
+        'Windows settings: Game DVR background capture off, fullscreen optimizations off for cs2.exe, and old crash dumps and temp files cleaned.',
+        'Power plan: Balanced for Ryzen X3D and laptop CPUs, High Performance otherwise (you can change it).',
+        'Live Booster: raises cs2.exe to High process priority while it runs. Nothing is saved, it resets when CS2 closes, and it never touches game memory.'
       ],
       parameters: [
-        { name: 'Process Priority', value: 'HIGH_PRIORITY_CLASS', desc: 'Direct Windows thread scheduling elevation' },
-        { name: 'Undo', value: 'Close CS2', desc: 'Priority is not saved; it resets on the next launch' }
+        { name: 'Selectable tweaks', value: '5 + power plan', desc: 'Each can be switched off before you press One-click optimize' },
+        { name: 'Process Priority', value: 'HIGH_PRIORITY_CLASS', desc: 'Live Booster only; resets when CS2 closes' },
+        { name: 'Undo', value: 'Restore Defaults', desc: 'Reverts Game DVR, fullscreen optimizations, power plan and the autoexec block' }
       ],
-      proTip: 'Particularly effective on 64-player Zombie Escape servers where heavy grenade smoke, particle effects, and laser barricades drop 1% low FPS.',
+      proTip: 'These tweaks aim at steadier frame times (1% lows) and fewer stutters, not a higher maximum FPS.',
       noMemoryAccess: true
     },
     {
       id: 'mpo',
-      name: 'GPU MPO & DWM Latency Fixer',
+      name: 'GPU MPO Diagnostics',
       shortTag: 'DISPLAY ENGINE',
-      badge: 'ALT-TAB FIX',
+      badge: 'READ-ONLY + COPY-READY COMMANDS',
       icon: <Zap className="w-5 h-5 text-amber-400" />,
-      summary: 'Detects and resolves Windows Multi-Plane Overlay (MPO) driver conflicts that cause Alt-Tab black screens, display freezing, and desktop stutter.',
+      summary: 'Read-only diagnostics for Windows Multi-Plane Overlay (MPO) problems such as Alt-Tab black screens, driver timeouts and checkerboard glitches, with commands you copy and run yourself.',
       details: [
-        'Important: Before altering MPO, perform a clean DDU (Display Driver Uninstaller) wipe in Safe Mode + fresh GPU driver reinstall.',
-        'Automatic scan of Windows Registry for active MPO overlays on NVIDIA & AMD drivers.',
-        '1-Click automated MPO disable/enable patch with instant backup and restore.',
-        'DWM (Desktop Window Manager) composition latency tuning for borderless & fullscreen modes.',
-        'Hardware Accelerated GPU Scheduling (HAGS) compatibility diagnostics.'
+        'Shows your GPU and whether MPO is currently disabled, by reading the DisableOverlays and DWM OverlayTestMode registry values.',
+        'Never edits the registry or your driver: it copies the disable and restore commands to your clipboard so you can run them yourself in an administrator terminal.',
+        'Recommends a clean DDU (Display Driver Uninstaller) reinstall in Safe Mode first, with a link to the official DDU site.',
+        'Explains in plain language when disabling MPO helps, what it costs (slightly higher idle GPU power) and that it does not add game latency.'
       ],
       parameters: [
-        { name: 'DDU Recommendation', value: 'Clean Safe Mode Wipe', desc: 'Rule out driver/shader corruption first' },
-        { name: 'OverlayTestMode', value: '0x00000005 (Disabled)', desc: 'NVIDIA/AMD MPO registry bypass' },
-        { name: 'DWM Composition', value: 'Low Latency Mode', desc: 'Eliminates DWM frame queue buffer delay' },
-        { name: 'Alt-Tab Freeze', value: 'RESOLVED', desc: 'Seamless instant desktop switching' }
+        { name: 'Registry read', value: 'DisableOverlays / OverlayTestMode', desc: 'Read-only check of the current MPO state' },
+        { name: 'DDU Recommendation', value: 'Clean Safe Mode Wipe', desc: 'Rule out driver corruption first' },
+        { name: 'Changes made by the app', value: 'None', desc: 'You run the copied command yourself' }
       ],
-      proTip: 'Before toggling MPO, try running DDU + clean GPU driver reinstall first to verify if that solves your issue! If Alt-Tab freezing persists, disable MPO.',
+      proTip: 'Before toggling MPO, try a DDU clean driver reinstall first. Only if Alt-Tab freezing or driver timeouts persist, disable MPO.',
       noMemoryAccess: true
     },
     {
@@ -175,19 +178,20 @@ export const CS2CommandCenterPreview: React.FC = () => {
       shortTag: 'STORAGE & VPK DOCTOR',
       badge: 'PROTECTED PACKS & SAFE CLEAN',
       icon: <HardDrive className="w-5 h-5 text-emerald-400" />,
-      summary: 'Scans your CS2 Workshop and community maps directory to reclaim 10–50GB of SSD space, protects subscribed server packs, and verifies .vpk binary headers (0x55aa1234) to repair corrupted/incomplete downloads.',
+      summary: 'Scans your CS2 workshop maps to free SSD space, protects subscribed server packs, and checks every workshop pack for damaged or unfinished downloads.',
       details: [
-        'NEW: Protected Server Packs System - Automatically detects and safeguards subscribed packs (GFL 355+ ZE, Possession PSE, RSS Revenant, Mapeadores & cOLa) and maps played in the last 14 days.',
-        'NEW: 1-Click "Select All Temp Downloads (Safe)" - Safely purges non-subscribed temporary server downloads with zero risk to subscribed collections.',
-        'NEW: Steam Workshop VPK Binary Header Verifier (checks 0x55aa1234 signature across steamapps/workshop/content/730/).',
-        'Filter tabs (All, Temp downloads, Subscribed packs, Server assets, Duplicates), search, sort by size or date, and a confirmation before anything is deleted. Subscribed packs and server assets cannot be ticked.'
+        'Protected packs: subscribed server map packs and server asset packs (GFL, Possession, RSS, Mapeadores / cOLa) are detected and cannot be ticked. An option also protects maps played in the last 14 days.',
+        '1-click "Select all temp downloads (safe)" ticks only maps you are not subscribed to. Deleting asks for confirmation and cannot be undone.',
+        'Verify Workshop VPK health: reads each pack\'s index and confirms that every data part is on disk and complete, so a download that stopped half way is found, not just a bad file header.',
+        'Repair corrupted VPKs removes only the damaged workshop folders. It never follows links and skips anything changed in the last 15 minutes. Steam can download the map again afterwards.',
+        'Filter tabs (All, Temp downloads, Subscribed packs, Server assets, Duplicates), search, and sort by size or date.'
       ],
       parameters: [
-        { name: 'VPK Magic Signature', value: '0x55AA1234 (v1/v2)', desc: 'Detects truncated or corrupted Workshop packs' },
-        { name: 'Target Directory', value: 'workshop/content/730', desc: 'CS2 Steam Workshop & custom maps folders' },
-        { name: 'Space Reclaimed', value: '10 GB - 50 GB avg', desc: 'Instant SSD space recovery' }
+        { name: 'VPK check', value: 'Index + data parts', desc: 'Finds truncated files and missing or short archive parts' },
+        { name: 'Target Directory', value: 'workshop/content/730', desc: 'Your Steam library workshop folder for CS2' },
+        { name: 'Space freed', value: 'Depends on your maps', desc: 'Often several GB to tens of GB' }
       ],
-      proTip: 'If you ever get kicked from a ZE server with a "Missing VPK" or "Pure Server File Mismatch" error, run the Workshop VPK Health Verifier in 1 click!',
+      proTip: 'If a server kicks you with a missing-file error, run Verify Workshop VPK health. It cannot see changed bytes inside a complete file, but it finds incomplete downloads.',
       noMemoryAccess: true
     },
     {
@@ -213,23 +217,23 @@ export const CS2CommandCenterPreview: React.FC = () => {
     },
     {
       id: 'launch',
-      name: 'Steam Launch Options Preset Builder',
+      name: 'Steam Launch Options Editor',
       shortTag: 'ENGINE LAUNCHER',
-      badge: 'PRESET GENERATOR',
+      badge: 'COPY OR APPLY TO STEAM',
       icon: <Terminal className="w-5 h-5 text-blue-400" />,
-      summary: 'Launch option presets for Counter-Strike 2 that you can review and copy into Steam.',
+      summary: 'Reads your current Steam launch options for CS2, keeps your own flags, and offers one competitive reference preset that you can copy or apply to Steam.',
       details: [
-        'Skips the Valve splash video intro (-novid) for faster game launches.',
-        'Disables controller joystick polling (-nojoy) to free input thread cycles.',
-        'Adds launch options you can copy into Steam (review each one before use).',
-        'High execution priority (-high) and physical thread affinity (-threads N).'
+        '-novid skips the Valve intro video for a faster start.',
+        '-nojoy turns off joystick polling.',
+        '+fps_max 0 uncaps the frame rate (you can cap it to your refresh rate instead).',
+        'Your own flags, for example -allow_third_party_software or -condebug, are kept. Apply writes Steam\'s localconfig.vdf (Steam must be closed) and keeps a backup; Copy lets you paste them into Steam yourself.'
       ],
       parameters: [
-        { name: 'Competitive Baseline', value: '-novid -nojoy -high', desc: 'Universal stutter-free baseline' },
-        { name: 'CPU Thread Lock', value: '-threads 8 (Custom)', desc: 'Allocates exact physical core count' },
-        { name: 'Third-Party Interop', value: '-allow_third_party_software', desc: 'For Discord / OBS / NVIDIA overlay' }
+        { name: 'Reference preset', value: '-novid -nojoy +fps_max 0', desc: 'One click loads it into the editor' },
+        { name: 'Apply to Steam', value: 'localconfig.vdf', desc: 'Close Steam first; a backup is kept' },
+        { name: 'Log flag', value: '-condebug', desc: 'Type it here so the Log Analyzer and Discord card can read the CS2 log' }
       ],
-      proTip: 'Click any preset in the app to immediately copy the exact command line ready to paste into Steam CS2 Properties.',
+      proTip: 'Add -condebug to your launch options so the Log Analyzer and the Discord card can read the CS2 log.',
       noMemoryAccess: true
     },
     {
@@ -242,7 +246,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
       details: [
         'Shows the server name, the current map and the live player count, with a session timer that starts when you join.',
         'Two buttons for friends: Server IP (connect link) and the server\'s own community Discord (GFL, Possession, Mapeadores, cOLa, RSS). Discord hides the buttons on your own profile.',
-        'Finds your server from the connection line CS2 writes to console.log (needs -condebug, which the Launch Options tab can add), then falls back to matching the map and your Steam name.',
+        'Finds your server from the connection line CS2 writes to console.log (needs -condebug in your launch options, which you can type in the Launch Options tab), then falls back to matching the map and your Steam name.',
         'Cleared when CS2 closes. One switch turns it on or off, and Refresh now forces an update. It only talks to the Discord app on your PC through a local pipe.'
       ],
       parameters: [
@@ -250,7 +254,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
         { name: 'Detection', value: 'console.log + map + name', desc: 'Finds the server you are connected to' },
         { name: 'Buttons', value: 'Server IP + community Discord', desc: 'Visible to friends on your profile' }
       ],
-      proTip: 'Add -condebug in the Launch Options tab so the app can read the server straight from the CS2 log.',
+      proTip: 'Add -condebug to your launch options so the app can read the server straight from the CS2 log.',
       noMemoryAccess: true
     }
   ];
@@ -300,7 +304,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
             <span>DOWNLOAD APP (.EXE)</span>
           </a>
           <span className="text-[11px] font-code text-slate-400">
-            Portable &bull; ~33 MB &bull; No installation required
+            Portable &bull; ~{typeof __APP_EXE_SIZE_MB__ !== 'undefined' ? __APP_EXE_SIZE_MB__ : 26} MB &bull; No installation required
           </span>
 
           <div id="exe-sha256-badge" className="flex items-center gap-1.5 text-[10px] font-code text-slate-400 mt-0.5 scroll-mt-28">
