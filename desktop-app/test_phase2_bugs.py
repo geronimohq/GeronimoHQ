@@ -318,7 +318,7 @@ class Bug4DiscordPreview(AppTestBase):
         t = self._texts()
         self.assertEqual(t["details"], sent["details"]); self.assertEqual(t["btn1"], "Join")
         self.assertIn("In-Game", t["status"])
-        self.assertEqual(self.root.preview_status_lbl.cget("fg"), "#57d98a")
+        self.assertEqual(self.root.preview_status_lbl.cget("fg"), app.theme.GOOD_TEXT)
 
     def test_rpc_snapshot_cleared_on_close(self):
         rpc = discord_rpc.DiscordRPC("1")
