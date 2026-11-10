@@ -181,7 +181,6 @@ function Shell() {
         <div className="drag pywebview-drag-region" onDoubleClick={() => void api.winMax().then(setMaxed)} />
         <div className="ind">
           <span className="pill"><i className="dot" />PERM: {info ? (info.admin ? 'ADMIN' : 'STANDARD') : '...'}</span>
-          <span className="pill"><i className={`dot ${info?.cs2_found ? 'cy' : 'am'}`} />CS2: {info ? (info.cs2_found ? 'FOUND' : 'NOT FOUND') : '...'}</span>
           <button className="sfx" onClick={() => { sfx.click(); setSettingsOpen(true); }} title="Settings">SETTINGS</button>
           <button className="sfx" aria-pressed={sound} onClick={() => { const v = !sound; sfx.set(v); setSound(v); if (v) sfx.click(); }} title="Interface sounds on or off">{sound ? 'SFX ON' : 'SFX OFF'}</button>
         </div>
