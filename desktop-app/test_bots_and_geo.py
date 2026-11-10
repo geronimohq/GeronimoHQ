@@ -8,6 +8,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import geo_estimate  # noqa: E402
 import server_browser  # noqa: E402
 
+_REAL_QUERY_INFO = server_browser.query_server_info   # the app tests below stub the network module
+
 
 def _info_packet(players, max_players, bots):
     body = b"\x11" + b"Zombie Test\x00" + b"ze_test\x00" + b"csgo\x00" + b"CS2\x00" + b"\x00\x00" + bytes([players, max_players, bots])
@@ -29,7 +31,7 @@ class BotFilter(unittest.TestCase):
         with mock.patch.object(server_browser.socket, "socket", lambda *a, **k: FakeSock(_info_packet(players, 65, bots))), \
              mock.patch.object(server_browser.socket, "gethostbyname", lambda h: "1.2.3.4"), \
              mock.patch.object(server_browser, "query_server_players", return_value=roster) as qp:
-            return server_browser.query_server_info("1.2.3.4", 27015), qp
+            return _REAL_QUERY_INFO("1.2.3.4", 27015), qp
 
     def test_server_that_hides_bots_is_corrected_from_the_roster(self):
         info, _ = self._info(16, 0, {"success": True, "count": 1, "players": [{}]})
@@ -68,6 +70,52 @@ class GeoRegion(unittest.TestCase):
 
     def test_text_wrapper_unchanged_default(self):
         self.assertEqual(server_browser.get_server_demographics_text("Europe (Spain)", 0), "\U0001F310 GEO: server empty")
+
+
+class AppPieces(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import _test_isolation  # noqa: F401
+        import app
+        cls.app = app
+        cls.root = app.CS2TruePanoramaApp()
+        cls.root.withdraw()
+
+    @classmethod
+    def tearDownClass(cls):
+        with mock.patch.object(cls.app.os, "_exit", lambda code=0: None):
+            cls.root.exit_application()
+
+    def test_bot_dominated_rule(self):
+        d = self.app.CS2TruePanoramaApp._bot_dominated
+        self.assertTrue(d(15, 14))       # Net4All
+        self.assertTrue(d(6, 3))
+        self.assertFalse(d(63, 0))       # GFL
+        self.assertFalse(d(10, 2))
+        self.assertFalse(d(2, 2))        # too small to call
+
+    def test_geo_mode_is_per_server_and_badge_shows(self):
+        import time
+        root = self.root
+        root._select_nav("SERVERS")
+        end = time.time() + 1.5
+        while time.time() < end:
+            root.update(); time.sleep(0.02)
+        ids = list(root.server_row_widgets)
+        self.assertGreaterEqual(len(ids), 2)
+        a, b = ids[0], ids[1]
+        root._set_geo_mode("region", a)
+        self.assertEqual(root.server_row_widgets[a]["geo_mode"], "region")
+        self.assertEqual(root.server_row_widgets[b]["geo_mode"], "country")
+        self.assertEqual(root.gfl_geo_mode, "country")
+        root._set_geo_mode("region", None)
+        self.assertEqual(root.server_row_widgets[b]["geo_mode"], "country")
+        root._update_bot_badge(b, 15, 14)
+        root.update()
+        self.assertTrue(root.server_row_widgets[b]["bot_pill"].winfo_ismapped())
+        root._update_bot_badge(b, 63, 0)
+        root.update()
+        self.assertFalse(root.server_row_widgets[b]["bot_pill"].winfo_ismapped())
 
 
 if __name__ == "__main__":
