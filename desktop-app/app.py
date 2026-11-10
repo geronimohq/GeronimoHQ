@@ -7462,7 +7462,7 @@ class CS2TruePanoramaApp(tk.Tk):
         prot_bar = Frame(dlg, bg=theme.SURFACE_INSET, padx=10, pady=5, highlightbackground=theme.BEVEL_DARK, highlightthickness=1)
         prot_bar.pack(fill="x", padx=10, pady=(0, 6))
 
-        Label(prot_bar, text="🛡️ PROTECT PACKS:", font=(theme.FONT_UI, theme.FS_13, "bold"), fg=theme.CT_BLUE_TEXT, bg=theme.SURFACE_INSET).pack(side="left", padx=(0, 6))
+        Label(prot_bar, text="🛡️ PROTECT PACKS:", font=(theme.FONT_UI, theme.FS_13, "bold"), fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET).pack(side="left", padx=(0, 6))
 
         saved_comms = set(self.config.get("cleaner_protected_comms", ["gfl", "possession", "rss", "mapeadores_cola"]))
         saved_recent = self.config.get("cleaner_protect_recent", True)
@@ -7521,20 +7521,20 @@ class CS2TruePanoramaApp(tk.Tk):
             update_filter_button_labels()
             render_maps()
 
-        cb_gfl = Checkbutton(prot_bar, text="GFL (355+ ZE)", variable=var_prot_gfl, font=(theme.FONT_UI, theme.FS_13, "bold"),
-                                fg=theme.GOOD_TEXT, bg=theme.SURFACE_INSET, selectcolor=theme.SURFACE_INSET, activebackground=theme.SURFACE_INSET,
+        cb_gfl = Checkbutton(prot_bar, text="GFL (355+ ZE)", variable=var_prot_gfl, font=(theme.FONT_UI, theme.FS_13),
+                                fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET, selectcolor=theme.SURFACE_INSET, activebackground=theme.SURFACE_INSET,
                                 activeforeground=theme.GOOD_TEXT, cursor="hand2", command=_on_prot_changed)
         cb_gfl.pack(side="left", padx=(0, 6))
         add_tooltip(cb_gfl, "Protect GFL Clan Zombie Escape official subscribed collection (355+ maps).")
 
         cb_pse = Checkbutton(prot_bar, text="Possession (PSE)", variable=var_prot_pse, font=(theme.FONT_UI, theme.FS_13),
-                                fg=theme.GOOD_TEXT, bg=theme.SURFACE_INSET, selectcolor=theme.SURFACE_INSET, activebackground=theme.SURFACE_INSET,
+                                fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET, selectcolor=theme.SURFACE_INSET, activebackground=theme.SURFACE_INSET,
                                 activeforeground=theme.GOOD_TEXT, cursor="hand2", command=_on_prot_changed)
         cb_pse.pack(side="left", padx=(0, 6))
         add_tooltip(cb_pse, "Protect Possession (PSE Tokyo) custom maps (e.g. ze_colorlicouspilar_p) and asset packs.")
 
         cb_rss = Checkbutton(prot_bar, text="RSS Revenant", variable=var_prot_rss, font=(theme.FONT_UI, theme.FS_13),
-                                fg=theme.CT_BLUE_TEXT, bg=theme.SURFACE_INSET, selectcolor=theme.SURFACE_INSET, activebackground=theme.SURFACE_INSET,
+                                fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET, selectcolor=theme.SURFACE_INSET, activebackground=theme.SURFACE_INSET,
                                 activeforeground=theme.CT_BLUE_TEXT, cursor="hand2", command=_on_prot_changed)
         cb_rss.pack(side="left", padx=(0, 6))
         add_tooltip(cb_rss, "Protect RSS Zombie Escape custom maps (e.g. ze_obff_npst_v24).")
@@ -7545,8 +7545,8 @@ class CS2TruePanoramaApp(tk.Tk):
         cb_eu.pack(side="left", padx=(0, 6))
         add_tooltip(cb_eu, "Protect Mapeadores and cOLa-TeaM European custom maps and asset packs.")
 
-        cb_rec = Checkbutton(prot_bar, text="🕒 Active (Last 14d)", variable=var_prot_recent, font=(theme.FONT_UI, theme.FS_13, "bold"),
-                                fg=theme.CT_BLUE_TEXT, bg=theme.SURFACE_INSET, selectcolor=theme.SURFACE_INSET, activebackground=theme.SURFACE_INSET,
+        cb_rec = Checkbutton(prot_bar, text="🕒 Active (Last 14d)", variable=var_prot_recent, font=(theme.FONT_UI, theme.FS_13),
+                                fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET, selectcolor=theme.SURFACE_INSET, activebackground=theme.SURFACE_INSET,
                                 activeforeground=theme.CT_BLUE_TEXT, cursor="hand2", command=_on_prot_changed)
         cb_rec.pack(side="left", padx=(0, 6))
         add_tooltip(cb_rec, "Protect custom maps played in the last 14 days so active rotation maps are preserved.")
@@ -7562,11 +7562,11 @@ class CS2TruePanoramaApp(tk.Tk):
         btn_filter_temp = Button(filter_tabs_bar, text="📁 Temp Downloads (0)", font=(theme.FONT_UI, theme.FS_12),
                                     fg=theme.TEXT_SECONDARY, bg=theme.SURFACE_RAISED, relief="flat", padx=8, pady=4, cursor="hand2")
         btn_filter_sub = Button(filter_tabs_bar, text="⭐ Subscribed Packs (0)", font=(theme.FONT_UI, theme.FS_12),
-                                   fg=theme.GOOD_TEXT, bg=theme.SURFACE_INSET, relief="flat", padx=8, pady=4, cursor="hand2")
+                                   fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET, relief="flat", padx=8, pady=4, cursor="hand2")
         btn_filter_assets = Button(filter_tabs_bar, text="🛡️ Server Assets (0)", font=(theme.FONT_UI, theme.FS_12, "bold"),
-                                      fg=theme.CT_BLUE_TEXT, bg=theme.SURFACE_RAISED, relief="flat", padx=8, pady=4, cursor="hand2")
+                                      fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_RAISED, relief="flat", padx=8, pady=4, cursor="hand2")
         btn_filter_dupe = Button(filter_tabs_bar, text="⚠️ Duplicates (0)", font=(theme.FONT_UI, theme.FS_12),
-                                    fg=theme.WARN_TEXT, bg=theme.SURFACE_RAISED, relief="flat", padx=8, pady=4, cursor="hand2")
+                                    fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_RAISED, relief="flat", padx=8, pady=4, cursor="hand2")
 
         btn_filter_all.pack(side="left", padx=(0, 4))
         btn_filter_temp.pack(side="left", padx=(0, 4))
@@ -7591,7 +7591,7 @@ class CS2TruePanoramaApp(tk.Tk):
         search_ent.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
         summary_var = tk.StringVar(value="Scanning maps...")
-        Label(bar, textvariable=summary_var, font=(theme.FONT_UI, theme.FS_13, "bold"), fg=ACCENT_CYAN, bg=theme.SURFACE_INSET).pack(side="right")
+        Label(bar, textvariable=summary_var, font=(theme.FONT_UI, theme.FS_13, "bold"), fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET).pack(side="right")
 
         # Table Container
         tbl_frame = Frame(dlg, bg=theme.SURFACE_INSET, highlightbackground=BG_BORDER, highlightthickness=1)
@@ -7672,8 +7672,8 @@ class CS2TruePanoramaApp(tk.Tk):
         sb.pack(side="right", fill="y")
 
         # Row color tags
-        tree.tag_configure("sub", foreground=theme.GOOD_TEXT)               # subscribed pack = good
-        tree.tag_configure("server_asset", foreground=theme.CT_BLUE_TEXT)   # server asset = ct-blue
+        tree.tag_configure("sub", foreground=theme.TEXT_PRIMARY)               # subscribed pack = good
+        tree.tag_configure("server_asset", foreground=theme.TEXT_PRIMARY)   # server asset = ct-blue
         tree.tag_configure("temp", foreground=theme.TEXT_SECONDARY)         # temp download = secondary
         tree.tag_configure("vpk", foreground=theme.TEXT_PRIMARY)
         tree.tag_configure("dupe", foreground=theme.WARN_TEXT)              # duplicate = warn (rust)
@@ -7893,7 +7893,7 @@ class CS2TruePanoramaApp(tk.Tk):
         add_tooltip(btn_sel_temp, "One-click selects all temporary downloaded maps while keeping server packs and assets protected.")
 
         btn_sel_dupes = Button(filter_actions, text="⚠️ Select Temp Dupes Only (Safe)", font=(theme.FONT_UI, theme.FS_12, "bold"),
-                  fg=theme.BAD_TEXT, bg=theme.SURFACE_RAISED, activebackground=theme.SURFACE_RAISED, relief="flat", padx=10, pady=4,
+                  fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_RAISED, activebackground=theme.SURFACE_RAISED, relief="flat", padx=10, pady=4,
                   cursor="hand2", command=select_dupes_safe)
         btn_sel_dupes.pack(side="left", padx=(0, 4))
         add_tooltip(btn_sel_dupes, "Selects only temporary duplicate copies to reclaim SSD space safely.")
@@ -8057,13 +8057,13 @@ class CS2TruePanoramaApp(tk.Tk):
         add_tooltip(btn_del, "Permanently removes checked maps from your drive to free up SSD space.")
 
         btn_bk = Button(btn_bar, text="💾 Backup Custom VPK", font=(theme.FONT_UI, theme.FS_12, "bold"),
-                  fg=theme.GOOD_TEXT, bg=theme.SURFACE_RAISED, activebackground=theme.SURFACE_RAISED, activeforeground=theme.TEXT_PRIMARY,
+                  fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_RAISED, activebackground=theme.SURFACE_RAISED, activeforeground=theme.TEXT_PRIMARY,
                   relief="flat", padx=14, pady=4, cursor="hand2", command=backup_custom_vpks)
         btn_bk.pack(side="left", padx=(0, 6))
         add_tooltip(btn_bk, "Creates a safe backup of your server asset VPKs and custom modifications.")
 
         btn_rst = Button(btn_bar, text="♻️ Restore Custom VPK", font=(theme.FONT_UI, theme.FS_12, "bold"),
-                  fg=theme.CT_BLUE_TEXT, bg=theme.SURFACE_RAISED, activebackground=theme.SURFACE_PANEL, activeforeground=theme.TEXT_PRIMARY,
+                  fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_RAISED, activebackground=theme.SURFACE_PANEL, activeforeground=theme.TEXT_PRIMARY,
                   relief="flat", padx=14, pady=4, cursor="hand2", command=restore_custom_vpks)
         btn_rst.pack(side="left")
         add_tooltip(btn_rst, "Restores your backed-up custom VPKs if overwritten by Steam or server updates.")
