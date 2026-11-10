@@ -14,7 +14,11 @@
    },
    {
     "q": "Does this app communicate with external servers or collect telemetry?",
-    "a": "No. The Command Center is completely privacy-respecting and contains zero third-party telemetry, ads, or tracking. The only network calls are lightweight UDP A2S queries sent directly to game servers to retrieve live player counts, and local named pipes for Discord RPC."
+    "a": "There are no ads, no accounts and no tracking, and the app never sends your Steam login, files or personal data anywhere. It does contact these places: game servers directly (UDP A2S queries for player counts, maps and ping); ZE Graph (zegraph.xyz) for the GFL round scores, country mix and map pictures; geronimohq.com for the signed update check and the same server totals the website shows; and the Discord app on your own PC through a local pipe. Steam, the Steam workshop and your browser only open when you click something."
+   },
+   {
+    "q": "How do updates work?",
+    "a": "The app checks geronimohq.com for a signed update manifest. The new exe is only offered when its Ed25519 signature, size and SHA-256 match, so a tampered file is rejected. Settings shows the last check and a Check now button. Your settings and logs are kept when the app updates."
    }
   ]
  },
@@ -121,7 +125,7 @@
   "qa": [
    {
     "q": "How does the Slot Sniper function and how does it detect open slots?",
-    "a": "The Slot Sniper runs a high-speed 0.25s background polling loop that queries the server directly via standard Steam A2S_INFO UDP protocol. It checks live player counts against your selected slot threshold (e.g., ≤ 62 for public players). The instant a player leaves or disconnects, the sniper detects the open slot within milliseconds, executes the in-game console connect immediately, and starts a 10-second cooldown!"
+    "a": "The Slot Sniper runs a high-speed 0.25s background polling loop that queries the server directly via standard Steam A2S_INFO UDP protocol. It checks live player counts against your selected slot threshold (Normal public players: up to 61, Mapper or Supporter: up to 62, VIP or Admin: up to 63). The instant a player leaves or disconnects, the sniper detects the open slot within milliseconds, executes the in-game console connect immediately, and starts a 10-second cooldown. It only starts while CS2 is running."
    },
    {
     "q": "Why doesn't the Slot Sniper continuously spam 'connect' in the CS2 console while waiting?",
@@ -133,15 +137,35 @@
    },
    {
     "q": "How does the Command Center know when I am already in the server?",
-    "a": "The app combines two automatic systems: Valve Game State Integration (GSI) via local HTTP events, and live A2S player roster matching using your active Steam persona. When your player connects to the server, the app automatically transitions to tracking mode and disarms the sniper so it never spams or fires duplicate connections."
+    "a": "The app combines automatic signals: the connection line CS2 writes to console.log (needs -condebug, which the Launch Options tab can add), Valve Game State Integration (GSI) via local HTTP events, the map name matched against the server list, and your Steam name found in a live A2S player roster. When you connect, the app switches to tracking mode and disarms the sniper so it never fires duplicate connections."
    },
    {
     "q": "What are the Slot Sniper Priority Tiers (VIP / Mapper / Normal)?",
-    "a": "On 64-player community servers like GFL ZE, the server holds 64 players, but 2 slots (63 and 64) are reserved for VIPs, Mappers, and Supporters. If you are a standard player, select '≤ 62' so the sniper only attempts to join when a public slot opens, avoiding the 'Server is reserved for VIPs' kick. If you have VIP or Supporter status, select '≤ 64'."
+    "a": "On 64-player community servers like GFL ZE the last slots are reserved for VIPs, Mappers and Supporters. Use GFL slot priority on the GFL card: Normal (up to 61) for public players, Mapper / Supporter (up to 62), or VIP / Admin (up to 63). This avoids the 'Server is reserved' kick. The three buttons next to the server filter set the same target for every other server."
+   },
+   {
+    "q": "What does 'Map not installed. Get it' mean?",
+    "a": "The server is playing a Zombie Escape map that is not on your PC, so joining would fail with 'Required map is missing on your client'. The amber link appears on the server's row, or next to Copy IP on the GFL card. Click it and Steam opens that map's workshop page. Press Subscribe, Steam downloads it in the background, and the warning disappears within about 20 seconds of the map appearing in your folders. If the app does not know a map's workshop page, the click opens a workshop search for the map name instead. Downloading the map through another tool does not work: CS2 only uses workshop maps that Steam itself downloaded."
    },
    {
     "q": "What is the 'Launch Delay' setting for?",
     "a": "When CS2 is closed and you click 'Connect to GFL', the Command Center launches the game via Steam and waits for the configured Launch Delay (default: 15 seconds) so CS2 can load its main menu and establish Steam network credentials before executing the direct server connection."
+   },
+   {
+    "q": "What does '4:46 on map' and the '≥' sign mean?",
+    "a": "It is how long the current map has been running. The app reads the longest player connection time on the server, because a player's time restarts on a map change; GFL uses ZE Graph's exact start time. A time with '≥' in front is a minimum: the app only knows the map has run at least that long, for example on an empty server or right after the app opened. It becomes exact once the app sees a map change or has a player to measure."
+   },
+   {
+    "q": "What is the Geo radar and how accurate is it?",
+    "a": "It is an estimate of where the players on a server come from, shown as Country or Region (your choice per server). It uses name signals and the time of day the players are active, so it is never exact and no individual player is identified. The coloured pills fill the card's width, up to two lines, and the rest are grouped under '+N more' (hover for the list)."
+   },
+   {
+    "q": "What does 'N bots excluded' or 'MOSTLY BOTS' mean?",
+    "a": "Some servers fill empty slots with bots. The app counts humans only: bots are subtracted from the player count. 'N bots excluded' shows how many were removed. 'MOSTLY BOTS' appears when bots are at least half of the reported players (and at least three), because the headline number would otherwise look busier than the server really is."
+   },
+   {
+    "q": "How does Planet China work, and why is there no Players button there?",
+    "a": "Planet China lists the Chinese communities in clusters (EXG, FyS, MoeUB, ZL, 93X). Pick a cluster in 'Select community cluster' and only its servers are listed and queried. Chinese servers block the live player list (A2S_PLAYER), so the Players dialog and name-based features are not offered there. Player counts, ping and map still work."
    }
   ]
  },
@@ -159,12 +183,20 @@
     "a": "By design. When CS2 is closed, nothing is sent, so Discord shows no game from this app."
    },
    {
+    "q": "How does the app know which server I am on?",
+    "a": "In this order: the connection line CS2 writes to console.log (needs -condebug, which the Launch Options tab can add), the map the game reports matched against the servers, and your Steam name found in a server's player roster. If none of these identify the server yet, Discord shows the generic card 'Zombie Escape Server' with the map and a GeronimoHQ Portal button, then switches to the full card as soon as the server is known. The activity log lists every card sent."
+   },
+   {
     "q": "Do new users need to create or configure a Discord Application ID?",
     "a": "No. The app ships with its own Discord Application ID. Rich Presence works completely out-of-the-box for all users with zero extra setup or developer portal steps."
    },
    {
     "q": "Why don't the buttons [🎮 Server IP] and [💬 Community Discord] show when I view my own profile?",
     "a": "Discord's client intentionally hides Rich Presence action buttons on your OWN profile popout (Discord does this to prevent users from clicking links on their own profile). Rest assured, your friends, teammates, and server members CAN see and click both buttons directly on your profile!"
+   },
+   {
+    "q": "How do I turn the presence off?",
+    "a": "Use the 'Enable Discord Rich Presence' switch on the Discord Presence tab. Off clears your card and stops sending until you switch it back on. 'Refresh now' only forces an immediate update. While CS2 is closed nothing is sent anyway."
    }
   ]
  },
@@ -175,11 +207,11 @@
   "qa": [
    {
     "q": "Why should I clean custom maps?",
-    "a": "Custom Zombie Escape maps downloaded from community servers are stored as .vpk packages in csgo/maps/ and can range from 500MB to 2.5GB each. Over time, active ZE players accumulate 50GB to 150GB+ of stale map packages on their SSD. The cleaner lets you sort by file size or last played date, and safely delete obsolete or unpopular maps without touching base game files."
+    "a": "Custom Zombie Escape maps downloaded from the Steam workshop are stored as .vpk packages (mostly in steamapps/workshop/content/730) and can range from 50 MB to 2.5 GB each. Over time, active ZE players accumulate tens or hundreds of GB of stale map packages. The cleaner lets you sort by file size or last played date and delete the maps you no longer need. Subscribed server map packs, server asset packs and official Valve maps are protected and cannot be ticked."
    },
    {
     "q": "What happens if I delete a map and later rejoin a server running that map?",
-    "a": "CS2 will automatically download the map fresh from the server's FastDL HTTP mirror before joining! Deleting downloaded custom maps only removes files CS2 can download again; it does not affect your account."
+    "a": "When you join a server that plays it again, CS2 asks 'Confirm Workshop Download' and downloads the map from the Steam workshop after you accept. Deleting downloaded maps only removes files that can be downloaded again; it does not affect your account. The app asks you to confirm before it deletes anything, and the confirmation cannot be undone."
    }
   ]
  },
@@ -228,11 +260,15 @@
   "qa": [
    {
     "q": "How do the Minimize [-] and Close [X] buttons work?",
-    "a": "Clicking the [-] Minimize button hides the application completely from the Windows taskbar and tucks it quietly into the system tray near the clock (~15MB RAM). Clicking the [X] Close button completely terminates and shuts down the application."
+    "a": "[X] always closes the app completely. [-] depends on the setting 'Minimize to the system tray when [-] is clicked' (on by default): on, the window hides in the tray near the clock; off, it minimizes to the taskbar like any window. Clicking the app's taskbar button also minimizes it."
    },
    {
     "q": "How do I restore the app from the system tray?",
     "a": "Simply left-click or right-click the orange CS2 icon in your Windows system tray near the clock, or launch the app shortcut again. You can also right-click the tray icon to quick-connect to GFL, toggle the Slot Sniper, or click [❌ Exit Completely]."
+   },
+   {
+    "q": "How much memory and CPU does the app use?",
+    "a": "The window is drawn by Microsoft Edge WebView2, which Task Manager lists separately from CS2_Command_Center. In our tests the whole app used roughly 500 to 600 MB while open (most of it WebView2), the animated backdrop uses a small share of one CPU core, and the memory drops sharply while the window is minimized or in the tray (about 190 MB in our test) because the app asks WebView2 for its low-memory mode and hands unused memory back to Windows. It grows again when you use the window. The two CS2_Command_Center lines in Task Manager are normal: a tiny launcher and the app itself."
    }
   ]
  }
