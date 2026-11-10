@@ -6,6 +6,8 @@
 - Owner-only: when a presence_secret is set, a heartbeat tells the website whether CS2/Steam are running.
 """
 import concurrent.futures
+import os
+import re
 import threading
 import time
 import urllib.request
@@ -38,6 +40,7 @@ class PresenceService:
         self._logged_map = ""
         self._menu_since = 0.0
         self._logged_miss = ""
+        self._last_log_check = 0.0
         self._sent = ""
 
     # ---------- lifecycle ----------
@@ -98,6 +101,32 @@ class PresenceService:
             if match.get("group") == "china":
                 return [btn1, {"label": f"{str(match.get('cluster', 'China')).split()[0][:14]} Portal", "url": "https://geronimohq.com"}]
         return [btn1, {"label": "GeronimoHQ Portal", "url": "https://geronimohq.com"}]
+
+    def _from_console_log(self) -> Optional[Tracked]:
+        """The server CS2 itself says it connected to (needs -condebug, which the Launch Options tab can add). The last
+        "Host activate:" line wins: a Remote Connect means you are on that server, anything after it means you left."""
+        try:
+            cfg = self.core.paths.get("cfg_dir")
+            if not cfg:
+                return None
+            path = os.path.join(os.path.dirname(cfg), "console.log")
+            size = os.path.getsize(path)
+            with open(path, "rb") as fh:
+                fh.seek(max(0, size - 400_000))
+                text = fh.read().decode("utf-8", errors="replace")
+            last = None
+            for m in re.finditer(r"Host activate: (Remote Connect \(([^)]+)\)|[^\r\n]*)", text):
+                last = m.group(2)
+            if not last or ":" not in last:
+                return None
+            host, _, port = last.rpartition(":")
+            port = int(port)
+            for sv in self._servers():
+                if str(sv["host"]) == host and int(sv["port"]) == port:
+                    return (host, port, sv["name"])
+            return (host, port, f"Server {host}:{port}")
+        except Exception:
+            return None
 
     def _parallel(self, fn, servers):
         """Runs fn(server) for every server at once (a sequential sweep of 40+ servers took over 20 s, and Discord showed the
@@ -225,6 +254,12 @@ class PresenceService:
                 else:
                     self._menu_since = 0.0
 
+                if self.tracked is not None and now - self._last_log_check > 5.0:
+                    self._last_log_check = now
+                    seen = self._from_console_log()
+                    if seen and (seen[0], seen[1]) != (self.tracked[0], self.tracked[1]):
+                        self.tracked, self.tracked_since, missing, self.session_start = seen, time.time(), 0, int(time.time())
+                        self.core.log(f"[DISCORD] Player switched servers: {seen[2]}")
                 if self.tracked is not None:
                     host, port, name = self.tracked
                     in_grace = (now - self.tracked_since) < 30.0
@@ -246,7 +281,9 @@ class PresenceService:
                                         self.core.log("[DISCORD] Player left the server; back to Main Menu.")
                 elif not sniping and now - last_scan > 3.0:
                     last_scan = now
-                    joined = self._match_by_map(gmap) if gmap else None
+                    joined = self._from_console_log()
+                    if not joined and gmap:
+                        joined = self._match_by_map(gmap)
                     if not joined and persona:
                         joined = self._scan_for_user(persona)
                     if joined:

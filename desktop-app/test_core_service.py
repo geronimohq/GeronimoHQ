@@ -482,3 +482,22 @@ class PresenceDetection(unittest.TestCase):
             self.assertEqual(p._match_by_map("ze_a"), ("2.2.2.2", 2, "X"))
             infos["1.1.1.1"]["curr_players"] = 5
             self.assertEqual(p._match_by_map("ze_a"), ("1.1.1.1", 1, "GFL"))
+
+
+class ConsoleLogDetection(unittest.TestCase):
+    def test_last_host_activate_line_decides_the_server(self):
+        import tempfile
+        core, _ = make_core()
+        with tempfile.TemporaryDirectory() as d:
+            cfg = os.path.join(d, "cfg"); os.makedirs(cfg)
+            log = os.path.join(d, "console.log")
+            with mock.patch.dict(core.paths, {"cfg_dir": cfg}):
+                with open(log, "w", encoding="utf-8") as fh:
+                    fh.write("x\n[HostStateManager] Host activate: Remote Connect (74.91.124.21:27015)\n")
+                self.assertEqual(core.presence._from_console_log()[:2], ("74.91.124.21", 27015))
+                with open(log, "a", encoding="utf-8") as fh:
+                    fh.write("[HostStateManager] Host activate: Remote Connect (9.9.9.9:27016)\n")
+                self.assertEqual(core.presence._from_console_log(), ("9.9.9.9", 27016, "Server 9.9.9.9:27016"))
+                with open(log, "a", encoding="utf-8") as fh:
+                    fh.write("[HostStateManager] Host activate: Idle (levelload)\n")
+                self.assertIsNone(core.presence._from_console_log())
