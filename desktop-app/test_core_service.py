@@ -470,3 +470,15 @@ class MapClockRoster(unittest.TestCase):
         self.assertEqual(c["start"], 18_500.0)
         self.assertTrue(c["exact"])
         self.assertFalse(c["probing"])
+
+
+class PresenceDetection(unittest.TestCase):
+    def test_map_match_prefers_gfl_and_skips_empty_servers(self):
+        core, _ = make_core()
+        p = core.presence
+        servers = [{"id": "gfl", "host": "1.1.1.1", "port": 1, "name": "GFL"}, {"id": "x", "host": "2.2.2.2", "port": 2, "name": "X"}]
+        infos = {"1.1.1.1": {"online": True, "map": "ze_a", "curr_players": 0}, "2.2.2.2": {"online": True, "map": "workshop/1/ze_a", "curr_players": 20}}
+        with mock.patch.object(p, "_servers", return_value=servers), mock.patch.object(server_browser, "query_server_info", side_effect=lambda h, po, timeout=1: infos[h]):
+            self.assertEqual(p._match_by_map("ze_a"), ("2.2.2.2", 2, "X"))
+            infos["1.1.1.1"]["curr_players"] = 5
+            self.assertEqual(p._match_by_map("ze_a"), ("1.1.1.1", 1, "GFL"))

@@ -5,6 +5,7 @@
   or "In Main Menu".
 - Owner-only: when a presence_secret is set, a heartbeat tells the website whether CS2/Steam are running.
 """
+import concurrent.futures
 import threading
 import time
 import urllib.request
@@ -35,6 +36,7 @@ class PresenceService:
         self.thread: Optional[threading.Thread] = None
         self._logged_act = None
         self._logged_map = ""
+        self._menu_since = 0.0
 
     # ---------- lifecycle ----------
     def start(self) -> None:
@@ -95,31 +97,55 @@ class PresenceService:
                 return [btn1, {"label": f"{str(match.get('cluster', 'China')).split()[0][:14]} Portal", "url": "https://geronimohq.com"}]
         return [btn1, {"label": "GeronimoHQ Portal", "url": "https://geronimohq.com"}]
 
+    def _parallel(self, fn, servers):
+        """Runs fn(server) for every server at once (a sequential sweep of 40+ servers took over 20 s, and Discord showed the
+        generic "Zombie Escape Server" card for that long after every map change). Results keep the catalog order."""
+        with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
+            return list(ex.map(lambda sv: self._safe(fn, sv), servers))
+
+    @staticmethod
+    def _safe(fn, sv):
+        try:
+            return fn(sv)
+        except Exception:
+            return None
+
     def _match_by_map(self, map_name: str) -> Optional[Tracked]:
         target = (map_name or "").split("/")[-1].lower().strip()
         if not target:
             return None
-        for s in sorted(self._servers(), key=lambda x: x["id"] != "gfl"):
-            try:
-                info = server_browser.query_server_info(s["host"], int(s["port"]), timeout=0.8 if s["id"] == "gfl" else 0.6)
-                if info.get("online") and (info.get("map") or "").split("/")[-1].lower().strip() == target:
-                    return (s["host"], int(s["port"]), s["name"])
-            except Exception:
-                continue
-        return None
+        servers = sorted(self._servers(), key=lambda x: x["id"] != "gfl")
+
+        def one(sv):
+            info = server_browser.query_server_info(sv["host"], int(sv["port"]), timeout=1.2)
+            if info.get("online") and (info.get("map") or "").split("/")[-1].lower().strip() == target:
+                return (sv["host"], int(sv["port"]), sv["name"], int(info.get("curr_players") or 0))
+            return None
+
+        first = self._safe(one, servers[0]) if servers and servers[0]['id'] == 'gfl' else None
+        if first and first[3] > 0:
+            return (first[0], first[1], first[2])        # the usual case, answered in about a second
+        hits = [h for h in self._parallel(one, servers) if h]
+        if not hits:
+            return None
+        best = hits[0]                       # GFL first, then catalog order; an empty server is a worse guess than a busy one
+        if best[3] == 0:
+            best = next((h for h in hits if h[3] > 0), best)
+        return (best[0], best[1], best[2])
 
     def _scan_for_user(self, persona: str) -> Optional[Tracked]:
         target = (persona or "").lower().strip()
         if not target:
             return None
-        for s in sorted(self._servers(), key=lambda x: x["id"] != "gfl"):
-            try:
-                res = server_browser.query_server_players(s["host"], int(s["port"]), timeout=0.8 if s["id"] == "gfl" else 0.6)
-                if res.get("success") and any(p.get("name", "").strip().lower() == target for p in res.get("players", [])):
-                    return (s["host"], int(s["port"]), s["name"])
-            except Exception:
-                continue
-        return None
+        servers = [sv for sv in sorted(self._servers(), key=lambda x: x["id"] != "gfl") if sv.get("group") != "china"]   # China rosters are shielded
+
+        def one(sv):
+            res = server_browser.query_server_players(sv["host"], int(sv["port"]), timeout=1.2)
+            if res.get("success") and any(p.get("name", "").strip().lower() == target for p in res.get("players", [])):
+                return (sv["host"], int(sv["port"]), sv["name"])
+            return None
+
+        return next((h for h in self._parallel(one, servers) if h), None)
 
     def _heartbeat(self, is_cs2: bool, is_steam: bool) -> None:
         secret = str(self.core.config.get("presence_secret", "") or "").strip()
@@ -191,8 +217,12 @@ class PresenceService:
                 gmap = (gs.get("map_name", "") or "").split("/")[-1].strip()
                 act = gs.get("activity", "")
                 if act == "menu" and not gmap and self.tracked is not None:
-                    self.core.log("[DISCORD] Main menu detected, tracking reset to standby.")
-                    self.tracked, missing = None, 0
+                    self._menu_since = self._menu_since or now      # a map change also looks like the menu for a moment: only reset after 25 s
+                    if now - self._menu_since >= 25.0:
+                        self.core.log("[DISCORD] Main menu detected, tracking reset to standby.")
+                        self.tracked, missing, self._menu_since = None, 0, 0.0
+                else:
+                    self._menu_since = 0.0
 
                 if self.tracked is not None:
                     host, port, name = self.tracked
@@ -215,9 +245,9 @@ class PresenceService:
                                         self.core.log("[DISCORD] Player left the server; back to Main Menu.")
                 elif now - last_scan > 3.0:
                     last_scan = now
-                    joined = self._scan_for_user(persona) if persona else None
-                    if not joined and gmap:
-                        joined = self._match_by_map(gmap)
+                    joined = self._match_by_map(gmap) if gmap else None
+                    if not joined and persona:
+                        joined = self._scan_for_user(persona)
                     if joined:
                         self.tracked, self.tracked_since, missing, self.session_start = joined, time.time(), 0, int(time.time())
                         self.core.log(f"[DISCORD] Detected connected server: {joined[2]}")
