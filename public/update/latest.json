@@ -1,9 +1,9 @@
 {
-  "version": "1.5.1",
+  "version": "1.6.0",
   "build_date": "2026-11-10",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "F48472BB7E7AF4368671E77181F158E30B0173BD4682FFEBD32284A4E9D6BE16",
-  "size": 37063751,
-  "notes": "CS2 Command Center v1.5.1 update with improved performance, updater, and fixes.",
-  "signature": "ba74314e31e49d351197f765c000c8599578bba028c06da00457fc65fef10be2cc1781b35e833546fb6cdeb7c9f6130aa8717d6ba86bc4f707589a61f374dd07"
+  "sha256": "6F82ED3E23775E23CA1C366F1DC4D2306D068CF0C8AFC2852B816ED9ABC6DC3A",
+  "size": 37089663,
+  "notes": "New dark retro look, per-server Country/Region geo view, bot-count fix with a MOSTLY BOTS badge, Engine Tweaks fits without scrolling, consistent Map Cleaner colors.",
+  "signature": "d6caa44b82b39a625992a00a05f97a9f5a43ce915ae8e704e14b62d4e540478b6e760b227411223d5cb18abbfed6214ed7021b7a9fc70967902237a637327d0f"
 }
