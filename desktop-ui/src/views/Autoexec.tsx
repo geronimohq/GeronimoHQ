@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../api';
 import { sfx } from '../sound';
 import { useModal } from '../components/Modal';
@@ -37,6 +37,7 @@ export default function Autoexec() {
   const [editing, setEditing] = useState(false), [draft, setDraft] = useState('');
   const [flash, setFlash] = useState('Read-only preview (click Edit config to modify)');
   const openModal = useModal();
+  const edRef = useRef<HTMLDivElement>(null);
   const load = () => { void api.autoexecState().then((s) => { setSt(s); if (s.personal_vm) setVm(false); }); };
   useEffect(load, []);
   const lines = useMemo(() => (st?.text ?? '').split(/\r?\n/), [st]);
@@ -52,6 +53,7 @@ export default function Autoexec() {
     const r = await api.zeCustomizer({ ze_laser_viewmodel: vm, clean_telemetry_hud: tel, hud_color: hud, duck_key: duck, voice_mute_key: mute });
     setFlash(`Updated at ${new Date().toLocaleTimeString()}: live preview shows the injected block at the bottom.`);
     load();
+    setTimeout(() => { if (edRef.current) edRef.current.scrollTop = edRef.current.scrollHeight; }, 500);
     openModal(r.ok
       ? { kind: 'ok', label: 'Notification', title: 'ZE visual & audio binds added to autoexec.cfg',
           body: `Successfully injected into autoexec.cfg!\n\n${r.message}\n\n• Viewmodel low laser preset: ${vm ? 'ON (FOV 68, X:+2, Y:+2, Z:-2)' : 'OFF (your own viewmodel settings are kept)'}\n• HUD color: ${hud}\n• Boss audio ducking key: [${duck}] (22% <-> 100%)  |  Panic voice mute key: [${mute}]\n\nThe live autoexec.cfg preview below has updated and shows your new ZE block.` }
@@ -67,6 +69,8 @@ export default function Autoexec() {
     <section className="view on">
       <div className="vhead"><div><div className="decal">// 04 · config</div><h1>CS2 in-game autoexec configuration</h1><p>Config directory: {st?.cfg_dir ?? (st ? 'Not found' : '...')}</p></div></div>
 
+      {st && !st.cfg && <div className="glass card" role="alert" style={{ borderColor: 'rgba(255,158,27,.5)' }}><b>CS2 cfg folder not found.</b> The app works without it, but the autoexec tools are off. Install CS2 through Steam, or check that your Steam library is detected.</div>}
+      {st?.cfg && st.state === 'missing' && <div className="glass card" style={{ borderColor: 'rgba(0,240,255,.4)' }}><b>No autoexec.cfg yet.</b> Apply engine autoexec tweaks creates one for you and keeps a backup of anything it replaces. {PAGES.autoexec.sub}</div>}
       <div className="glass card">
         <div className="sect" style={{ marginBottom: 6 }}>1. Engine autoexec tweaks</div>
         <div className="ptext" style={{ marginBottom: 6 }}>{A.sub}</div>
@@ -106,7 +110,7 @@ export default function Autoexec() {
         </div>
         {editing
           ? <textarea className="editor edit" value={draft} onChange={(e) => setDraft(e.target.value)} spellCheck={false} aria-label="autoexec.cfg editor" />
-          : <div className="editor">{st?.text ? lines.map((l, i) => <div key={i} className="ln"><span className="no">{i + 1}</span><Line t={l} /></div>) : <div className="decal" style={{ padding: 10 }}>{st ? 'No autoexec.cfg to show.' : '...'}</div>}</div>}
+          : <div className="editor" ref={edRef}>{st?.text ? lines.map((l, i) => <div key={i} className="ln"><span className="no">{i + 1}</span><Line t={l} /></div>) : <div className="decal" style={{ padding: 10 }}>{st ? 'No autoexec.cfg to show.' : '...'}</div>}</div>}
       </div>
     </section>
   );

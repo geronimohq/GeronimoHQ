@@ -18,7 +18,7 @@ export function Info({ title, badge, text, children, open = true, tone = 'var(--
 }
 
 /** Reminder banner shown on Engine Tweaks and PC Maintenance (same rules as the classic app: 7 days). */
-export function WeeklyBanner({ daysOpt, daysMaint, go }: { daysOpt: number | null | undefined; daysMaint: number | null | undefined; go: (id: 'engine' | 'maintenance') => void }) {
+export function WeeklyBanner({ daysOpt, daysMaint, go, actions }: { daysOpt: number | null | undefined; daysMaint: number | null | undefined; go: (id: 'engine' | 'maintenance') => void; actions?: { label: string; run: () => void }[] }) {
   const age = (d: number | null | undefined) => (d == null ? 'not yet run' : d === 0 ? 'today' : `${d}d ago`);
   const optOld = daysOpt == null || daysOpt > 7, mOld = daysMaint == null || daysMaint > 7;
   const both = optOld && mOld;
@@ -34,6 +34,7 @@ export function WeeklyBanner({ daysOpt, daysMaint, go }: { daysOpt: number | nul
       <span style={{ color: bad ? 'var(--amber)' : 'var(--ok)', fontSize: 18 }}>{bad ? '\u26A0' : '\u2713'}</span>
       <div style={{ flex: 1, minWidth: 240 }}><div className="t">{title}</div><div className="d" style={{ color: 'var(--tx2)' }}>{body}</div></div>
       <button className="btn cut ghost sm" onClick={() => { sfx.click(); go(optOld ? 'engine' : 'maintenance'); }}>{optOld ? 'Open engine tweaks' : 'Open PC maintenance'}</button>
+      {(actions ?? []).map((a) => <button key={a.label} className="btn cut ghost sm" onClick={() => { sfx.click(); a.run(); }}>{a.label}</button>)}
       {!optOld && !mOld ? null : (optOld && mOld) ? <button className="btn cut ghost sm" onClick={() => { sfx.click(); go('maintenance'); }}>Open PC maintenance</button> : null}
     </div>
   );

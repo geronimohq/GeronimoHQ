@@ -74,7 +74,7 @@ export default function Maintenance({ busy, setBusy, go }: { busy: boolean; setB
       <div className="vhead"><div><div className="decal">// 08 · housekeeping</div><h1>Safe system &amp; storage maintenance</h1><p>PC clean-up: free up storage, clear cache bloat, inspect drive health and flush DNS.</p></div>
         <button className="btn cut ghost sm" onClick={() => { sfx.click(); load(); }}><RefreshCw size={13} /> Refresh</button></div>
 
-      <WeeklyBanner daysOpt={daysOpt} daysMaint={st?.days_maint} go={go} />
+      <WeeklyBanner daysOpt={daysOpt} daysMaint={st?.days_maint} go={go} actions={st?.days_maint == null || st.days_maint > 7 ? [{ label: 'Run Maintenance Below', run }] : []} />
       <Info title={M.purpose_title} text={M.purpose} open={false} tone="var(--cyan)" />
 
       {st && !st.admin && (

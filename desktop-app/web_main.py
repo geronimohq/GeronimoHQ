@@ -49,7 +49,7 @@ def selftest(window, api) -> None:
     import traceback
     time.sleep(4)
     names = ["app_info", "hw_info", "servers_catalog", "engine_state", "dashboard", "maint_state", "launch_state", "dns_state", "autoexec_state",
-             "mpo_state", "settings_get", "maps_settings", "presence_state", "sniper_status", "start_page", "restore_summary", "log_history"]
+             "mpo_state", "settings_get", "maps_settings", "presence_state", "sniper_status", "start_page", "restore_summary", "log_history", "dns_status", "about", "diagnostics"]
     out = []
     for n in names:
         try:

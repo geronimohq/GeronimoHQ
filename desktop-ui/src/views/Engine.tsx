@@ -54,7 +54,7 @@ export default function Engine({ opts, setOpts, onApplied, log, power, setPower,
         <div><div className="decal">// 02 · system tuning</div><h1>Engine performance tweaks</h1><p>Each change has an undo: Restore Defaults, the autoexec backup, or the Restore ISP Default (DHCP) button.</p></div>
         <span className="pill"><i className="dot" /><span>{enabled} of {TWEAKS.length} selected</span></span>
       </div>
-      <WeeklyBanner daysOpt={daysOpt} daysMaint={daysMaint} go={go} />
+      <WeeklyBanner daysOpt={daysOpt} daysMaint={daysMaint} go={go} actions={daysOpt == null || daysOpt > 7 ? [{ label: '1-Click Optimize', run: onApplied }] : []} />
       <Info title={PAGES.engine.note_title.replace(/^[^A-Za-z]*/, '')} text={PAGES.engine.note} open={false} tone="var(--cyan)" />
       {state && !state.cs2_found && <div className="glass card" role="alert" style={{ borderColor: 'rgba(239,68,68,.45)' }}>CS2 was not found, so the autoexec, fullscreen and dump tweaks are skipped. Shader cleaning and Game DVR still work.</div>}
       {state?.autoexec && <div className="decal" style={{ padding: '0 4px' }}>{state.autoexec.text}</div>}

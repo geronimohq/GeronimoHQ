@@ -45,18 +45,21 @@ export default function Booster() {
     openModal(x.ok ? { kind: 'ok', label: 'Notification', title } : { kind: 'warn', label: 'Problem', title: 'DNS not changed', body: x.error ?? 'See the log.' });
     loadDns();
   };
-  const apply = (name: string, primary: string, secondary: string) => dns && !dns.admin ? adminPrompt(`Use ${name}`, 'booster') : openModal({
+  const applyInner = (name: string, primary: string, secondary: string) => dns && !dns.admin ? adminPrompt(`Use ${name}`, 'booster') : openModal({
     kind: 'q', label: 'Confirm', title: `Use ${name}?`, body: `Sets DNS ${primary} / ${secondary} on your active network adapter. Undo any time with Restore ISP default.`,
     confirm: { text: 'Apply DNS', run: async () => done(await api.dnsApply(primary, secondary, name), 'DNS updated') },
   });
+  const alreadyOn = (name: string) => openModal({ kind: 'ok', label: 'Notification', title: `${name} is already active`, body: 'Your network adapter already uses this DNS, so nothing was changed.' });
+  const apply = (name: string, primary: string, secondary: string) => (dns?.current ?? '').includes(primary) ? alreadyOn(name) : applyInner(name, primary, secondary);
   const restore = () => dns && !dns.admin ? adminPrompt('Restore ISP default DNS', 'booster') : openModal({
     kind: 'q', label: 'Confirm', title: 'Restore ISP default DNS?', body: 'Switches the adapter back to automatic (DHCP) and flushes the DNS cache.',
     confirm: { text: 'Restore', run: async () => done(await api.dnsRestore(), 'DNS restored to automatic') },
   });
-  const custom = () => dns && !dns.admin ? adminPrompt('Apply custom DNS', 'booster') : openModal({
+  const customInner = () => dns && !dns.admin ? adminPrompt('Apply custom DNS', 'booster') : openModal({
     kind: 'q', label: 'Confirm', title: 'Apply custom DNS?', body: `Sets DNS ${p1} / ${p2 || '(none)'} on your active network adapter.`,
     confirm: { text: 'Apply custom DNS', run: async () => done(await api.dnsCustom(p1, p2), 'Custom DNS applied') },
   });
+  const custom = () => p1.trim() && (dns?.current ?? '').includes(p1.trim()) ? alreadyOn('Custom DNS') : customInner();
   const analyze = async () => {
     sfx.click();
     const r = await api.logAnalyze();

@@ -1,11 +1,13 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Play, Plus, Search } from 'lucide-react';
+import { Play, Plus, RefreshCw, Search } from 'lucide-react';
 import { api, on } from '../api';
 import { sfx } from '../sound';
 import { Geo } from '../components/Geo';
 import { useModal } from '../components/Modal';
+import PlayersDialog from '../components/PlayersDialog';
+import SoundtrackDialog from '../components/SoundtrackDialog';
 import type { AppInfo, Match, SniperStatus, Srv, Status } from '../types';
 
 type GeoMode = 'country' | 'region';
@@ -33,13 +35,13 @@ function MapTimer({ since, exact }: { since: number; exact: boolean }) {
   return <span className="cell">&#9201; {exact ? '' : '≥ '}{m}:{String(s).padStart(2, '0')} on map</span>;
 }
 
-const Row = memo(function Row({ srv, st, mode, onMode, since, armed, onConnect, onPlayers, onSniper, onCopy, thumb }: { srv: Srv; st?: Status; mode: GeoMode; onMode: (m: GeoMode) => void; since?: number; armed: boolean; onConnect: () => void; onPlayers: () => void; onSniper: () => void; onCopy: () => void; thumb?: string }) {
+const Row = memo(function Row({ srv, st, mode, onMode, since, armed, onConnect, onPlayers, onSniper, onCopy, thumb, onLink, onRemove, cooldown }: { srv: Srv; st?: Status; mode: GeoMode; onMode: (m: GeoMode) => void; since?: number; armed: boolean; onConnect: () => void; onPlayers: () => void; onSniper: () => void; onCopy: () => void; thumb?: string; onLink: (k: '3d' | 'discord' | 'portal' | 'sound') => void; onRemove?: () => void; cooldown?: number }) {
   const humans = st?.humans ?? 0;
   const fp = useFlash(humans), fg = useFlash(st?.ping);
   return (
     <article className="glass srv">
       <div className="srvmain"><div className="thumb" style={thumb ? { backgroundImage: `url(${thumb})` } : undefined} aria-hidden="true" /><div style={{ minWidth: 0, flex: 1 }}>
-        <div className="nm"><span className="cc">{srv.flag.replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase() || '--'}</span>{srv.name}</div>
+        <div className="nm"><span className="cc">{srv.flag.replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase() || '--'}</span>{srv.name}{srv.region && <span className="rpill">{srv.region.toUpperCase()}</span>}</div>
         <div className="cells">
           {st?.online
             ? <>
@@ -50,12 +52,13 @@ const Row = memo(function Row({ srv, st, mode, onMode, since, armed, onConnect, 
               </>
             : <span className="cell">{st ? '● Offline / not answering' : 'Querying…'}</span>}
         </div>
-        <div className="decal" style={{ marginTop: 7 }}>{srv.region || srv.cluster || 'Custom'}{st?.map ? ` · ${st.map}` : ''}</div>
+        <div className="decal" style={{ marginTop: 7 }}>{srv.cluster || 'Custom'}{st?.map ? ` \u00B7 ${st.map}` : ''}</div>
+        <div className="links">{st?.map && <button className="lnk" onClick={() => onLink('3d')}>3D map</button>}{st?.map && <button className="lnk" onClick={() => onLink('sound')}>Soundtrack</button>}{srv.discord && <button className="lnk" onClick={() => onLink('discord')}>Discord</button>}{srv.website && <button className="lnk" onClick={() => onLink('portal')}>Portal</button>}{onRemove && <button className="lnk bad" onClick={onRemove}>Remove server</button>}</div>
       </div></div>
       <Geo countries={st?.geo?.countries ?? []} regions={st?.geo?.regions ?? []} mode={mode} onMode={onMode} humans={humans} />
       <div className="dock">
         <button className={`btn cut amber pri sm${st?.online ? '' : ' dim'}`} onClick={onConnect}>Connect</button>
-        <button className={`btn cut ${armed ? 'armed' : 'ghost'} sm`} aria-pressed={armed} onClick={onSniper}>{armed ? 'Sniper armed' : 'Sniper'}</button>
+        <button className={`btn cut ${armed ? 'armed' : 'ghost'} sm`} aria-pressed={armed} disabled={!!cooldown} onClick={onSniper}>{cooldown ? `Cooldown ${cooldown}s` : armed ? 'Sniper armed' : 'Sniper'}</button>
         <button className="btn cut ghost sm" onClick={onPlayers}>Players</button>
         <button className="btn cut ghost sm" onClick={onCopy}>Copy IP</button>
       </div>
@@ -64,11 +67,11 @@ const Row = memo(function Row({ srv, st, mode, onMode, since, armed, onConnect, 
 });
 
 function AddServer({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [name, setName] = useState(''), [addr, setAddr] = useState(''), [err, setErr] = useState('');
+  const [name, setName] = useState(''), [addr, setAddr] = useState(''), [region, setRegion] = useState('Community'), [err, setErr] = useState('');
   const save = async () => {
     const m = addr.trim().match(/^(.+):(\d{2,5})$/);
     if (!m) { setErr('Enter the address as host:port, for example 74.91.124.21:27015.'); return; }
-    const r = await api.addServer(name, m[1], Number(m[2]));
+    const r = await api.addServer(name, m[1], Number(m[2]), region);
     if (r.ok) { sfx.toggle(); onSaved(); onClose(); } else setErr(r.error ?? 'Could not save the server.');
   };
   return createPortal(
@@ -80,6 +83,7 @@ function AddServer({ onClose, onSaved }: { onClose: () => void; onSaved: () => v
         </div>
         <div className="field"><label htmlFor="fName">Server name</label><input id="fName" value={name} onChange={(e) => setName(e.target.value)} placeholder="My ZE server" autoFocus /></div>
         <div className="field"><label htmlFor="fHost">Host : port</label><input id="fHost" value={addr} onChange={(e) => setAddr(e.target.value)} placeholder="74.91.124.21:27015" onKeyDown={(e) => { if (e.key === 'Enter') void save(); }} /></div>
+        <div className="field"><label htmlFor="fReg">Region / community</label><input id="fReg" value={region} onChange={(e) => setRegion(e.target.value)} placeholder="Community" /></div>
         {err && <div style={{ color: 'var(--bad)', marginTop: 10 }} role="alert">{err}</div>}
         <div className="btns"><button className="btn cut ghost" onClick={() => { sfx.click(); onClose(); }}>Cancel</button><button className="btn cut amber pri" onClick={() => void save()}>Save server</button></div>
       </motion.div>
@@ -94,6 +98,9 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
   const openModal = useModal();
   const [tiers, setTiers] = useState<{ gfl: string; community: string }>({ gfl: 'mapper', community: '63' });
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const [playersFor, setPlayersFor] = useState<Srv | null>(null);
+  const [soundFor, setSoundFor] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
   const asked = useRef<Set<string>>(new Set());
   useEffect(() => { void api.sniperTiers().then(setTiers); const off = on<{ map: string; uri: string }>('thumb', (t) => setThumbs((p) => ({ ...p, [t.map]: t.uri }))); return off; }, []);
   const wantThumb = useCallback((map?: string | null) => {
@@ -144,7 +151,7 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
     void run();
     const t = setInterval(run, rate * 1000);
     return () => clearInterval(t);
-  }, [listAll, rate, merge]);
+  }, [listAll, rate, merge, tick]);
 
   // featured server: every second
   useEffect(() => {
@@ -175,16 +182,18 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
       else log('SERVERS', `Connecting to ${s.name}`);
     });
   };
-  const players = async (s: Srv) => {
+  const players = async (s: Srv) => { sfx.click(); setPlayersFor(s); };
+  const link = (s: Srv, k: '3d' | 'discord' | 'portal' | 'sound') => {
     sfx.click();
-    const r = await api.players(s.id);
-    openModal({
-      kind: r.success ? 'ok' : 'warn', label: 'Active players', title: s.name,
-      body: r.success
-        ? (r.players.length ? <div className="roster">{r.players.map((p, i) => <div key={i} className="rrow"><span>{p.name}</span><span className="mono">{p.score}</span><span className="mono">{p.time}</span></div>)}</div> : 'No players on the server right now.')
-        : (r.error || 'The server did not answer the player list request.'),
-    });
+    const map = st[s.id]?.map ?? '';
+    if (k === '3d') void api.open3dMap(map);
+    else if (k === 'sound') setSoundFor(map);
+    else if (k === 'discord' && s.discord) void api.openUrl(s.discord.startsWith('http') ? s.discord : `https://${s.discord}`);
+    else if (k === 'portal' && s.website) void api.openUrl(s.website.startsWith('http') ? s.website : `https://${s.website}`);
   };
+  const remove = (s: Srv) => openModal({ kind: 'q', label: 'Confirm', title: `Remove ${s.name}?`, body: 'Removes this server from your list. Servers that came with the app cannot be removed.', confirm: { text: 'Remove', run: async () => { await api.removeServer(s.id); loadCatalog(); log('SERVERS', `Removed server: ${s.name}`); } } });
+  const refreshAll = () => { sfx.click(); setTick((t) => t + 1); };
+  const cd = (s: Srv) => { if (!sniper || sniper.state !== 'cooldown' || sniper.target !== s.name) return undefined; const m = sniper.text.match(/\((\d+)s\)/); return m ? Number(m[1]) : undefined; };
   const toggleSniper = (s: Srv) => {
     sfx.click();
     if (sniper?.active && sniper.target === s.name) { void api.sniperStop(); return; }
@@ -245,6 +254,10 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
                   <button className={`btn cut ${isArmed(featured) ? 'armed' : 'ghost'} sm`} aria-pressed={isArmed(featured)} onClick={() => toggleSniper(featured)}>{isArmed(featured) ? 'Sniper armed' : 'Sniper'}</button>
                   <button className="btn cut ghost sm" onClick={() => void players(featured)}>Players</button>
                   <button className="btn cut ghost sm" onClick={() => copyIp(featured)}>Copy IP</button>
+                  <button className="btn cut ghost sm" onClick={() => link(featured, '3d')}>3D map</button>
+                  <button className="btn cut ghost sm" onClick={() => link(featured, 'sound')}>Soundtrack</button>
+                  {featured.discord && <button className="btn cut ghost sm" onClick={() => link(featured, 'discord')}>Discord</button>}
+                  {featured.website && <button className="btn cut ghost sm" onClick={() => link(featured, 'portal')}>Portal</button>}
                 </div>
               </div>
             </div>
@@ -264,13 +277,16 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
         </div>
         {totals.humans !== undefined && <span className="pill" title="Human players on the catalog servers that answered recently"><i className="dot cy" />{totals.humans} PLAYERS IN-GAME</span>}
         {totals.online !== undefined && <span className="pill">{totals.online} / {totals.total} SERVERS ONLINE</span>}
+        <button className="btn cut sm ghost" onClick={refreshAll}><RefreshCw size={13} /> Refresh all</button>
         <button className="btn cut sm ghost" onClick={() => { sfx.click(); setAdding(true); }}><Plus size={13} /> Add server</button>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {list.map((s) => <Row key={s.id} thumb={thumbs[st[s.id]?.map ?? '']} onCopy={() => copyIp(s)} srv={s} st={st[s.id]} mode={modes[s.id] ?? 'country'} onMode={setMode(s.id)} since={seen.current[s.id]?.since} armed={isArmed(s)} onConnect={() => connect(s)} onPlayers={() => void players(s)} onSniper={() => toggleSniper(s)} />)}
+        {list.map((s) => <Row key={s.id} onLink={(k) => link(s, k)} onRemove={s.custom ? () => remove(s) : undefined} cooldown={cd(s)} thumb={thumbs[st[s.id]?.map ?? '']} onCopy={() => copyIp(s)} srv={s} st={st[s.id]} mode={modes[s.id] ?? 'country'} onMode={setMode(s.id)} since={seen.current[s.id]?.since} armed={isArmed(s)} onConnect={() => connect(s)} onPlayers={() => void players(s)} onSniper={() => toggleSniper(s)} />)}
         {!list.length && <div className="glass card ph">No servers match.</div>}
       </div>
+      <AnimatePresence>{playersFor && <PlayersDialog srv={playersFor} onClose={() => setPlayersFor(null)} onConnect={() => connect(playersFor)} />}</AnimatePresence>
+      <AnimatePresence>{soundFor !== null && <SoundtrackDialog map={soundFor} onClose={() => setSoundFor(null)} log={log} />}</AnimatePresence>
       <AnimatePresence>{adding && <AddServer onClose={() => setAdding(false)} onSaved={() => { log('SERVERS', 'Server saved'); loadCatalog(); }} />}</AnimatePresence>
     </section>
   );

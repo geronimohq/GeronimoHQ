@@ -1,4 +1,4 @@
-import type { AnalyzerResult, AppInfo, AutoexecState, HwInfo, VpkResult, UpdateInfo, PresenceState, MapsSettings, MpoState, SettingsValues, DashboardData, DnsState, EngineState, LogLine, LaunchState, MaintState, Match, PlayerRow, SniperStatus, Srv, Status } from './types';
+import type { Track, AnalyzerResult, AppInfo, AutoexecState, HwInfo, VpkResult, UpdateInfo, PresenceState, MapsSettings, MpoState, SettingsValues, DashboardData, DnsState, EngineState, LogLine, LaunchState, MaintState, Match, PlayerRow, SniperStatus, Srv, Status } from './types';
 
 type Fn = (...a: unknown[]) => Promise<unknown>;
 declare global {
@@ -37,7 +37,16 @@ export const api = {
   statusMany: (ids: string[]) => call<Status[]>('servers_status_many', ids),
   gflMatch: () => call<Match>('gfl_match'),
   totals: () => call<{ humans?: number; bots?: number; online?: number; total?: number }>('servers_totals'),
-  addServer: (name: string, host: string, port: number) => call<{ ok: boolean; error?: string }>('servers_add', name, host, port),
+  addServer: (name: string, host: string, port: number, region: string) => call<{ ok: boolean; error?: string }>('servers_add', name, host, port, region),
+  removeServer: (id: string) => call<boolean>('servers_remove', id),
+  soundtrack: (map: string) => call<{ map: string; tracks: Track[] }>('soundtrack', map),
+  open3dMap: (map: string) => call<boolean>('open_3d_map', map),
+  openYoutube: (title: string) => call<boolean>('open_youtube_search', title),
+  dnsStatus: () => call<{ text: string; state: string }>('dns_status'),
+  diagnostics: () => call<string>('diagnostics'),
+  exeSha: () => call<string>('exe_sha256'),
+  logClear: () => call<boolean>('log_clear'),
+  about: () => call<{ version: string; build_date: string; last_update_check: string }>('about'),
   engineState: () => call<EngineState>('engine_state'),
   engineApply: (opts: Record<string, unknown>) => call<{ ok: boolean; error?: string }>('engine_apply', opts),
   engineRestore: () => call<{ ok: boolean; error?: string }>('engine_restore'),
@@ -172,6 +181,12 @@ async function mock(name: string, ...args: unknown[]): Promise<unknown> {
     case 'sniper_set_tier': return { gfl: 'mapper', community: String(args[1]), ok: true };
     case 'map_thumb': return '';
     case 'win_maximize': return false;
+    case 'servers_remove': case 'open_3d_map': case 'open_youtube_search': case 'log_clear': return true;
+    case 'soundtrack': return { map: String(args[0]), tracks: [{ name: 'Sample track', duration: '03:12', tags: ['stage 1'], url: null }] };
+    case 'dns_status': return { text: '\u25CF DNS: Cloudflare Gaming (1.1.1.1)', state: 'provider' };
+    case 'diagnostics': return 'CS2 Command Center Diagnostics (sample)';
+    case 'exe_sha256': return 'SAMPLE';
+    case 'about': return { version: '2.0.0-dev', build_date: '', last_update_check: 'Never' };
     case 'restore_summary': return 'This undoes the app\'s engine changes.';
     default: return undefined;
   }

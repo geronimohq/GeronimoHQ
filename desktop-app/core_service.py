@@ -99,11 +99,11 @@ class Core:
         out = []
         for s in server_browser.get_all_servers():
             out.append({"id": s.get("id"), "name": s.get("name"), "host": s.get("host"), "port": int(s.get("port") or 0),
-                        "region": s.get("region") or "", "flag": s.get("flag") or "", "discord": s.get("discord") or "",
+                        "region": s.get("region") or "", "flag": s.get("flag") or "", "discord": s.get("discord") or "", "website": s.get("website") or "",
                         "featured": bool(s.get("is_featured")), "custom": bool(s.get("is_custom")), "group": "global", "cluster": ""})
         for s in self._china_servers():
             out.append({"id": s["id"], "name": s.get("name"), "host": s["host"], "port": int(s["port"]), "region": s["region"],
-                        "flag": "", "discord": "", "featured": False, "custom": False, "group": "china", "cluster": s["cluster"]})
+                        "flag": "", "discord": "", "website": "", "featured": False, "custom": False, "group": "china", "cluster": s["cluster"]})
         return out
 
     def _find_server(self, sid: str) -> Optional[Dict[str, Any]]:
@@ -165,7 +165,7 @@ class Core:
         except Exception:
             return {}
 
-    def servers_add(self, name: str, host: str, port: int) -> Dict[str, Any]:
+    def servers_add(self, name: str, host: str, port: int, region: str = "Community") -> Dict[str, Any]:
         name = (name or "").strip()
         if not name or not server_browser.validate_server_address(host, port):
             return {"ok": False, "error": "Enter a name and a valid host and port."}
@@ -173,7 +173,7 @@ class Core:
         sid = f"custom_{str(host).replace('.', '_')}_{int(port)}"
         if any(s.get("id") == sid for s in customs):
             return {"ok": False, "error": "That server is already in your list."}
-        customs.append({"id": sid, "name": name, "host": str(host), "port": int(port), "flag": "", "region": "", "is_custom": True})
+        customs.append({"id": sid, "name": name, "host": str(host), "port": int(port), "flag": "", "region": str(region or "Community")[:40], "is_custom": True})
         ok = server_browser.save_servers(customs)
         self.log(f"Server saved: {name}", "SERVERS")
         return {"ok": bool(ok)}
@@ -959,3 +959,73 @@ class Core:
         except Exception:
             pass
         self.emit("sniper", self.sniper_status())
+
+    # ---------- soundtrack, 3D map, links ----------
+    def soundtrack(self, map_name: str) -> Dict[str, Any]:
+        tracks = server_browser.query_zegraph_soundtrack(map_name or "")
+        return {"map": map_name, "tracks": [{"name": t.get("name"), "duration": t.get("duration_str"), "tags": t.get("tags") or [], "url": t.get("youtube_url")} for t in tracks]}
+
+    def open_3d_map(self, map_name: str) -> bool:
+        clean = server_browser.clean_map_slug(map_name or "")
+        url = f"https://maps.cybo.dev/?map={clean}" if clean and clean not in ("-", "unknown", "none") else "https://maps.cybo.dev/"
+        return self.open_url(url)
+
+    def open_youtube_search(self, title: str) -> bool:
+        import urllib.parse
+        return self.open_url("https://www.youtube.com/results?search_query=" + urllib.parse.quote(str(title)[:120]))
+
+    # ---------- DNS status, diagnostics, checksum ----------
+    _dns_cache = (0.0, {})
+
+    def dns_status(self) -> Dict[str, Any]:
+        """Text for the status bar, from the adapter's real DNS (cached 30 s: reading it runs netsh)."""
+        at, val = self._dns_cache
+        if time.time() - at < 30 and val:
+            return val
+        try:
+            iface = core_logic.get_active_network_interface()
+            text, state = core_logic.dns_status_bar(iface.get("current_dns", ""))
+        except Exception:
+            text, state = "DNS: unknown", "unknown"
+        val = {"text": text, "state": state}
+        self._dns_cache = (time.time(), val)
+        return val
+
+    def diagnostics(self) -> str:
+        import os
+        import platform
+        import re
+        import hardware_info
+        cpu, gpu = hardware_info.get_cpu_info(), hardware_info.get_gpu_info()
+        lines = [f"CS2 Command Center Diagnostics v{version.APP_VERSION} ({version.BUILD_DATE})",
+                 f"OS: {platform.system()} {platform.release()} ({platform.architecture()[0]})",
+                 f"Environment: Python {platform.python_version()} | Mode: {'Admin' if core_logic.is_admin() else 'Standard'}",
+                 f"CPU: {cpu.get('name', 'Unknown CPU')}", f"GPU: {gpu.get('name', 'Unknown GPU')}",
+                 f"CS2 Executable Status: {'Installed' if self.paths.get('cs2_exe') else 'Not Found'}",
+                 f"Autoexec Status: {'Configured' if self.paths.get('autoexec_cfg') else 'Not Found'}",
+                 f"Tracked Servers: {len(self.servers_catalog())} nodes"]
+        text = "\n".join(lines)
+        user = os.environ.get("USERNAME", "")
+        if user:
+            text = text.replace(user, "[USER_REDACTED]")
+        text = re.sub(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", "[IP_REDACTED]", text)
+        return re.sub(r"\b(?:STEAM_[0-5]:[01]:\d+|7656119\d{10})\b", "[STEAM_ID_REDACTED]", text)
+
+    def exe_sha256(self) -> str:
+        import hashlib
+        import os
+        import sys
+        path = sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(65536), b""):
+                h.update(chunk)
+        return h.hexdigest().upper()
+
+    def log_clear(self) -> bool:
+        with self._lock:
+            self.log_buf.clear()
+        return True
+
+    def about(self) -> Dict[str, Any]:
+        return {"version": version.APP_VERSION, "build_date": version.BUILD_DATE, "last_update_check": self.config.get("last_update_check_time") or "Never"}

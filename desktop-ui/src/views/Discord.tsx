@@ -9,8 +9,9 @@ const D = PAGES.discord;
 
 export default function Discord() {
   const [p, setP] = useState<PresenceState | null>(null);
+  const [persona, setPersona] = useState('');
   const refresh = useCallback(() => { void api.presence().then(setP); }, []);
-  useEffect(() => { refresh(); const t = setInterval(refresh, 2000); return () => clearInterval(t); }, [refresh]);
+  useEffect(() => { refresh(); void api.appInfo().then((i) => setPersona(i.persona ?? '')); const t = setInterval(refresh, 2000); return () => clearInterval(t); }, [refresh]);
   const idle = !p?.details && !p?.state;
 
   return (
@@ -41,6 +42,7 @@ export default function Discord() {
         <div className="sect" style={{ marginBottom: 4 }}>{D.sim_title}</div>
         <div className="decal" style={{ marginBottom: 10, textTransform: 'none', letterSpacing: 0 }}>{D.sim_sub}</div>
         <div className="dpreview">
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}><span className="av">{(persona || 'P')[0].toUpperCase()}</span><div><div className="t">{persona || 'Player'}</div><div className="decal" style={{ textTransform: 'none', letterSpacing: 0 }}>{p?.cs2_running ? 'Online' : 'Standby | CS2 closed (no presence)'}</div></div></div>
           <div className="decal">Playing a game</div>
           <div className="t" style={{ fontSize: 15, marginTop: 6 }}>Counter-Strike 2</div>
           <div style={{ marginTop: 6 }}>{idle ? (p?.cs2_running ? 'Waiting for the next update…' : 'Nothing is shown (CS2 is not running)') : p?.details}</div>

@@ -179,8 +179,8 @@ class Api:
     def servers_totals(self) -> Dict[str, Any]:
         return self.core.servers_totals()
 
-    def servers_add(self, name: str, host: str, port: int) -> Dict[str, Any]:
-        return self.core.servers_add(name, host, int(port))
+    def servers_add(self, name: str, host: str, port: int, region: str = "Community") -> Dict[str, Any]:
+        return self.core.servers_add(name, host, int(port), region)
 
     def servers_remove(self, sid: str) -> bool:
         return self.core.servers_remove(sid)
@@ -379,3 +379,28 @@ class Api:
 
     def presence_refresh(self) -> Dict[str, Any]:
         return self.core.presence_refresh()
+
+    # soundtrack, 3D map, DNS status, about
+    def soundtrack(self, map_name: str) -> Dict[str, Any]:
+        return self.core.soundtrack(map_name)
+
+    def open_3d_map(self, map_name: str) -> bool:
+        return self.core.open_3d_map(map_name)
+
+    def open_youtube_search(self, title: str) -> bool:
+        return self.core.open_youtube_search(title)
+
+    def dns_status(self) -> Dict[str, Any]:
+        return self.core.dns_status()
+
+    def diagnostics(self) -> str:
+        return self.core.diagnostics()
+
+    def exe_sha256(self) -> str:
+        return self.core.exe_sha256()
+
+    def log_clear(self) -> bool:
+        return self.core.log_clear()
+
+    def about(self) -> Dict[str, Any]:
+        return self.core.about()

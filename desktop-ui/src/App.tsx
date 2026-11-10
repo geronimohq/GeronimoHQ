@@ -71,6 +71,7 @@ function Shell() {
   const [days, setDays] = useState<{ opt: number | null; maint: number | null }>({ opt: null, maint: null });
   const [sniper, setSniper] = useState<SniperStatus | null>(null);
   const [maxed, setMaxed] = useState(false);
+  const [dnsInfo, setDnsInfo] = useState<{ text: string; state: string } | null>(null);
   const hist = useRef<NavId[]>([]);
   const pos = useRef(-1);
   const openModal = useModal();
@@ -88,6 +89,9 @@ function Shell() {
     void api.dashboard().then((d) => setDays({ opt: d.days_opt, maint: d.days_maint }));
     void api.appInfo().then(setInfo);
     void api.logHistory().then((h) => setLogs(h));
+    const pollDns = () => { void api.dnsStatus().then(setDnsInfo); };
+    pollDns();
+    const dnsTimer = setInterval(pollDns, 30000);
     const pollSniper = () => { void api.sniperStatus().then(setSniper); };
     pollSniper();
     const sniperTimer = setInterval(pollSniper, 1500);
@@ -108,7 +112,7 @@ function Shell() {
         openModal({ kind: 'ok', label: 'Notification', title: 'Restore finished', body: 'Each step is listed in the log. DNS and Steam launch options were not changed.' });
       }
     });
-    return () => { off1(); off2(); offS(); offU(); offM(); clearInterval(sniperTimer); };
+    return () => { off1(); off2(); offS(); offU(); offM(); clearInterval(sniperTimer); clearInterval(dnsTimer); };
   }, [openModal]);
 
   useEffect(() => { logEnd.current?.scrollIntoView({ block: 'end' }); }, [logs, drawer]);
@@ -170,6 +174,7 @@ function Shell() {
           <span className="pill"><i className="dot" />PERM: {info ? (info.admin ? 'ADMIN' : 'STANDARD') : '...'}</span>
           <span className="pill"><i className={`dot ${info?.cs2_found ? 'cy' : 'am'}`} />CS2: {info ? (info.cs2_found ? 'FOUND' : 'NOT FOUND') : '...'}</span>
           <span className="pill"><i className="dot am" />ENGINE: {engineAge == null ? 'NEVER RUN' : engineAge === 0 ? 'OPTIMIZED TODAY' : `${engineAge}D AGO`}</span>
+          {dnsInfo && <span className="pill" title="The DNS your network adapter uses right now"><i className={`dot ${dnsInfo.state === 'provider' ? 'cy' : 'am'}`} />{dnsInfo.text.replace(/^\W+/, '').toUpperCase()}</span>}
           <button className="sfx" onClick={() => { sfx.click(); setSettingsOpen(true); }} title="Settings">SETTINGS</button>
           <button className="sfx" aria-pressed={sound} onClick={() => { const v = !sound; sfx.set(v); setSound(v); if (v) sfx.click(); }} title="Interface sounds on or off">{sound ? 'SFX ON' : 'SFX OFF'}</button>
         </div>
@@ -229,6 +234,7 @@ function Shell() {
       </div>
 
       <section className={`glass log${drawer ? '' : ' shut'}`}>
+        <button className="btn cut ghost sm logclear" onClick={() => { sfx.click(); void api.logClear(); setLogs([]); }}>Clear</button>
         <button onClick={() => { sfx.click(); setDrawer(!drawer); }} aria-expanded={drawer}>
           <span className="sect">System activity log</span><span className="decal">// {last ? last.msg.slice(0, 70) : 'idle'}</span><span style={{ marginLeft: 'auto', color: 'var(--tx3)' }}><ChevronDown size={14} /></span>
         </button>
@@ -237,9 +243,10 @@ function Shell() {
           <div ref={logEnd} />
         </div>
       </section>
-      <AnimatePresence>{settingsOpen && <Settings onClose={() => setSettingsOpen(false)} onSaved={() => addLog('SYSTEM', 'Settings saved')} />}</AnimatePresence>
+      <AnimatePresence>{settingsOpen && <Settings onClose={() => setSettingsOpen(false)} onSaved={() => addLog('SYSTEM', 'Settings saved')} openDiscord={() => { setSettingsOpen(false); go('discord'); }} log={addLog} />}</AnimatePresence>
       <footer className="statusbar">
         <span className={`sn ${sniper?.state ?? 'idle'}`}>{sniper?.text ?? '\u25CF SLOT SNIPER: IDLE'}</span>
+        {dnsInfo && <span className="sn dns">{dnsInfo.text}</span>}
         <span className="decal">Hobby project · not affiliated with Valve</span>
       </footer>
     </div>

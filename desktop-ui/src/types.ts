@@ -1,6 +1,6 @@
 export interface GeoRow { code: string; name: string; pct: number; count: number }
 export interface Srv {
-  id: string; name: string; host: string; port: number; region: string; flag: string; discord: string;
+  id: string; name: string; host: string; port: number; region: string; flag: string; discord: string; website?: string;
   featured: boolean; custom: boolean; group: 'global' | 'china'; cluster: string;
 }
 export interface Status {
@@ -21,7 +21,8 @@ export interface DashboardData {
 }
 export interface MaintState { drives: Drive[]; admin: boolean; days_maint: number | null }
 export interface SniperStatus { text: string; state: 'idle' | 'armed' | 'triggered' | 'cooldown'; target: string; active: boolean }
-export interface PlayerRow { name: string; score: number; time: string }
+export interface PlayerRow { name: string; score: number; time: string; seconds?: number; index?: number }
+export interface Track { name: string; duration: string; tags: string[]; url: string | null }
 export interface LaunchState { current: string; vdf_found: boolean; warnings: string[]; recommended: string; suggestions: string[] }
 export interface DnsProvider { id: string; name: string; primary: string; secondary: string; desc: string }
 export interface DnsState { interface: string; current: string; found: boolean; providers: DnsProvider[]; admin: boolean }

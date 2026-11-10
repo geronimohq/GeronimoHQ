@@ -353,6 +353,56 @@ class ServerExtras(unittest.TestCase):
             os.unlink(f.name)
 
 
+class Gaps(unittest.TestCase):
+    def test_add_server_keeps_the_region(self):
+        core, _ = make_core()
+        with mock.patch.object(server_browser, "save_servers", return_value=True) as save:
+            self.assertTrue(core.servers_add("My ZE", "1.2.3.4", 27015, "Europe (Germany)")["ok"])
+        self.assertEqual(save.call_args[0][0][-1]["region"], "Europe (Germany)")
+
+    def test_catalog_carries_discord_and_website_links(self):
+        core, _ = make_core()
+        gfl = next(s for s in core.servers_catalog() if s["id"] == "gfl")
+        self.assertTrue(gfl["discord"] and gfl["website"])
+
+    def test_soundtrack_is_reshaped_for_the_page(self):
+        core, _ = make_core()
+        fake = [{"name": "Song A", "duration_str": "03:10", "tags": ["stage 1"], "youtube_url": "https://www.youtube.com/watch?v=x"}]
+        with mock.patch.object(server_browser, "query_zegraph_soundtrack", return_value=fake):
+            r = core.soundtrack("ze_x")
+        self.assertEqual(r["tracks"], [{"name": "Song A", "duration": "03:10", "tags": ["stage 1"], "url": "https://www.youtube.com/watch?v=x"}])
+
+    def test_3d_map_url_and_youtube_search_are_built_safely(self):
+        core, _ = make_core()
+        with mock.patch.object(core, "open_url", return_value=True) as ou:
+            core.open_3d_map("ze_Some_Map_v2")
+            self.assertTrue(ou.call_args[0][0].startswith("https://maps.cybo.dev/?map="))
+            core.open_youtube_search('a b&c="x"')
+            self.assertIn("search_query=a%20b%26c%3D%22x%22", ou.call_args[0][0])
+
+    def test_dns_status_is_cached_for_30_seconds(self):
+        core, _ = make_core()
+        with mock.patch.object(core_logic, "get_active_network_interface", return_value={"current_dns": "Cloudflare Gaming (1.1.1.1) [1.1.1.1, 1.0.0.1]"}) as g:
+            a, b = core.dns_status(), core.dns_status()
+        self.assertEqual(a, b)
+        self.assertEqual(g.call_count, 1)
+        self.assertEqual(a["state"], "provider")
+
+    def test_diagnostics_hide_the_user_name_and_addresses(self):
+        core, _ = make_core()
+        with mock.patch.dict(os.environ, {"USERNAME": "SecretUser"}):
+            text = core.diagnostics()
+        self.assertNotIn("SecretUser", text)
+        self.assertNotRegex(text, r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b")
+
+    def test_clear_log_empties_the_history(self):
+        core, _ = make_core()
+        core.log("x")
+        self.assertTrue(core.log_history())
+        core.log_clear()
+        self.assertEqual(core.log_history(), [])
+
+
 if __name__ == "__main__":
     _res = unittest.main(exit=False, verbosity=2)
     sys.stdout.flush(); sys.stderr.flush()
