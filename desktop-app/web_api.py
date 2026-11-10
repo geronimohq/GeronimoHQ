@@ -122,6 +122,7 @@ class Api:
             try:
                 self._window.show()
                 self._window.restore()
+                self.fix_window_style()
             except Exception:
                 pass
 
@@ -237,16 +238,74 @@ class Api:
         return self.core.open_url(url)
 
     def relaunch_admin(self, page: str = "") -> Dict[str, Any]:
-        r = self.core.relaunch_admin(page)
-        if r.get("ok"):
-            try:
-                if self._window:
-                    self._window.hide()
-                if getattr(self, "tray", None):
-                    self.tray.stop()
-            finally:
-                threading.Timer(0.8, lambda: os._exit(0)).start()
+        """Starts an elevated copy on the same tab. This copy stays open until the elevated one reports that it is up, so
+        a declined prompt or a failed start never leaves you without the app."""
+        import web_tray
+        flag = self._ready_flag()
+        try:
+            os.remove(flag)
+        except OSError:
+            pass
+        web_tray.release_mutex()                    # the elevated copy must be able to take the single-instance lock
+        r = self.core.relaunch_admin(page)          # blocks while Windows shows its permission prompt
+        if not r.get("ok"):
+            web_tray.reacquire_mutex()
+            return r
+
+        def wait_then_quit():
+            for _ in range(120):                    # up to 30 s
+                if os.path.exists(flag):
+                    self.core.log("[ADMIN] Elevated copy is running; closing this one.")
+                    try:
+                        if self._window:
+                            self._window.hide()
+                        if getattr(self, "tray", None):
+                            self.tray.stop()
+                    finally:
+                        os._exit(0)
+                time.sleep(0.25)
+            web_tray.reacquire_mutex()
+            self.core.log("[ADMIN] The elevated copy did not start in time; staying open as a standard user. See web_main.log in the app data folder.")
+
+        threading.Thread(target=wait_then_quit, daemon=True, name="relaunch-wait").start()
         return r
+
+    def _ready_flag(self) -> str:
+        import app_config
+        return os.path.join(app_config.get_storage_dir(), "elevated_ready.flag")
+
+    def signal_elevated_ready(self) -> None:
+        try:
+            with open(self._ready_flag(), "w") as fh:
+                fh.write("ready")
+        except Exception:
+            pass
+
+    def center_window(self) -> None:
+        """Centre the window (its real size) in the primary monitor's work area."""
+        try:
+            user32 = ctypes.windll.user32
+            hwnd = self._hwnd()
+            r, wa = wintypes.RECT(), wintypes.RECT()
+            user32.GetWindowRect(hwnd, ctypes.byref(r))
+            user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(wa), 0)
+            w, h = r.right - r.left, r.bottom - r.top
+            x = wa.left + max(0, (wa.right - wa.left - w) // 2)
+            y = wa.top + max(0, (wa.bottom - wa.top - h) // 2)
+            user32.SetWindowPos(hwnd, 0, x, y, 0, 0, 0x0001 | 0x0004 | 0x0010)     # keep size, no z-order change, no activate
+        except Exception as e:
+            self.core.log(f"[WINDOW] centering failed: {e}")
+
+    def fix_window_style(self) -> None:
+        """A frameless Windows form has no minimize box, so a click on its taskbar button did nothing. Add it back."""
+        try:
+            user32 = ctypes.windll.user32
+            hwnd = self._hwnd()
+            style = user32.GetWindowLongW(hwnd, -16)
+            user32.SetWindowLongW(hwnd, -16, style | 0x00020000 | 0x00080000)      # WS_MINIMIZEBOX | WS_SYSMENU
+            user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0004 | 0x0020)   # keep size/position, apply the frame change
+        except Exception as e:
+            self.core.log(f"[WINDOW] style fix failed: {e}")
 
     # PC maintenance
     def maint_state(self) -> Dict[str, Any]:

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { RefreshCw, Search } from 'lucide-react';
@@ -21,7 +21,10 @@ export default function PlayersDialog({ srv, onClose, onConnect }: { srv: Srv; o
       setRows(r.players); setStatus(r.players.length ? '' : 'No active players currently connected');
     });
   }, [srv.id]);
-  useEffect(() => { load(); const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k); }, [load, onClose]);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;          // the parent passes a new function on every repaint; it must not restart the load
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === 'Escape') closeRef.current(); }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k); }, []);
 
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase();

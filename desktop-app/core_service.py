@@ -875,8 +875,19 @@ class Core:
     # ---------- log analyzer, custom DNS, VPK health ----------
     def log_analyze(self) -> Dict[str, Any]:
         res = core_logic.analyze_cs2_session_logs(self.paths.get("cs2_exe"))
-        self.log(f"[LOG ANALYZER] {res.get('message')}")
-        keys = ("found", "message", "file_size_mb", "frame_hitch_events", "shader_compile_events", "net_jitter_events", "vpk_load_events",
+        if not res.get("found"):
+            import hardware_info
+            try:
+                opts, _vdf = hardware_info.get_current_launch_options(self.paths.get("steam_path"))
+            except Exception:
+                opts = ""
+            if "-condebug" in (opts or "").lower():
+                res["message"] = ("-condebug is already in your Steam launch options, but CS2 has not written console.log yet "
+                                  f"({res.get('log_path') or 'game/csgo/console.log'}).\n\nCS2 creates the file the next time it starts with that flag. "
+                                  "Restart CS2 once (the flag only counts from a fresh start), play a session, then analyze again.")
+                res["condebug"] = True
+        self.log(f"[LOG ANALYZER] {str(res.get('message')).splitlines()[0]}")
+        keys = ("found", "condebug", "message", "file_size_mb", "frame_hitch_events", "shader_compile_events", "net_jitter_events", "vpk_load_events",
                 "last_map", "recommendation", "log_path", "grade")
         return {k: res.get(k) for k in keys}
 

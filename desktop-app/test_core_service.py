@@ -403,6 +403,21 @@ class Gaps(unittest.TestCase):
         self.assertEqual(core.log_history(), [])
 
 
+class AnalyzerHint(unittest.TestCase):
+    def test_condebug_already_set_is_recognised(self):
+        import hardware_info
+        core, _ = make_core()
+        missing = {"found": False, "message": "console.log not found in game/csgo/console.log (Add -condebug in Launch Options).", "log_path": "X:/csgo/console.log"}
+        with mock.patch.object(core_logic, "analyze_cs2_session_logs", return_value=dict(missing)),              mock.patch.object(hardware_info, "get_current_launch_options", return_value=("-novid -condebug +exec autoexec.cfg", "vdf")):
+            r = core.log_analyze()
+        self.assertTrue(r["condebug"])
+        self.assertIn("already in your Steam launch options", r["message"])
+        with mock.patch.object(core_logic, "analyze_cs2_session_logs", return_value=dict(missing)),              mock.patch.object(hardware_info, "get_current_launch_options", return_value=("-novid", "vdf")):
+            r2 = core.log_analyze()
+        self.assertFalse(r2.get("condebug"))
+        self.assertIn("Add -condebug", r2["message"])
+
+
 if __name__ == "__main__":
     _res = unittest.main(exit=False, verbosity=2)
     sys.stdout.flush(); sys.stderr.flush()

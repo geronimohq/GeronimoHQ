@@ -9,8 +9,36 @@ SINGLE_INSTANCE_MUTEX_NAME = "Local\\CS2CommandCenter_App_SingleInstance_Mutex" 
 SINGLE_INSTANCE_EVENT_NAME = "Local\\CS2CommandCenter_App_ShowEvent"                   # never run side by side
 
 
+HELD = None     # the single-instance mutex this process owns
+
+
+def release_mutex() -> None:
+    """Lets go of the single-instance lock (used right before starting the elevated copy)."""
+    global HELD
+    if HELD:
+        try:
+            ctypes.windll.kernel32.CloseHandle(HELD)
+        except Exception:
+            pass
+        HELD = None
+
+
+def reacquire_mutex() -> None:
+    global HELD
+    if not HELD:
+        HELD = ctypes.windll.kernel32.CreateMutexW(None, True, SINGLE_INSTANCE_MUTEX_NAME)
+
+
 def check_single_instance():
     """Returns a mutex handle if this is the only instance; otherwise signals the running one to show itself and returns None."""
+    global HELD
+    r = _check_single_instance()
+    if r:
+        HELD = r
+    return r
+
+
+def _check_single_instance():
     kernel32 = ctypes.windll.kernel32
     elevated = "--elevated" in sys.argv
     for _ in range(20 if elevated else 1):

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { api } from '../api';
@@ -9,12 +9,14 @@ import type { Track } from '../types';
 export default function SoundtrackDialog({ map, onClose, log }: { map: string; onClose: () => void; log: (tag: string, msg: string) => void }) {
   const [tracks, setTracks] = useState<Track[] | null>(null);
   const [sel, setSel] = useState<number | null>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => { void api.soundtrack(map).then((r) => setTracks(r.tracks)); }, [map]);
   useEffect(() => {
-    void api.soundtrack(map).then((r) => setTracks(r.tracks));
-    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') closeRef.current(); };
     window.addEventListener('keydown', k);
     return () => window.removeEventListener('keydown', k);
-  }, [map, onClose]);
+  }, []);
   const listen = (t: Track) => { sfx.click(); void (t.url ? api.openUrl(t.url) : api.openYoutube(t.name)); };
   const copy = (t: Track) => { sfx.toggle(); try { void navigator.clipboard.writeText(t.name); } catch { /* ignore */ } log('SYSTEM', `Copied track title: ${t.name}`); };
   const cur = sel != null && tracks ? tracks[sel] : null;

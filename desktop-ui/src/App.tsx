@@ -235,7 +235,7 @@ function Shell() {
 
       <section className={`glass log${drawer ? '' : ' shut'}`}>
         <button className="btn cut ghost sm logclear" onClick={() => { sfx.click(); void api.logClear(); setLogs([]); }}>Clear</button>
-        <button onClick={() => { sfx.click(); setDrawer(!drawer); }} aria-expanded={drawer}>
+        <button className="loghead" onClick={() => { sfx.click(); setDrawer(!drawer); }} aria-expanded={drawer}>
           <span className="sect">System activity log</span><span className="decal">// {last ? last.msg.slice(0, 70) : 'idle'}</span><span style={{ marginLeft: 'auto', color: 'var(--tx3)' }}><ChevronDown size={14} /></span>
         </button>
         <div className="body">

@@ -64,7 +64,7 @@ export default function Booster() {
     sfx.click();
     const r = await api.logAnalyze();
     setAn(r);
-    if (!r.found) openModal({ kind: 'warn', label: 'CS2 session log analyzer', title: 'console.log not found', body: `${r.message}\n\nTip: add -condebug in the Launch Options tab to enable passive session logging.` });
+    if (!r.found) openModal({ kind: 'warn', label: 'CS2 session log analyzer', title: 'console.log not found', body: r.condebug ? r.message : `${r.message}\n\nTip: add -condebug in the Launch Options tab to enable passive session logging.` });
   };
 
   const rows = res.length ? res : (dns?.providers ?? []).map((p, i) => ({ name: p.name, primary: p.primary, secondary: p.secondary, avg_ms: 0, jitter_ms: 0, reachable: true, fastest: false, rank: i + 1, idle: true, desc: p.desc }));
@@ -113,7 +113,7 @@ export default function Booster() {
         <div className="ptext" style={{ margin: '8px 0 12px' }}>{B.analyzer_desc}</div>
         <button className="btn cut ghost sm" title={B.analyzer_tip} onClick={() => void analyze()}>Analyze CS2 session telemetry log</button>
         <div className="mono" style={{ fontSize: 12, marginTop: 10, color: 'var(--tx2)' }}>
-          {!an ? "Click 'Analyze CS2 session telemetry log' to inspect your latest session." : !an.found ? 'console.log not found. Add -condebug in the Launch Options tab.'
+          {!an ? "Click 'Analyze CS2 session telemetry log' to inspect your latest session." : !an.found ? (an.condebug ? '-condebug is set; restart CS2 once and play a session so console.log is created.' : 'console.log not found. Add -condebug in the Launch Options tab.')
             : `Size: ${an.file_size_mb} MB | Frame hitches: ${an.frame_hitch_events} | Shader stalls: ${an.shader_compile_events} | Net jitter: ${an.net_jitter_events} | VPKs loaded: ${an.vpk_load_events} | Last map: ${an.last_map}`}
         </div>
         {an?.found && <div className="ptext" style={{ marginTop: 8 }}>{an.recommendation}</div>}

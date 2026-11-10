@@ -10,13 +10,51 @@ def resource_dir() -> str:
     return getattr(sys, "_MEIPASS", HERE)
 
 
+def log_line(msg: str) -> None:
+    """Small startup log (app data folder) so a failed start can be diagnosed even though the exe has no console."""
+    try:
+        import time
+        import app_config
+        path = os.path.join(app_config.get_storage_dir(), "web_main.log")
+        if os.path.exists(path) and os.path.getsize(path) > 200_000:
+            os.remove(path)
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {msg}\n")
+    except Exception:
+        pass
+
+
+def centered(w: int, h: int):
+    """Top-left corner that puts a w x h window in the middle of the primary monitor's work area."""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        r = wintypes.RECT()
+        ctypes.windll.user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(r), 0)   # SPI_GETWORKAREA
+        ww, wh = min(w, r.right - r.left), min(h, r.bottom - r.top)
+        return ww, wh, r.left + (r.right - r.left - ww) // 2, r.top + (r.bottom - r.top - wh) // 2
+    except Exception:
+        return w, h, None, None
+
+
 def main() -> int:
+    try:
+        return _main()
+    except Exception:
+        import traceback
+        log_line("FATAL " + traceback.format_exc())
+        raise
+
+
+def _main() -> int:
     import webview
     from web_api import Api
+    log_line(f"start args={sys.argv[1:]} frozen={getattr(sys, 'frozen', False)}")
 
     import web_tray
     mutex = True if os.environ.get("CS2CC_ALLOW_SECOND_INSTANCE") else web_tray.check_single_instance()   # env switch is for side-by-side testing only
     if mutex is None:
+        log_line("another copy is running; asked it to show itself, exiting")
         return 0          # another copy is running; it was asked to show itself
     index = os.path.join(resource_dir(), "web", "index.html")
     if not os.path.exists(index):
@@ -24,22 +62,44 @@ def main() -> int:
         return 2
     api = Api()
     hidden = "--minimized" in sys.argv
+    ww, wh, wx, wy = centered(1400, 880)
     window = webview.create_window(
-        "CS2 Command Center", url=index, js_api=api, width=1400, height=880, min_size=(980, 640),
+        "CS2 Command Center", url=index, js_api=api, width=ww, height=wh, x=wx, y=wy, min_size=(980, 640),
         frameless=True, easy_drag=False, background_color="#080a0e", text_select=False, hidden=hidden)
     api._attach(window)
+
+    first = {"v": True}
+
+    def on_shown():
+        api.fix_window_style()                  # taskbar click minimizes, like any other window
+        if first["v"]:
+            first["v"] = False
+            api.center_window()                 # only the first time, so restoring from the tray keeps your position
+
+    def on_loaded():
+        if "--elevated" in sys.argv:            # tell the standard copy that this elevated copy is up, so it can close
+            api.signal_elevated_ready()
+        log_line("window loaded")
+
+    window.events.shown += on_shown
+    window.events.loaded += on_loaded
     api.tray = web_tray.Tray(api)
     api.tray.start()
     web_tray.listen_for_show(api.show_window)
     api.core.presence.start()
     api.core.update_check_startup()
     debug = bool(os.environ.get("CS2CC_DEBUG"))
+    # WebView2 cannot share one data folder between a standard and an elevated process, so each gets its own.
+    import app_config
+    sp = os.path.join(app_config.get_storage_dir(), "webview2-admin" if "--elevated" in sys.argv else "webview2")
+    os.makedirs(sp, exist_ok=True)
     if os.environ.get("CS2CC_BENCH"):
-        webview.start(bench, window, debug=debug)
+        webview.start(bench, window, debug=debug, storage_path=sp)
     elif os.environ.get("CS2CC_SELFTEST"):
-        webview.start(selftest, (window, api), debug=debug)
+        webview.start(selftest, (window, api), debug=debug, storage_path=sp)
     else:
-        webview.start(debug=debug)
+        webview.start(debug=debug, storage_path=sp)
+    log_line("window closed")
     return 0
 
 

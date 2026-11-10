@@ -55,7 +55,7 @@ const Row = memo(function Row({ srv, st, mode, onMode, since, armed, onConnect, 
         <div className="decal" style={{ marginTop: 7 }}>{[srv.cluster || (srv.custom ? 'Custom' : ''), st?.map].filter(Boolean).join(' \u00B7 ')}</div>
         <div className="links">{st?.map && <button className="lnk" onClick={() => onLink('3d')}>3D map</button>}{st?.map && <button className="lnk" onClick={() => onLink('sound')}>Soundtrack</button>}{srv.discord && <button className="lnk" onClick={() => onLink('discord')}>Discord</button>}{srv.website && <button className="lnk" onClick={() => onLink('portal')}>Portal</button>}{onRemove && <button className="lnk bad" onClick={onRemove}>Remove server</button>}</div>
       </div></div>
-      <Geo countries={st?.geo?.countries ?? []} regions={st?.geo?.regions ?? []} mode={mode} onMode={onMode} humans={humans} />
+      <Geo countries={st?.geo?.countries ?? []} regions={st?.geo?.regions ?? []} mode={mode} onMode={onMode} humans={humans} max={7} />
       <div className="dock">
         <button className={`btn cut amber pri sm${st?.online ? '' : ' dim'}`} onClick={onConnect}>Connect</button>
         <button className={`btn cut ${armed ? 'armed' : 'ghost'} sm`} aria-pressed={armed} disabled={!!cooldown} onClick={onSniper}>{cooldown ? `Cooldown ${cooldown}s` : armed ? 'Sniper armed' : 'Sniper'}</button>
@@ -230,7 +230,17 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
                 <div className="mname">{f?.map ?? '…'}</div>
               </div>
               <div className="fbody">
-                <h2>{featured.name.replace(/ 24\/7$/, '')} <em>24/7</em></h2>
+                <div className="fhead">
+                  <h2>{featured.name.replace(/ 24\/7$/, '')} <em>24/7</em></h2>
+                  <div className="toplinks">
+                    <div className="r1">
+                      <button className="btn cut ghost sm" onClick={() => link(featured, '3d')}>3D map</button>
+                      {featured.website && <button className="btn cut ghost sm" onClick={() => link(featured, 'portal')}>Portal</button>}
+                      {featured.discord && <button className="btn cut ghost sm" onClick={() => link(featured, 'discord')}>Discord</button>}
+                    </div>
+                    <div className="r2"><button className="btn cut ghost sm" onClick={() => link(featured, 'sound')}>Soundtrack</button></div>
+                  </div>
+                </div>
                 <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                   <div className="ring">
                     <svg viewBox="0 0 100 100">
@@ -247,17 +257,13 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
                   </div>
                 </div>
                 <div className="stat"><span>Humans <b style={{ color: 'var(--cyan)' }}>{match.human_score ?? '-'}</b></span><span>Zombies <b style={{ color: 'var(--bad)' }}>{match.zombie_score ?? '-'}</b></span><span>Extends <b>{match.extend_count ?? '-'}/3</b></span></div>
-                <Geo countries={f?.geo?.countries ?? []} regions={f?.geo?.regions ?? []} mode={modes[featured.id] ?? 'country'} onMode={setMode(featured.id)} humans={fHumans} />
+                <Geo countries={f?.geo?.countries ?? []} regions={f?.geo?.regions ?? []} mode={modes[featured.id] ?? 'country'} onMode={setMode(featured.id)} humans={fHumans} max={9} />
                 <div className="prio"><span className="sect">GFL slot priority:</span><select className="sel" value={tiers.gfl} aria-label="GFL slot priority" title="Sets the player count at which the Slot Sniper joins GFL (for example up to 62 for a Supporter or Mapper reserved slot)." onChange={(e) => setTier('gfl', e.target.value)}>{GFL_TIERS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
                 <div className="dock">
                   <button className="btn cut amber pri sm" onClick={() => connect(featured)}><Play size={13} /> Connect</button>
                   <button className={`btn cut ${isArmed(featured) ? 'armed' : 'ghost'} sm`} aria-pressed={isArmed(featured)} onClick={() => toggleSniper(featured)}>{isArmed(featured) ? 'Sniper armed' : 'Sniper'}</button>
                   <button className="btn cut ghost sm" onClick={() => void players(featured)}>Players</button>
                   <button className="btn cut ghost sm" onClick={() => copyIp(featured)}>Copy IP</button>
-                  <button className="btn cut ghost sm" onClick={() => link(featured, '3d')}>3D map</button>
-                  <button className="btn cut ghost sm" onClick={() => link(featured, 'sound')}>Soundtrack</button>
-                  {featured.discord && <button className="btn cut ghost sm" onClick={() => link(featured, 'discord')}>Discord</button>}
-                  {featured.website && <button className="btn cut ghost sm" onClick={() => link(featured, 'portal')}>Portal</button>}
                 </div>
               </div>
             </div>
