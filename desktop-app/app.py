@@ -2087,7 +2087,7 @@ class CS2TruePanoramaApp(tk.Tk):
         Label(c3, text="🌐 ZE GAME SERVERS", font=(theme.FONT_UI, theme.FS_15, "bold"), fg=theme.COLOR_PRIMARY, bg=BG_CARD_ROW).pack(anchor="w")
         # AUDIT P2-#2: was fixed text (a constant player count and server count), never updated.
         _pl_txt, _sv_txt = server_browser.format_totals(getattr(self, "_ze_totals", None))
-        self.dash_ze_players_lbl = Label(c3, text=_pl_txt, font=(theme.FONT_UI, theme.FS_13, "bold"), fg=ACCENT_GREEN, bg=BG_CARD_ROW)
+        self.dash_ze_players_lbl = Label(c3, text=_pl_txt, font=(theme.FONT_UI, theme.FS_13, "bold"), fg=FG_WHITE, bg=BG_CARD_ROW)
         self.dash_ze_players_lbl.pack(anchor="w", pady=(4, 2))
         self.dash_ze_nodes_lbl = Label(c3, text=_sv_txt, font=(theme.FONT_UI, theme.FS_13), fg=ACCENT_CYAN, bg=BG_CARD_ROW)
         self.dash_ze_nodes_lbl.pack(anchor="w", pady=(0, 4))
@@ -2111,7 +2111,7 @@ class CS2TruePanoramaApp(tk.Tk):
         Label(c4, text=f"CS2 Engine Tweaks: Optimized {_opt_str}", font=(theme.FONT_UI, theme.FS_13), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(4, 1))
         Label(c4, text=f"PC Maintenance: Clean {_maint_str}", font=(theme.FONT_UI, theme.FS_13), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 1))
         Label(c4, text="(Recommended every 7 days)", font=(theme.FONT_UI, theme.FS_12), fg=FG_MUTED, bg=BG_CARD_ROW).pack(anchor="w", pady=(0, 4))
-        b_maint_nav = Button(c4, text="Open PC Maintenance →", font=(theme.FONT_UI, theme.FS_12, "bold"), fg=ACCENT_GREEN, bg=theme.SURFACE_RAISED,
+        b_maint_nav = Button(c4, text="Open PC Maintenance →", font=(theme.FONT_UI, theme.FS_12, "bold"), fg=ACCENT_CYAN, bg=theme.SURFACE_RAISED,
                                 relief="flat", cursor="hand2", padx=8, pady=3, command=lambda: self._select_nav("MAINTENANCE"))
         b_maint_nav.pack(anchor="w", pady=(2, 0))
         add_tooltip(b_maint_nav, "Switch to the PC Maintenance tab to run SSD TRIM, disk cleanup, and system file repairs.")
@@ -2387,8 +2387,8 @@ class CS2TruePanoramaApp(tk.Tk):
         right.pack(side="right")
 
         cb = Checkbutton(right, text="Enabled", variable=var,
-                            font=(theme.FONT_UI, theme.FS_13, "bold"), fg=ACCENT_ORANGE, bg=BG_CARD,
-                            activebackground=BG_CARD, activeforeground=ACCENT_ORANGE,
+                            font=(theme.FONT_UI, theme.FS_13, "bold"), fg=ACCENT_GREEN, bg=BG_CARD,
+                            activebackground=BG_CARD, activeforeground=ACCENT_GREEN,
                             selectcolor=BG_WINDOW, relief="flat", cursor="hand2")
         cb.pack(side="right")
         add_tooltip(cb, f"Toggle {title}: {desc}")
@@ -3102,8 +3102,9 @@ class CS2TruePanoramaApp(tk.Tk):
         Label(page, text="Direct Steam Game Server Protocol (bypasses console) • Live Server Ping, Map & Player Monitor • ZE Graph Intel", font=(theme.FONT_UI, theme.FS_13), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(1, 6))
 
         # 1. FEATURED GFL QUICK-CONNECT CARD
-        gfl_card = Frame(page, bg=theme.SURFACE_INSET, padx=14, pady=10, highlightbackground=theme.COLOR_PRIMARY, highlightthickness=1)
+        gfl_card = Frame(page, bg=theme.SURFACE_INSET, padx=16, pady=10, highlightbackground=theme.BEVEL_DARK, highlightthickness=1)
         gfl_card.pack(fill="x", pady=(0, 8))
+        add_accent_bar(gfl_card, theme.ACCENT, 4)   # premier featured server: accent bar on the left
 
         top_row = Frame(gfl_card, bg=theme.SURFACE_INSET)
         top_row.pack(fill="x")
@@ -3300,7 +3301,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
         self.pill_srv_players = Frame(telemetry_pills, bg=theme.SURFACE_RAISED, padx=8, pady=3, highlightbackground=BG_BORDER, highlightthickness=1)
         self.pill_srv_players.pack(side="right", padx=(4, 0))
-        self.lbl_srv_players = Label(self.pill_srv_players, text="👥 — PLAYERS IN-GAME", font=(theme.FONT_UI, theme.FS_12, "bold"), fg=ACCENT_GREEN, bg=theme.SURFACE_RAISED)
+        self.lbl_srv_players = Label(self.pill_srv_players, text="👥 — PLAYERS IN-GAME", font=(theme.FONT_UI, theme.FS_12, "bold"), fg=FG_WHITE, bg=theme.SURFACE_RAISED)
         self.lbl_srv_players.pack()
         add_tooltip(self.lbl_srv_players, "Human players only (bots not counted) on catalog servers that answered in the last 90 seconds.")
         self.safe_after(300, self._refresh_ze_totals)
@@ -3444,7 +3445,7 @@ class CS2TruePanoramaApp(tk.Tk):
             cooldown_rem = max(0, int(round(cooldown_until - time.time())))
             if is_active_target:
                 btn_snip_txt = "🎯 Active"
-                btn_snip_bg = theme.COLOR_PRIMARY
+                btn_snip_bg = theme.GOOD   # armed = status (good), not a second primary button
                 btn_snip_state = "normal"
             elif cooldown_rem > 0:
                 btn_snip_txt = f"⏳ ({cooldown_rem}s)"
@@ -3707,7 +3708,7 @@ class CS2TruePanoramaApp(tk.Tk):
         self._set_sniper_button_active(sid, True)
         tier_sub = f" [Priority: ≤{target_max_players} for {tier_label}]" if target_max_players else ""
         if host == "74.91.124.21" and port == 27015:
-            self.btn_gfl_sniper.config(text="🎯 Active", bg=theme.COLOR_PRIMARY, activebackground=theme.SURFACE_RAISED, state="normal")
+            self.btn_gfl_sniper.config(text="🎯 Active", bg=theme.GOOD, fg=theme.TEXT_ON_ACCENT, activebackground=theme.lighten(theme.GOOD), state="normal")
             self.gfl_workflow_status.set(f"🎯 Active: Watching for open slot (Silent UDP 0.25s / 0 RAM){tier_sub}...")
 
         self.log(f"[SNIPER] Slot Sniper Active for {name} ({host}:{port}){tier_sub}. Monitoring player count via silent UDP A2S at 0.25s (0 CS2 RAM stacking)...")
@@ -3758,7 +3759,7 @@ class CS2TruePanoramaApp(tk.Tk):
         if gfl_rem > 0:
             self.btn_gfl_sniper.config(text=f"⏳ ({gfl_rem}s)", bg=theme.SURFACE_PANEL, state="disabled", disabledforeground=theme.TEXT_PRIMARY)
         else:
-            self.btn_gfl_sniper.config(text="🎯 Slot Sniper", bg=theme.SURFACE_RAISED, activebackground=theme.SURFACE_PANEL, state="normal")
+            self.btn_gfl_sniper.config(text="🎯 Slot Sniper", bg=theme.SURFACE_RAISED, fg=theme.TEXT_PRIMARY, activebackground=theme.SURFACE_PANEL, state="normal")
         for sid, btn in self.server_sniper_buttons.items():
             try:
                 rem = max(0, int(round(self.sniper_cooldown_until.get(sid, 0) - time.time())))
@@ -3822,13 +3823,13 @@ class CS2TruePanoramaApp(tk.Tk):
                 self.sniper_cooldown_until.pop(sid, None)
                 if is_gfl:
                     try:
-                        self.btn_gfl_sniper.config(text="🎯 Slot Sniper", bg=theme.SURFACE_RAISED, activebackground=theme.SURFACE_PANEL, state="normal")
+                        self.btn_gfl_sniper.config(text="🎯 Slot Sniper", bg=theme.SURFACE_RAISED, fg=theme.TEXT_PRIMARY, activebackground=theme.SURFACE_PANEL, state="normal")
                         self.gfl_workflow_status.set("Status: Ready to connect (Click Slot Sniper again if needed)")
                     except Exception:
                         pass
                 if sid in self.server_sniper_buttons:
                     try:
-                        self.server_sniper_buttons[sid].config(text="🎯 Sniper", bg=theme.SURFACE_RAISED, activebackground=theme.SURFACE_PANEL, state="normal")
+                        self.server_sniper_buttons[sid].config(text="🎯 Sniper", bg=theme.SURFACE_RAISED, fg=theme.TEXT_PRIMARY, activebackground=theme.SURFACE_PANEL, state="normal")
                     except Exception:
                         pass
                 self._update_server_sniper_label(sid, None)
@@ -6829,7 +6830,7 @@ class CS2TruePanoramaApp(tk.Tk):
                 if hasattr(self, "server_row_widgets") and sid in self.server_row_widgets:
                     try:
                         w = self.server_row_widgets[sid]["status_lbl"]
-                        self.safe_after(0, lambda w=w, m=msg: w.config(text=f"   ⏳ {m}", fg=ACCENT_ORANGE))
+                        self.safe_after(0, lambda w=w, m=msg: w.config(text=f"   ⏳ {m}", fg=FG_MUTED))
                     except Exception:
                         pass
 

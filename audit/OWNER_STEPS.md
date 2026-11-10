@@ -139,3 +139,18 @@ Per your rule I did not touch `dist\CS2_Command_Center.exe` or `public\`.
 - **Cold start**: when Render is asleep, the presence card shows "Connecting..." then "Standby", never "Offline".
 - **Leave the app running for a day**: Task Manager, Details, add the "Handles" column; it should stay
   roughly flat (a leak of about 60 per minute was fixed).
+
+## H. Retro skin: your visual check (screen-only, I did not run these)
+
+Branch `ui-retro-skin`. Run `python desktop-apppp.py` (or build an exe), then look at:
+1. **Every page in the sidebar**, once at 100 %: does any text look cut off, too wide (Verdana is wider than
+   the old Segoe UI), or hard to read? Note the page and the sentence.
+2. **Windows display scale 125 % and 150 %**: Dashboard cards, ZE Game Servers table, Settings, Map Cleaner.
+3. **Bevels**: buttons should look raised and sink when pressed; input fields and the log should look sunk.
+4. **Orange**: only headings, the active sidebar item, the selected DNS row bar, the featured-server bar and
+   ONE button per page. If orange appears elsewhere, tell me where.
+5. **Status**: Online / OK / Enabled green, offline red, nothing yellow.
+6. **Settings** window: the line "Clicking [-] hides the window to the tray; clicking [X] closes ..." is complete.
+7. **Open the five windows**: Settings, Add Server, Players, Soundtrack, Custom Map Cleaner.
+8. **Keyboard**: Tab through a page; the focused control shows a thin light outline.
+Send me screenshots or a list of what looks off; I will fix those (items in UI_RETRO_SKIN.md section 5 are known).
