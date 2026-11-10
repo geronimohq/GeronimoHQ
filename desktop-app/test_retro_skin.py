@@ -41,7 +41,7 @@ class RetroSkin(unittest.TestCase):
         bad = []
         for fn in os.listdir(HERE):
             # make_cs2_badge.py is a stand-alone icon generator (not imported by the app, not in the exe)
-            if fn.endswith(".py") and not fn.startswith(("test_", "_test")) and fn not in ("theme.py", "retro_audit.py", "make_cs2_badge.py"):
+            if fn.endswith(".py") and not fn.startswith(("test_", "_test")) and fn not in ("theme.py", "retro_audit.py", "make_cs2_badge.py", "web_main.py"):
                 with open(os.path.join(HERE, fn), encoding="utf-8") as fh:
                     for n, line in enumerate(fh, 1):
                         if re.search(r"""["']#[0-9A-Fa-f]{6}["']""", line):

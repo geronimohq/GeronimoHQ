@@ -28,6 +28,7 @@ class FakeSock:
 
 class BotFilter(unittest.TestCase):
     def _info(self, players, bots, roster):
+        server_browser._ROSTER_CACHE.clear()   # the 10 s roster cache must not leak between cases
         with mock.patch.object(server_browser.socket, "socket", lambda *a, **k: FakeSock(_info_packet(players, 65, bots))), \
              mock.patch.object(server_browser.socket, "gethostbyname", lambda h: "1.2.3.4"), \
              mock.patch.object(server_browser, "query_server_players", return_value=roster) as qp:

@@ -1,0 +1,166 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { AppWindow, Binary, ChevronDown, Gauge, Globe2, LayoutDashboard, MessageSquare, Minus, Monitor, Rocket, Square, Wifi, Wrench, X, Zap, HelpCircle } from 'lucide-react';
+import { api, isNative, on } from './api';
+import { sfx } from './sound';
+import { ModalHost, useModal } from './components/Modal';
+import Servers from './views/Servers';
+import Engine, { ALL_ON, type Opts } from './views/Engine';
+import type { AppInfo, LogLine } from './types';
+
+const NAV = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'engine', label: 'Engine Tweaks', icon: Zap },
+  { id: 'mpo', label: 'GPU MPO Diagnostics', icon: Monitor },
+  { id: 'autoexec', label: 'Autoexec & Binds', icon: Binary },
+  { id: 'launch', label: 'Launch Options', icon: Rocket },
+  { id: 'booster', label: 'Live Booster & DNS', icon: Wifi },
+  { id: 'servers', label: 'ZE Game Servers', icon: Globe2 },
+  { id: 'maintenance', label: 'PC Maintenance', icon: Wrench },
+  { id: 'discord', label: 'Discord Presence', icon: MessageSquare },
+  { id: 'faq', label: 'Help & FAQ', icon: HelpCircle },
+] as const;
+type NavId = (typeof NAV)[number]['id'];
+const TAGCLS: Record<string, string> = { SYSTEM: 's', SERVERS: 'm', ENGINE: 'o' };
+
+const EDGES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'] as const;
+/** True once the Python bridge is attached (it appears a moment after the page loads). */
+function useNative(): boolean {
+  const [n, setN] = useState(isNative());
+  useEffect(() => {
+    if (n) return;
+    const f = () => setN(isNative());
+    window.addEventListener('pywebviewready', f);
+    const t = setTimeout(f, 1500);
+    return () => { window.removeEventListener('pywebviewready', f); clearTimeout(t); };
+  }, [n]);
+  return n;
+}
+
+function ResizeEdges() {
+  const native = useNative();
+  if (!native) return null;
+  return <>{EDGES.map((e) => <div key={e} className={`edge e-${e}`} onMouseDown={(ev) => { if (ev.button === 0) void api.winResize(e); }} />)}</>;
+}
+
+function Shell() {
+  const [view, setView] = useState<NavId>(() => (NAV.find((n) => n.id === location.hash.slice(1))?.id ?? 'servers'));
+  const [info, setInfo] = useState<AppInfo | null>(null);
+  const [logs, setLogs] = useState<LogLine[]>([]);
+  const [drawer, setDrawer] = useState(false);
+  const [opts, setOpts] = useState<Opts>(ALL_ON);
+  const [sound, setSound] = useState(sfx.on);
+  const [busy, setBusy] = useState(false);
+  const openModal = useModal();
+  const native = useNative();
+  const logEnd = useRef<HTMLDivElement>(null);
+
+  const addLog = useCallback((tag: string, msg: string) => {
+    const t = new Date(), p = (n: number) => String(n).padStart(2, '0');
+    setLogs((l) => [...l.slice(-399), { t: `${p(t.getHours())}:${p(t.getMinutes())}:${p(t.getSeconds())}`, tag, msg }]);
+  }, []);
+
+  useEffect(() => {
+    void api.appInfo().then(setInfo);
+    void api.logHistory().then((h) => setLogs(h));
+    const off1 = on<LogLine>('log', (l) => setLogs((p) => [...p.slice(-399), l]));
+    const off2 = on<{ name: string; ok: boolean }>('job', (j) => {
+      setBusy(false);
+      void api.appInfo().then(setInfo);
+      if (j.name === 'engine_apply') {
+        openModal(j.ok
+          ? { kind: 'ok', label: 'Notification', title: 'Optimization applied', body: 'The selected tweaks are done. Every change has an undo: Restore Defaults brings back your previous settings. The log lists each step.' }
+          : { kind: 'warn', label: 'Problem', title: 'Optimization stopped', body: 'Something failed. The log lists each step.' });
+      } else if (j.name === 'engine_restore') {
+        openModal({ kind: 'ok', label: 'Notification', title: 'Restore finished', body: 'Each step is listed in the log. DNS and Steam launch options were not changed.' });
+      }
+    });
+    return () => { off1(); off2(); };
+  }, [openModal]);
+
+  useEffect(() => { logEnd.current?.scrollIntoView({ block: 'end' }); }, [logs, drawer]);
+  useEffect(() => { const h = () => { const n = NAV.find((x) => x.id === location.hash.slice(1)); if (n) setView(n.id); }; window.addEventListener('hashchange', h); return () => window.removeEventListener('hashchange', h); }, []);
+
+  const go = (id: NavId) => { sfx.click(); setView(id); try { history.replaceState(null, '', `#${id}`); } catch { location.hash = id; } };
+
+  const runApply = () => {
+    openModal({
+      kind: 'q', label: 'Confirm', title: 'Apply the selected tweaks?',
+      body: 'Runs the tweaks that are switched on in Engine Tweaks. You can undo them at any time.',
+      confirm: { text: 'Apply', run: async () => { setBusy(true); const r = await api.engineApply({ ...opts, power: null }); if (!r.ok) { setBusy(false); openModal({ kind: 'warn', label: 'Problem', title: 'Not started', body: r.error }); } } },
+    });
+  };
+  const runRestore = async () => {
+    const summary = await api.restoreSummary();
+    openModal({
+      kind: 'q', label: 'Confirm', title: 'Restore defaults?', body: summary,
+      confirm: { text: 'Restore', run: async () => { setBusy(true); const r = await api.engineRestore(); if (!r.ok) { setBusy(false); openModal({ kind: 'warn', label: 'Problem', title: 'Not started', body: r.error }); } } },
+    });
+  };
+
+  const engineAge = info?.days_since_optimization;
+  const last = logs[logs.length - 1];
+
+  return (
+    <div className="app">
+      <header className="glass titlebar">
+        <div className="cut badge pywebview-drag-region" style={{ ['--fill' as string]: 'rgba(10,14,19,.95)' }}><span className="in">CS2 // COMMAND CENTER</span></div>
+        <span className="decal pywebview-drag-region">v{info?.version ?? '...'} {native ? '' : '· browser preview'}</span>
+        <div className="drag pywebview-drag-region" />
+        <div className="ind">
+          <span className="pill"><i className="dot" />PERM: {info ? (info.admin ? 'ADMIN' : 'STANDARD') : '...'}</span>
+          <span className="pill"><i className={`dot ${info?.cs2_found ? 'cy' : 'am'}`} />CS2: {info ? (info.cs2_found ? 'FOUND' : 'NOT FOUND') : '...'}</span>
+          <span className="pill"><i className="dot am" />ENGINE: {engineAge == null ? 'NEVER RUN' : engineAge === 0 ? 'OPTIMIZED TODAY' : `${engineAge}D AGO`}</span>
+          <button className="sfx" aria-pressed={sound} onClick={() => { const v = !sound; sfx.set(v); setSound(v); if (v) sfx.click(); }} title="Interface sounds on or off">{sound ? 'SFX ON' : 'SFX OFF'}</button>
+        </div>
+        <div className="winctl">
+          <button aria-label="Minimize" onClick={() => void api.winMin()}><Minus size={14} /></button>
+          <button aria-label="Maximize" onClick={() => void api.winMax()}><Square size={11} /></button>
+          <button aria-label="Close" className="x" onClick={() => void api.winClose()}><X size={14} /></button>
+        </div>
+      </header>
+
+      <section className="glass hud2 brk" aria-label="Quick actions">
+        <div className="hw"><span className="decal">// System</span>{info?.persona && <span className="pill">Steam: {info.persona}</span>}<span className="pill"><AppWindow size={12} /> {info?.cfg_dir ? 'autoexec folder found' : 'autoexec folder not found'}</span></div>
+        <div className="acts">
+          <button className="btn cut amber pri" disabled={busy} onClick={runApply}><Zap size={14} /> {busy ? 'Working…' : 'One-click optimize'}</button>
+          <button className="btn cut ghost" disabled={busy} onClick={() => void runRestore()}>Restore defaults</button>
+        </div>
+      </section>
+
+      <div className="main">
+        <nav className="glass rail" aria-label="Sections">
+          <div className="cap decal">// Navigation</div>
+          {NAV.map(({ id, label, icon: Icon }) => (
+            <button key={id} className="nav" aria-current={view === id ? 'page' : undefined} onMouseEnter={sfx.hover} onClick={() => go(id)}><Icon size={17} strokeWidth={1.7} />{label}</button>
+          ))}
+        </nav>
+        <main className="content" style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <AnimatePresence mode="wait">
+            <motion.div key={view} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {view === 'servers' && <Servers info={info} log={addLog} />}
+              {view === 'engine' && <Engine opts={opts} setOpts={setOpts} onApplied={runApply} log={addLog} />}
+              {view !== 'servers' && view !== 'engine' && (
+                <div className="glass card ph brk"><div className="big">{NAV.find((n) => n.id === view)?.label.toUpperCase()}</div><div>This screen is not in the new app yet. It is still in the classic app.</div><div className="decal" style={{ marginTop: 8 }}>Built so far: ZE Game Servers, Engine Tweaks</div></div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
+
+      <section className={`glass log${drawer ? '' : ' shut'}`}>
+        <button onClick={() => { sfx.click(); setDrawer(!drawer); }} aria-expanded={drawer}>
+          <span className="sect">System activity log</span><span className="decal">// {last ? last.msg.slice(0, 70) : 'idle'}</span><span style={{ marginLeft: 'auto', color: 'var(--tx3)' }}><ChevronDown size={14} /></span>
+        </button>
+        <div className="body">
+          {logs.map((l, i) => <div key={i}><span style={{ color: 'var(--tx3)' }}>[{l.t}] </span><span className={`lt ${TAGCLS[l.tag] ?? 's'}`}>[{l.tag}]</span> {l.msg}</div>)}
+          <div ref={logEnd} />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default function App() {
+  return <ModalHost><div className="bgfx" aria-hidden="true" /><Shell /><ResizeEdges /></ModalHost>;
+}

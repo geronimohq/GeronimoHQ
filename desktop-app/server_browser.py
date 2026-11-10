@@ -611,6 +611,9 @@ def get_or_download_map_thumbnail(map_name: str, callback: Optional[Callable[[st
     threading.Thread(target=_worker, daemon=True).start()
     return None
 
+_ROSTER_CACHE: Dict[Tuple[str, int], Tuple[float, Optional[int]]] = {}
+
+
 def query_server_info(host: str, port: int, timeout: float = 1.8) -> Dict[str, Any]:
     """
     Queries Source Engine A2S_INFO via UDP packet.
@@ -684,9 +687,16 @@ def query_server_info(host: str, port: int, timeout: float = 1.8) -> Dict[str, A
             # only, so when its roster is smaller than players - bots, the difference is bots.
             if players > 0 and bots == 0:
                 try:
-                    roster = query_server_players(host, port, timeout=1.5)
-                    if roster.get("success") and roster.get("count", 0) < players:
-                        bots = players - roster["count"]
+                    # the roster answer is cached for 10 s so fast refresh rates do not double the query rate
+                    hit = _ROSTER_CACHE.get((host, port))
+                    if hit and time.time() - hit[0] < 10:
+                        roster_count = hit[1]
+                    else:
+                        roster = query_server_players(host, port, timeout=1.5)
+                        roster_count = roster.get("count", 0) if roster.get("success") else None
+                        _ROSTER_CACHE[(host, port)] = (time.time(), roster_count)
+                    if roster_count is not None and roster_count < players:
+                        bots = players - roster_count
                 except Exception:
                     pass
 
