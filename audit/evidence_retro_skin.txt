@@ -1,69 +1,48 @@
-# Retro skin evidence - 2026-11-10T08:25:46+08:00 - Windows 11, Python 3.14.7
+test_disabled_text_is_exempt_but_still_dimmer_than_secondary (__main__.ThemeContrast.test_disabled_text_is_exempt_but_still_dimmer_than_secondary) ... ok
+test_table (__main__.ThemeContrast.test_table) ... ok
+test_type_scale (__main__.ThemeContrast.test_type_scale) ... ok
 
-## test_theme_contrast.py (contrast table)
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
 OK
+
 TEXT vs SURFACE (ratio)                  base    panel   raised    inset
-text-primary   #D5DACF                     7.52     6.00     5.73    10.17
-text-secondary #C4CABE                     6.39     5.10     4.87     8.64
-ct-blue-text   #BBCADE                     6.43     5.13     4.90     8.69
-t-gold-text    #D7C6A4                     6.37     5.08     4.85     8.62
-good-text      #A6D499                     6.37     5.08     4.85     8.61
-warn-text      #EEBEA7                     6.40     5.10     4.87     8.65
-bad-text       #EFBCB7                     6.39     5.10     4.87     8.65
+text-primary   #D5DACF                    11.52     9.97     8.59    12.86
+text-secondary #9FA997                     6.71     5.80     5.00     7.49
+ct-blue-text   #66ACE9                     6.75     5.84     5.03     7.53
+t-gold-text    #D2A84E                     7.38     6.38     5.50     8.24
+good-text      #6FCB57                     8.08     6.99     6.03     9.03
+warn-text      #EB8E6D                     6.73     5.82     5.02     7.51
+bad-text       #F18882                     6.70     5.80     4.99     7.48
 accent (headings only, bold >= 15 px, needs 3:1)
-  accent #E48716 on base: 3.96
-  accent #E48716 on panel: 3.16
-  accent #E48716 on inset: 5.36
+  accent #E48716 on base: 6.07
+  accent #E48716 on panel: 5.25
+  accent #E48716 on inset: 6.78
 LABEL on FILL
-  text-on-accent / accent          5.99
-  text-on-accent / accent-hover    6.96
-  text-on-accent / good            6.07
+  text-on-accent / accent          6.71
+  text-on-accent / accent-hover    7.79
+  text-on-accent / good            6.20
   text-on-dark-fill / bad          5.38
   text-on-dark-fill / warn         5.04
   text-on-dark-fill / bad hover    4.90
+test_buttons_have_bevels_and_fields_are_inset (__main__.RetroSkin.test_buttons_have_bevels_and_fields_are_inset) ... ok
+test_every_text_widget_is_readable_and_accent_is_for_headings_only (__main__.RetroSkin.test_every_text_widget_is_readable_and_accent_is_for_headings_only) ... ok
+test_fonts_and_type_scale (__main__.RetroSkin.test_fonts_and_type_scale) ... ok
+test_log_is_monospace_inset_with_colored_parts (__main__.RetroSkin.test_log_is_monospace_inset_with_colored_parts) ... ok
+test_no_color_literals_outside_theme (__main__.RetroSkin.test_no_color_literals_outside_theme) ... ok
+test_no_yellow_or_neon_on_any_widget (__main__.RetroSkin.test_no_yellow_or_neon_on_any_widget) ... ok
+test_one_primary_button_per_screen (__main__.RetroSkin.test_one_primary_button_per_screen) ... ok
+test_only_one_red_surface_style (__main__.RetroSkin.test_only_one_red_surface_style) ... ok
+test_settings_text_not_clipped_wording (__main__.RetroSkin.test_settings_text_not_clipped_wording) ... ok
 
-## test_retro_skin.py (real widget tree: 16 pages and dialogs)
-test_buttons_have_bevels_and_fields_are_inset ... ok
-test_every_text_widget_is_readable_and_accent_is_for_headings_only ... ok
-test_fonts_and_type_scale ... ok
-test_log_is_monospace_inset_with_colored_parts ... ok
-test_no_color_literals_outside_theme ... ok
-test_no_yellow_or_neon_on_any_widget ... ok
-test_one_primary_button_per_screen ... ok
-test_only_one_red_surface_style ... ok
-test_settings_text_not_clipped_wording ... ok
-Ran 9 tests in 9.638s
+----------------------------------------------------------------------
+Ran 9 tests in 9.721s
+
 OK
+
 [skin] 1152 widgets checked on 16 pages/dialogs
+
 [skin] font families in use: ['Consolas', 'Verdana'] | point sizes: [8, 9, 10, 11, 14]
+
 [skin] primary (accent-filled) button per screen: {'page:AUTOEXEC': ['📥 1. Apply Engine Autoexec Tweaks'], 'page:LAUNCH': ['📋 Copy Options'], 'page:BOOST': ['⚡ APPLY SAFE CS2 CPU PRIORITY BOOST'], 'page:SERVERS': ['⚡ Connect'], 'page:MAINTENANCE': ['🧹 RUN SELECTED PC CLEANUP'], 'dialog:settings': ['💾 Save Settings'], 'dialog:add_server': ['💾 Save Server'], 'dialog:players': ['🚀 Connect To Server']}
-
-## all desktop tests
-test_banned_hues.py rc=0 :: Ran 4 tests in 0.827s OK 
-test_comprehensive_audit.py rc=0 :: Ran 18 tests in 8.876s OK 
-test_dashboard_clarity.py rc=0 :: Ran 2 tests in 0.985s OK 
-test_diagnostics_redaction.py rc=0 :: Ran 1 test in 0.861s OK 
-test_dialog_geometry.py rc=0 :: Ran 1 test in 1.259s OK 
-test_dpi_table_scaling.py rc=0 :: Ran 1 test in 0.457s OK 
-test_map_protection_dummy.py rc=0 :: Ran 1 test in 0.008s OK 
-test_new_functionality.py rc=0 :: Ran 5 tests in 0.649s OK 
-test_phase2_bugs.py rc=0 :: Ran 37 tests in 3.935s OK 
-test_phase3_functional.py rc=0 :: Ran 11 tests in 8.440s OK 
-test_phase3_gaps.py rc=0 :: Ran 1 test in 7.527s OK 
-test_phase5_wording_a11y.py rc=0 :: Ran 8 tests in 0.108s OK 
-test_phase6_revert.py rc=0 :: Ran 11 tests in 0.846s OK 
-test_pills_calc.py rc=0 :: Ran 1 test in 1.323s OK 
-test_retro_skin.py rc=0 :: Ran 9 tests in 9.549s OK 
-test_security_phase1c.py rc=0 :: Ran 18 tests in 0.384s OK (skipped=1) 
-test_server_asset_protection.py rc=0 :: Ran 3 tests in 0.301s OK 
-test_server_browser_telemetry.py rc=0 :: All tests passed! 
-test_sidebar_architecture.py rc=0 :: Ran 3 tests in 1.338s OK 
-test_theme_contrast.py rc=0 :: Ran 3 tests in 0.000s OK 
-test_token_parity.py rc=0 :: Ran 2 tests in 0.000s OK 
-test_updater.py rc=0 :: Ran 7 tests in 1.822s OK 
-test_user_feedback_fixes.py rc=0 :: Ran 5 tests in 0.299s OK 
-test_version_consistency.py rc=0 :: Ran 2 tests in 0.829s OK 
-test_website_feature_parity.py rc=0 :: Ran 5 tests in 1.479s OK 
-
-## color literals outside theme.py:
-app.py:0 core_logic.py:0 server_browser.py:0 custom_map_cleaner.py:0 hardware_info.py:0 discord_rpc.py:0 cs2_gsi.py:0 updater.py:0 app_config.py:0 (make_cs2_badge.py = stand-alone icon generator, exempt)

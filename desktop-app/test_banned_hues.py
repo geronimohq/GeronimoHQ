@@ -26,10 +26,10 @@ class TestApprovedThemePalette(unittest.TestCase):
         self.assertEqual(theme.ACCENT_HOVER, "#F09527")
         self.assertEqual(theme.ACCENT_PRESSED, "#C5720E")
         self.assertEqual(theme.COLOR_PRIMARY, theme.ACCENT)
-        self.assertEqual(theme.TEXT_ON_ACCENT, "#1E2219")
-        for name, val in (("SURFACE_BASE", "#3A4034"), ("SURFACE_PANEL", "#474F40"), ("SURFACE_INSET", "#262B22"),
-                          ("BEVEL_LIGHT", "#7C8574"), ("BEVEL_DARK", "#22261E"), ("TEXT_PRIMARY", "#D5DACF"),
-                          ("GOOD", "#6FAE5C"), ("BAD", "#B8433A"), ("CT_BLUE", "#6F8FB8"), ("T_GOLD", "#B89A5E")):
+        self.assertEqual(theme.TEXT_ON_ACCENT, "#14170F")
+        for name, val in (("SURFACE_BASE", "#1C2119"), ("SURFACE_PANEL", "#262D22"), ("SURFACE_INSET", "#12160F"),
+                          ("BEVEL_LIGHT", "#596652"), ("BEVEL_DARK", "#0C0E0A"), ("TEXT_PRIMARY", "#D5DACF"),
+                          ("GOOD", "#5FA84C"), ("BAD", "#B8433A"), ("CT_BLUE", "#4F86B8"), ("T_GOLD", "#A8863F")):
             self.assertEqual(getattr(theme, name), val, name)
         # status is never the accent
         self.assertNotEqual(theme.COLOR_SUCCESS_PEPE, theme.ACCENT)

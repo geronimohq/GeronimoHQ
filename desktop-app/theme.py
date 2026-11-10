@@ -18,21 +18,21 @@ import tkinter as tk
 from tkinter import ttk
 
 # ---------------------------------------------------------------- surfaces
-SURFACE_BASE = "#3A4034"     # window background
-SURFACE_PANEL = "#474F40"    # cards, panels, sidebar
-SURFACE_RAISED = "#4A5242"   # rows / list items sitting on a panel (a touch lighter)
-SURFACE_INSET = "#262B22"    # log box, code preview, inputs, dropdowns
-HOVER_LIGHTEN = 1.06         # hover = surface x 1.06 (no color change)
+SURFACE_BASE = "#1C2119"     # window background (dark olive-black, CRT phosphor feel)
+SURFACE_PANEL = "#262D22"    # cards, panels, sidebar
+SURFACE_RAISED = "#2F3829"   # rows / list items sitting on a panel (a touch lighter)
+SURFACE_INSET = "#12160F"    # log box, code preview, inputs, dropdowns
+HOVER_LIGHTEN = 1.12         # hover = surface x 1.12 (6 % is invisible on dark surfaces; no color change)
 
 # ---------------------------------------------------------------- bevels
-BEVEL_LIGHT = "#7C8574"      # top + left edge of raised elements
-BEVEL_DARK = "#22261E"       # bottom + right edge of raised elements
+BEVEL_LIGHT = "#596652"      # top + left edge of raised elements
+BEVEL_DARK = "#0C0E0A"       # bottom + right edge of raised elements
 
 # ---------------------------------------------------------------- text
 TEXT_PRIMARY = "#D5DACF"
-TEXT_SECONDARY = "#C4CABE"   # helper text (never dimmer; owner brief minimum was #A3AC9A, raised to pass 4.5:1)
-TEXT_DISABLED = "#8A9284"    # disabled controls only (exempt from 4.5:1 by WCAG)
-TEXT_ON_ACCENT = "#1E2219"   # dark text on accent / good fills
+TEXT_SECONDARY = "#9FA997"   # helper text (never dimmer than this; passes 4.5:1 on every surface)
+TEXT_DISABLED = "#6B7364"    # disabled controls only (exempt from 4.5:1 by WCAG)
+TEXT_ON_ACCENT = "#14170F"   # dark text on accent / good fills
 TEXT_ON_DARK_FILL = "#FFFFFF"  # light text on warn / bad fills
 
 # ---------------------------------------------------------------- the ONE accent
@@ -41,18 +41,18 @@ ACCENT_HOVER = "#F09527"
 ACCENT_PRESSED = "#C5720E"
 
 # ---------------------------------------------------------------- status (status elements only)
-GOOD = "#6FAE5C"             # fill / icon / dot / border
+GOOD = "#5FA84C"             # fill / icon / dot / border
 WARN = "#AC5733"             # rust, never yellow
 BAD = "#B8433A"
-GOOD_TEXT = "#A6D499"        # small status TEXT
-WARN_TEXT = "#EEBEA7"
-BAD_TEXT = "#EFBCB7"
+GOOD_TEXT = "#6FCB57"        # small status TEXT
+WARN_TEXT = "#EB8E6D"
+BAD_TEXT = "#F18882"
 
 # ---------------------------------------------------------------- team colors (reserved)
-CT_BLUE = "#6F8FB8"          # fills / icons / left borders
-CT_BLUE_TEXT = "#BBCADE"     # links, secondary actions, humans (as text)
-T_GOLD = "#B89A5E"
-T_GOLD_TEXT = "#D7C6A4"      # zombies / T-side tags (as text)
+CT_BLUE = "#4F86B8"          # fills / icons / left borders
+CT_BLUE_TEXT = "#66ACE9"     # links, secondary actions, humans (as text)
+T_GOLD = "#A8863F"
+T_GOLD_TEXT = "#D2A84E"      # zombies / T-side tags (as text)
 
 # ---------------------------------------------------------------- fonts + type scale
 def _pick_font(candidates, default):

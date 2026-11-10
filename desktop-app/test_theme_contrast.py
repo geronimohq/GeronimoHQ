@@ -19,7 +19,7 @@ FILLS = {  # (label color, fill)
     "text-on-accent / good": (theme.TEXT_ON_ACCENT, theme.GOOD),
     "text-on-dark-fill / bad": (theme.TEXT_ON_DARK_FILL, theme.BAD),
     "text-on-dark-fill / warn": (theme.TEXT_ON_DARK_FILL, theme.WARN),
-    "text-on-dark-fill / bad hover": (theme.TEXT_ON_DARK_FILL, theme.lighten(theme.BAD)),
+    "text-on-dark-fill / bad hover": (theme.TEXT_ON_DARK_FILL, theme.lighten(theme.BAD, 1.06)),
 }
 
 

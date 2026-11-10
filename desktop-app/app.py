@@ -373,7 +373,7 @@ class Button(tk.Button):
             bg, fg, hover = theme.ACCENT, theme.TEXT_ON_ACCENT, theme.ACCENT_HOVER
         elif kind == "danger":
             bg, fg = (bg if bg in (theme.BAD, theme.WARN) else theme.BAD), theme.TEXT_ON_DARK_FILL
-            hover = theme.lighten(bg)
+            hover = theme.lighten(bg, 1.06)      # gentler: keeps the white label above 4.5:1
         elif kind == "good":
             bg, fg, hover = theme.GOOD, theme.TEXT_ON_ACCENT, theme.lighten(theme.GOOD)
         else:
@@ -454,7 +454,7 @@ class Label(tk.Label):
             kw.pop("foreground", None)
             if shouty and bold and font:
                 # uppercase bold heading: lift it to the heading size so it may use the accent
-                kw["font"] = (font[0], max(font[1], theme.FS_15), font[2])
+                kw["font"] = (theme.FONT_MONO, max(font[1], theme.FS_15), font[2])
             else:
                 kw["fg"] = theme.TEXT_PRIMARY
         elif shouty and bold and _is_heading_font(font) and fg in (theme.TEXT_PRIMARY, theme.TEXT_SECONDARY,
@@ -462,6 +462,7 @@ class Label(tk.Label):
             # ONE heading style: uppercase, bold, accent
             kw.pop("foreground", None)
             kw["fg"] = theme.ACCENT
+            kw["font"] = (theme.FONT_MONO, font[1], font[2])     # retro terminal headings
         super().__init__(master, cnf, **kw)
 
 
@@ -475,6 +476,8 @@ class Checkbutton(tk.Checkbutton):
         bg = kw.get("bg", kw.get("background"), ) or theme.SURFACE_PANEL
         for k in ("fg", "foreground", "bg", "background"):
             kw.pop(k, None)
+        kw.setdefault("anchor", "w")      # long labels must not be centered (clipped on both sides)
+        kw.setdefault("justify", "left")
         kw.update(fg=fg, bg=bg, selectcolor=theme.SURFACE_INSET, activebackground=theme.lighten(bg),
                   activeforeground=fg, disabledforeground=theme.TEXT_DISABLED, highlightthickness=1,
                   highlightbackground=bg, highlightcolor=theme.TEXT_PRIMARY)
@@ -7557,13 +7560,13 @@ class CS2TruePanoramaApp(tk.Tk):
         btn_filter_all = Button(filter_tabs_bar, text="All Maps (0)", font=(theme.FONT_UI, theme.FS_12, "bold"),
                                    fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_RAISED, relief="flat", padx=8, pady=4, cursor="hand2")
         btn_filter_temp = Button(filter_tabs_bar, text="📁 Temp Downloads (0)", font=(theme.FONT_UI, theme.FS_12),
-                                    fg=theme.CT_BLUE_TEXT, bg=theme.SURFACE_RAISED, relief="flat", padx=8, pady=4, cursor="hand2")
+                                    fg=theme.TEXT_SECONDARY, bg=theme.SURFACE_RAISED, relief="flat", padx=8, pady=4, cursor="hand2")
         btn_filter_sub = Button(filter_tabs_bar, text="⭐ Subscribed Packs (0)", font=(theme.FONT_UI, theme.FS_12),
                                    fg=theme.GOOD_TEXT, bg=theme.SURFACE_INSET, relief="flat", padx=8, pady=4, cursor="hand2")
         btn_filter_assets = Button(filter_tabs_bar, text="🛡️ Server Assets (0)", font=(theme.FONT_UI, theme.FS_12, "bold"),
-                                      fg=theme.GOOD_TEXT, bg=theme.SURFACE_RAISED, relief="flat", padx=8, pady=4, cursor="hand2")
+                                      fg=theme.CT_BLUE_TEXT, bg=theme.SURFACE_RAISED, relief="flat", padx=8, pady=4, cursor="hand2")
         btn_filter_dupe = Button(filter_tabs_bar, text="⚠️ Duplicates (0)", font=(theme.FONT_UI, theme.FS_12),
-                                    fg=theme.BAD_TEXT, bg=theme.SURFACE_RAISED, relief="flat", padx=8, pady=4, cursor="hand2")
+                                    fg=theme.WARN_TEXT, bg=theme.SURFACE_RAISED, relief="flat", padx=8, pady=4, cursor="hand2")
 
         btn_filter_all.pack(side="left", padx=(0, 4))
         btn_filter_temp.pack(side="left", padx=(0, 4))
@@ -7735,11 +7738,11 @@ class CS2TruePanoramaApp(tk.Tk):
 
         def set_filter(mode: str):
             view_filter.set(mode)
-            btn_filter_all.config(bg=theme.SURFACE_RAISED if mode == "ALL" else theme.SURFACE_INSET)
-            btn_filter_temp.config(bg=theme.SURFACE_PANEL if mode == "TEMP" else theme.SURFACE_RAISED)
-            btn_filter_sub.config(bg=theme.SURFACE_INSET if mode == "SUBSCRIBED" else theme.SURFACE_INSET)
-            btn_filter_assets.config(bg=theme.SURFACE_RAISED if mode == "ASSETS" else theme.SURFACE_RAISED)
-            btn_filter_dupe.config(bg=theme.SURFACE_RAISED if mode == "DUPES" else theme.SURFACE_RAISED)
+            for key, btn in (("ALL", btn_filter_all), ("TEMP", btn_filter_temp), ("SUBSCRIBED", btn_filter_sub),
+                             ("ASSETS", btn_filter_assets), ("DUPES", btn_filter_dupe)):
+                on = key == mode
+                btn.config(bg=theme.SURFACE_INSET if on else theme.SURFACE_RAISED, relief="sunken" if on else "raised",
+                           font=(theme.FONT_UI, theme.FS_12, "bold" if on else "normal"))
             render_maps()
 
         btn_filter_all.config(command=lambda: set_filter("ALL"))
@@ -8240,7 +8243,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
         cb_s = Checkbutton(sec_gen, text=" Start CS2 Command Center with Windows", variable=var_startup,
                               command=on_startup_toggle,
-                              font=(theme.FONT_UI, theme.FS_18, "bold"), fg=FG_WHITE, bg=BG_CARD, activebackground=BG_CARD, selectcolor=BG_WINDOW)
+                              font=(theme.FONT_UI, theme.FS_13, "bold"), fg=FG_WHITE, bg=BG_CARD, activebackground=BG_CARD, selectcolor=BG_WINDOW)
         cb_s.pack(anchor="w", pady=(0, 2))
 
         cb_m = Checkbutton(sec_gen, text=" Start minimized to System Tray (hidden near Windows clock)", variable=var_minimized,
@@ -8255,7 +8258,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
         var_tray = tk.BooleanVar(value=self.config.get("minimize_to_tray_on_close", True))
         cb_t = Checkbutton(sec_gen, text=" Minimize to System Tray when [-] is clicked", variable=var_tray,
-                              font=(theme.FONT_UI, theme.FS_18, "bold"), fg=FG_WHITE, bg=BG_CARD, activebackground=BG_CARD, selectcolor=BG_WINDOW)
+                              font=(theme.FONT_UI, theme.FS_13, "bold"), fg=FG_WHITE, bg=BG_CARD, activebackground=BG_CARD, selectcolor=BG_WINDOW)
         cb_t.pack(anchor="w", pady=(0, 2))
 
         lbl_t_sub = Label(sec_gen, text="Clicking [-] hides the window to the tray; clicking [X] closes the application completely.", font=(theme.FONT_UI, theme.FS_13), fg=FG_MUTED, bg=BG_CARD, wraplength=480, justify="left")
