@@ -528,3 +528,17 @@ class MissingMap(unittest.TestCase):
             ou.assert_called_with("steam://url/CommunityFilePage/123")
             self.assertEqual(core.map_get("ze b", "x; calc")["kind"], "search")       # a non-numeric id never reaches the protocol link
             self.assertIn("searchtext=ze%20b", ou.call_args[0][0])
+
+
+class UpdateInstallExit(unittest.TestCase):
+    def test_install_ends_the_whole_app_after_the_helper_starts(self):
+        import updater
+        core, _ = make_core()
+        core._pending_manifest = {"version": "9.9.9", "url": "https://geronimohq.com/x.exe"}
+        called = threading.Event()
+        core.exit_cb = called.set
+        with mock.patch.object(sys, "frozen", True, create=True), \
+                mock.patch.object(updater, "download_and_verify_binary", return_value=(True, "ok")), \
+                mock.patch.object(updater, "spawn_updater_helper_and_exit", side_effect=SystemExit(0)):
+            self.assertTrue(core.update_install()["ok"])
+            self.assertTrue(called.wait(5), "the app must exit, not just the job thread (sys.exit(0) in a thread ends only that thread)")

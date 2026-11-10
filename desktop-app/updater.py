@@ -266,16 +266,18 @@ def spawn_updater_helper_and_exit(current_exe_path: str, new_exe_path: str):
     exe_name = os.path.basename(current_exe_path)
     old_exe_path = current_exe_path + ".old"
     helper_bat = os.path.join(exe_dir, "_geronimo_updater.bat")
+    # NOTE: the waits use ping, not "timeout": the helper has no console, and "timeout" returns at once there, which made the
+    # 20-second health check run immediately, miss the just-started app and launch a second copy.
 
     script = f"""@echo off
 setlocal
 cd /d "{exe_dir}"
-timeout /t 1 /nobreak >nul
+ping -n 2 127.0.0.1 >nul
 
 :wait_pid
 tasklist /fi "PID eq {pid}" 2>nul | find "{pid}" >nul
 if not errorlevel 1 (
-    timeout /t 1 /nobreak >nul
+    ping -n 2 127.0.0.1 >nul
     goto wait_pid
 )
 
@@ -285,7 +287,7 @@ ren "{new_exe_path}" "{exe_name}"
 
 start "" "{current_exe_path}"
 
-timeout /t 20 /nobreak >nul
+ping -n 21 127.0.0.1 >nul
 tasklist /fi "IMAGENAME eq {exe_name}" 2>nul | find /i "{exe_name}" >nul
 if errorlevel 1 (
     echo [ROLLBACK] New binary failed to run within 20s. Restoring backup...
@@ -300,7 +302,14 @@ exit
     with open(helper_bat, "w", encoding="utf-8") as f:
         f.write(script)
 
-    subprocess.Popen(["cmd.exe", "/c", helper_bat], shell=True, close_fds=True)
+    # A PyInstaller one-file app that starts another copy of itself must tell the new bootloader to unpack fresh. Otherwise the
+    # new copy reuses this copy's temp folder, which is deleted while this copy exits ("Cannot find win-arm64" crash, stuck launcher).
+    env = dict(os.environ)
+    env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
+    for k in ("_MEIPASS2", "_PYI_APPLICATION_HOME_DIR", "_PYI_ARCHIVE_FILE", "_PYI_PARENT_PROCESS_LEVEL"):
+        env.pop(k, None)
+    env.pop("CS2CC_UPDATETEST", None)
+    subprocess.Popen(["cmd.exe", "/c", helper_bat], shell=True, close_fds=True, env=env)
     sys.exit(0)
 
 def cleanup_old_update_backup(exe_path: str):

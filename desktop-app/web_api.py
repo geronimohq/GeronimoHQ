@@ -18,6 +18,7 @@ class Api:
     def __init__(self):
         self._window = None
         self.core = Core(emit=self._emit)
+        self.core.exit_cb = self.quit            # the updater needs the whole app to end (window, tray icon, process), not just its own thread
 
     # wiring (not exposed: leading underscore)
     def _attach(self, window) -> None:
