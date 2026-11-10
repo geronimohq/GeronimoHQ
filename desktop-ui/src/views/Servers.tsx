@@ -91,7 +91,7 @@ export default function Servers({ info, log, sniper, tier, setTier }: { info: Ap
   const openModal = useModal();
   const [catalog, setCatalog] = useState<Srv[]>([]);
   const [st, setSt] = useState<Record<string, Status>>({});
-  const [rate, setRateState] = useState(info?.refresh_seconds ?? 5);
+  const rate = info?.refresh_seconds ?? 5;      // set in Settings (Server query speed)
   const [q, setQ] = useState('');
   const [group, setGroup] = useState<'global' | 'china'>('global');
   const [modes, setModes] = useState<Record<string, GeoMode>>({});
@@ -183,16 +183,13 @@ export default function Servers({ info, log, sniper, tier, setTier }: { info: Ap
   const ringDash = f?.online && f.max ? Math.min(1, (f.players ?? 0) / f.max) : 0;
   const featSince = match.started_sec && match.started_sec > 0 ? match.started_sec : seen.current[featured?.id ?? '']?.since;
   const setMode = (id: string) => (m: GeoMode) => setModes((p) => ({ ...p, [id]: m }));
-  const pickRate = (s: number) => { sfx.click(); setRateState(s); void api.setRefresh(s); log('SYSTEM', `List refresh set to ${s} s`); };
   const fp = useFlash(fHumans), fg = useFlash(f?.ping);
 
   return (
     <section className="view on">
       <div className="vhead">
         <div><div className="decal">// 07 · live telemetry</div><h1>ZE game servers</h1><p>Direct Steam server queries. Player counts are humans only, bots are not counted.</p></div>
-        <div className="seg cy" role="group" aria-label="List refresh rate">
-          {[1, 5, 15].map((s) => <button key={s} aria-pressed={rate === s} onClick={() => pickRate(s)}>{s}s</button>)}
-        </div>
+
       </div>
 
       {featured && (

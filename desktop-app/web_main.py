@@ -33,9 +33,33 @@ def main() -> int:
     web_tray.listen_for_show(api.show_window)
     api.core.presence.start()
     api.core.update_check_startup()
-    webview.start(bench if os.environ.get("CS2CC_BENCH") else None, window if os.environ.get("CS2CC_BENCH") else None,
-                  debug=bool(os.environ.get("CS2CC_DEBUG")))
+    debug = bool(os.environ.get("CS2CC_DEBUG"))
+    if os.environ.get("CS2CC_BENCH"):
+        webview.start(bench, window, debug=debug)
+    elif os.environ.get("CS2CC_SELFTEST"):
+        webview.start(selftest, (window, api), debug=debug)
+    else:
+        webview.start(debug=debug)
     return 0
+
+
+def selftest(window, api) -> None:
+    """Developer check (CS2CC_SELFTEST=1): calls every read-only API in this exact build and writes the result to cs2cc_selftest.txt in the temp folder."""
+    import time
+    import traceback
+    time.sleep(4)
+    names = ["app_info", "hw_info", "servers_catalog", "engine_state", "dashboard", "maint_state", "launch_state", "dns_state", "autoexec_state",
+             "mpo_state", "settings_get", "maps_settings", "presence_state", "sniper_status", "start_page", "restore_summary", "log_history"]
+    out = []
+    for n in names:
+        try:
+            getattr(api, n)()
+            out.append(f"ok   {n}")
+        except Exception:
+            out.append(f"FAIL {n}: {traceback.format_exc(limit=2).strip().splitlines()[-1]}")
+    with open(os.path.join(os.environ.get("TEMP", "."), "cs2cc_selftest.txt"), "w", encoding="utf-8") as fh:
+        fh.write(chr(10).join(out) + chr(10))
+    window.destroy()
 
 
 def bench(window) -> None:

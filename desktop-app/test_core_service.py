@@ -262,6 +262,24 @@ class Updates(unittest.TestCase):
         self.assertFalse(core.update_install()["ok"])               # not frozen (running from source)
 
 
+class NoTkinter(unittest.TestCase):
+    def test_every_read_api_works_where_tkinter_is_not_bundled(self):
+        """The packaged web-window app has no Tk. A module that imports it at the top (theme.py did) silently broke the MPO and Launch pages."""
+        import subprocess
+        code = (
+            "import sys; sys.modules['tkinter'] = None; sys.modules['tkinter.ttk'] = None\n"
+            "import web_api\n"
+            "a = web_api.Api()\n"
+            "for n in ('app_info','hw_info','servers_catalog','engine_state','dashboard','maint_state','launch_state','dns_state','autoexec_state',"
+            "'mpo_state','settings_get','maps_settings','presence_state','sniper_status','start_page','restore_summary'):\n"
+            "    getattr(a, n)()\n"
+            "print('ALL_OK')\n"
+        )
+        env = dict(os.environ, PYTHONUTF8="1", PYTHONPATH=os.path.dirname(os.path.abspath(__file__)))
+        r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120, env=env, cwd=os.path.dirname(os.path.abspath(__file__)))
+        self.assertIn("ALL_OK", r.stdout, r.stderr[-800:])
+
+
 if __name__ == "__main__":
     _res = unittest.main(exit=False, verbosity=2)
     sys.stdout.flush(); sys.stderr.flush()

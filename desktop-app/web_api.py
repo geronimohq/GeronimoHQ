@@ -306,3 +306,31 @@ class Api:
 
     def update_install(self) -> Dict[str, Any]:
         return self.core.update_install()
+
+    # hardware banner, ZE customizer, manual autoexec edit, analyzer, custom DNS, VPK health
+    def hw_info(self) -> Dict[str, Any]:
+        return self.core.hw_info()
+
+    def ze_customizer(self, opts: Dict[str, Any]) -> Dict[str, Any]:
+        return self.core.ze_customizer(opts)
+
+    def autoexec_save(self, text: str) -> Dict[str, Any]:
+        return self.core.autoexec_save(text)
+
+    def log_analyze(self) -> Dict[str, Any]:
+        return self.core.log_analyze()
+
+    def dns_custom(self, primary: str, secondary: str) -> Dict[str, Any]:
+        return self.core.dns_custom(primary, secondary)
+
+    def vpk_verify(self) -> Dict[str, Any]:
+        return self.core.vpk_verify()
+
+    def vpk_repair(self) -> Dict[str, Any]:
+        return self.core.vpk_repair()
+
+    def maps_quick_stats(self) -> Dict[str, Any]:
+        return self.core.maps_quick_stats()
+
+    def presence_refresh(self) -> Dict[str, Any]:
+        return self.core.presence_refresh()

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { api } from '../api';
 import { sfx } from '../sound';
+import { Info, WeeklyBanner } from '../components/Info';
+import PAGES from '../data/pages.json';
 import type { EngineState } from '../types';
 
 export const TWEAKS = [
@@ -31,14 +33,17 @@ function Group({ id, title, children, count }: { id: string; title: string; chil
   );
 }
 
-export default function Engine({ opts, setOpts, onApplied, log }: {
+export default function Engine({ opts, setOpts, onApplied, log, power, setPower, daysOpt, daysMaint, go }: {
   opts: Opts; setOpts: (o: Opts) => void; onApplied: () => void; log: (tag: string, msg: string) => void;
+  power: { on: boolean; plan: 'balanced' | 'high' }; setPower: (p: { on: boolean; plan: 'balanced' | 'high' }) => void;
+  daysOpt: number | null | undefined; daysMaint: number | null | undefined; go: (id: 'engine' | 'maintenance') => void;
 }) {
   const [state, setState] = useState<EngineState | null>(null);
-  const [plan, setPlan] = useState<'balanced' | 'high'>('balanced');
+  const plan = power.plan;
+  const setPlan = (p: 'balanced' | 'high') => setPower({ ...power, plan: p });
   const [ddOpen, setDdOpen] = useState(false);
   const [applied, setApplied] = useState(false);
-  useEffect(() => { void api.engineState().then((s) => { setState(s); setPlan(/high/i.test(s.power_plan) ? 'high' : 'balanced'); }); }, []);
+  useEffect(() => { void api.engineState().then((s) => { setState(s); }); }, []);
   useEffect(() => { if (!ddOpen) return; const c = () => setDdOpen(false); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, [ddOpen]);
   const enabled = Object.values(opts).filter(Boolean).length;
   const planName = plan === 'balanced' ? 'Balanced' : 'High performance';
@@ -49,6 +54,8 @@ export default function Engine({ opts, setOpts, onApplied, log }: {
         <div><div className="decal">// 02 · system tuning</div><h1>Engine performance tweaks</h1><p>Each change has an undo: Restore Defaults, the autoexec backup, or the Restore ISP Default (DHCP) button.</p></div>
         <span className="pill"><i className="dot" /><span>{enabled} of {TWEAKS.length} selected</span></span>
       </div>
+      <WeeklyBanner daysOpt={daysOpt} daysMaint={daysMaint} go={go} />
+      <Info title={PAGES.engine.note_title.replace(/^[^A-Za-z]*/, '')} text={PAGES.engine.note} open={false} tone="var(--cyan)" />
       {state && !state.cs2_found && <div className="glass card" role="alert" style={{ borderColor: 'rgba(239,68,68,.45)' }}>CS2 was not found, so the autoexec, fullscreen and dump tweaks are skipped. Shader cleaning and Game DVR still work.</div>}
       {state?.autoexec && <div className="decal" style={{ padding: '0 4px' }}>{state.autoexec.text}</div>}
       {(['engine', 'win'] as const).map((g) => (
@@ -64,7 +71,8 @@ export default function Engine({ opts, setOpts, onApplied, log }: {
       ))}
       <div className="glass card brk">
         <div className="row" style={{ border: 0, padding: '4px 6px' }}>
-          <div className="grow"><div className="t">Windows CPU power scheme</div><div className="d">Active now: {state?.power_plan ?? '…'}. Applying remembers your current plan so Restore Defaults can put it back.</div></div>
+          <div className="grow"><div className="t">Windows CPU power scheme</div><div className="d">Recommended for your CPU: {power.plan === 'balanced' ? 'Balanced' : 'High performance'} | Active: {state?.power_plan ?? '…'}. {PAGES.engine.power_tip}</div></div>
+          <label className="chk" title={PAGES.engine.power_check_tip}><input type="checkbox" checked={power.on} onChange={() => { sfx.toggle(); setPower({ ...power, on: !power.on }); }} />Include in one-click</label>
           <span className={`applied${applied ? ' on' : ''}`}>&#10003; Applied</span>
           <div className={`dd${ddOpen ? ' open' : ''}`}>
             <button aria-haspopup="listbox" aria-expanded={ddOpen} onClick={(e) => { e.stopPropagation(); sfx.click(); setDdOpen(!ddOpen); }}><span>{planName}</span><ChevronDown size={14} /></button>

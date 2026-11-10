@@ -7,6 +7,7 @@ import { ModalHost, useModal } from './components/Modal';
 import Servers from './views/Servers';
 import Engine, { ALL_ON, type Opts } from './views/Engine';
 import Dashboard from './views/Dashboard';
+import PAGES from './data/pages.json';
 import Maintenance from './views/Maintenance';
 import Launch from './views/Launch';
 import Booster from './views/Booster';
@@ -15,6 +16,8 @@ import Faq from './views/Faq';
 import Mpo from './views/Mpo';
 import Discord from './views/Discord';
 import Settings from './components/Settings';
+import { Reactor } from './components/Reactor';
+import type { HwInfo } from './types';
 import type { AppInfo, LogLine, SniperStatus, UpdateInfo } from './types';
 
 const NAV = [
@@ -62,6 +65,9 @@ function Shell() {
   const [busy, setBusy] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [update, setUpdate] = useState<UpdateInfo | null>(null);
+  const [hw, setHw] = useState<HwInfo | null>(null);
+  const [power, setPower] = useState<{ on: boolean; plan: 'balanced' | 'high' }>({ on: false, plan: 'balanced' });
+  const [days, setDays] = useState<{ opt: number | null; maint: number | null }>({ opt: null, maint: null });
   const [sniper, setSniper] = useState<SniperStatus | null>(null);
   const [tier, setTierState] = useState<number>(() => { try { return Number(localStorage.getItem('sniperTier')) || 62; } catch { return 62; } });
   const setTier = (n: number) => { setTierState(n); try { localStorage.setItem('sniperTier', String(n)); } catch { /* ignore */ } };
@@ -76,6 +82,8 @@ function Shell() {
 
   useEffect(() => {
     if (!NAV.some((n) => n.id === location.hash.slice(1))) void api.startPage().then((p) => { if (NAV.some((n) => n.id === p)) setView(p as NavId); });
+    void api.hw().then((h) => { setHw(h); setPower((p) => ({ ...p, plan: h.recommended_plan })); });
+    void api.dashboard().then((d) => setDays({ opt: d.days_opt, maint: d.days_maint }));
     void api.appInfo().then(setInfo);
     void api.logHistory().then((h) => setLogs(h));
     const pollSniper = () => { void api.sniperStatus().then(setSniper); };
@@ -102,6 +110,11 @@ function Shell() {
 
   useEffect(() => { logEnd.current?.scrollIntoView({ block: 'end' }); }, [logs, drawer]);
   useEffect(() => { void api.setLastPage(view); }, [view]);
+  useEffect(() => {
+    const h = (e: PromiseRejectionEvent) => { addLog('SYSTEM', `[ERROR] ${String(e.reason?.message ?? e.reason)}`); setDrawer(true); };
+    window.addEventListener('unhandledrejection', h);
+    return () => window.removeEventListener('unhandledrejection', h);
+  }, [addLog]);
   useEffect(() => { const h = () => { const n = NAV.find((x) => x.id === location.hash.slice(1)); if (n) setView(n.id); }; window.addEventListener('hashchange', h); return () => window.removeEventListener('hashchange', h); }, []);
 
   const go = (id: NavId) => { sfx.click(); setView(id); try { history.replaceState(null, '', `#${id}`); } catch { location.hash = id; } };
@@ -110,7 +123,7 @@ function Shell() {
     openModal({
       kind: 'q', label: 'Confirm', title: 'Apply the selected tweaks?',
       body: 'Runs the tweaks that are switched on in Engine Tweaks. You can undo them at any time.',
-      confirm: { text: 'Apply', run: async () => { setBusy(true); const r = await api.engineApply({ ...opts, power: null }); if (!r.ok) { setBusy(false); openModal({ kind: 'warn', label: 'Problem', title: 'Not started', body: r.error }); } } },
+      confirm: { text: 'Apply', run: async () => { setBusy(true); const r = await api.engineApply({ ...opts, power: power.on ? power.plan : null }); if (!r.ok) { setBusy(false); openModal({ kind: 'warn', label: 'Problem', title: 'Not started', body: r.error }); } } },
     });
   };
   const runRestore = async () => {
@@ -145,10 +158,14 @@ function Shell() {
       </header>
 
       <section className="glass hud2 brk" aria-label="Quick actions">
-        <div className="hw"><span className="decal">// System</span>{info?.persona && <span className="pill">Steam: {info.persona}</span>}<span className="pill"><AppWindow size={12} /> {info?.cfg_dir ? 'autoexec folder found' : 'autoexec folder not found'}</span></div>
+        <div className="hwb">
+          <div className="l1">PROCESSOR:&nbsp; {hw?.cpu ?? '...'}</div>
+          <div className="l2">GRAPHICS:&nbsp; {hw?.gpu ?? '...'}</div>
+          <div className="l3">&#9889; Profile: {hw?.profile ?? ''}</div>
+        </div>
         <div className="acts">
-          <button className="btn cut amber pri" disabled={busy} onClick={runApply}><Zap size={14} /> {busy ? 'Working…' : 'One-click optimize'}</button>
-          <button className="btn cut ghost" disabled={busy} onClick={() => void runRestore()}>Restore defaults</button>
+          <button className="btn cut amber pri" disabled={busy} onClick={runApply} title={PAGES.header.oneclick}><Zap size={14} /> {busy ? 'Working…' : 'One-click optimize'}</button>
+          <button className="btn cut ghost" disabled={busy} onClick={() => void runRestore()} title={PAGES.header.restore}>Restore defaults</button>
         </div>
       </section>
 
@@ -171,7 +188,7 @@ function Shell() {
           <AnimatePresence mode="wait">
             <motion.div key={view} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {view === 'dashboard' && <Dashboard go={go} />}
-              {view === 'maintenance' && <Maintenance busy={busy} setBusy={setBusy} />}
+              {view === 'maintenance' && <Maintenance busy={busy} setBusy={setBusy} go={go} />}
               {view === 'launch' && <Launch />}
               {view === 'booster' && <Booster />}
               {view === 'autoexec' && <Autoexec />}
@@ -179,7 +196,7 @@ function Shell() {
               {view === 'mpo' && <Mpo />}
               {view === 'discord' && <Discord />}
               {view === 'servers' && <Servers info={info} log={addLog} sniper={sniper} tier={tier} setTier={setTier} />}
-              {view === 'engine' && <Engine opts={opts} setOpts={setOpts} onApplied={runApply} log={addLog} />}
+              {view === 'engine' && <Engine opts={opts} setOpts={setOpts} onApplied={runApply} log={addLog} power={power} setPower={setPower} daysOpt={days.opt} daysMaint={days.maint} go={go} />}
               {!['servers', 'engine', 'dashboard', 'maintenance', 'launch', 'booster', 'autoexec', 'faq', 'mpo', 'discord'].includes(view) && (
                 <div className="glass card ph brk"><div className="big">{NAV.find((n) => n.id === view)?.label.toUpperCase()}</div><div>This screen is not in the new app yet. It is still in the classic app.</div><div className="decal" style={{ marginTop: 8 }}>Still to come: Discord Presence</div></div>
               )}
@@ -207,5 +224,5 @@ function Shell() {
 }
 
 export default function App() {
-  return <ModalHost><div className="bgfx" aria-hidden="true" /><Shell /><ResizeEdges /></ModalHost>;
+  return <ModalHost><Reactor /><Shell /><ResizeEdges /></ModalHost>;
 }

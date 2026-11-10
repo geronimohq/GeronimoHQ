@@ -1,4 +1,4 @@
-import type { AppInfo, AutoexecState, UpdateInfo, PresenceState, MapsSettings, MpoState, SettingsValues, DashboardData, DnsState, EngineState, LogLine, LaunchState, MaintState, Match, PlayerRow, SniperStatus, Srv, Status } from './types';
+import type { AnalyzerResult, AppInfo, AutoexecState, HwInfo, VpkResult, UpdateInfo, PresenceState, MapsSettings, MpoState, SettingsValues, DashboardData, DnsState, EngineState, LogLine, LaunchState, MaintState, Match, PlayerRow, SniperStatus, Srv, Status } from './types';
 
 type Fn = (...a: unknown[]) => Promise<unknown>;
 declare global {
@@ -86,6 +86,15 @@ export const api = {
   updateCheck: () => call<UpdateInfo>('update_check', true),
   updateSkip: (v: string) => call<boolean>('update_skip', v),
   updateInstall: () => call<{ ok: boolean; error?: string }>('update_install'),
+  hw: () => call<HwInfo>('hw_info'),
+  zeCustomizer: (o: Record<string, unknown>) => call<{ ok: boolean; message: string; keys: string[]; hud: number; vm: boolean }>('ze_customizer', o),
+  autoexecSave: (t: string) => call<{ ok: boolean; error?: string; path?: string }>('autoexec_save', t),
+  logAnalyze: () => call<AnalyzerResult>('log_analyze'),
+  dnsCustom: (p: string, s: string) => call<{ ok: boolean; error?: string }>('dns_custom', p, s),
+  vpkVerify: () => call<VpkResult>('vpk_verify'),
+  vpkRepair: () => call<{ ok: boolean; count: number; message: string }>('vpk_repair'),
+  mapStats: () => call<{ count: number; gb: number }>('maps_quick_stats'),
+  presenceRefresh: () => call<import('./types').PresenceState>('presence_refresh'),
   winMin: () => call<void>('win_minimize'),
   winMax: () => call<void>('win_maximize'),
   winClose: () => call<void>('win_close'),
@@ -147,6 +156,15 @@ async function mock(name: string, ...args: unknown[]): Promise<unknown> {
     case 'update_check': return { available: false, message: 'You are up to date (sample).', last: '' };
     case 'update_skip': return true;
     case 'update_install': return { ok: false, error: 'Updates install only in the packaged app.' };
+    case 'hw_info': return { cpu: 'AMD Ryzen 7 5700X3D 8-Core Processor [3D V-Cache Detected]', gpu: 'AMD Radeon RX 6600', profile: 'AMD 3D V-Cache detected. Windows Balanced allows AMD CPPC to properly schedule game threads.', recommended_plan: 'balanced' };
+    case 'ze_customizer': return { ok: true, message: 'Sample', keys: ['F7', 'F8'], hud: 0, vm: true };
+    case 'autoexec_save': return { ok: true, path: 'C:/cs2/cfg/autoexec.cfg' };
+    case 'log_analyze': return { found: false, message: 'console.log not found (sample).', file_size_mb: 0, frame_hitch_events: 0, shader_compile_events: 0, net_jitter_events: 0, vpk_load_events: 0, last_map: 'Unknown', recommendation: '', log_path: '', grade: '' };
+    case 'dns_custom': return { ok: true };
+    case 'vpk_verify': return { message: 'Verified 0 Workshop VPK packs: 1 Healthy, 0 Corrupted/Incomplete.', healthy: 1, corrupted: 0, total_gb: 0.07, bad: [] };
+    case 'vpk_repair': return { ok: true, count: 0, message: 'No damaged Workshop VPK files were found. Nothing to remove.' };
+    case 'maps_quick_stats': return { count: 373, gb: 87.6 };
+    case 'presence_refresh': return { enabled: true, connected: false, status: 'Standby (CS2 closed)', details: '', state: '', buttons: [], cs2_running: false, tracked: '' };
     case 'restore_summary': return 'This undoes the app\'s engine changes.';
     default: return undefined;
   }

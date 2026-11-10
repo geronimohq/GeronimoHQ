@@ -26,7 +26,7 @@ export interface LaunchState { current: string; vdf_found: boolean; warnings: st
 export interface DnsProvider { id: string; name: string; primary: string; secondary: string; desc: string }
 export interface DnsState { interface: string; current: string; found: boolean; providers: DnsProvider[]; admin: boolean }
 export interface DnsResult { name: string; primary: string; secondary: string; avg_ms: number; jitter_ms: number; reachable: boolean; fastest: boolean; rank: number }
-export interface AutoexecState { state: string; status: string; path: string | null; text: string; cfg: boolean }
+export interface AutoexecState { state: string; status: string; path: string | null; text: string; cfg: boolean; cfg_dir: string | null; personal_vm: boolean; personal_lines: string[] }
 export interface MpoState { gpu: string; vendor: string; disabled: boolean; badge: string; detail: string; reg_path: string }
 export interface SettingsValues {
   start_with_windows: boolean; start_minimized: boolean; minimize_to_tray_on_close: boolean; open_on_page: string; sniper_sound_enabled: boolean;
@@ -36,3 +36,6 @@ export interface MapRow { id: string; name: string; status: string; type: string
 export interface MapsSettings { communities: string[]; protect_recent: boolean }
 export interface PresenceState { enabled: boolean; connected: boolean; status: string; details: string; state: string; buttons: string[]; cs2_running: boolean; tracked: string }
 export interface UpdateInfo { available: boolean; version?: string; notes?: string; size?: number; message?: string; last?: string }
+export interface HwInfo { cpu: string; gpu: string; profile: string; recommended_plan: 'balanced' | 'high' }
+export interface AnalyzerResult { found: boolean; message: string; file_size_mb: number; frame_hitch_events: number; shader_compile_events: number; net_jitter_events: number; vpk_load_events: number; last_map: string; recommendation: string; log_path: string; grade: string }
+export interface VpkResult { message: string; healthy: number; corrupted: number; total_gb: number; bad: string[] }

@@ -31,6 +31,7 @@ class PresenceService:
         self.session_start = 0
         self.status = "Standby"
         self.stop_event = threading.Event()
+        self.wake = threading.Event()
         self.thread: Optional[threading.Thread] = None
         self._logged_act = None
         self._logged_map = ""
@@ -143,7 +144,11 @@ class PresenceService:
             persona = core_logic.get_steam_active_persona(self.core.paths.get("steam_path"))
         except Exception:
             pass
-        while not self.stop_event.wait(2.0):
+        while not self.stop_event.is_set():
+            self.wake.wait(2.0)
+            self.wake.clear()
+            if self.stop_event.is_set():
+                break
             try:
                 if not self.core.config.get("discord_rpc_enabled", True):
                     if self.rpc.connected:

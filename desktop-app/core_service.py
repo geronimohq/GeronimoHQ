@@ -507,7 +507,14 @@ class Core:
                     text = f.read()[:60000]
             except Exception:
                 pass
-        return {"state": st.get("state"), "status": st.get("text"), "path": st.get("path"), "text": text, "cfg": bool(self.paths.get("cfg_dir"))}
+        personal = None
+        try:
+            personal = core_logic.detect_personal_viewmodel_in_autoexec(self.paths.get("cfg_dir"))
+        except Exception:
+            pass
+        return {"state": st.get("state"), "status": st.get("text"), "path": st.get("path"), "text": text, "cfg": bool(self.paths.get("cfg_dir")),
+                "cfg_dir": self.paths.get("cfg_dir"), "personal_vm": bool(personal and personal.get("has_personal_viewmodel")),
+                "personal_lines": (personal or {}).get("lines", [])}
 
     def autoexec_install(self) -> Dict[str, Any]:
         if not self.paths.get("cfg_dir"):
@@ -773,3 +780,92 @@ class Core:
             updater.spawn_updater_helper_and_exit(curr, new)
 
         return self._start_job("update_install", task)
+
+    # ---------- hardware banner ----------
+    def hw_info(self) -> Dict[str, Any]:
+        import hardware_info
+        cpu, gpu = hardware_info.get_cpu_info(), hardware_info.get_gpu_info()
+        tag = " [3D V-Cache Detected]" if cpu.get("is_x3d") else (" [Mobile]" if cpu.get("is_laptop") else "")
+        return {"cpu": f"{cpu.get('name', '')}{tag}", "gpu": gpu.get("name", ""), "profile": cpu.get("power_reason", ""),
+                "recommended_plan": "high" if str(cpu.get("recommended_power_plan", "")).lower().startswith("high") else "balanced"}
+
+    # ---------- ZE customizer + manual autoexec edit ----------
+    def ze_customizer(self, opts: Dict[str, Any]) -> Dict[str, Any]:
+        opts = opts or {}
+        try:
+            hud = int(str(opts.get("hud_color", 0)).split()[0])
+        except Exception:
+            hud = 0
+        clean = {"ze_laser_viewmodel": bool(opts.get("ze_laser_viewmodel", True)), "clean_telemetry_hud": bool(opts.get("clean_telemetry_hud", True)),
+                 "hud_color": max(0, min(12, hud)), "hud_scale": 0.90, "radar_zoom": 0.40,
+                 "duck_key": str(opts.get("duck_key") or "F7").strip()[:20], "voice_mute_key": str(opts.get("voice_mute_key") or "F8").strip()[:20]}
+        res = core_logic.apply_ze_visual_and_hud_customizer(self.paths.get("cfg_dir"), clean)
+        if isinstance(res, tuple):
+            ok, logs = res
+            res = {"success": ok, "message": logs[-1] if logs else "Updated autoexec.cfg", "logs": logs}
+        self.log(f"[ZE CUSTOMIZER] {res.get('message')}")
+        return {"ok": bool(res.get("success")), "message": res.get("message", ""), "keys": [clean["duck_key"], clean["voice_mute_key"]], "hud": clean["hud_color"], "vm": clean["ze_laser_viewmodel"]}
+
+    def autoexec_save(self, text: str) -> Dict[str, Any]:
+        import os
+        import shutil
+        cfg = self.paths.get("cfg_dir")
+        if not cfg:
+            return {"ok": False, "error": "Cannot locate the CS2 cfg folder."}
+        path = os.path.join(cfg, "autoexec.cfg")
+        try:
+            if os.path.exists(path):
+                try:
+                    shutil.copy2(path, path + ".manual_bak")
+                except Exception:
+                    pass
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(str(text))
+            self.config["autoexec_last_app_save"] = {"path": path, "sha256": core_logic.file_sha256(path), "time": time.strftime("%Y-%m-%d %H:%M")}
+            app_config.save_config(self.config)
+            self.log(f"[AUTOEXEC] Manual changes saved to: {path}")
+            return {"ok": True, "path": path}
+        except Exception as e:
+            return {"ok": False, "error": f"Failed to save autoexec.cfg: {e}"}
+
+    # ---------- log analyzer, custom DNS, VPK health ----------
+    def log_analyze(self) -> Dict[str, Any]:
+        res = core_logic.analyze_cs2_session_logs(self.paths.get("cs2_exe"))
+        self.log(f"[LOG ANALYZER] {res.get('message')}")
+        keys = ("found", "message", "file_size_mb", "frame_hitch_events", "shader_compile_events", "net_jitter_events", "vpk_load_events",
+                "last_map", "recommendation", "log_path", "grade")
+        return {k: res.get(k) for k in keys}
+
+    def dns_custom(self, primary: str, secondary: str) -> Dict[str, Any]:
+        import ipaddress
+        try:
+            p = str(ipaddress.IPv4Address(str(primary).strip()))
+            s2 = str(ipaddress.IPv4Address(str(secondary).strip())) if str(secondary).strip() else ""
+        except Exception:
+            return {"ok": False, "error": "Enter valid IPv4 addresses, for example 1.1.1.1 and 1.0.0.1."}
+        return self.dns_apply(p, s2, "Custom DNS")
+
+    def vpk_verify(self) -> Dict[str, Any]:
+        res = core_logic.scan_workshop_vpk_addons(self.paths.get("steam_path"), self.paths.get("cs2_exe"))
+        self._vpk_scan = res
+        self.log(f"[VPK] {res.get('message')}")
+        return {"message": res.get("message"), "healthy": res.get("healthy_count", 0), "corrupted": res.get("corrupted_count", 0),
+                "total_gb": res.get("total_gb", 0), "bad": [a.get("name") or a.get("id") for a in res.get("addons", []) if a.get("status") != "Healthy"][:30]}
+
+    def vpk_repair(self) -> Dict[str, Any]:
+        scan = core_logic.scan_workshop_vpk_addons(self.paths.get("steam_path"), self.paths.get("cs2_exe"))
+        bad = [a for a in scan.get("addons", []) if a.get("status") != "Healthy"]
+        if not bad:
+            return {"ok": True, "count": 0, "message": "No damaged Workshop VPK files were found. Nothing to remove."}
+        res = core_logic.repair_corrupted_workshop_addons(bad)
+        self.log(f"[VPK] {res.get('message')}")
+        return {"ok": True, "count": len(bad), "message": res.get("message", "")}
+
+    def maps_quick_stats(self) -> Dict[str, Any]:
+        import custom_map_cleaner
+        maps = custom_map_cleaner.scan_custom_maps(self.paths.get("steam_path"), self.paths.get("cs2_dir"))
+        return {"count": len(maps), "gb": round(sum(m.get("size_bytes", 0) for m in maps) / (1024 ** 3), 1)}
+
+    def presence_refresh(self) -> Dict[str, Any]:
+        self.presence.wake.set()
+        return self.presence.snapshot()
