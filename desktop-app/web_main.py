@@ -99,6 +99,10 @@ def _main() -> int:
         webview.start(selftest, (window, api), debug=debug, storage_path=sp)
     else:
         webview.start(debug=debug, storage_path=sp)
+    try:
+        api.tray.stop()                       # a process that ends without this leaves a dead icon in the tray until the mouse passes over it
+    except Exception:
+        pass
     log_line("window closed")
     return 0
 

@@ -120,6 +120,11 @@ class Tray:
     def stop(self) -> None:
         try:
             if self.icon:
+                try:
+                    self.icon.visible = False        # take the icon off the taskbar right now, before the loop is stopped
+                except Exception:
+                    pass
                 self.icon.stop()
+                self.icon = None
         except Exception:
             pass
