@@ -5,7 +5,7 @@ export interface Srv {
 }
 export interface Status {
   id: string; online: boolean; map?: string | null; players?: number; bots?: number; humans?: number; max?: number;
-  ping?: number | null; geo?: { countries: GeoRow[]; regions: GeoRow[] }; at?: number; error?: string; map_since?: number; map_exact?: boolean;
+  ping?: number | null; geo?: { countries: GeoRow[]; regions: GeoRow[] }; at?: number; error?: string; map_since?: number; map_exact?: boolean; map_missing?: boolean; map_wid?: string;
 }
 export interface AppInfo {
   version: string; build_date: string; admin: boolean; cs2_found: boolean; cfg_dir: string | null; persona: string | null;
