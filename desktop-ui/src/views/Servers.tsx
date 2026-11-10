@@ -11,6 +11,7 @@ import SoundtrackDialog from '../components/SoundtrackDialog';
 import type { AppInfo, Match, SniperStatus, Srv, Status } from '../types';
 
 type GeoMode = 'country' | 'region';
+const mapWarnTip = (s?: Status) => s?.map_wid ? `${s.map} is not on this PC. Click to open its Steam workshop page, press Subscribe, and Steam downloads it. Joining without it fails with "Required map is missing on your client".` : `${s?.map} was not found on this PC and its workshop page is not known. Click to search the workshop for it.`;
 const botsMostly = (s?: Status) => !!s && (s.bots ?? 0) >= 3 && (s.bots ?? 0) * 2 >= (s.players ?? 0);
 
 /** Highlights a value for a moment when it changes. */
@@ -35,7 +36,7 @@ function MapTimer({ since, exact }: { since: number; exact: boolean }) {
   return <span className="cell">&#9201; {exact ? '' : '≥ '}{m}:{String(s).padStart(2, '0')} on map</span>;
 }
 
-const Row = memo(function Row({ srv, st, mode, onMode, since, exact, armed, onConnect, onPlayers, onSniper, onCopy, thumb, onLink, onRemove, cooldown }: { srv: Srv; st?: Status; mode: GeoMode; onMode: (m: GeoMode) => void; since?: number; exact?: boolean; armed: boolean; onConnect: () => void; onPlayers: () => void; onSniper: () => void; onCopy: () => void; thumb?: string; onLink: (k: '3d' | 'discord' | 'portal' | 'sound') => void; onRemove?: () => void; cooldown?: number }) {
+const Row = memo(function Row({ srv, st, mode, onMode, since, exact, armed, onConnect, onPlayers, onSniper, onCopy, thumb, onLink, onRemove, onGetMap, cooldown }: { srv: Srv; st?: Status; mode: GeoMode; onMode: (m: GeoMode) => void; since?: number; exact?: boolean; armed: boolean; onConnect: () => void; onPlayers: () => void; onSniper: () => void; onCopy: () => void; thumb?: string; onLink: (k: '3d' | 'discord' | 'portal' | 'sound') => void; onRemove?: () => void; onGetMap: (s: Status) => void; cooldown?: number }) {
   const humans = st?.humans ?? 0;
   const fp = useFlash(humans), fg = useFlash(st?.ping);
   return (
@@ -54,7 +55,7 @@ const Row = memo(function Row({ srv, st, mode, onMode, since, exact, armed, onCo
             : <span className="cell">{st ? '● Offline / not answering' : 'Querying…'}</span>}
         </div>
         <div className="decal" style={{ marginTop: 7 }}>{[srv.cluster || (srv.custom ? 'Custom' : ''), st?.map].filter(Boolean).join(' \u00B7 ')}</div>
-        <div className="links">{st?.map && <button className="lnk" onClick={() => onLink('3d')}>3D map</button>}{st?.map && <button className="lnk" onClick={() => onLink('sound')}>Soundtrack</button>}{srv.discord && <button className="lnk" onClick={() => onLink('discord')}>Discord</button>}{srv.website && <button className="lnk" onClick={() => onLink('portal')}>Portal</button>}{onRemove && <button className="lnk bad" onClick={onRemove}>Remove server</button>}</div>
+        <div className="links">{st?.map && <button className="lnk" onClick={() => onLink('3d')}>3D map</button>}{st?.map && <button className="lnk" onClick={() => onLink('sound')}>Soundtrack</button>}{srv.discord && <button className="lnk" onClick={() => onLink('discord')}>Discord</button>}{srv.website && <button className="lnk" onClick={() => onLink('portal')}>Portal</button>}{st?.map_missing && <button className="lnk warn" title={mapWarnTip(st)} onClick={() => onGetMap(st)}>&#9888; Map not installed. Get it</button>}{onRemove && <button className="lnk bad" onClick={onRemove}>Remove server</button>}</div>
       </div></div>
       <Geo countries={st?.geo?.countries ?? []} regions={st?.geo?.regions ?? []} mode={mode} onMode={onMode} humans={humans} />
       <div className="dock">
@@ -205,6 +206,12 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
     void api.sniperStart(s.id, 0).then((r) => { if (!r.ok && r.error) openModal({ kind: 'warn', label: 'CS2 required', title: 'CS2 must be running to arm the Slot Sniper', body: r.error }); });
   };
   const isArmed = (s: Srv) => !!sniper?.active && sniper.target === s.name;
+  const getMap = (s: Status) => {
+    sfx.click();
+    void api.mapGet(s.map ?? '', s.map_wid ?? '').then((r) => {
+      if (!r.ok) log('SERVERS', 'Could not open Steam or the browser for this map.');
+    });
+  };
   const copyIp = (s: Srv) => {
     sfx.toggle();
     try { void navigator.clipboard.writeText(`${s.host}:${s.port}`); } catch { /* ignore */ }
@@ -270,6 +277,7 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
                   <button className={`btn cut ${isArmed(featured) ? 'armed' : 'ghost'} sm`} aria-pressed={isArmed(featured)} onClick={() => toggleSniper(featured)}>{isArmed(featured) ? 'Sniper armed' : 'Sniper'}</button>
                   <button className="btn cut ghost sm" onClick={() => void players(featured)}>Players</button>
                   <button className="btn cut ghost sm" onClick={() => copyIp(featured)}>Copy IP</button>
+                  {f?.map_missing && <button className="lnk warn" title={mapWarnTip(f)} onClick={() => getMap(f)}>&#9888; Map not installed. Get it</button>}
                 </div>
               </div>
             </div>
@@ -303,7 +311,7 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {list.map((s) => <Row key={s.id} onLink={(k) => link(s, k)} onRemove={s.custom ? () => remove(s) : undefined} cooldown={cd(s)} thumb={thumbs[st[s.id]?.map ?? '']} onCopy={() => copyIp(s)} srv={s} st={st[s.id]} mode={modes[s.id] ?? 'country'} onMode={setMode(s.id)} since={st[s.id]?.map_since} exact={!!st[s.id]?.map_exact} armed={isArmed(s)} onConnect={() => connect(s)} onPlayers={() => void players(s)} onSniper={() => toggleSniper(s)} />)}
+        {list.map((s) => <Row key={s.id} onLink={(k) => link(s, k)} onRemove={s.custom ? () => remove(s) : undefined} onGetMap={getMap} cooldown={cd(s)} thumb={thumbs[st[s.id]?.map ?? '']} onCopy={() => copyIp(s)} srv={s} st={st[s.id]} mode={modes[s.id] ?? 'country'} onMode={setMode(s.id)} since={st[s.id]?.map_since} exact={!!st[s.id]?.map_exact} armed={isArmed(s)} onConnect={() => connect(s)} onPlayers={() => void players(s)} onSniper={() => toggleSniper(s)} />)}
         {!list.length && <div className="glass card ph">No servers match.</div>}
       </div>
       <AnimatePresence>{playersFor && <PlayersDialog srv={playersFor} onClose={() => setPlayersFor(null)} onConnect={() => connect(playersFor)} />}</AnimatePresence>

@@ -39,6 +39,8 @@ class Core:
         import presence_service
         self.presence = presence_service.PresenceService(self)      # created here, started by web_main (no threads in tests)
         self._pool = concurrent.futures.ThreadPoolExecutor(max_workers=8, thread_name_prefix="srvq")
+        self._maps_lock = threading.Lock()
+        self._maps_cache = None
         try:
             self.paths = core_logic.find_cs2_paths()
         except Exception:
@@ -139,11 +141,13 @@ class Core:
             except Exception:
                 pass
         cur_map = info.get("map") if online else None
+        mm = self.map_check(cur_map) if online else None
         since, exact = self._map_clock(sid, cur_map, None if s.get("group") == "china" else s["host"], int(s["port"]), humans)
         return {"id": sid, "online": online, "map": cur_map, "players": total, "bots": bots,
                 "humans": humans, "max": int(info.get("max_players") or 0), "ping": info.get("rtt") if online else None,
                 "name_live": info.get("server_name") if online else None, "geo": geo, "at": time.time(),
-                "map_since": since, "map_exact": exact}
+                "map_since": since, "map_exact": exact,
+                "map_missing": bool(mm and mm["missing"]), "map_wid": (mm or {}).get("wid", "")}
 
     @staticmethod
     def _probe_map_start(c: Dict[str, Any], host: str, port: int) -> None:
@@ -159,6 +163,97 @@ class Core:
             pass
         finally:
             c["probing"] = False
+
+    # ---------- missing-map check ----------
+    def _steam_libraries(self) -> List[str]:
+        import os
+        import re
+        libs: List[str] = []
+        seen: set = set()
+        steam = self.paths.get("steam_path")
+        if steam and os.path.exists(steam):
+            libs.append(steam)
+            seen.add(os.path.normcase(os.path.abspath(steam)))
+            vdf = os.path.join(steam, "steamapps", "libraryfolders.vdf")
+            try:
+                with open(vdf, "r", encoding="utf-8", errors="ignore") as fh:
+                    for m in re.findall(r'"path"\s+"([^"]+)"', fh.read()):
+                        p = m.replace("\\\\", "\\")
+                        if os.path.normcase(os.path.abspath(p)) not in seen and os.path.exists(p):
+                            libs.append(p)
+                            seen.add(os.path.normcase(os.path.abspath(p)))
+            except Exception:
+                pass
+        cs2 = self.paths.get("cs2_dir")
+        if cs2:
+            lib = os.path.dirname(os.path.dirname(os.path.dirname(cs2)))        # ...\SteamLibrary\steamapps\common\<game> -> ...\SteamLibrary
+            if lib and os.path.exists(lib) and os.path.normcase(os.path.abspath(lib)) not in seen:
+                libs.append(lib)
+        return libs
+
+    def installed_maps(self, force: bool = False) -> Dict[str, Any]:
+        """Workshop ids (folders holding a .vpk) and map names found on this PC. Cached for 20 s; names come from each item's
+        publish_data.txt and from the .vpk files in game/csgo/maps."""
+        import glob
+        import os
+        import re
+        with self._maps_lock:
+            c = self._maps_cache
+            if c and not force and time.time() - c["at"] < 20:
+                return c
+            ids, names = set(), set()
+            for lib in self._steam_libraries():
+                for folder in glob.glob(os.path.join(lib, "steamapps", "workshop", "content", "730", "*")):
+                    wid = os.path.basename(folder)
+                    vpks = glob.glob(os.path.join(folder, "*.vpk"))
+                    if not wid.isdigit() or not vpks:
+                        continue
+                    ids.add(wid)
+                    try:
+                        with open(os.path.join(folder, "publish_data.txt"), "r", encoding="utf-8", errors="ignore") as fh:
+                            txt = fh.read()
+                        for key in ("title", "source_folder"):
+                            m = re.search(r'"%s"\s+"([^"]+)"' % key, txt)
+                            if m:
+                                names.add(m.group(1).strip().lower())
+                    except Exception:
+                        pass
+            cs2 = self.paths.get("cs2_dir")
+            if cs2:
+                for v in glob.glob(os.path.join(cs2, "game", "csgo", "maps", "**", "*.vpk"), recursive=True):
+                    names.add(os.path.splitext(os.path.basename(v))[0].lower())
+            self._maps_cache = {"at": time.time(), "ids": ids, "names": names, "known": bool(self._steam_libraries())}
+            return self._maps_cache
+
+    def map_check(self, map_name: Optional[str]) -> Optional[Dict[str, Any]]:
+        """None when the check does not apply; otherwise {missing, wid, name}. Only ze_/zm_ community maps are checked."""
+        name = (map_name or "").replace("\\", "/").split("/")[-1].strip().lower()
+        if name.endswith(".vpk"):
+            name = name[:-4]
+        if not name or not name.startswith(("ze_", "zm_")) or not self.paths.get("cs2_dir"):
+            return None
+        try:
+            inst = self.installed_maps()
+            if not inst.get("known"):
+                return None
+            meta = server_browser._get_s2ze_map_meta(name) or {}
+            wid = str(meta.get("addon") or "")
+            have = (wid and wid in inst["ids"]) or name in inst["names"] or name.replace("_p", "") in inst["names"]
+            return {"missing": not have, "wid": wid if wid.isdigit() else "", "name": name}
+        except Exception:
+            return None
+
+    def map_get(self, map_name: str, wid: str = "") -> Dict[str, Any]:
+        """Opens the map's Steam workshop page (Subscribe there), or a workshop search when its id is not known."""
+        import urllib.parse
+        name = (map_name or "").split("/")[-1].strip()
+        if str(wid).isdigit():
+            ok, kind = self.open_url(f"steam://url/CommunityFilePage/{wid}"), "page"
+        else:
+            ok, kind = self.open_url("https://steamcommunity.com/workshop/browse/?appid=730&searchtext=" + urllib.parse.quote(name)), "search"
+        self.log(f"[MAPS] Opened the workshop {'page' if kind == 'page' else 'search'} for {name}. Press Subscribe in Steam; the warning clears once it is downloaded.")
+        self.installed_maps(force=True)
+        return {"ok": ok, "kind": kind}
 
     def _map_clock(self, sid: str, cur_map: Optional[str], host: Optional[str] = None, port: int = 0, humans: int = 0):
         """Per-server map start, kept for the life of the app (like 1.6.0): exact once a map change was seen,

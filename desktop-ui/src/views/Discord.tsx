@@ -34,7 +34,6 @@ export default function Discord() {
           <span className="mono" style={{ fontSize: 12, color: p?.connected ? 'var(--ok)' : 'var(--tx3)' }}>Status: {p?.status ?? 'Checking CS2...'}</span>
           <span style={{ flex: 1 }} />
           <button className="btn cut ghost sm" title={D.refresh_tip} onClick={() => { sfx.click(); void api.presenceRefresh().then(setP); }}>Refresh now</button>
-          <button className="btn cut ghost sm" title={D.off_tip} onClick={() => { sfx.click(); void api.presenceClear().then(setP); }}>Turn off presence</button>
         </div>
       </div>
 

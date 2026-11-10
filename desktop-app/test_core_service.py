@@ -2,6 +2,7 @@
 import os
 import sys
 import threading
+import time
 import unittest
 from unittest import mock
 
@@ -501,3 +502,29 @@ class ConsoleLogDetection(unittest.TestCase):
                 with open(log, "a", encoding="utf-8") as fh:
                     fh.write("[HostStateManager] Host activate: Idle (levelload)\n")
                 self.assertIsNone(core.presence._from_console_log())
+
+
+class MissingMap(unittest.TestCase):
+    def _core(self, ids, names):
+        core, _ = make_core()
+        core.paths["cs2_dir"] = "C:/cs2"
+        core._maps_cache = {"at": time.time(), "ids": set(ids), "names": set(names), "known": True}
+        return core
+
+    def test_missing_installed_and_not_applicable(self):
+        core = self._core({"3554293383"}, {"ze_other"})
+        with mock.patch.object(server_browser, "_get_s2ze_map_meta", side_effect=lambda n: {"addon": "3554293383"} if n == "ze_evernight" else ({"addon": "999"} if n == "zm_x" else None)):
+            self.assertFalse(core.map_check("ze_evernight")["missing"])              # installed by workshop id
+            self.assertFalse(core.map_check("workshop/1/ze_other")["missing"])       # installed by name
+            m = core.map_check("zm_x")
+            self.assertEqual((m["missing"], m["wid"]), (True, "999"))
+            self.assertEqual(core.map_check("ze_unknown")["wid"], "")                # missing, no workshop id known
+        self.assertIsNone(core.map_check("de_dust2"))                                 # not a community ZE map
+
+    def test_map_get_opens_page_or_search(self):
+        core, _ = make_core()
+        with mock.patch.object(core, "open_url", return_value=True) as ou, mock.patch.object(core, "installed_maps", return_value={}):
+            self.assertEqual(core.map_get("ze_a", "123")["kind"], "page")
+            ou.assert_called_with("steam://url/CommunityFilePage/123")
+            self.assertEqual(core.map_get("ze b", "x; calc")["kind"], "search")       # a non-numeric id never reaches the protocol link
+            self.assertIn("searchtext=ze%20b", ou.call_args[0][0])

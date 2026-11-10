@@ -324,3 +324,6 @@ html.idle *,html.idle *::before,html.idle *::after{animation-play-state:paused!i
 .core{animation-timing-function:steps(50)}
 .led{animation-timing-function:steps(10)}
 .dot{animation-timing-function:steps(8)}
+.scrim.top{z-index:80}  /* message and confirm boxes sit above every other dialog (Map Cleaner, Players, Settings) */
+
+.lnk.warn{color:var(--amber);font-weight:600}

@@ -32,7 +32,7 @@ interface AppFeatureModule {
 declare const __APP_EXE_SHA256__: string;
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=2.0.1';
+  const downloadUrl = '/CS2_Command_Center.exe?v=2.0.2';
   const exeSha256 = typeof __APP_EXE_SHA256__ !== 'undefined' ? __APP_EXE_SHA256__ : '66B78485C7C1F5622C12B702D07C83B7CEC781E344DC7AFE35B0272B494E7A01';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -49,8 +49,8 @@ export const CS2CommandCenterPreview: React.FC = () => {
       details: [
         '1-Click Total Optimization: Automatically verifies and applies recommended Source 2 CVARs, power plans, and autoexec binds in a single click.',
         'Hardware Architecture Telemetry: Real-time detection of AMD 3D V-Cache, Intel P/E-Core topologies, and discrete GPU drivers.',
-        'Persistent CyberDeck Status Bar: Live tracking of CS2 process status, background UDP slot sniper and the DNS your adapter really uses.',
-        'Tactical Left-Rail Navigation: Quick-jump buttons for seamless switching across all 8 optimization modules.'
+        'Persistent CyberDeck Status Bar: Live slot sniper state and the DNS your adapter really uses. The Dashboard shows whether CS2 was found and where it is installed.',
+        'New dark-glass interface with a reactor-core backdrop on every tab, left-rail navigation, and mouse back/forward buttons for moving between tabs.'
       ],
       parameters: [
         { name: 'Architecture', value: 'CyberDeck Command Rail', desc: 'Tactical left-rail navigation with instant view switching' },
@@ -58,6 +58,29 @@ export const CS2CommandCenterPreview: React.FC = () => {
         { name: 'Game process', value: 'No memory access', desc: 'Does not read or modify CS2 memory; no DLL injection' }
       ],
       proTip: 'The new CyberDeck Command Console is designed for quick alt-tab use; most features work offline.',
+      noMemoryAccess: true
+    },
+    {
+      id: 'servers',
+      name: 'ZE Game Servers: Live Browser',
+      shortTag: 'LIVE TELEMETRY',
+      badge: 'GLOBAL + PLANET CHINA',
+      icon: <Radio className="w-5 h-5 text-cyan-400" />,
+      summary: 'Live Zombie Escape server list with humans-only player counts, ping, map pictures, time on the current map, a country/region estimate of who is playing, and a warning when you do not have the map yet.',
+      details: [
+        'Humans only: bots are subtracted from the player count, with a MOSTLY BOTS badge and a bots-excluded note on bot-heavy servers.',
+        'Time on map per server: exact for GFL (from ZE Graph) and measured from player connection times elsewhere; a leading ">=" marks a minimum.',
+        'Geo radar (estimate): Country or Region view per server, filling the card width up to two lines. It is an estimate from name signals and time of day; no player is identified.',
+        'Missing-map warning: when a server plays a map that is not on your PC, an amber "Map not installed. Get it" link opens that map\'s Steam workshop page so you can subscribe before joining.',
+        'Planet China: pick a community cluster (EXG, FyS, MoeUB, ZL, 93X). Those servers block the live player list, so the Players dialog is not offered there.',
+        'Connect, Copy IP, Players list, 3D map, soundtrack, community Discord and portal links on every row, plus the GFL slot priority and a Refresh all button.'
+      ],
+      parameters: [
+        { name: 'Queries', value: 'Steam A2S over UDP', desc: 'Read-only server info; no game memory access' },
+        { name: 'Missing map', value: 'steam://url/CommunityFilePage', desc: 'Opens the map workshop page in Steam; you press Subscribe' },
+        { name: 'Window', value: 'Edge WebView2', desc: 'Memory is trimmed while minimized or in the tray' }
+      ],
+      proTip: 'If a row shows the amber map warning, click it before you press Connect. CS2 only uses workshop maps that Steam downloaded itself.',
       noMemoryAccess: true
     },
     {
@@ -136,7 +159,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
         'Responsive Detection: Checks player counts about four times a second for rapid slot detection.',
         'Zero Console & Clipboard Spam while waiting (avoids Windows Clipboard History buildup).',
         'Uses console when CS2 is in front, otherwise opens Steam connect link, with 10s cooldown.',
-        'GFL Priority Slot Tiers (Normal ≤ 61, Mapper/Supporter ≤ 62, VIP ≤ 63) with snug pixel-measured dropdown UI.'
+        'GFL Priority Slot Tiers (Normal up to 61, Mapper/Supporter up to 62, VIP/Admin up to 63) and a separate target for all other servers. Only runs while CS2 is open.'
       ],
       parameters: [
         { name: 'Waiting Mode', value: 'Silent UDP A2S (0.25s)', desc: 'Zero CS2 RAM & Zero SDR leaks' },
@@ -157,7 +180,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
         'NEW: Protected Server Packs System - Automatically detects and safeguards subscribed packs (GFL 355+ ZE, Possession PSE, RSS Revenant, Mapeadores & cOLa) and maps played in the last 14 days.',
         'NEW: 1-Click "Select All Temp Downloads (Safe)" - Safely purges non-subscribed temporary server downloads with zero risk to subscribed collections.',
         'NEW: Steam Workshop VPK Binary Header Verifier (checks 0x55aa1234 signature across steamapps/workshop/content/730/).',
-        'Multi-DPI High-Resolution Treeview: Column widths scale dynamically with display DPI to eliminate text cutoff at 125% and 150% scaling.'
+        'Filter tabs (All, Temp downloads, Subscribed packs, Server assets, Duplicates), search, sort by size or date, and a confirmation before anything is deleted. Subscribed packs and server assets cannot be ticked.'
       ],
       parameters: [
         { name: 'VPK Magic Signature', value: '0x55AA1234 (v1/v2)', desc: 'Detects truncated or corrupted Workshop packs' },
@@ -215,19 +238,19 @@ export const CS2CommandCenterPreview: React.FC = () => {
       shortTag: 'SOCIAL RPC',
       badge: 'LIVE PROFILE SYNC',
       icon: <Radio className="w-5 h-5 text-indigo-400" />,
-      summary: 'Broadcasts your real-time Counter-Strike 2 gameplay status to your Discord profile with custom Zombie Escape map graphics and party counts.',
+      summary: 'Shows the Zombie Escape server you are on, its map, player count and a session timer on your Discord profile, with buttons for the server IP and its community Discord.',
       details: [
-        'Displays exact ZE map currently playing (e.g. "Playing ze_dark_souls on GFL Clan").',
-        'Shows real-time player counts ("Party of 64") and session elapsed time.',
-        'Provides friends a 1-click "Join Game" button on Discord to jump straight into your server.',
-        'Integrated with your local CS2 process with zero performance impact.'
+        'Shows the server name, the current map and the live player count, with a session timer that starts when you join.',
+        'Two buttons for friends: Server IP (connect link) and the server\'s own community Discord (GFL, Possession, Mapeadores, cOLa, RSS). Discord hides the buttons on your own profile.',
+        'Finds your server from the connection line CS2 writes to console.log (needs -condebug, which the Launch Options tab can add), then falls back to matching the map and your Steam name.',
+        'Cleared when CS2 closes. One switch turns it on or off, and Refresh now forces an update. It only talks to the Discord app on your PC through a local pipe.'
       ],
       parameters: [
         { name: 'Discord Client ID', value: 'CS2 Command Center RPC', desc: 'Official Rich Presence application' },
-        { name: 'Map Image Asset', value: 'Dynamic ZE Map Thumbnail', desc: 'Shows visual map artwork on Discord' },
-        { name: 'Join Party Hook', value: 'steam://connect/IP:PORT', desc: 'Allows friends to spectate or join' }
+        { name: 'Detection', value: 'console.log + map + name', desc: 'Finds the server you are connected to' },
+        { name: 'Buttons', value: 'Server IP + community Discord', desc: 'Visible to friends on your profile' }
       ],
-      proTip: 'Show off your Zombie Escape adventures directly on Discord with custom map artwork!',
+      proTip: 'Add -condebug in the Launch Options tab so the app can read the server straight from the CS2 log.',
       noMemoryAccess: true
     }
   ];
@@ -256,7 +279,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v2.0.1
+              v2.0.2
             </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-2xl">

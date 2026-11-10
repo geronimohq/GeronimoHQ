@@ -123,6 +123,9 @@ class Api:
         except Exception as e:  # never break the UI; leave a trace for debugging
             self.core.log(f"[WINDOW] resize failed: {e}")
 
+    def map_get(self, map_name: str, wid: str = "") -> Dict[str, Any]:
+        return self.core.map_get(map_name, wid)
+
     def mem_trim(self, low: bool = True) -> None:
         """While the window is hidden or minimized: ask WebView2 for its low-memory mode and hand unused pages back to Windows
         (they come back on demand). Normal mode again as soon as the window is shown."""

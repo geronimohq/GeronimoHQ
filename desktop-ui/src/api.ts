@@ -109,6 +109,7 @@ export const api = {
   presenceRefresh: () => call<import('./types').PresenceState>('presence_refresh'),
   winMin: () => call<void>('win_minimize'),
   memTrim: (low: boolean) => call<void>('mem_trim', low),
+  mapGet: (map: string, wid: string) => call<{ ok: boolean; kind: string }>('map_get', map, wid),
   winMax: () => call<boolean>('win_maximize'),
   winClose: () => call<void>('win_close'),
   winResize: (edge: string) => call<void>('win_resize', edge),
