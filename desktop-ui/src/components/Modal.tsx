@@ -27,7 +27,7 @@ export function ModalHost({ children }: { children: ReactNode }) {
       {children}
       <AnimatePresence>
         {m && (
-          <motion.div className="scrim on" role="dialog" aria-modal="true" aria-labelledby="mTitle"
+          <motion.div className="scrim on top" role="dialog" aria-modal="true" aria-labelledby="mTitle"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
             <motion.div className="cut modal brk" initial={{ scale: 0.94, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }} transition={{ type: 'spring', stiffness: 420, damping: 30 }}>
               <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
