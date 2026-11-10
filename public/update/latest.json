@@ -1,9 +1,9 @@
 {
-  "version": "2.0.3",
+  "version": "2.0.4",
   "build_date": "2026-11-11",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "36D323E6131ABEE419D30DA7EA647BFC1604780379F42FEC33135534DC9E5ED7",
-  "size": 27339127,
-  "notes": "Fixes the in-app updater: the app now closes and restarts into the new version by itself, with no duplicate or stuck copy. Keeps all 2.0.2 features.",
-  "signature": "ba1cf83c6cf2f6c7aad3b8f19db22457939ac8c818209d3e70564526fa4a3e560fca6bc0a46f794a86a74e451380f79dc5e059093de71a5284f5659646484309"
+  "sha256": "1FE7A3561D4A8244A1CCEE6424A4951CED0F2315CF1E46F34E7EF8DE0EF72BCD",
+  "size": 27344544,
+  "notes": "Fixes Verify Workshop VPK health (it reported 0 packs) and the log analyzer, adds a deeper download check and safer repair, and corrects the app descriptions on the website.",
+  "signature": "64f88588bd660411e32b9ac7043be00a95bd92829ad4519a857b967d4178d015689544bce64538c8c2b782e76d5f2430a130bfd0beb0b2a566e2a48ed260070b"
 }
