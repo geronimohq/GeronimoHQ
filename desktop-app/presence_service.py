@@ -37,6 +37,8 @@ class PresenceService:
         self._logged_act = None
         self._logged_map = ""
         self._menu_since = 0.0
+        self._logged_miss = ""
+        self._sent = ""
 
     # ---------- lifecycle ----------
     def start(self) -> None:
@@ -208,8 +210,7 @@ class PresenceService:
                 if not self.rpc.connected and not self.rpc.connect():
                     self.status = "Discord desktop app not detected"
                     continue
-                if server_browser.get_slot_sniper().is_active:
-                    continue
+                sniping = server_browser.get_slot_sniper().is_active      # keep the card current, but leave the network to the sniper
                 if not persona:
                     persona = core_logic.get_steam_active_persona(self.core.paths.get("steam_path"))
 
@@ -227,7 +228,7 @@ class PresenceService:
                 if self.tracked is not None:
                     host, port, name = self.tracked
                     in_grace = (now - self.tracked_since) < 30.0
-                    if not in_grace and persona and not (self._fresh() and act == "playing"):
+                    if not sniping and not in_grace and persona and not (self._fresh() and act == "playing"):
                         res = server_browser.query_server_players(host, port, timeout=0.9)
                         if res.get("success"):
                             names = [p.get("name", "").strip().lower() for p in res.get("players", [])]
@@ -243,7 +244,7 @@ class PresenceService:
                                     else:
                                         self.tracked, missing = None, 0
                                         self.core.log("[DISCORD] Player left the server; back to Main Menu.")
-                elif now - last_scan > 3.0:
+                elif not sniping and now - last_scan > 3.0:
                     last_scan = now
                     joined = self._match_by_map(gmap) if gmap else None
                     if not joined and persona:
@@ -251,6 +252,9 @@ class PresenceService:
                     if joined:
                         self.tracked, self.tracked_since, missing, self.session_start = joined, time.time(), 0, int(time.time())
                         self.core.log(f"[DISCORD] Detected connected server: {joined[2]}")
+                    elif act == "playing" and gmap and gmap != self._logged_miss:
+                        self._logged_miss = gmap
+                        self.core.log(f"[DISCORD] In a match on {gmap}, but no catalog server is on that map yet; showing the generic card and retrying every few seconds.")
 
                 details, state, btns = STANDBY_DETAILS, STANDBY_STATE, None
                 if self.tracked is not None:
@@ -268,6 +272,10 @@ class PresenceService:
                     details = "Zombie Escape Server" if gmap.startswith("ze_") else "Community Server"
                     state, btns = f"Map: {gmap}", [{"label": "GeronimoHQ Portal", "url": "https://geronimohq.com"}]
                 self.rpc.set_activity(details=details, state=state, start_timestamp=self.session_start, large_image=None, buttons=btns)
+                sig = f"{details}|{state.split(' (')[0]}|{[b.get('label') for b in (btns or [])]}"
+                if sig != self._sent and (self.tracked is not None or act == "playing"):
+                    self._sent = sig
+                    self.core.log(f"[DISCORD] Card sent: {details} / {state} / buttons: {', '.join(b.get('label', '') for b in (btns or [])) or 'none'}")
                 self.status = f"Active: {details}" if details != STANDBY_DETAILS else "Active: CS2 main menu"
             except Exception as e:  # the loop must never die
                 self.status = f"Error: {e}"
