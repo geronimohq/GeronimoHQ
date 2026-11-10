@@ -310,3 +310,6 @@ html.max .statusbar{padding-bottom:8px}
 .geo .plmirror{position:absolute;visibility:hidden;pointer-events:none;height:0;overflow:hidden;white-space:nowrap}
 .geo .plmirror span{flex:none}
 .geo{position:relative}
+
+.titlebar{flex-wrap:nowrap}.titlebar .ind{flex-wrap:nowrap;flex:none}.titlebar .drag{flex:1;min-width:0}.winctl{flex:none}
+.clusterbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}

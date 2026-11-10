@@ -92,7 +92,7 @@ class Core:
         out = []
         for c in getattr(server_browser, "CHINA_CLUSTERS", []) or []:
             for s in c.get("servers", []):
-                out.append({**s, "region": c.get("region", ""), "cluster": c.get("name", ""), "group": "china"})
+                out.append({**s, "region": c.get("region", ""), "cluster": c.get("name", ""), "cluster_id": c.get("id", ""), "cluster_desc": c.get("description", ""), "group": "china"})
         return out
 
     def servers_catalog(self) -> List[Dict[str, Any]]:
@@ -103,7 +103,8 @@ class Core:
                         "featured": bool(s.get("is_featured")), "custom": bool(s.get("is_custom")), "group": "global", "cluster": ""})
         for s in self._china_servers():
             out.append({"id": s["id"], "name": s.get("name"), "host": s["host"], "port": int(s["port"]), "region": s["region"],
-                        "flag": "", "discord": "", "website": "", "featured": False, "custom": False, "group": "china", "cluster": s["cluster"]})
+                        "flag": "", "discord": "", "website": "", "featured": False, "custom": False, "group": "china", "cluster": s["cluster"],
+                        "cluster_id": s.get("cluster_id", ""), "cluster_desc": s.get("cluster_desc", "")})
         return out
 
     def _find_server(self, sid: str) -> Optional[Dict[str, Any]]:

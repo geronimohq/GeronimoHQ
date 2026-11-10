@@ -1,7 +1,7 @@
 export interface GeoRow { code: string; name: string; pct: number; count: number }
 export interface Srv {
   id: string; name: string; host: string; port: number; region: string; flag: string; discord: string; website?: string;
-  featured: boolean; custom: boolean; group: 'global' | 'china'; cluster: string;
+  featured: boolean; custom: boolean; group: 'global' | 'china'; cluster: string; cluster_id?: string; cluster_desc?: string;
 }
 export interface Status {
   id: string; online: boolean; map?: string | null; players?: number; bots?: number; humans?: number; max?: number;

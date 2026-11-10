@@ -128,7 +128,14 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
   }, []);
 
   const featured = catalog.find((s) => s.featured);
-  const listAll = useMemo(() => catalog.filter((s) => !s.featured && s.group === group), [catalog, group]);
+  const clusters = useMemo(() => {
+    const m = new Map<string, { id: string; name: string; desc: string; n: number }>();
+    for (const s of catalog) if (s.group === 'china' && s.cluster_id) { const c = m.get(s.cluster_id); if (c) c.n++; else m.set(s.cluster_id, { id: s.cluster_id, name: s.cluster, desc: s.cluster_desc ?? '', n: 1 }); }
+    return [...m.values()];
+  }, [catalog]);
+  const [cluster, setCluster] = useState('');
+  const curCluster = clusters.find((c) => c.id === cluster) ?? clusters[0];
+  const listAll = useMemo(() => catalog.filter((s) => !s.featured && s.group === group && (group !== 'china' || !curCluster || s.cluster_id === curCluster.id)), [catalog, group, curCluster]);
   const list = useMemo(() => {
     const t = q.trim().toLowerCase();
     return t ? listAll.filter((s) => `${s.name} ${s.region} ${s.cluster} ${st[s.id]?.map ?? ''}`.toLowerCase().includes(t)) : listAll;
@@ -267,6 +274,15 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
         </div>
       )}
 
+      {group === 'china' && curCluster && (
+        <div className="glass toolbar clusterbar">
+          <span className="sect">Select community cluster:</span>
+          <select className="sel" value={curCluster.id} aria-label="Community cluster" onChange={(e) => { sfx.click(); setCluster(e.target.value); }}>
+            {clusters.map((c) => <option key={c.id} value={c.id}>{`${c.name} (${c.n} servers)`}</option>)}
+          </select>
+          <span className="decal" style={{ textTransform: 'none', letterSpacing: 0, fontStyle: 'italic' }}>{curCluster.desc}</span>
+        </div>
+      )}
       <div className="glass toolbar">
         <div className="seg" role="group" aria-label="Community">
           <button aria-pressed={group === 'global'} onClick={() => { sfx.click(); setGroup('global'); }}>Global</button>

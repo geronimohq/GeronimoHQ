@@ -173,8 +173,6 @@ function Shell() {
         <div className="ind">
           <span className="pill"><i className="dot" />PERM: {info ? (info.admin ? 'ADMIN' : 'STANDARD') : '...'}</span>
           <span className="pill"><i className={`dot ${info?.cs2_found ? 'cy' : 'am'}`} />CS2: {info ? (info.cs2_found ? 'FOUND' : 'NOT FOUND') : '...'}</span>
-          <span className="pill"><i className="dot am" />ENGINE: {engineAge == null ? 'NEVER RUN' : engineAge === 0 ? 'OPTIMIZED TODAY' : `${engineAge}D AGO`}</span>
-          {dnsInfo && <span className="pill" title="The DNS your network adapter uses right now"><i className={`dot ${dnsInfo.state === 'provider' ? 'cy' : 'am'}`} />{dnsInfo.text.replace(/^\W+/, '').toUpperCase()}</span>}
           <button className="sfx" onClick={() => { sfx.click(); setSettingsOpen(true); }} title="Settings">SETTINGS</button>
           <button className="sfx" aria-pressed={sound} onClick={() => { const v = !sound; sfx.set(v); setSound(v); if (v) sfx.click(); }} title="Interface sounds on or off">{sound ? 'SFX ON' : 'SFX OFF'}</button>
         </div>
