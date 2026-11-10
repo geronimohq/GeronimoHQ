@@ -6698,7 +6698,7 @@ class CS2TruePanoramaApp(tk.Tk):
                         font=(theme.FONT_UI, theme.FS_12))
         style.configure("Soundtrack.Treeview.Heading",
                         background=theme.SURFACE_RAISED,
-                        foreground=theme.CT_BLUE_TEXT,
+                        foreground=theme.TEXT_PRIMARY,
                         relief="flat",
                         font=(theme.FONT_UI, theme.FS_13, "bold"))
         style.map("Soundtrack.Treeview.Heading",
@@ -7275,7 +7275,7 @@ class CS2TruePanoramaApp(tk.Tk):
                         font=(theme.FONT_UI, theme.FS_12))
         style.configure("Players.Treeview.Heading",
                         background=theme.SURFACE_RAISED,
-                        foreground=theme.CT_BLUE_TEXT,
+                        foreground=theme.TEXT_PRIMARY,
                         relief="flat",
                         font=(theme.FONT_UI, theme.FS_13, "bold"))
         style.map("Players.Treeview.Heading",
@@ -7535,7 +7535,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
         cb_rss = Checkbutton(prot_bar, text="RSS Revenant", variable=var_prot_rss, font=(theme.FONT_UI, theme.FS_13),
                                 fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET, selectcolor=theme.SURFACE_INSET, activebackground=theme.SURFACE_INSET,
-                                activeforeground=theme.CT_BLUE_TEXT, cursor="hand2", command=_on_prot_changed)
+                                activeforeground=theme.TEXT_PRIMARY, cursor="hand2", command=_on_prot_changed)
         cb_rss.pack(side="left", padx=(0, 6))
         add_tooltip(cb_rss, "Protect RSS Zombie Escape custom maps (e.g. ze_obff_npst_v24).")
 
@@ -7547,7 +7547,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
         cb_rec = Checkbutton(prot_bar, text="🕒 Active (Last 14d)", variable=var_prot_recent, font=(theme.FONT_UI, theme.FS_13),
                                 fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET, selectcolor=theme.SURFACE_INSET, activebackground=theme.SURFACE_INSET,
-                                activeforeground=theme.CT_BLUE_TEXT, cursor="hand2", command=_on_prot_changed)
+                                activeforeground=theme.TEXT_PRIMARY, cursor="hand2", command=_on_prot_changed)
         cb_rec.pack(side="left", padx=(0, 6))
         add_tooltip(cb_rec, "Protect custom maps played in the last 14 days so active rotation maps are preserved.")
 
@@ -7614,7 +7614,7 @@ class CS2TruePanoramaApp(tk.Tk):
                         font=(theme.FONT_UI, theme.FS_12))
         style.configure("MapCleaner.Treeview.Heading",
                         background=theme.SURFACE_RAISED,
-                        foreground=theme.CT_BLUE_TEXT,
+                        foreground=theme.TEXT_PRIMARY,
                         relief="flat",
                         font=(theme.FONT_UI, theme.FS_13, "bold"))
         style.map("MapCleaner.Treeview.Heading",
@@ -7736,13 +7736,17 @@ class CS2TruePanoramaApp(tk.Tk):
             btn_filter_assets.config(text=f"🛡️ Server Assets ({asset_c})")
             btn_filter_dupe.config(text=f"⚠️ Duplicates ({dupe_c})")
 
-        def set_filter(mode: str):
-            view_filter.set(mode)
+        def _style_tabs(mode: str):
             for key, btn in (("ALL", btn_filter_all), ("TEMP", btn_filter_temp), ("SUBSCRIBED", btn_filter_sub),
                              ("ASSETS", btn_filter_assets), ("DUPES", btn_filter_dupe)):
                 on = key == mode
-                btn.config(bg=theme.SURFACE_INSET if on else theme.SURFACE_RAISED, relief="sunken" if on else "raised",
+                btn.config(fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET if on else theme.SURFACE_RAISED,
+                           relief="sunken" if on else "raised",
                            font=(theme.FONT_UI, theme.FS_12, "bold" if on else "normal"))
+
+        def set_filter(mode: str):
+            view_filter.set(mode)
+            _style_tabs(mode)
             render_maps()
 
         btn_filter_all.config(command=lambda: set_filter("ALL"))
@@ -7750,6 +7754,7 @@ class CS2TruePanoramaApp(tk.Tk):
         btn_filter_sub.config(command=lambda: set_filter("SUBSCRIBED"))
         btn_filter_assets.config(command=lambda: set_filter("ASSETS"))
         btn_filter_dupe.config(command=lambda: set_filter("DUPES"))
+        _style_tabs("ALL")
         def update_summary():
             sel_bytes = sum(m["size_bytes"] for m in all_maps if m["id"] in selected_ids)
             total_bytes = sum(m["size_bytes"] for m in all_maps)
