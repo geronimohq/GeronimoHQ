@@ -95,6 +95,8 @@ def _main() -> int:
     os.makedirs(sp, exist_ok=True)
     if os.environ.get("CS2CC_BENCH"):
         webview.start(bench, window, debug=debug, storage_path=sp)
+    elif os.environ.get("CS2CC_UPDATETEST"):
+        webview.start(updatetest, (window, api), debug=debug, storage_path=sp)
     elif os.environ.get("CS2CC_SELFTEST"):
         webview.start(selftest, (window, api), debug=debug, storage_path=sp)
     else:
@@ -105,6 +107,20 @@ def _main() -> int:
         pass
     log_line("window closed")
     return 0
+
+
+def updatetest(window, api) -> None:
+    """Developer check (CS2CC_UPDATETEST=1): checks for an update and installs it, like pressing the two buttons, and logs each step."""
+    import time
+    time.sleep(6)
+    r = api.update_check(True)
+    if os.environ.get("CS2CC_UPDATETEST") == "quit":
+        log_line("updatetest: quitting through Api.quit")
+        api.quit()
+        return
+    log_line(f"updatetest check: {r}")
+    if r.get("available"):
+        log_line(f"updatetest install: {api.update_install()}")
 
 
 def selftest(window, api) -> None:

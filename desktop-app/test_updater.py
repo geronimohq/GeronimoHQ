@@ -277,3 +277,25 @@ if __name__ == "__main__":
     _res = unittest.main(exit=False)
     sys.stdout.flush(); sys.stderr.flush()
     os._exit(0 if _res.result.wasSuccessful() else 1)
+
+
+class HelperScriptFixes(unittest.TestCase):
+    """Regressions found in the first real end-to-end update: the helper has no console, so 'timeout' returns at once, and a
+    PyInstaller one-file app must tell the copy it starts to unpack fresh."""
+
+    def test_helper_waits_with_ping_and_resets_the_pyinstaller_environment(self):
+        import os
+        import tempfile
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as d:
+            exe = os.path.join(d, "app.exe")
+            open(exe, "wb").write(b"MZ")
+            with mock.patch.object(updater.subprocess, "Popen") as popen, mock.patch.object(updater.sys, "exit", side_effect=SystemExit):
+                with self.assertRaises(SystemExit):
+                    updater.spawn_updater_helper_and_exit(exe, exe + ".new")
+            bat = open(os.path.join(d, "_geronimo_updater.bat"), encoding="utf-8").read()
+            self.assertNotIn("timeout /t", bat)
+            self.assertIn("ping -n 21 127.0.0.1", bat)
+            env = popen.call_args.kwargs["env"]
+            self.assertEqual(env.get("PYINSTALLER_RESET_ENVIRONMENT"), "1")
+            self.assertNotIn("_MEIPASS2", env)

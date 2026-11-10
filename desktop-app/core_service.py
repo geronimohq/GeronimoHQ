@@ -39,6 +39,7 @@ class Core:
         import presence_service
         self.presence = presence_service.PresenceService(self)      # created here, started by web_main (no threads in tests)
         self._pool = concurrent.futures.ThreadPoolExecutor(max_workers=8, thread_name_prefix="srvq")
+        self.exit_cb = None
         self._maps_lock = threading.Lock()
         self._maps_cache = None
         try:
@@ -962,7 +963,12 @@ class Core:
                 raise RuntimeError(msg)
             self.log("[UPDATE] Download verified (size, SHA-256 and signature). Applying...")
             self.shutdown()
-            updater.spawn_updater_helper_and_exit(curr, new)
+            try:
+                updater.spawn_updater_helper_and_exit(curr, new)        # starts the helper, then calls sys.exit(0): that only ends this job thread
+            except SystemExit:
+                pass
+            self.log("[UPDATE] Restarting into the new version...")
+            (getattr(self, "exit_cb", None) or (lambda: os._exit(0)))()   # end the whole app so the helper can swap the file
 
         return self._start_job("update_install", task)
 
