@@ -1,4 +1,4 @@
-import { lookupS2zeMapper } from './s2zeMappersCatalog';
+import { lookupS2zeMapper, lookupS2zeMapperExact } from './s2zeMappersCatalog';
 
 export type MapDifficultyTier = 1 | 2 | 3 | 4 | 5 | 6 | 'untiered';
 
@@ -801,7 +801,7 @@ export const ZE_MAP_TIERS_REGISTRY: Record<
  * Normalizes map name and retrieves Tier and Mapper attribution.
  * Handles untiered/new workshop maps via robust keyword heuristics and fallback badge.
  */
-export function getMapTierAndMapper(mapName?: string): MapTierData {
+function getMapTierAndMapperRaw(mapName?: string): MapTierData {
   if (!mapName || mapName === '-' || mapName === 'Unknown') {
     return {
       mapKey: 'unknown',
@@ -999,4 +999,28 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
     mapper: lookupS2zeMapper(clean) || lookupS2zeMapper(stripped) || '',
     isUntiered: true,
   };
+}
+
+
+// Generic stand-ins the keyword fallbacks use when nothing is known about a map. They are not names of people.
+const PLACEHOLDER_MAPPERS = new Set(['Community Surf', 'Nipper / Dave J.', 'Classic CS:S Port']);
+const S2ZE_GENERIC = 'Source 2 Zombie Escape';
+const HOF_MAPPERS = /Kuroki|ViSral|Hannibal|Luffaren|Airvulpes|Clown|Kaemon|Nipper|Subzero|DarkerZ|TaskuVaras|Moltard|Waffel/i;
+
+/**
+ * Tier + mapper for a map. The tier/badge come from the curated registry and keyword rules; the MAPPER NAME
+ * comes first from the S2ZE / Steam Workshop catalog (the workshop author of that exact map), because the
+ * hand-typed registry and the keyword guesses were often wrong or only a generic label.
+ * Order: catalog person -> curated registry name -> catalog generic label -> "Mapper not listed" (never a made-up name).
+ */
+export function getMapTierAndMapper(mapName?: string): MapTierData {
+  const base = getMapTierAndMapperRaw(mapName);
+  const exact = lookupS2zeMapperExact(base.mapKey || mapName || '');
+  if (exact && exact !== S2ZE_GENERIC) {
+    return { ...base, mapper: exact, isHallOfFameMapper: HOF_MAPPERS.test(exact) };
+  }
+  if (PLACEHOLDER_MAPPERS.has(base.mapper)) {
+    return { ...base, mapper: exact === S2ZE_GENERIC ? S2ZE_GENERIC : 'Mapper not listed', isHallOfFameMapper: false };
+  }
+  return base;
 }

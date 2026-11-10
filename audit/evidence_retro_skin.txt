@@ -1,0 +1,48 @@
+test_disabled_text_is_exempt_but_still_dimmer_than_secondary (__main__.ThemeContrast.test_disabled_text_is_exempt_but_still_dimmer_than_secondary) ... ok
+test_table (__main__.ThemeContrast.test_table) ... ok
+test_type_scale (__main__.ThemeContrast.test_type_scale) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+
+TEXT vs SURFACE (ratio)                  base    panel   raised    inset
+text-primary   #D5DACF                    11.52     9.97     8.59    12.86
+text-secondary #9FA997                     6.71     5.80     5.00     7.49
+ct-blue-text   #66ACE9                     6.75     5.84     5.03     7.53
+t-gold-text    #D2A84E                     7.38     6.38     5.50     8.24
+good-text      #6FCB57                     8.08     6.99     6.03     9.03
+warn-text      #EB8E6D                     6.73     5.82     5.02     7.51
+bad-text       #F18882                     6.70     5.80     4.99     7.48
+accent (headings only, bold >= 15 px, needs 3:1)
+  accent #E48716 on base: 6.07
+  accent #E48716 on panel: 5.25
+  accent #E48716 on inset: 6.78
+LABEL on FILL
+  text-on-accent / accent          6.71
+  text-on-accent / accent-hover    7.79
+  text-on-accent / good            6.20
+  text-on-dark-fill / bad          5.38
+  text-on-dark-fill / warn         5.04
+  text-on-dark-fill / bad hover    4.90
+test_buttons_have_bevels_and_fields_are_inset (__main__.RetroSkin.test_buttons_have_bevels_and_fields_are_inset) ... ok
+test_every_text_widget_is_readable_and_accent_is_for_headings_only (__main__.RetroSkin.test_every_text_widget_is_readable_and_accent_is_for_headings_only) ... ok
+test_fonts_and_type_scale (__main__.RetroSkin.test_fonts_and_type_scale) ... ok
+test_log_is_monospace_inset_with_colored_parts (__main__.RetroSkin.test_log_is_monospace_inset_with_colored_parts) ... ok
+test_no_color_literals_outside_theme (__main__.RetroSkin.test_no_color_literals_outside_theme) ... ok
+test_no_yellow_or_neon_on_any_widget (__main__.RetroSkin.test_no_yellow_or_neon_on_any_widget) ... ok
+test_one_primary_button_per_screen (__main__.RetroSkin.test_one_primary_button_per_screen) ... ok
+test_only_one_red_surface_style (__main__.RetroSkin.test_only_one_red_surface_style) ... ok
+test_settings_text_not_clipped_wording (__main__.RetroSkin.test_settings_text_not_clipped_wording) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 9.721s
+
+OK
+
+[skin] 1152 widgets checked on 16 pages/dialogs
+
+[skin] font families in use: ['Consolas', 'Verdana'] | point sizes: [8, 9, 10, 11, 14]
+
+[skin] primary (accent-filled) button per screen: {'page:AUTOEXEC': ['📥 1. Apply Engine Autoexec Tweaks'], 'page:LAUNCH': ['📋 Copy Options'], 'page:BOOST': ['⚡ APPLY SAFE CS2 CPU PRIORITY BOOST'], 'page:SERVERS': ['⚡ Connect'], 'page:MAINTENANCE': ['🧹 RUN SELECTED PC CLEANUP'], 'dialog:settings': ['💾 Save Settings'], 'dialog:add_server': ['💾 Save Server'], 'dialog:players': ['🚀 Connect To Server']}

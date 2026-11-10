@@ -10,6 +10,7 @@ import re
 import winreg
 import platform
 import subprocess
+import theme
 from typing import Dict, Any, Optional, Tuple
 
 def get_cpu_info() -> Dict[str, Any]:
@@ -250,7 +251,7 @@ def get_mpo_diagnostic(gpu_name: str) -> Dict[str, Any]:
         brand = "WINDOWS MPO"
 
     badge = f"[{brand} • MPO DISABLED]" if disabled else f"[{brand} • MPO ENABLED]"
-    badge_color = "#38bdf8" if disabled else "#34d399"
+    badge_color = theme.CT_BLUE_TEXT if disabled else theme.GOOD_TEXT
 
     return {
         "disabled": disabled,
@@ -275,7 +276,7 @@ def get_hpet_diagnostic() -> Dict[str, Any]:
                     "is_default": True,
                     "is_low_latency": False,
                     "badge": "[BOOT TIMERS • ADMIN REQUIRED TO QUERY]",
-                    "badge_color": "#94a3b8",
+                    "badge_color": theme.TEXT_SECONDARY,
                     "detail": "Access denied to BCD store (Non-Elevated). Run app as Administrator to query live boot variables. Windows default utilizes your CPU native Invariant TSC.",
                     "cmd_text": "bcdedit /deletevalue useplatformclock\nbcdedit /set useplatformtick yes\nbcdedit /set disabledynamictick yes",
                     "cmd_restore": "bcdedit /deletevalue useplatformclock\nbcdedit /deletevalue disabledynamictick\nbcdedit /deletevalue useplatformtick"
@@ -288,7 +289,7 @@ def get_hpet_diagnostic() -> Dict[str, Any]:
                 "is_default": False,
                 "is_low_latency": False,
                 "badge": "[BOOT TIMERS • UNKNOWN STATUS]",
-                "badge_color": "#94a3b8",
+                "badge_color": theme.TEXT_SECONDARY,
                 "detail": f"BCD query returned status code {res.returncode}.",
                 "cmd_text": "bcdedit /deletevalue useplatformclock\nbcdedit /set useplatformtick yes\nbcdedit /set disabledynamictick yes",
                 "cmd_restore": "bcdedit /deletevalue useplatformclock\nbcdedit /deletevalue disabledynamictick\nbcdedit /deletevalue useplatformtick"
@@ -301,19 +302,19 @@ def get_hpet_diagnostic() -> Dict[str, Any]:
 
         if has_useplatformclock:
             badge = "[HPET: FORCED ON (NON-OPTIMAL)]"
-            badge_color = "#f59e0b"
+            badge_color = theme.WARN_TEXT
             detail = "Forced HPET detected (useplatformclock = Yes). Windows is querying the motherboard chipset timer over PCIe instead of CPU Invariant TSC."
         elif has_dynamictick and has_platformtick:
             badge = "[TIMERS: LOW-LATENCY TSC (DYNAMIC TICK OFF)]"
-            badge_color = "#38bdf8"
+            badge_color = theme.CT_BLUE_TEXT
             detail = "Low-latency configuration active: disabledynamictick = Yes and useplatformtick = Yes with Invariant TSC."
         elif has_dynamictick:
             badge = "[TIMERS: DYNAMIC TICK DISABLED]"
-            badge_color = "#38bdf8"
+            badge_color = theme.CT_BLUE_TEXT
             detail = "disabledynamictick = Yes detected. Timer ticks deliver continuous polling at constant frequency."
         else:
             badge = "[TIMERS: INVARIANT TSC (WINDOWS DEFAULT)]"
-            badge_color = "#34d399"
+            badge_color = theme.GOOD_TEXT
             detail = "Windows boot configuration is clean. Operating with native CPU Invariant TSC (Zero forced HPET overhead)."
 
         return {
@@ -338,7 +339,7 @@ def get_hpet_diagnostic() -> Dict[str, Any]:
             "is_default": False,
             "is_low_latency": False,
             "badge": "[BOOT TIMERS • QUERY ERROR]",
-            "badge_color": "#94a3b8",
+            "badge_color": theme.TEXT_SECONDARY,
             "detail": str(e),
             "cmd_text": "bcdedit /deletevalue useplatformclock\nbcdedit /set useplatformtick yes\nbcdedit /set disabledynamictick yes",
             "cmd_restore": "bcdedit /deletevalue useplatformclock\nbcdedit /deletevalue disabledynamictick\nbcdedit /deletevalue useplatformtick"
@@ -360,7 +361,7 @@ def get_vbs_diagnostic() -> Dict[str, Any]:
         detail = "HypervisorEnforcedCodeIntegrity registry key not present (Disabled by default / Clean)"
 
     badge = "[VBS / HVCI • ENABLED (SECURITY)]" if enabled else "[VBS / HVCI • DISABLED (MAX GAMING FPS)]"
-    badge_color = "#38bdf8" if enabled else "#34d399"
+    badge_color = theme.CT_BLUE_TEXT if enabled else theme.GOOD_TEXT
 
     return {
         "enabled": enabled,
@@ -383,15 +384,15 @@ def get_hags_diagnostic() -> Dict[str, Any]:
 
     if hags_val == 2:
         badge = "[HAGS • ENABLED (ON)]"
-        badge_color = "#38bdf8"
+        badge_color = theme.CT_BLUE_TEXT
         detail = r"HwSchMode = 2 in HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers (Hardware GPU Scheduling Active)"
     elif hags_val == 1:
         badge = "[HAGS • DISABLED (OFF)]"
-        badge_color = "#94a3b8"
+        badge_color = theme.TEXT_SECONDARY
         detail = r"HwSchMode = 1 in HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers (CPU Software Scheduling Active)"
     else:
         badge = "[HAGS • DISABLED (WINDOWS DEFAULT)]"
-        badge_color = "#94a3b8"
+        badge_color = theme.TEXT_SECONDARY
         detail = r"HwSchMode key absent in GraphicsDrivers (Off by default for current display adapter)"
 
     return {
@@ -409,7 +410,7 @@ def get_ulps_diagnostic(is_amd: bool) -> Dict[str, Any]:
             "applicable": False,
             "enabled": False,
             "badge": "[N/A • AMD RADEON ONLY]",
-            "badge_color": "#64748b",
+            "badge_color": theme.TEXT_SECONDARY,
             "detail": "Ultra Low Power State (ULPS) is an AMD Radeon-exclusive driver mechanism. Non-applicable for NVIDIA GeForce or Intel Arc GPUs.",
             "reg_path": r"HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000"
         }
@@ -424,7 +425,7 @@ def get_ulps_diagnostic(is_amd: bool) -> Dict[str, Any]:
                         "applicable": True,
                         "enabled": True,
                         "badge": "[AMD ULPS • ENABLED (DEFAULT)]",
-                        "badge_color": "#f59e0b",
+                        "badge_color": theme.WARN_TEXT,
                         "detail": f"EnableUlps = 1 in HKLM\\{base_key}\\{sub} (GPU enters deep sleep during idle/menus)",
                         "reg_path": f"HKLM\\{base_key}\\{sub}"
                     }
@@ -433,7 +434,7 @@ def get_ulps_diagnostic(is_amd: bool) -> Dict[str, Any]:
                         "applicable": True,
                         "enabled": False,
                         "badge": "[AMD ULPS • DISABLED (OPTIMIZED)]",
-                        "badge_color": "#34d399",
+                        "badge_color": theme.GOOD_TEXT,
                         "detail": f"EnableUlps = 0 in HKLM\\{base_key}\\{sub} (Clock domains stay active, preventing wake stutters)",
                         "reg_path": f"HKLM\\{base_key}\\{sub}"
                     }
@@ -444,7 +445,7 @@ def get_ulps_diagnostic(is_amd: bool) -> Dict[str, Any]:
         "applicable": True,
         "enabled": False,
         "badge": "[AMD ULPS • NOT CONFIGURED]",
-        "badge_color": "#94a3b8",
+        "badge_color": theme.TEXT_SECONDARY,
         "detail": "EnableUlps registry entry not present in standard graphics class keys.",
         "reg_path": r"HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000"
     }
@@ -464,11 +465,11 @@ def get_mmcss_diagnostic() -> Dict[str, Any]:
 
     if is_unthrottled:
         badge = "[MMCSS • UNTHROTTLED (OPTIMAL)]"
-        badge_color = "#34d399"
+        badge_color = theme.GOOD_TEXT
         detail = f"NetworkThrottlingIndex = 0xFFFFFFFF (Network packet limiter disabled). SystemResponsiveness = {sys_resp}%."
     else:
         badge = "[MMCSS • WINDOWS DEFAULT (THROTTLED)]"
-        badge_color = "#f59e0b"
+        badge_color = theme.WARN_TEXT
         net_str = hex(net_val) if isinstance(net_val, int) else str(net_val)
         detail = f"NetworkThrottlingIndex = {net_str} (Default 10 pkts/ms limiter active). SystemResponsiveness = {sys_resp}% (Default 20% reserved)."
 
@@ -507,7 +508,7 @@ def get_msi_mode_diagnostic() -> Dict[str, Any]:
                                                 return {
                                                     "supported": True,
                                                     "badge": "[PCIe MSI • ENABLED (LOW DPC LATENCY)]",
-                                                    "badge_color": "#34d399",
+                                                    "badge_color": theme.GOOD_TEXT,
                                                     "detail": r"MSISupported = 1. GPU delivers interrupts as direct memory writes over PCIe (Clean DPC latency).",
                                                     "reg_path": f"HKLM\\{msi_path}"
                                                 }
@@ -515,7 +516,7 @@ def get_msi_mode_diagnostic() -> Dict[str, Any]:
                                                 return {
                                                     "supported": False,
                                                     "badge": "[PCIe MSI • DISABLED (LINE IRQ)]",
-                                                    "badge_color": "#f59e0b",
+                                                    "badge_color": theme.WARN_TEXT,
                                                     "detail": r"MSISupported = 0. GPU is falling back to legacy shared pin-based line interrupts.",
                                                     "reg_path": f"HKLM\\{msi_path}"
                                                 }
@@ -529,7 +530,7 @@ def get_msi_mode_diagnostic() -> Dict[str, Any]:
     return {
         "supported": True,
         "badge": "[PCIe MSI • DRIVER MANAGED]",
-        "badge_color": "#38bdf8",
+        "badge_color": theme.CT_BLUE_TEXT,
         "detail": "GPU MSI mode is negotiated automatically by the modern WDDM display driver stack.",
         "reg_path": r"HKLM\SYSTEM\CurrentControlSet\Enum\PCI\..."
     }

@@ -8038,5 +8038,10 @@
     "mapper": "Steam Workshop Creator",
     "image": "https://images.steamusercontent.com/ugc/16964232060350221856/3986CCCEE554F2E6472EB63AE58A84CE6D7A4659/?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false",
     "addon": "3836139164"
+  },
+  "ze_radio_tower": {
+    "mapper": "Onono_Imouto",
+    "image": "https://images.steamusercontent.com/ugc/14568915538226147099/B172489B74BCE0BFCDF4CC54704F07E164C23774/?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false",
+    "addon": "3836768028"
   }
 }

@@ -39,22 +39,13 @@ class TestDesignTokenParity(unittest.TestCase):
             self.tokens = json.load(f)
             
     def test_theme_color_parity(self):
-        """Verify that every color in design-tokens.json is exactly matched in theme.py."""
+        """The desktop app now has its own retro olive palette (owner request, 2026-11-10) while
+        design-tokens.json stays the WEBSITE's token file. What both still share is the accent:
+        the owner-approved CS2 orange and its hover / pressed shades."""
         colors = self.tokens["colors"]
-        self.assertEqual(theme.COLOR_CANVAS, colors["canvas"])
-        self.assertEqual(theme.COLOR_PANEL, colors["panel"])
-        self.assertEqual(theme.COLOR_PANEL_ROW, colors["panel_row"])
-        self.assertEqual(theme.COLOR_PANEL_HOVER, colors["panel_hover"])
-        self.assertEqual(theme.COLOR_BORDER, colors["border"])
-        self.assertEqual(theme.COLOR_BORDER_HOVER, colors["border_hover"])
-        self.assertEqual(theme.COLOR_TEXT_PRIMARY, colors["text_primary"])
-        self.assertEqual(theme.COLOR_TEXT_MUTED, colors["text_muted"])
-        self.assertEqual(theme.COLOR_PRIMARY_BANANA, colors["primary_banana"])
-        self.assertEqual(theme.COLOR_TEXT_ON_BANANA, colors["text_on_banana"])
-        self.assertEqual(theme.COLOR_SUCCESS_PEPE, colors["success_pepe"])
-        self.assertEqual(theme.COLOR_ALERT_MAGENTA, colors["alert_magenta"])
-        self.assertEqual(theme.COLOR_TELEMETRY_CYAN, colors["telemetry_cyan"])
-        self.assertEqual(theme.COLOR_FOCUS_RING, colors["focus_ring"])
+        self.assertEqual(theme.ACCENT, colors["primary"])
+        self.assertEqual(theme.ACCENT_HOVER, colors["primary_hover"])
+        self.assertEqual(theme.ACCENT_PRESSED, colors["primary_pressed"])
 
     def test_contrast_ratios(self):
         """Verify that all text and UI elements meet minimum contrast thresholds."""

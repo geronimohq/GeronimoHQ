@@ -21,13 +21,33 @@ BANNED_HEX_PATTERNS = [
 
 class TestApprovedThemePalette(unittest.TestCase):
     def test_theme_constants_use_approved_palette(self):
-        """Verify theme.py constants use the user-approved CS2 amber-orange palette."""
-        self.assertEqual(theme.COLOR_PRIMARY, "#E48716")
-        self.assertEqual(theme.COLOR_PRIMARY_HOVER, "#F09527")
-        self.assertEqual(theme.COLOR_PRIMARY_PRESSED, "#C5720E")
-        self.assertEqual(theme.COLOR_TEXT_ON_PRIMARY, "#0A0E12")
-        self.assertEqual(theme.COLOR_ACCENT, "#E48716")
-        self.assertEqual(theme.COLOR_SUCCESS_PEPE, "#E48716")
+        """Retro skin: the owner-approved CS2 orange is the ONE accent; surfaces are muted olive."""
+        self.assertEqual(theme.ACCENT, "#E48716")
+        self.assertEqual(theme.ACCENT_HOVER, "#F09527")
+        self.assertEqual(theme.ACCENT_PRESSED, "#C5720E")
+        self.assertEqual(theme.COLOR_PRIMARY, theme.ACCENT)
+        self.assertEqual(theme.TEXT_ON_ACCENT, "#14170F")
+        for name, val in (("SURFACE_BASE", "#1C2119"), ("SURFACE_PANEL", "#262D22"), ("SURFACE_INSET", "#12160F"),
+                          ("BEVEL_LIGHT", "#596652"), ("BEVEL_DARK", "#0C0E0A"), ("TEXT_PRIMARY", "#D5DACF"),
+                          ("GOOD", "#5FA84C"), ("BAD", "#B8433A"), ("CT_BLUE", "#4F86B8"), ("T_GOLD", "#A8863F")):
+            self.assertEqual(getattr(theme, name), val, name)
+        # status is never the accent
+        self.assertNotEqual(theme.COLOR_SUCCESS_PEPE, theme.ACCENT)
+        self.assertNotEqual(theme.COLOR_SUCCESS, theme.ACCENT)
+
+    def test_no_yellow_or_neon_in_theme(self):
+        """No yellow / bright amber and no color above ~70 % saturation among the surface, text and status tokens."""
+        import colorsys
+        tokens = {n: getattr(theme, n) for n in dir(theme) if n.isupper() and isinstance(getattr(theme, n), str)
+                  and re.fullmatch(r"#[0-9A-Fa-f]{6}", getattr(theme, n))}
+        for name, hexv in tokens.items():
+            r, g, b = (int(hexv[i:i + 2], 16) / 255 for i in (1, 3, 5))
+            h, s, v = colorsys.rgb_to_hsv(r, g, b)
+            hue = h * 360
+            if name.startswith(("ACCENT", "COLOR_PRIMARY", "COLOR_ACCENT", "COLOR_FOCUS", "COLOR_TEXT_ON")):
+                continue   # the approved orange (hue ~34, saturation ~87 %) is the single exception
+            self.assertFalse(48 <= hue <= 70 and s > 0.35 and v > 0.5, f"{name} {hexv} looks yellow")
+            self.assertLessEqual(s, 0.72, f"{name} {hexv} is too saturated for the muted palette")
 
     def test_app_py_source_no_old_green_or_neon_literals(self):
         """Scan app.py source code for old green or neon literals."""
@@ -35,7 +55,7 @@ class TestApprovedThemePalette(unittest.TestCase):
         with open(app_path, "r", encoding="utf-8") as f:
             src = f.read()
 
-        found = []
+        found = re.findall(r"""["']#[0-9A-Fa-f]{6}["']""", src)   # no color literal may live in app.py at all
         for pat in BANNED_HEX_PATTERNS:
             matches = re.findall(pat, src, re.IGNORECASE)
             if matches:
@@ -49,8 +69,10 @@ class TestApprovedThemePalette(unittest.TestCase):
         try:
             root.update_idletasks()
             self.assertEqual(app.ACCENT_ORANGE, theme.COLOR_PRIMARY)
-            self.assertEqual(app.ACCENT_GREEN, theme.COLOR_PRIMARY)
-            self.assertEqual(app.BG_WINDOW, theme.COLOR_BG)
+            self.assertEqual(app.ACCENT_GREEN, theme.GOOD_TEXT)       # status text is green, never orange
+            self.assertNotEqual(app.ACCENT_GREEN, app.ACCENT_ORANGE)
+            self.assertEqual(app.BG_WINDOW, theme.SURFACE_BASE)
+            self.assertEqual(app.BG_CONSOLE, theme.SURFACE_INSET)
         finally:
             try:
                 root.destroy()
