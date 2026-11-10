@@ -736,8 +736,8 @@ export const ZE_MAP_TIERS_REGISTRY: Record<
     tierLabel: 'Warmup',
     badge: '🟢 T1 Warmup',
     colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
-    mapper: 'Nipper',
-    isHallOfFame: true,
+    mapper: 'Source 2 Zombie Escape',
+    isHallOfFame: false,
   },
   'zm_dust_v3': {
     tier: 1,
@@ -784,8 +784,8 @@ export const ZE_MAP_TIERS_REGISTRY: Record<
     tierLabel: 'Warmup',
     badge: '🟢 T1 Warmup',
     colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
-    mapper: 'Nipper',
-    isHallOfFame: true,
+    mapper: 'Source 2 Zombie Escape',
+    isHallOfFame: false,
   },
   'ze_jurassicpark': {
     tier: 1,
@@ -905,9 +905,6 @@ function getMapTierAndMapperRaw(mapName?: string): MapTierData {
     if (c.includes('deadcore')) {
       return { mapper: 'Airvulpes', isHoF: true, tier: 5, tierLabel: 'Nightmare', badge: '🔥 T5 Nightmare', colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]' };
     }
-    if (c.includes('atix')) {
-      return { mapper: 'Nipper', isHoF: true, tier: 1, tierLabel: 'Warmup', badge: '🟢 T1 Warmup', colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]' };
-    }
     if (c.startsWith('zm_') || c.includes('warmup') || c.includes('infection')) {
       return { mapper: 'Nipper / Dave J.', isHoF: false, tier: 1, tierLabel: 'Warmup', badge: '🟢 T1 Warmup', colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]' };
     }
@@ -1018,6 +1015,14 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
   const exact = lookupS2zeMapperExact(base.mapKey || mapName || '');
   if (exact && exact !== S2ZE_GENERIC) {
     return { ...base, mapper: exact, isHallOfFameMapper: HOF_MAPPERS.test(exact) };
+  }
+  if (exact === S2ZE_GENERIC) {
+    // The catalog only says the CS2 port is by the Source 2 Zombie Escape team. A hand-typed registry entry for this exact
+    // map may name the original author, but a keyword/substring guess (e.g. "atix" -> Nipper) is not evidence.
+    const c = (mapName || '').trim().toLowerCase();
+    const st = c.replace(/_(?:p|v\d+[\w]*|[a-z]\d+[\w]*|rc\d+|beta\d*|final|test)$/i, '');
+    const curated = ZE_MAP_TIERS_REGISTRY[c] || ZE_MAP_TIERS_REGISTRY[st];
+    if (!curated) return { ...base, mapper: S2ZE_GENERIC, isHallOfFameMapper: false };
   }
   if (PLACEHOLDER_MAPPERS.has(base.mapper)) {
     return { ...base, mapper: exact === S2ZE_GENERIC ? S2ZE_GENERIC : 'Mapper not listed', isHallOfFameMapper: false };
