@@ -1,9 +1,9 @@
 {
-  "version": "2.0.0",
+  "version": "2.0.1",
   "build_date": "2026-11-10",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "3126C03AB0BF622BB31BF6C497A4D6A4C657CAD094AD0E0E2E3EC72B328B92D6",
-  "size": 27329735,
-  "notes": "Brand new dark glass interface with the reactor backdrop, all features kept. Faster, smoother window, per-server time on map, Planet China cluster picker, Discord card finds your server from the game log, and many fixes.",
-  "signature": "9431a12870d83f8cb2776ec9889b218e954a62fb0c62b546249e4960f516832265eca8f98fb1d025815f8b2aebd72e994efdf4a8b68cfcc93487ca1e75c4c70e"
+  "sha256": "7A60FC7382D8DE8859891173BA6A2A78EE24A902C1957C75DAE3CBDFCBFCD1C1",
+  "size": 27331203,
+  "notes": "Smoother and lighter: the reactor backdrop uses about half the CPU, the app trims its memory while minimized or in the tray, and the Discord card now finds your server from the game log.",
+  "signature": "36dc93f4e57c9c9b9f92964d1142f26bd2fe443a37896de96c83b0015d6c521fe7a5d70e0748d4b6d29134be617c51938d902408775005432a676086c896ba02"
 }
