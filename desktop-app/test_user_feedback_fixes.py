@@ -14,7 +14,7 @@ class TestUserFeedbackFixes(unittest.TestCase):
         with open(app_path, "r", encoding="utf-8") as f:
             src = f.read()
         self.assertIn("req_w=540, req_h=430", src)
-        self.assertIn('Clicking [-] hides window to the tray; clicking [X] closes the application completely.', src)
+        self.assertIn('Clicking [-] hides the window to the tray; clicking [X] closes the application completely.', src)
         self.assertIn('wraplength=480, justify="left"', src)
 
     def test_cleaner_tooltips_present(self):

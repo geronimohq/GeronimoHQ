@@ -30,10 +30,10 @@ BEVEL_DARK = "#22261E"       # bottom + right edge of raised elements
 
 # ---------------------------------------------------------------- text
 TEXT_PRIMARY = "#D5DACF"
-TEXT_SECONDARY = "#BCC3B6"   # helper text (never dimmer; owner brief minimum was #A3AC9A, raised to pass 4.5:1)
+TEXT_SECONDARY = "#C4CABE"   # helper text (never dimmer; owner brief minimum was #A3AC9A, raised to pass 4.5:1)
 TEXT_DISABLED = "#8A9284"    # disabled controls only (exempt from 4.5:1 by WCAG)
 TEXT_ON_ACCENT = "#1E2219"   # dark text on accent / good fills
-TEXT_ON_DARK_FILL = "#F2F4EE"  # light text on warn / bad fills
+TEXT_ON_DARK_FILL = "#FFFFFF"  # light text on warn / bad fills
 
 # ---------------------------------------------------------------- the ONE accent
 ACCENT = "#E48716"
@@ -44,15 +44,15 @@ ACCENT_PRESSED = "#C5720E"
 GOOD = "#6FAE5C"             # fill / icon / dot / border
 WARN = "#AC5733"             # rust, never yellow
 BAD = "#B8433A"
-GOOD_TEXT = "#9CCF8D"        # small status TEXT
-WARN_TEXT = "#ECB59B"
-BAD_TEXT = "#EDB4AE"
+GOOD_TEXT = "#A6D499"        # small status TEXT
+WARN_TEXT = "#EEBEA7"
+BAD_TEXT = "#EFBCB7"
 
 # ---------------------------------------------------------------- team colors (reserved)
 CT_BLUE = "#6F8FB8"          # fills / icons / left borders
-CT_BLUE_TEXT = "#B2C3D9"     # links, secondary actions, humans (as text)
+CT_BLUE_TEXT = "#BBCADE"     # links, secondary actions, humans (as text)
 T_GOLD = "#B89A5E"
-T_GOLD_TEXT = "#D2BF99"      # zombies / T-side tags (as text)
+T_GOLD_TEXT = "#D7C6A4"      # zombies / T-side tags (as text)
 
 # ---------------------------------------------------------------- fonts + type scale
 def _pick_font(candidates, default):

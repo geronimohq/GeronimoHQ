@@ -53,8 +53,13 @@ def collect(root_app, pump):
                     state = str(w.cget("state"))
                 except Exception:
                     state = "normal"
+                try:
+                    relief = str(w.cget("relief"))
+                except Exception:
+                    relief = ""
+                a = f.actual()
                 rows.append(dict(where=where, cls=cls, fg=fg, bg=bg, px=px, bold=(weight == "bold"), text=txt,
-                                 state=state, widget=w))
+                                 state=state, widget=w, relief=relief, family=a["family"], pt=a["size"]))
             except Exception:
                 continue
 
@@ -63,7 +68,39 @@ def collect(root_app, pump):
         pump(0.3)
         scan(root_app.pages[key], f"page:{key}")
     scan(root_app, "main")
+    # dialogs (same chrome as the main window)
+    import tempfile
+    tmp = tempfile.mkdtemp(prefix="retro_cfg_")
+    opens = [("settings", lambda: root_app.open_settings_dialog()),
+             ("add_server", lambda: root_app.open_add_server_dialog()),
+             ("players", lambda: root_app.open_players_dialog("74.91.124.21", 27015, "GFL Clan Zombie Escape")),
+             ("soundtrack", lambda: root_app.open_soundtrack_dialog("ze_test_v1")),
+             ("map_cleaner", lambda: root_app.open_custom_map_cleaner_dialog())]
+    for name, fn in opens:
+        before = set(map(str, root_app.winfo_children()))
+        with mock.patch.dict(root_app.paths, {"cfg_dir": tmp, "cs2_dir": tmp, "steam_path": tmp}):
+            fn()
+            pump(0.6)
+        for w in root_app.winfo_children():
+            if isinstance(w, tk.Toplevel) and str(w) not in before:
+                scan(w, f"dialog:{name}")
+                try:
+                    cmd = w.protocol("WM_DELETE_WINDOW")
+                    w.tk.call(cmd) if cmd else w.destroy()
+                except Exception:
+                    pass
+        pump(0.2)
     return rows
+
+
+def primary_buttons(rows):
+    """{where: [button texts]} for accent-filled buttons (page/dialog scope; the header button is 'main')."""
+    import theme
+    out = collections.defaultdict(list)
+    for r in rows:
+        if r["cls"] == "Button" and r["bg"] == theme.ACCENT.upper() and r["where"] != "main":
+            out[r["where"]].append(r["text"])
+    return out
 
 
 def violations(rows):
@@ -75,6 +112,8 @@ def violations(rows):
         c = theme.contrast(r["fg"], r["bg"])
         large = r["px"] >= 24 or (r["px"] >= 18 and r["bold"])
         if r["fg"].upper() == theme.ACCENT.upper():
+            if not any(ch.isalnum() for ch in r["text"]):
+                continue   # icon-only label: the active nav icon may be accent
             # accent: headings only (bold, >= 15 px) and >= 3:1; never small body text
             if not (r["bold"] and r["px"] >= 15):
                 out["accent-small-text"].append(r)

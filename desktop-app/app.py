@@ -1055,6 +1055,8 @@ class CS2TruePanoramaApp(tk.Tk):
 
         # ZE Graph Live Telemetry & Multimedia Variables
         self.gfl_score_var = tk.StringVar(value="🛡️ Humans: -  vs  🧟 Zombies: -")
+        self.gfl_humans_var = tk.StringVar(value="🛡️ Humans: -")
+        self.gfl_zombies_var = tk.StringVar(value="🧟 Zombies: -")
         self.gfl_extends_var = tk.StringVar(value="⏱️ Extends: -/3")
         self.gfl_timer_var = tk.StringVar(value="⏱️ --:-- on map")
         self.gfl_geo_var = tk.StringVar(value="🌐 GEO: checking…")  # AUDIT P2-#5: was a fixed made-up split
@@ -1378,13 +1380,13 @@ class CS2TruePanoramaApp(tk.Tk):
         add_tooltip(b_settings, "Configure Windows autostart, minimize-to-tray behavior, and Discord integration.")
 
         admin_txt = "ADMIN PERMISSIONS" if self.admin_status else "STANDARD PERMISSIONS"
-        admin_col = ACCENT_GREEN if self.admin_status else FG_MUTED
+        admin_col = theme.GOOD if self.admin_status else theme.TEXT_SECONDARY
         admin_tip = "Running with Administrator privileges (Full access for system maintenance, TRIM, and latency diagnostics)." if self.admin_status else "Running as a standard user (autoexec and engine tweaks do not need Administrator)."
         self._create_header_pill(head_right, admin_txt, admin_col, tooltip=admin_tip)
 
         cs2_found = bool(self.paths["cs2_exe"])
         cs2_txt = "CS2 GAME READY" if cs2_found else "CS2 NOT DETECTED"
-        cs2_col = ACCENT_GREEN if cs2_found else ACCENT_RED
+        cs2_col = theme.GOOD if cs2_found else theme.BAD
         cs2_tip = f"Counter-Strike 2 detected at {self.paths['cs2_exe']}" if cs2_found else "Counter-Strike 2 installation path could not be detected automatically."
         self._create_header_pill(head_right, cs2_txt, cs2_col, tooltip=cs2_tip)
 
@@ -1455,12 +1457,14 @@ class CS2TruePanoramaApp(tk.Tk):
             self.after(20, self._apply_win32_icons)
 
     def _create_header_pill(self, parent, text, color, tooltip=None):
-        pill = Frame(parent, bg=BG_BORDER, padx=1, pady=1)
+        # Inset badge: status DOT carries the color, the words stay text-primary
+        pill = Frame(parent, bg=theme.SURFACE_INSET, bd=2, relief="sunken", padx=8, pady=2)
         pill.pack(side="left", padx=4)
-        inner = Frame(pill, bg=BG_CARD_ROW, padx=10, pady=3)
-        inner.pack()
-        lbl = Label(inner, text=f"● {text}", font=(theme.FONT_UI, theme.FS_13, "bold"), fg=color, bg=theme.SURFACE_INSET)
-        lbl.pack()
+        inner = pill
+        dot = Label(pill, text="●", font=(theme.FONT_UI, theme.FS_13, "bold"), fg=color, bg=theme.SURFACE_INSET)
+        dot.pack(side="left")
+        lbl = Label(pill, text=text, font=(theme.FONT_UI, theme.FS_12, "bold"), fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET)
+        lbl.pack(side="left", padx=(5, 0))
         if tooltip:
             add_tooltip(pill, tooltip)
             add_tooltip(inner, tooltip)
@@ -1478,7 +1482,7 @@ class CS2TruePanoramaApp(tk.Tk):
 
         Label(left, text=f"GRAPHICS:  {self.gpu_info['name']}", font=(theme.FONT_UI, theme.FS_15, "bold"), fg=ACCENT_CYAN, bg=BG_CARD).pack(anchor="w", pady=(2, 2))
 
-        prof_lbl = Label(left, text=f"⚡ Profile: {self.cpu_info['power_reason']}", font=(theme.FONT_UI, theme.FS_12, "italic"), fg=ACCENT_GREEN, bg=BG_CARD, justify="left", anchor="w")
+        prof_lbl = Label(left, text=f"⚡ Profile: {self.cpu_info['power_reason']}", font=(theme.FONT_UI, theme.FS_12, "italic"), fg=FG_MUTED, bg=BG_CARD, justify="left", anchor="w")
         prof_lbl.pack(anchor="w", fill="x")
         def _adjust_prof_wrap(e):
             if e.width > 50:
@@ -1515,9 +1519,14 @@ class CS2TruePanoramaApp(tk.Tk):
         Button(head, text="Clear", font=(theme.FONT_UI, theme.FS_12), fg=FG_MUTED, bg=BG_WINDOW,
                   relief="flat", cursor="hand2", command=self.clear_logs).pack(side="right")
 
-        self.console = tk.Text(console_box, height=4, bg=BG_CONSOLE, fg=ACCENT_CYAN,
-                               font=(theme.FONT_MONO, theme.FS_13), relief="flat",
-                               highlightbackground=BG_BORDER, highlightthickness=1, padx=8, pady=4)
+        self.console = tk.Text(console_box, height=4, bg=BG_CONSOLE, fg=theme.TEXT_PRIMARY,
+                               font=(theme.FONT_MONO, theme.FS_13), relief="sunken", bd=2,
+                               highlightbackground=BG_BORDER, highlightthickness=0, padx=8, pady=4,
+                               insertbackground=theme.TEXT_PRIMARY, selectbackground=theme.SURFACE_RAISED,
+                               selectforeground=theme.TEXT_PRIMARY)
+        for _tag, _col in (("log_ts", theme.TEXT_SECONDARY), ("log_tag", theme.CT_BLUE_TEXT),
+                           ("log_msg", theme.TEXT_PRIMARY), ("log_err", theme.BAD_TEXT)):
+            self.console.tag_configure(_tag, foreground=_col)
         self.console.pack(fill="x")
         self.console.config(state="disabled")
 
@@ -1567,7 +1576,7 @@ class CS2TruePanoramaApp(tk.Tk):
                             fg=lbl_fg, bg=BG_SIDEBAR)
         icon_box.place(relx=0.5, rely=0.5, anchor="center")
 
-        title_lbl = Label(item_frame, text=title, font=("Segoe UI", 9, "bold" if is_alert else "normal"),
+        title_lbl = Label(item_frame, text=title, font=(theme.FONT_UI, theme.FS_12, "bold" if is_alert else "normal"),
                              fg=lbl_fg, bg=BG_SIDEBAR, anchor="w")
         title_lbl.pack(side="left", fill="both", expand=True, pady=10)
 
@@ -1986,10 +1995,11 @@ class CS2TruePanoramaApp(tk.Tk):
         pills = Frame(hero_left, bg=theme.SURFACE_INSET)
         pills.pack(anchor="w")
         # AUDIT P2-#7: plain facts (were "100% VAC-SAFE", "SUB-TICK VERIFIED", "ZERO RUNTIME OVERHEAD": unprovable or false)
-        for p_txt, p_col in [("CONFIG FILES + WINDOWS SETTINGS", ACCENT_GREEN), ("NO GAME MEMORY ACCESS", ACCENT_CYAN), ("NOT AFFILIATED WITH VALVE", theme.COLOR_PRIMARY)]:
-            pf = Frame(pills, bg=theme.SURFACE_RAISED, padx=8, pady=2, highlightbackground=BG_BORDER, highlightthickness=1)
+        for p_txt in ("CONFIG FILES + WINDOWS SETTINGS", "NO GAME MEMORY ACCESS", "NOT AFFILIATED WITH VALVE"):
+            pf = Frame(pills, bg=theme.SURFACE_INSET, bd=2, relief="sunken", padx=8, pady=2)
             pf.pack(side="left", padx=(0, 6))
-            Label(pf, text=f"✔ {p_txt}", font=(theme.FONT_UI, theme.FS_13, "bold"), fg=p_col, bg=theme.SURFACE_RAISED).pack()
+            Label(pf, text="✔", font=(theme.FONT_UI, theme.FS_13, "bold"), fg=theme.GOOD_TEXT, bg=theme.SURFACE_INSET).pack(side="left")
+            Label(pf, text=p_txt, font=(theme.FONT_UI, theme.FS_12, "bold"), fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET).pack(side="left", padx=(4, 0))
 
         # 4-Card 2x2 Grid Overview: CS2 ENVIRONMENT, STORAGE, ZE GAME SERVERS, MAINTENANCE
         grid = Frame(content, bg=BG_CARD)
@@ -2247,12 +2257,14 @@ class CS2TruePanoramaApp(tk.Tk):
 
             # State 1: Both up-to-date (< 7 days) -> Crisp Green Banner
             if not opt_due and not maint_due:
-                card = Frame(container, bg=theme.SURFACE_INSET, padx=12, pady=7, highlightbackground=theme.BEVEL_DARK, highlightthickness=1)
+                card = Frame(container, bg=theme.SURFACE_INSET, padx=14, pady=7, highlightbackground=theme.BEVEL_DARK, highlightthickness=1)
                 card.pack(fill="x")
                 top = Frame(card, bg=theme.SURFACE_INSET)
                 top.pack(fill="x")
 
-                Label(top, text="✅  SYSTEM & CS2 HEALTH UP-TO-DATE", font=(theme.FONT_UI, theme.FS_13, "bold"), fg=ACCENT_GREEN, bg=theme.SURFACE_INSET).pack(side="left")
+                Label(top, text="✔", font=(theme.FONT_UI, theme.FS_13, "bold"), fg=theme.GOOD_TEXT, bg=theme.SURFACE_INSET).pack(side="left")
+                Label(top, text="SYSTEM & CS2 HEALTH UP-TO-DATE", font=(theme.FONT_UI, theme.FS_13, "bold"), fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET).pack(side="left", padx=(6, 0))
+                add_accent_bar(card, theme.GOOD, 3)
 
                 if page_type == "ENGINE":
                     b_nav = Button(top, text="Open PC Maintenance", font=(theme.FONT_UI, theme.FS_12), fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_RAISED,
@@ -2440,12 +2452,13 @@ class CS2TruePanoramaApp(tk.Tk):
         self.ze_mute_key_var = tk.StringVar(value="F8")
 
         if has_custom_vm:
-            vm_badge = Frame(ze_hud_card, bg=theme.SURFACE_RAISED, padx=8, pady=3, highlightbackground=ACCENT_GREEN, highlightthickness=1)
+            vm_badge = Frame(ze_hud_card, bg=theme.SURFACE_INSET, padx=14, pady=4, highlightbackground=theme.BEVEL_DARK, highlightthickness=1)
             vm_badge.pack(anchor="w", fill="x", pady=(0, 4))
+            add_accent_bar(vm_badge, theme.GOOD, 3)
             Label(
                 vm_badge,
                 text="🛡️ PERSONAL CONFIG DETECTED: Your custom viewmodel is active & preserved. Check the box below ONLY if you wish to override it.",
-                font=(theme.FONT_UI, theme.FS_12, "bold"), fg=ACCENT_GREEN, bg=theme.SURFACE_RAISED, anchor="w"
+                font=(theme.FONT_UI, theme.FS_12, "bold"), fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET, anchor="w"
             ).pack(anchor="w")
 
         zh_grid = Frame(ze_hud_card, bg=BG_CARD_ROW)
@@ -3184,9 +3197,9 @@ class CS2TruePanoramaApp(tk.Tk):
         header_tags.pack(anchor="w")
         Label(header_tags, text="★ PREMIER FEATURED SERVER", font=(theme.FONT_UI, theme.FS_18, "bold"), fg=ACCENT_ORANGE, bg=theme.SURFACE_INSET).pack(side="left")
         
-        reg_pill = Frame(header_tags, bg=theme.SURFACE_RAISED, padx=5, pady=1)
+        reg_pill = Frame(header_tags, bg=theme.SURFACE_INSET, bd=1, relief="sunken", padx=5, pady=1)
         reg_pill.pack(side="left", padx=5)
-        Label(reg_pill, text="CHICAGO, US", font=(theme.FONT_UI, theme.FS_11, "bold"), fg=theme.TEXT_SECONDARY, bg=theme.SURFACE_RAISED).pack()
+        Label(reg_pill, text="CHICAGO, US", font=(theme.FONT_UI, theme.FS_11, "bold"), fg=theme.TEXT_SECONDARY, bg=theme.SURFACE_INSET).pack()
 
         # Line 2: Server Title and Quick Links
         title_box = Frame(gfl_info_col, bg=theme.SURFACE_INSET)
@@ -3225,7 +3238,9 @@ class CS2TruePanoramaApp(tk.Tk):
         telemetry_row = Frame(gfl_card, bg=theme.SURFACE_INSET, padx=8, pady=4, highlightbackground=theme.BEVEL_DARK, highlightthickness=1)
         telemetry_row.pack(fill="x", pady=(8, 0))
 
-        Label(telemetry_row, textvariable=self.gfl_score_var, font=(theme.FONT_UI, theme.FS_12, "bold"), fg=theme.CT_BLUE_TEXT, bg=theme.SURFACE_INSET).pack(side="left", padx=(4, 12))
+        Label(telemetry_row, textvariable=self.gfl_humans_var, font=(theme.FONT_UI, theme.FS_12, "bold"), fg=theme.CT_BLUE_TEXT, bg=theme.SURFACE_INSET).pack(side="left", padx=(4, 4))
+        Label(telemetry_row, text="vs", font=(theme.FONT_UI, theme.FS_12), fg=theme.TEXT_SECONDARY, bg=theme.SURFACE_INSET).pack(side="left", padx=(0, 4))
+        Label(telemetry_row, textvariable=self.gfl_zombies_var, font=(theme.FONT_UI, theme.FS_12, "bold"), fg=theme.T_GOLD_TEXT, bg=theme.SURFACE_INSET).pack(side="left", padx=(0, 12))
         Label(telemetry_row, textvariable=self.gfl_extends_var, font=(theme.FONT_UI, theme.FS_12, "bold"), fg=theme.CT_BLUE_TEXT, bg=theme.SURFACE_INSET).pack(side="left", padx=(0, 12))
         Label(telemetry_row, textvariable=self.gfl_geo_var, font=(theme.FONT_UI, theme.FS_11), fg=theme.TEXT_SECONDARY, bg=theme.SURFACE_INSET).pack(side="left", padx=(0, 12))
 
@@ -3503,9 +3518,9 @@ class CS2TruePanoramaApp(tk.Tk):
                 srv_title = srv_title[:22] + ".."
             Label(r1, text=f"{flag}  {srv_title}", font=(theme.FONT_UI, theme.FS_15, "bold"), fg=FG_WHITE, bg=theme.SURFACE_INSET).pack(side="left")
             if s.get("region"):
-                reg_pill = Frame(r1, bg=theme.SURFACE_RAISED, padx=4, pady=1)
+                reg_pill = Frame(r1, bg=theme.SURFACE_INSET, bd=1, relief="sunken", padx=4, pady=1)
                 reg_pill.pack(side="left", padx=5)
-                Label(reg_pill, text=s.get("region", "").upper(), font=(theme.FONT_UI, theme.FS_11, "bold"), fg=theme.TEXT_SECONDARY, bg=theme.SURFACE_RAISED).pack()
+                Label(reg_pill, text=s.get("region", "").upper(), font=(theme.FONT_UI, theme.FS_11, "bold"), fg=theme.TEXT_SECONDARY, bg=theme.SURFACE_INSET).pack()
 
             # Live Player Count Badge
             c_info = cached.get("info") or {}
@@ -3525,7 +3540,7 @@ class CS2TruePanoramaApp(tk.Tk):
             r2.pack(anchor="w", pady=(1, 0))
 
             status_text = cached.get("display", "● Checking status...")
-            status_col = ACCENT_GREEN if cached.get("online") else theme.TEXT_SECONDARY
+            status_col = ACCENT_GREEN if cached.get("online") else ACCENT_RED
 
             status_lbl = Label(r2, text=status_text, font=(theme.FONT_UI, theme.FS_12), fg=status_col, bg=theme.SURFACE_INSET)
             status_lbl.pack(side="left")
@@ -3773,7 +3788,7 @@ class CS2TruePanoramaApp(tk.Tk):
             else:
                 cached = self.server_query_cache.get(sid, {})
                 disp = cached.get("display", "● Ready to Join")
-                col = ACCENT_GREEN if cached.get("online") else theme.TEXT_SECONDARY
+                col = ACCENT_GREEN if cached.get("online") else ACCENT_RED
                 w.config(text=f"   {disp}", fg=col)
 
     def _start_sniper_cooldown_timer(self, host: str, port: int, name: str, sid: str, duration: int = 10):
@@ -4520,7 +4535,13 @@ class CS2TruePanoramaApp(tk.Tk):
             timestamp = timestamp or datetime.datetime.now().strftime("%H:%M:%S")
             if hasattr(self, "console") and self.console.winfo_exists():
                 self.console.config(state="normal")
-                self.console.insert("end", f"[{timestamp}] {text}\n")
+                m = re.match(r"^(\[[A-Za-z0-9 _\-]+\])\s*(.*)$", text, re.S)
+                tag, msg = (m.group(1), m.group(2)) if m else ("", text)
+                is_err = bool(re.search(r"\b(error|failed|failure|denied|could not|not found)\b", text, re.I))
+                self.console.insert("end", f"[{timestamp}] ", "log_ts")
+                if tag:
+                    self.console.insert("end", tag + " ", "log_tag")
+                self.console.insert("end", msg + "\n", "log_err" if is_err else "log_msg")
                 self.console.see("end")
                 self.console.config(state="disabled")
         except Exception:
@@ -4579,10 +4600,11 @@ class CS2TruePanoramaApp(tk.Tk):
         Label(discord_content, text="Custom game activity status strictly designed and active ONLY for Counter-Strike 2. Clears automatically when CS2 closes and never touches or affects any other game.", font=(theme.FONT_UI, theme.FS_13), fg=FG_MUTED, bg=BG_CARD).pack(anchor="w", pady=(1, 4))
 
         # Safe Badge Banner
-        safe_frame = Frame(discord_content, bg=theme.SURFACE_INSET, padx=10, pady=4, highlightbackground=theme.BEVEL_DARK, highlightthickness=1)
+        safe_frame = Frame(discord_content, bg=theme.SURFACE_INSET, padx=14, pady=4, highlightbackground=theme.BEVEL_DARK, highlightthickness=1)
         safe_frame.pack(fill="x", pady=(0, 8))
+        add_accent_bar(safe_frame, theme.GOOD, 3)
         Label(safe_frame, text="● Talks only to the Discord app on this PC (named pipe \\\\.\\pipe\\discord-ipc-0). Does not touch cs2.exe memory or files.",
-                 font=(theme.FONT_UI, theme.FS_13, "bold"), fg=theme.GOOD_TEXT, bg=theme.SURFACE_INSET).pack(anchor="w")
+                 font=(theme.FONT_UI, theme.FS_13, "bold"), fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET).pack(anchor="w")
 
         # Top 2-Column Row (Controls on Left, Live Preview on Right)
         top_grid = Frame(discord_content, bg=BG_CARD)
@@ -4594,12 +4616,13 @@ class CS2TruePanoramaApp(tk.Tk):
 
         Label(col_left, text="PRESENCE CONTROLS & AUTO-DETECTION", font=(theme.FONT_UI, theme.FS_13, "bold"), fg=FG_WHITE, bg=BG_CARD_ROW).pack(anchor="w")
 
-        auto_badge = Frame(col_left, bg=theme.SURFACE_RAISED, padx=8, pady=4, highlightbackground=theme.BEVEL_DARK, highlightthickness=1)
+        auto_badge = Frame(col_left, bg=theme.SURFACE_INSET, padx=14, pady=4, highlightbackground=theme.BEVEL_DARK, highlightthickness=1)
         auto_badge.pack(fill="x", pady=(4, 6))
-        Label(auto_badge, text="⚡ AUTOMATIC DETECTION ON", font=(theme.FONT_UI, theme.FS_13, "bold"), fg=theme.CT_BLUE_TEXT, bg=theme.SURFACE_RAISED).pack(anchor="w")
+        add_accent_bar(auto_badge, theme.CT_BLUE, 3)
+        Label(auto_badge, text="AUTOMATIC DETECTION ON", font=(theme.FONT_UI, theme.FS_13, "bold"), fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET).pack(anchor="w")
         Label(auto_badge,
                  text="• CS2 Closed: nothing is sent to Discord.\n• CS2 Running: Automatically turns ON & tracks status.\n• In Server: Auto-detects map & players via Valve GSI.\n• Zero manual buttons or setup needed!",
-                 font=(theme.FONT_UI, theme.FS_12), fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_RAISED, justify="left").pack(anchor="w", pady=(2, 0))
+                 font=(theme.FONT_UI, theme.FS_12), fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET, justify="left").pack(anchor="w", pady=(2, 0))
 
         self.var_discord_enabled = tk.BooleanVar(value=self.config.get("discord_rpc_enabled", True))
         cb_disc = Checkbutton(col_left, text=" Enable Discord Rich Presence (RPC)", variable=self.var_discord_enabled,
@@ -4808,7 +4831,7 @@ class CS2TruePanoramaApp(tk.Tk):
                 # Question row - Strictly flush left alignment
                 q_row = Frame(item_f, bg=BG_CARD_ROW)
                 q_row.pack(fill="x", anchor="w")
-                Label(q_row, text="Q:", font=(theme.FONT_UI, theme.FS_13, "bold"), fg=ACCENT_ORANGE, bg=BG_CARD_ROW, anchor="nw").pack(side="left", anchor="nw")
+                Label(q_row, text="Q:", font=(theme.FONT_UI, theme.FS_15, "bold"), fg=ACCENT_ORANGE, bg=BG_CARD_ROW, anchor="nw").pack(side="left", anchor="nw")
                 lbl_q = Label(q_row, text=f" {q}", font=(theme.FONT_UI, theme.FS_13, "bold"), fg=theme.TEXT_PRIMARY, bg=BG_CARD_ROW, wraplength=670, justify="left", anchor="w")
                 lbl_q.pack(side="left", anchor="w", fill="x", expand=True)
 
@@ -5895,7 +5918,7 @@ class CS2TruePanoramaApp(tk.Tk):
             lbl = getattr(self, "status_sniper_lbl", None)
             if lbl is not None and lbl.winfo_exists():
                 text, state = server_browser.sniper_status_bar(self.sniper.get_status())
-                col = {"armed": ACCENT_ORANGE, "triggered": ACCENT_GREEN, "cooldown": ACCENT_CYAN}.get(state, FG_MUTED)
+                col = {"armed": ACCENT_GREEN, "triggered": ACCENT_GREEN, "cooldown": FG_MUTED}.get(state, FG_MUTED)
                 if lbl.cget("text") != text or str(lbl.cget("fg")) != col:
                     lbl.config(text=text, fg=col)
         except Exception:
@@ -5907,7 +5930,7 @@ class CS2TruePanoramaApp(tk.Tk):
         if lbl is None or not lbl.winfo_exists():
             return
         text, state = core_logic.dns_status_bar(current_dns)
-        lbl.config(text=text, fg=ACCENT_CYAN if state == "provider" else FG_MUTED)
+        lbl.config(text=text, fg=ACCENT_GREEN if state == "provider" else FG_MUTED)
 
     def _refresh_dns_interface_header(self):
         def _bg():
@@ -5945,13 +5968,21 @@ class CS2TruePanoramaApp(tk.Tk):
             bg_col = theme.SURFACE_RAISED if is_sel else theme.SURFACE_INSET
             r_bench = getattr(self, "dns_bench_results", {}).get(row_pid, {})
             if is_sel:
-                border_col = ACCENT_CYAN
+                border_col = theme.BEVEL_DARK
                 selected_name = w["provider"]["name"]
             elif r_bench.get("is_fastest"):
                 border_col = ACCENT_GREEN
             else:
                 border_col = theme.SURFACE_RAISED
             try:
+                bar = w.get("accent_bar")
+                if bar is None:
+                    bar = w["accent_bar"] = add_accent_bar(w["frame"], theme.ACCENT, 3)
+                if is_sel:
+                    bar.place(x=0, y=0, relheight=1.0)
+                    bar.lift()
+                else:
+                    bar.place_forget()
                 w["frame"].config(bg=bg_col, highlightbackground=border_col)
                 w["rb"].config(bg=bg_col, activebackground=bg_col)
                 w["ip_lbl"].config(bg=bg_col)
@@ -6844,7 +6875,7 @@ class CS2TruePanoramaApp(tk.Tk):
                 try:
                     cached = self.server_query_cache.get(sid, {})
                     disp = cached.get("display", "● Ready to Join")
-                    col = ACCENT_GREEN if cached.get("online") else theme.TEXT_SECONDARY
+                    col = ACCENT_GREEN if cached.get("online") else ACCENT_RED
                     w = self.server_row_widgets[sid]["status_lbl"]
                     self.after(0, lambda w=w, d=disp, c=col: w.config(text=f"   {d}", fg=c))
                 except Exception:
@@ -6935,6 +6966,8 @@ class CS2TruePanoramaApp(tk.Tk):
 
                             self.safe_after(0, lambda h=h_score, z=z_score, e=ext_cnt: [
                                 self.gfl_score_var.set(f"🛡️ Humans: {h}  vs  🧟 Zombies: {z}"),
+                                self.gfl_humans_var.set(f"🛡️ Humans: {h}"),
+                                self.gfl_zombies_var.set(f"🧟 Zombies: {z}"),
                                 self.gfl_extends_var.set(f"⏱️ Extends: {e}/3")
                             ])
                     except Exception:
@@ -6998,7 +7031,7 @@ class CS2TruePanoramaApp(tk.Tk):
                     if not (self.sniper.is_active and self.active_sniper_target == target_key):
                         if hasattr(self, "server_row_widgets") and sid in self.server_row_widgets:
                             w = self.server_row_widgets[sid]["status_lbl"]
-                            col = ACCENT_GREEN if info.get("online") else theme.TEXT_SECONDARY
+                            col = ACCENT_GREEN if info.get("online") else ACCENT_RED
                             self.safe_after(0, lambda w=w, disp=disp, col=col: w.config(text=f"   {disp}", fg=col))
 
             if not is_background:
@@ -7599,8 +7632,8 @@ class CS2TruePanoramaApp(tk.Tk):
             dpi_scale = 1.0
 
         from tkinter import font as tkfont
-        f_hd = tkfont.Font(family="Segoe UI", size=max(10, int(10 * dpi_scale)), weight="bold")
-        f_row = tkfont.Font(family="Segoe UI", size=max(9, int(9 * dpi_scale)))
+        f_hd = tkfont.Font(family=theme.FONT_UI, size=max(10, int(10 * dpi_scale)), weight="bold")
+        f_row = tkfont.Font(family=theme.FONT_UI, size=max(9, int(9 * dpi_scale)))
 
         w_check = max(45, int(45 * dpi_scale))
         w_id = max(f_hd.measure("Workshop ID ▾") + 24, f_row.measure("3351648056") + 24, int(120 * dpi_scale))
@@ -7635,11 +7668,11 @@ class CS2TruePanoramaApp(tk.Tk):
         sb.pack(side="right", fill="y")
 
         # Row color tags
-        tree.tag_configure("sub", foreground=theme.GOOD_TEXT)      # warm yellow/amber for subscribed
-        tree.tag_configure("server_asset", foreground=theme.GOOD_TEXT) # bright emerald green for protected server assets
-        tree.tag_configure("temp", foreground=theme.CT_BLUE_TEXT)     # bright cyan for safe temp downloads
-        tree.tag_configure("vpk", foreground=theme.TEXT_PRIMARY)      # standard white/gray for vpk
-        tree.tag_configure("dupe", background=theme.SURFACE_INSET)     # subtle warning background for duplicates
+        tree.tag_configure("sub", foreground=theme.GOOD_TEXT)               # subscribed pack = good
+        tree.tag_configure("server_asset", foreground=theme.CT_BLUE_TEXT)   # server asset = ct-blue
+        tree.tag_configure("temp", foreground=theme.TEXT_SECONDARY)         # temp download = secondary
+        tree.tag_configure("vpk", foreground=theme.TEXT_PRIMARY)
+        tree.tag_configure("dupe", foreground=theme.WARN_TEXT)              # duplicate = warn (rust)
 
         tree.bind("<MouseWheel>", lambda e: [tree.yview_scroll(int(-1 * (e.delta / 120)), "units"), "break"][1])
 
@@ -8183,7 +8216,7 @@ class CS2TruePanoramaApp(tk.Tk):
             _wrap_timer[0] = None
             if not dlg.winfo_exists():
                 return
-            target_wrap = max(340, dlg.winfo_width() - 80)
+            target_wrap = max(340, dlg.winfo_width() - 120)
             for lbl in wrap_labels:
                 if lbl.winfo_exists():
                     lbl.config(wraplength=target_wrap)
@@ -8224,7 +8257,7 @@ class CS2TruePanoramaApp(tk.Tk):
                               font=(theme.FONT_UI, theme.FS_18, "bold"), fg=FG_WHITE, bg=BG_CARD, activebackground=BG_CARD, selectcolor=BG_WINDOW)
         cb_t.pack(anchor="w", pady=(0, 2))
 
-        lbl_t_sub = Label(sec_gen, text="Clicking [-] hides window to the tray; clicking [X] closes the application completely.", font=(theme.FONT_UI, theme.FS_13), fg=FG_MUTED, bg=BG_CARD, wraplength=480, justify="left")
+        lbl_t_sub = Label(sec_gen, text="Clicking [-] hides the window to the tray; clicking [X] closes the application completely.", font=(theme.FONT_UI, theme.FS_13), fg=FG_MUTED, bg=BG_CARD, wraplength=480, justify="left")
         lbl_t_sub.pack(anchor="w", padx=20, pady=(0, 6))
         wrap_labels.append(lbl_t_sub)
 
