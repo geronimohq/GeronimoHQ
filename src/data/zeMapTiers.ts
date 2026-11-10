@@ -1,4 +1,4 @@
-import { lookupS2zeMapper } from './s2zeMappersCatalog';
+import { lookupS2zeMapper, lookupS2zeMapperExact } from './s2zeMappersCatalog';
 
 export type MapDifficultyTier = 1 | 2 | 3 | 4 | 5 | 6 | 'untiered';
 
@@ -931,6 +931,15 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
 
   const inferred = getInferredMapper(clean) || getInferredMapper(stripped);
   if (inferred) {
+    // The keyword guesses above are only a fallback: when the S2ZE catalog names this exact map, use that name
+    // (e.g. ze_surf_vortex_p is by reflelia, not "Community Surf"; zm_pudding_mill_xmas is by Ayano).
+    const exact = lookupS2zeMapperExact(clean);
+    const generic = !exact || exact === 'Source 2 Zombie Escape';
+    const placeholder = inferred.mapper === 'Community Surf' || inferred.mapper === 'Nipper / Dave J.';
+    if (exact && (!generic || placeholder)) {
+      inferred.mapper = exact;
+      inferred.isHoF = !generic && /Kuroki|ViSral|Hannibal|Luffaren|Airvulpes|Clown|Kaemon|Nipper|Subzero|DarkerZ|TaskuVaras|Moltard|Waffel/i.test(exact);
+    }
     return {
       mapKey: clean,
       displayName: mapName,

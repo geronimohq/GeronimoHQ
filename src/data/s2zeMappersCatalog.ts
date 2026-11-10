@@ -37,3 +37,15 @@ export function lookupS2zeMapper(mapKey: string): string | null {
   }
   return null;
 }
+
+/**
+ * Exact catalog hit only (map name, or the name without a _p / _v5 style suffix); no substring guessing.
+ * Used to correct the keyword-based mapper guesses in getMapTierAndMapper.
+ */
+export function lookupS2zeMapperExact(mapKey: string): string | null {
+  if (!mapKey) return null;
+  const clean = mapKey.trim().toLowerCase();
+  if (S2ZE_OFFICIAL_MAPS_CATALOG[clean]) return S2ZE_OFFICIAL_MAPS_CATALOG[clean].mapper;
+  const stripped = clean.replace(/_(?:p|v\d+[\w]*|[a-z]\d+[\w]*|rc\d+|beta\d*|final|test)$/i, '');
+  return S2ZE_OFFICIAL_MAPS_CATALOG[stripped]?.mapper ?? null;
+}
