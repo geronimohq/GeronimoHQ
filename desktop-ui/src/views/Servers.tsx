@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Play, Plus, Search } from 'lucide-react';
 import { api } from '../api';
@@ -69,7 +70,7 @@ function AddServer({ onClose, onSaved }: { onClose: () => void; onSaved: () => v
     const r = await api.addServer(name, m[1], Number(m[2]));
     if (r.ok) { sfx.toggle(); onSaved(); onClose(); } else setErr(r.error ?? 'Could not save the server.');
   };
-  return (
+  return createPortal(
     <motion.div className="scrim on" role="dialog" aria-modal="true" aria-labelledby="addTitle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div className="cut modal brk" initial={{ scale: 0.94, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }}>
@@ -81,7 +82,8 @@ function AddServer({ onClose, onSaved }: { onClose: () => void; onSaved: () => v
         {err && <div style={{ color: 'var(--bad)', marginTop: 10 }} role="alert">{err}</div>}
         <div className="btns"><button className="btn cut ghost" onClick={() => { sfx.click(); onClose(); }}>Cancel</button><button className="btn cut amber pri" onClick={() => void save()}>Save server</button></div>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body,
   );
 }
 

@@ -14,15 +14,25 @@ def main() -> int:
     import webview
     from web_api import Api
 
+    import web_tray
+    mutex = True if os.environ.get("CS2CC_ALLOW_SECOND_INSTANCE") else web_tray.check_single_instance()   # env switch is for side-by-side testing only
+    if mutex is None:
+        return 0          # another copy is running; it was asked to show itself
     index = os.path.join(resource_dir(), "web", "index.html")
     if not os.path.exists(index):
         print(f"UI not built: {index} is missing. Run `npm run build` in desktop-ui.")
         return 2
     api = Api()
+    hidden = "--minimized" in sys.argv
     window = webview.create_window(
         "CS2 Command Center", url=index, js_api=api, width=1400, height=880, min_size=(980, 640),
-        frameless=True, easy_drag=False, background_color="#080a0e", text_select=False)
+        frameless=True, easy_drag=False, background_color="#080a0e", text_select=False, hidden=hidden)
     api._attach(window)
+    api.tray = web_tray.Tray(api)
+    api.tray.start()
+    web_tray.listen_for_show(api.show_window)
+    api.core.presence.start()
+    api.core.update_check_startup()
     webview.start(bench if os.environ.get("CS2CC_BENCH") else None, window if os.environ.get("CS2CC_BENCH") else None,
                   debug=bool(os.environ.get("CS2CC_DEBUG")))
     return 0

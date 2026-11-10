@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { RefreshCw, ShieldAlert } from 'lucide-react';
 import { api } from '../api';
 import { sfx } from '../sound';
+import { AnimatePresence } from 'framer-motion';
 import { useModal } from '../components/Modal';
+import MapCleaner from '../components/MapCleaner';
 import type { MaintState } from '../types';
 
 const CLEAN = [
@@ -26,6 +28,7 @@ export default function Maintenance({ busy, setBusy }: { busy: boolean; setBusy:
   const [st, setSt] = useState<MaintState | null>(null);
   const [sel, setSel] = useState<Record<string, boolean>>({ temp: true, win_update: true, discord_steam: true, thumb: true, recycle: false, dns: true });
   const openModal = useModal();
+  const [cleaner, setCleaner] = useState(false);
   const load = () => { void api.maintState().then(setSt); };
   useEffect(load, []);
 
@@ -73,6 +76,11 @@ export default function Maintenance({ busy, setBusy }: { busy: boolean; setBusy:
         {st?.drives.some((d) => d.is_critical) && <div className="decal" style={{ color: 'var(--bad)', marginTop: 8 }}>Drives above 85% full can cause stutter: SSD write cache performance drops.</div>}
       </div>
 
+      <div className="glass card" style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 240 }}><div className="sect">Custom map cleaner</div><div className="d" style={{ color: 'var(--tx2)', marginTop: 4 }}>Inspect community workshop maps and reclaim storage. Subscribed server packs stay protected.</div></div>
+        <button className="btn cut ghost" onClick={() => { sfx.click(); setCleaner(true); }}>Inspect &amp; clean custom maps</button>
+      </div>
+
       <div className="glass card">
         <div className="sect" style={{ marginBottom: 4 }}>Safe disk &amp; cache clean-up</div>
         {CLEAN.map((c) => (
@@ -92,6 +100,7 @@ export default function Maintenance({ busy, setBusy }: { busy: boolean; setBusy:
           {TOOLS.map((t) => <button key={t.key} className="btn cut ghost sm" onClick={() => void tool(t.key, t.label, t.admin)}>{t.label}{t.admin ? ' · admin' : ''}</button>)}
         </div>
       </div>
+      <AnimatePresence>{cleaner && <MapCleaner onClose={() => setCleaner(false)} />}</AnimatePresence>
     </section>
   );
 }

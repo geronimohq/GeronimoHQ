@@ -85,9 +85,49 @@ class Api:
         except Exception as e:  # never break the UI; leave a trace for debugging
             self.core.log(f"[WINDOW] resize failed: {e}")
 
-    def win_close(self) -> None:
+    def show_window(self) -> None:
         if self._window:
-            self._window.destroy()
+            try:
+                self._window.show()
+                self._window.restore()
+            except Exception:
+                pass
+
+    def win_close(self) -> None:
+        """[X]: hide to the tray when that setting is on (and a tray icon exists), otherwise quit."""
+        if self.core.config.get("minimize_to_tray_on_close", True) and getattr(self, "tray", None) and self.tray.icon:
+            if self._window:
+                self._window.hide()
+            self.core.log("Window hidden to the tray")
+        else:
+            self.quit()
+
+    def quit(self) -> None:
+        self.core.shutdown()
+        if getattr(self, "tray", None):
+            self.tray.stop()
+        try:
+            if self._window:
+                self._window.destroy()
+        finally:
+            threading.Timer(1.5, lambda: os._exit(0)).start()
+
+    def toggle_gfl_sniper(self) -> None:
+        st = self.core.sniper_status()
+        if st.get("active"):
+            self.core.sniper_stop()
+        else:
+            self.core.sniper_start("gfl", 62)
+
+    def toggle_startup(self) -> None:
+        self.core.settings_save({"start_with_windows": not bool(self.core.config.get("start_with_windows", False)),
+                                 "start_minimized": bool(self.core.config.get("start_minimized", False))})
+
+    def set_last_page(self, page: str) -> None:
+        self.core.set_last_page(page)
+
+    def start_page(self) -> str:
+        return self.core.start_page()
 
     # app
     def app_info(self) -> Dict[str, Any]:
@@ -224,3 +264,45 @@ class Api:
 
     def settings_reset(self) -> Dict[str, Any]:
         return self.core.settings_reset()
+
+    # custom map cleaner
+    def maps_settings(self) -> Dict[str, Any]:
+        return self.core.maps_settings()
+
+    def maps_scan(self, communities: List[str], protect_recent: bool) -> Dict[str, Any]:
+        return self.core.maps_scan(list(communities or []), bool(protect_recent))
+
+    def maps_delete(self, ids: List[str]) -> Dict[str, Any]:
+        return self.core.maps_delete(list(ids or []))
+
+    def maps_backup(self) -> Dict[str, Any]:
+        return self.core.maps_backup()
+
+    def maps_restore(self) -> Dict[str, Any]:
+        return self.core.maps_restore()
+
+    # discord presence
+    def presence_state(self) -> Dict[str, Any]:
+        return self.core.presence_state()
+
+    def presence_toggle(self, enabled: bool) -> Dict[str, Any]:
+        return self.core.presence_toggle(bool(enabled))
+
+    def presence_clear(self) -> Dict[str, Any]:
+        return self.core.presence_clear()
+
+    def presence_standby(self) -> Dict[str, Any]:
+        return self.core.presence_standby()
+
+    def presence_broadcast(self, sid: str) -> Dict[str, Any]:
+        return self.core.presence_broadcast(sid)
+
+    # updates
+    def update_check(self, manual: bool = True) -> Dict[str, Any]:
+        return self.core.update_check(bool(manual))
+
+    def update_skip(self, ver: str) -> bool:
+        return self.core.update_skip(ver)
+
+    def update_install(self) -> Dict[str, Any]:
+        return self.core.update_install()

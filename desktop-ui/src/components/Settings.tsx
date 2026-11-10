@@ -16,6 +16,7 @@ const BOOLS: [keyof SettingsValues, string, string][] = [
 
 export default function Settings({ onClose, onSaved }: { onClose: () => void; onSaved: (refresh: number) => void }) {
   const [v, setV] = useState<SettingsValues | null>(null);
+  const [upd, setUpd] = useState('');
   const openModal = useModal();
   useEffect(() => { void api.settingsGet().then(setV); }, []);
   useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k); }, [onClose]);
@@ -38,6 +39,8 @@ export default function Settings({ onClose, onSaved }: { onClose: () => void; on
           <div className="seg cy">{v.speeds.map((s) => <button key={s} aria-pressed={v.server_refresh_speed === s} onClick={() => { sfx.click(); set('server_refresh_speed', s); }}>{s}</button>)}</div></div>
         <div className="row"><div className="grow"><div className="t" style={{ fontSize: 13 }}>Open on</div></div>
           <div className="seg">{v.pages.map((s) => <button key={s} aria-pressed={v.open_on_page === s} onClick={() => { sfx.click(); set('open_on_page', s); }}>{s}</button>)}</div></div>
+        <div className="row"><div className="grow"><div className="t" style={{ fontSize: 13 }}>Updates</div><div className="d" style={{ fontSize: 12 }}>{upd || 'Checks geronimohq.com for a newer signed version.'}</div></div>
+          <button className="btn cut ghost sm" onClick={() => { sfx.click(); setUpd('Checking\u2026'); void api.updateCheck().then((r) => setUpd(r.available ? `Update available: v${r.version}` : (r.message ?? ''))); }}>Check now</button></div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
           <button className="btn cut ghost sm" onClick={() => { sfx.click(); void api.openPath('appdata'); }}>Open app data folder</button>
           <button className="btn cut ghost sm dng" onClick={() => { sfx.click(); reset(); }}>Reset app settings</button>

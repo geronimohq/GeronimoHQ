@@ -13,8 +13,9 @@ import Booster from './views/Booster';
 import Autoexec from './views/Autoexec';
 import Faq from './views/Faq';
 import Mpo from './views/Mpo';
+import Discord from './views/Discord';
 import Settings from './components/Settings';
-import type { AppInfo, LogLine, SniperStatus } from './types';
+import type { AppInfo, LogLine, SniperStatus, UpdateInfo } from './types';
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -60,6 +61,7 @@ function Shell() {
   const [sound, setSound] = useState(sfx.on);
   const [busy, setBusy] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [update, setUpdate] = useState<UpdateInfo | null>(null);
   const [sniper, setSniper] = useState<SniperStatus | null>(null);
   const [tier, setTierState] = useState<number>(() => { try { return Number(localStorage.getItem('sniperTier')) || 62; } catch { return 62; } });
   const setTier = (n: number) => { setTierState(n); try { localStorage.setItem('sniperTier', String(n)); } catch { /* ignore */ } };
@@ -73,12 +75,14 @@ function Shell() {
   }, []);
 
   useEffect(() => {
+    if (!NAV.some((n) => n.id === location.hash.slice(1))) void api.startPage().then((p) => { if (NAV.some((n) => n.id === p)) setView(p as NavId); });
     void api.appInfo().then(setInfo);
     void api.logHistory().then((h) => setLogs(h));
     const pollSniper = () => { void api.sniperStatus().then(setSniper); };
     pollSniper();
     const sniperTimer = setInterval(pollSniper, 1500);
     const offS = on<SniperStatus>('sniper', setSniper);
+    const offU = on<UpdateInfo>('update', setUpdate);
     const off1 = on<LogLine>('log', (l) => setLogs((p) => [...p.slice(-399), l]));
     const off2 = on<{ name: string; ok: boolean }>('job', (j) => {
       setBusy(false);
@@ -93,10 +97,11 @@ function Shell() {
         openModal({ kind: 'ok', label: 'Notification', title: 'Restore finished', body: 'Each step is listed in the log. DNS and Steam launch options were not changed.' });
       }
     });
-    return () => { off1(); off2(); offS(); clearInterval(sniperTimer); };
+    return () => { off1(); off2(); offS(); offU(); clearInterval(sniperTimer); };
   }, [openModal]);
 
   useEffect(() => { logEnd.current?.scrollIntoView({ block: 'end' }); }, [logs, drawer]);
+  useEffect(() => { void api.setLastPage(view); }, [view]);
   useEffect(() => { const h = () => { const n = NAV.find((x) => x.id === location.hash.slice(1)); if (n) setView(n.id); }; window.addEventListener('hashchange', h); return () => window.removeEventListener('hashchange', h); }, []);
 
   const go = (id: NavId) => { sfx.click(); setView(id); try { history.replaceState(null, '', `#${id}`); } catch { location.hash = id; } };
@@ -147,6 +152,14 @@ function Shell() {
         </div>
       </section>
 
+      {update?.available && (
+        <section className="glass card" role="status" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', borderColor: 'rgba(0,240,255,.4)', flex: 'none' }}>
+          <div style={{ flex: 1, minWidth: 220 }}><div className="t">Update available: v{update.version}</div><div className="d" style={{ color: 'var(--tx2)' }}>{update.notes}</div></div>
+          <button className="btn cut amber pri sm" onClick={() => { sfx.click(); void api.updateInstall().then((r) => { if (!r.ok) openModal({ kind: 'warn', label: 'Update', title: 'Not installed', body: r.error }); else setBusy(true); }); }}>Update now</button>
+          <button className="btn cut ghost sm" onClick={() => { sfx.click(); setUpdate(null); }}>Later</button>
+          <button className="btn cut ghost sm" onClick={() => { sfx.click(); void api.updateSkip(update.version ?? ''); setUpdate(null); }}>Skip this version</button>
+        </section>
+      )}
       <div className="main">
         <nav className="glass rail" aria-label="Sections">
           <div className="cap decal">// Navigation</div>
@@ -164,9 +177,10 @@ function Shell() {
               {view === 'autoexec' && <Autoexec />}
               {view === 'faq' && <Faq />}
               {view === 'mpo' && <Mpo />}
+              {view === 'discord' && <Discord />}
               {view === 'servers' && <Servers info={info} log={addLog} sniper={sniper} tier={tier} setTier={setTier} />}
               {view === 'engine' && <Engine opts={opts} setOpts={setOpts} onApplied={runApply} log={addLog} />}
-              {!['servers', 'engine', 'dashboard', 'maintenance', 'launch', 'booster', 'autoexec', 'faq', 'mpo'].includes(view) && (
+              {!['servers', 'engine', 'dashboard', 'maintenance', 'launch', 'booster', 'autoexec', 'faq', 'mpo', 'discord'].includes(view) && (
                 <div className="glass card ph brk"><div className="big">{NAV.find((n) => n.id === view)?.label.toUpperCase()}</div><div>This screen is not in the new app yet. It is still in the classic app.</div><div className="decal" style={{ marginTop: 8 }}>Still to come: Discord Presence</div></div>
               )}
             </motion.div>

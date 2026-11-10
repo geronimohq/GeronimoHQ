@@ -156,6 +156,112 @@ class Settings(unittest.TestCase):
         self.assertEqual(core.config["presence_secret"], "keepme")
 
 
+class Presence(unittest.TestCase):
+    def test_buttons_use_the_server_discord_or_the_portal(self):
+        core, _ = make_core()
+        gfl = core.presence.buttons("74.91.124.21", 27015)
+        self.assertEqual(len(gfl), 2)
+        self.assertIn("GFL", gfl[1]["label"])
+        other = core.presence.buttons("9.9.9.9", 27015)
+        self.assertIn("geronimohq.com", other[1]["url"])      # never another community's Discord
+        self.assertTrue(gfl[0]["url"].startswith("https://geronimohq.com/connect?ip="))
+
+    def test_snapshot_is_empty_when_nothing_was_sent_to_discord(self):
+        core, _ = make_core()
+        with mock.patch.object(core.presence.rpc, "broadcast_snapshot", return_value=None), mock.patch.object(core_logic, "is_cs2_running", return_value=False):
+            snap = core.presence_state()
+        self.assertEqual((snap["details"], snap["state"], snap["buttons"]), ("", "", []))
+        self.assertFalse(snap["cs2_running"])
+
+    def test_match_by_map_picks_the_server_playing_that_map(self):
+        core, _ = make_core()
+
+        def fake_info(host, port, timeout=1.8):
+            return {"online": True, "map": "ze_target" if host == "103.62.49.55" else "ze_other"}
+        with mock.patch.object(server_browser, "query_server_info", side_effect=fake_info):
+            hit = core.presence._match_by_map("maps/ze_target")
+        self.assertEqual(hit[0], "103.62.49.55")
+
+    def test_toggle_off_clears_the_presence_and_saves(self):
+        core, _ = make_core()
+        with mock.patch("app_config.save_config", return_value=True), mock.patch.object(core.presence, "clear") as clear:
+            core.presence_toggle(False)
+        clear.assert_called_once()
+        self.assertFalse(core.config["discord_rpc_enabled"])
+
+
+class MapCleaner(unittest.TestCase):
+    ROWS = [{"id": "111", "name": "ze_a", "path": "X:/w/111", "size_bytes": 5, "status_label": "Temp", "status_type": "temp", "is_workshop": True},
+            {"id": "222", "name": "ze_b", "path": "X:/w/222", "size_bytes": 7, "status_label": "Temp", "status_type": "temp", "is_workshop": True}]
+
+    def _scan(self, core, events):
+        import custom_map_cleaner
+        with mock.patch.object(custom_map_cleaner, "scan_custom_maps", return_value=list(self.ROWS)), mock.patch("app_config.save_config", return_value=True):
+            self.assertTrue(core.maps_scan(["gfl"], True)["ok"])
+            for _ in range(200):
+                if any(e[0] == "job" and e[1]["name"] == "maps_scan" for e in events):
+                    break
+                threading.Event().wait(0.02)
+
+    def test_scan_emits_rows_without_paths(self):
+        core, events = make_core()
+        self._scan(core, events)
+        rows = next(d for e, d in events if e == "maps")
+        self.assertEqual([r["id"] for r in rows], ["111", "222"])
+        self.assertTrue(all("path" not in r for r in rows))     # the page never learns or sends filesystem paths
+
+    def test_delete_only_acts_on_scanned_items(self):
+        import custom_map_cleaner
+        core, events = make_core()
+        self._scan(core, events)
+        self.assertFalse(core.maps_delete(["999", "../../windows"])["ok"])        # unknown ids are refused
+        with mock.patch.object(custom_map_cleaner, "delete_custom_maps", return_value=(1, 5, ["[CLEANED]"])) as dele:
+            self.assertTrue(core.maps_delete(["111", "999"])["ok"])
+            for _ in range(200):
+                if any(e[0] == "maps_deleted" for e in events):
+                    break
+                threading.Event().wait(0.02)
+        sent = dele.call_args[0][0]
+        self.assertEqual([m["id"] for m in sent], ["111"])
+
+
+class Updates(unittest.TestCase):
+    MANIFEST = {"version": "9.9.9", "notes": "n", "size": 1, "url": "https://geronimohq.com/x.exe", "sha256": "0" * 64, "signature": "0" * 128}
+
+    def test_available_update_is_reported_and_remembered(self):
+        import updater
+        core, _ = make_core()
+        with mock.patch.object(updater, "fetch_update_manifest", return_value=(True, dict(self.MANIFEST), "ok")), mock.patch("app_config.save_config", return_value=True):
+            r = core.update_check(manual=True)
+        self.assertTrue(r["available"])
+        self.assertEqual(r["version"], "9.9.9")
+
+    def test_skipped_version_is_not_announced_at_startup_but_is_on_manual_check(self):
+        import updater
+        core, _ = make_core()
+        core.config["skipped_update_version"] = "9.9.9"
+        with mock.patch.object(updater, "fetch_update_manifest", return_value=(True, dict(self.MANIFEST), "ok")), mock.patch("app_config.save_config", return_value=True):
+            self.assertFalse(core.update_check(manual=False)["available"])
+            self.assertTrue(core.update_check(manual=True)["available"])
+
+    def test_startup_check_respects_the_setting_and_network_errors(self):
+        import updater
+        core, _ = make_core()
+        core.config["check_updates_on_startup"] = False
+        with mock.patch.object(updater, "fetch_update_manifest") as f:
+            self.assertFalse(core.update_check(manual=False)["available"])
+            f.assert_not_called()
+        core.config["check_updates_on_startup"] = True
+        with mock.patch.object(updater, "fetch_update_manifest", side_effect=OSError("offline")):
+            self.assertFalse(core.update_check(manual=True)["available"])
+
+    def test_install_needs_a_checked_update_and_the_packaged_app(self):
+        core, _ = make_core()
+        self.assertFalse(core.update_install()["ok"])               # nothing pending
+        core._pending_manifest = dict(self.MANIFEST)
+        self.assertFalse(core.update_install()["ok"])               # not frozen (running from source)
+
+
 if __name__ == "__main__":
     _res = unittest.main(exit=False, verbosity=2)
     sys.stdout.flush(); sys.stderr.flush()

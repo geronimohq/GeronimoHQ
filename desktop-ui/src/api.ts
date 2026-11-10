@@ -1,4 +1,4 @@
-import type { AppInfo, AutoexecState, MpoState, SettingsValues, DashboardData, DnsState, EngineState, LogLine, LaunchState, MaintState, Match, PlayerRow, SniperStatus, Srv, Status } from './types';
+import type { AppInfo, AutoexecState, UpdateInfo, PresenceState, MapsSettings, MpoState, SettingsValues, DashboardData, DnsState, EngineState, LogLine, LaunchState, MaintState, Match, PlayerRow, SniperStatus, Srv, Status } from './types';
 
 type Fn = (...a: unknown[]) => Promise<unknown>;
 declare global {
@@ -71,6 +71,21 @@ export const api = {
   settingsGet: () => call<SettingsValues>('settings_get'),
   settingsSave: (v: Partial<SettingsValues>) => call<{ ok: boolean; refresh_seconds: number }>('settings_save', v),
   settingsReset: () => call<{ ok: boolean }>('settings_reset'),
+  setLastPage: (v: string) => call<void>('set_last_page', v),
+  startPage: () => call<string>('start_page'),
+  mapsSettings: () => call<MapsSettings>('maps_settings'),
+  mapsScan: (c: string[], recent: boolean) => call<{ ok: boolean; error?: string }>('maps_scan', c, recent),
+  mapsDelete: (ids: string[]) => call<{ ok: boolean; error?: string }>('maps_delete', ids),
+  mapsBackup: () => call<{ ok: boolean; count: number; dir: string }>('maps_backup'),
+  mapsRestore: () => call<{ ok: boolean; count: number }>('maps_restore'),
+  presence: () => call<PresenceState>('presence_state'),
+  presenceToggle: (on: boolean) => call<PresenceState>('presence_toggle', on),
+  presenceClear: () => call<PresenceState>('presence_clear'),
+  presenceStandby: () => call<PresenceState>('presence_standby'),
+  presenceBroadcast: (id: string) => call<{ ok: boolean; error?: string }>('presence_broadcast', id),
+  updateCheck: () => call<UpdateInfo>('update_check', true),
+  updateSkip: (v: string) => call<boolean>('update_skip', v),
+  updateInstall: () => call<{ ok: boolean; error?: string }>('update_install'),
   winMin: () => call<void>('win_minimize'),
   winMax: () => call<void>('win_maximize'),
   winClose: () => call<void>('win_close'),
@@ -119,6 +134,19 @@ async function mock(name: string, ...args: unknown[]): Promise<unknown> {
     case 'settings_get': return { start_with_windows: false, start_minimized: false, minimize_to_tray_on_close: true, open_on_page: 'Dashboard', sniper_sound_enabled: true, server_refresh_speed: 'Normal (5s)', discord_rpc_enabled: true, check_updates_on_startup: true, speeds: ['Live (1s)', 'Normal (5s)', 'Eco (15s)'], pages: ['Dashboard', 'Last used page'] };
     case 'settings_save': return { ok: true, refresh_seconds: 5 };
     case 'settings_reset': return { ok: true };
+    case 'start_page': return 'servers';
+    case 'set_last_page': return undefined;
+    case 'maps_settings': return { communities: ['gfl', 'possession', 'rss', 'mapeadores_cola'], protect_recent: true };
+    case 'maps_scan': setTimeout(() => { window.__emit?.('maps', [
+      { id: '1', name: 'ze_sample_a', status: 'Subscribed (GFL ZE Collection)', type: 'subscribed', sub: true, asset: false, protected: true, workshop: true, dupe: false, size: 14000000, size_str: '13.4 MB', mtime: '2026-10-02 14:45' },
+      { id: '2', name: 'ze_temp_b', status: 'Temp download', type: 'temp', sub: false, asset: false, protected: false, workshop: true, dupe: true, size: 2400000000, size_str: '2.24 GB', mtime: '2026-09-13 11:53' }]); window.__emit?.('job', { name: 'maps_scan', ok: true }); }, 600); return { ok: true };
+    case 'maps_delete': setTimeout(() => window.__emit?.('maps_deleted', { count: 1, freed: 2400000000 }), 500); return { ok: true };
+    case 'maps_backup': case 'maps_restore': return { ok: true, count: 0, dir: '' };
+    case 'presence_state': case 'presence_toggle': case 'presence_clear': case 'presence_standby': return { enabled: true, connected: false, status: 'Standby (CS2 closed)', details: '', state: '', buttons: [], cs2_running: false, tracked: '' };
+    case 'presence_broadcast': return { ok: true };
+    case 'update_check': return { available: false, message: 'You are up to date (sample).', last: '' };
+    case 'update_skip': return true;
+    case 'update_install': return { ok: false, error: 'Updates install only in the packaged app.' };
     case 'restore_summary': return 'This undoes the app\'s engine changes.';
     default: return undefined;
   }

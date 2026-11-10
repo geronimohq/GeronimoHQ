@@ -35,6 +35,9 @@ class Core:
         self.log_buf: List[Dict[str, str]] = []
         self._lock = threading.Lock()
         self._busy: Optional[str] = None
+        self._maps: Dict[str, Dict[str, Any]] = {}
+        import presence_service
+        self.presence = presence_service.PresenceService(self)      # created here, started by web_main (no threads in tests)
         self._pool = concurrent.futures.ThreadPoolExecutor(max_workers=8, thread_name_prefix="srvq")
         try:
             self.paths = core_logic.find_cs2_paths()
@@ -568,3 +571,205 @@ class Core:
 
     def _refresh_seconds(self) -> int:
         return max(1, int(app_config.refresh_interval_ms(self.config) / 1000))
+
+    # ---------- lifecycle ----------
+    PAGE_KEYS = {"dashboard": "DASHBOARD", "engine": "ENGINE", "mpo": "OS_DIAGNOSTICS", "autoexec": "AUTOEXEC", "launch": "LAUNCH",
+                 "booster": "BOOST", "servers": "SERVERS", "maintenance": "MAINTENANCE", "discord": "DISCORD", "faq": "FAQ"}
+
+    def set_last_page(self, page: str) -> None:
+        key = self.PAGE_KEYS.get(page)
+        if key:
+            self.config["last_page_key"] = key
+
+    def start_page(self) -> str:
+        if self.config.get("open_on_page") == "Last used page":
+            inv = {v: k for k, v in self.PAGE_KEYS.items()}
+            return inv.get(self.config.get("last_page_key"), "dashboard")
+        return "dashboard"
+
+    def shutdown(self) -> None:
+        """Saves the last page and, only on the owner's install (presence_secret set), tells the website the app went offline."""
+        try:
+            app_config.save_config(self.config)
+        except Exception:
+            pass
+        try:
+            server_browser.get_slot_sniper().stop()
+        except Exception:
+            pass
+        try:
+            self.presence.stop()
+        except Exception:
+            pass
+        secret = str(self.config.get("presence_secret", "") or "").strip()
+        if secret:
+            try:
+                import urllib.request
+                req = urllib.request.Request(
+                    "https://geronimohq-telemetry.onrender.com/api/presence/heartbeat?is_cs2_running=false&is_steam_running=false",
+                    headers={"User-Agent": "CS2CommandCenter/2.0", "X-Geronimo-Token": secret})
+                urllib.request.urlopen(req, timeout=1.5)
+            except Exception:
+                pass
+
+    # ---------- custom map cleaner ----------
+    COMMUNITIES = ("gfl", "possession", "rss", "mapeadores_cola")
+
+    def maps_settings(self) -> Dict[str, Any]:
+        comms = self.config.get("cleaner_protected_comms", list(self.COMMUNITIES))
+        return {"communities": [c for c in self.COMMUNITIES if c in comms], "protect_recent": bool(self.config.get("cleaner_protect_recent", True))}
+
+    def maps_scan(self, communities: List[str], protect_recent: bool) -> Dict[str, Any]:
+        import custom_map_cleaner
+        comms = [c for c in (communities or []) if c in self.COMMUNITIES]
+        self.config["cleaner_protected_comms"] = comms
+        self.config["cleaner_protect_recent"] = bool(protect_recent)
+        app_config.save_config(self.config)
+
+        def task():
+            items = custom_map_cleaner.scan_custom_maps(self.paths.get("steam_path"), self.paths.get("cs2_dir"), set(comms), bool(protect_recent))
+            with self._lock:
+                self._maps = {str(m.get("id")): m for m in items}      # the ONLY source of paths for delete/backup (never trust the page)
+            rows = [{"id": str(m.get("id")), "name": m.get("name"), "status": m.get("status_label"), "type": m.get("status_type"),
+                     "sub": bool(m.get("is_subscribed")), "asset": bool(m.get("is_server_asset")), "protected": bool(m.get("is_protected")),
+                     "workshop": bool(m.get("is_workshop")), "dupe": bool(m.get("has_duplicate")), "size": int(m.get("size_bytes") or 0),
+                     "size_str": m.get("size_str"), "mtime": m.get("mtime_str")} for m in items]
+            self.emit("maps", rows)
+            self.log(f"Map scan found {len(rows)} custom maps", "SYSTEM")
+
+        return self._start_job("maps_scan", task)
+
+    def maps_delete(self, ids: List[str]) -> Dict[str, Any]:
+        import custom_map_cleaner
+        with self._lock:
+            items = [self._maps[i] for i in (ids or []) if i in getattr(self, "_maps", {})]
+        if not items:
+            return {"ok": False, "error": "Nothing selected."}
+
+        def task():
+            count, freed, logs = custom_map_cleaner.delete_custom_maps(items)
+            for l in logs:
+                self.log(l)
+            self.log(f"[MAP CLEANER] Deleted {count} custom maps. Freed {freed / (1024 ** 3):.2f} GB.")
+            self.emit("maps_deleted", {"count": count, "freed": freed})
+
+        return self._start_job("maps_delete", task)
+
+    def _vpk_backup_dir(self) -> str:
+        import os
+        return os.path.join(app_config.get_storage_dir(), "backups", "custom_assets")
+
+    def maps_backup(self) -> Dict[str, Any]:
+        import os
+        import shutil
+        dest = self._vpk_backup_dir()
+        os.makedirs(dest, exist_ok=True)
+        copied = 0
+        for m in list(getattr(self, "_maps", {}).values()):
+            if m.get("is_server_asset") or "3793587501" in str(m.get("id")):
+                folder = m.get("path")
+                if folder and os.path.isdir(folder):
+                    for fl in os.listdir(folder):
+                        if fl.endswith(".vpk"):
+                            shutil.copy2(os.path.join(folder, fl), os.path.join(dest, f"{m['id']}_{fl}"))
+                            copied += 1
+        self.log(f"[BACKUP] Backed up {copied} custom server asset VPK(s) to {dest}")
+        return {"ok": True, "count": copied, "dir": dest}
+
+    def maps_restore(self) -> Dict[str, Any]:
+        import os
+        import shutil
+        src_dir = self._vpk_backup_dir()
+        if not os.path.isdir(src_dir) or not os.listdir(src_dir):
+            return {"ok": True, "count": 0}
+        restored = 0
+        maps = getattr(self, "_maps", {})
+        for f in os.listdir(src_dir):
+            if f.endswith(".vpk") and "_" in f:
+                wid, vpk_name = f.split("_", 1)
+                m = maps.get(wid)
+                if m and m.get("path") and os.path.isdir(m["path"]):
+                    shutil.copy2(os.path.join(src_dir, f), os.path.join(m["path"], vpk_name))
+                    restored += 1
+        self.log(f"[RESTORE] Restored {restored} custom asset VPK(s)")
+        return {"ok": True, "count": restored}
+
+    # ---------- discord presence ----------
+    def presence_state(self) -> Dict[str, Any]:
+        return self.presence.snapshot()
+
+    def presence_toggle(self, enabled: bool) -> Dict[str, Any]:
+        self.config["discord_rpc_enabled"] = bool(enabled)
+        app_config.save_config(self.config)
+        if not enabled:
+            self.presence.clear()
+        return self.presence.snapshot()
+
+    def presence_clear(self) -> Dict[str, Any]:
+        self.presence.clear()
+        return self.presence.snapshot()
+
+    def presence_standby(self) -> Dict[str, Any]:
+        self.presence.standby()
+        return self.presence.snapshot()
+
+    def presence_broadcast(self, sid: str) -> Dict[str, Any]:
+        s = self._find_server(sid)
+        if not s:
+            return {"ok": False, "error": "Unknown server."}
+        return self.presence.broadcast(s["host"], int(s["port"]), s.get("name") or sid)
+
+    # ---------- updates (signed manifest, same updater module as the classic app) ----------
+    def update_check(self, manual: bool = False) -> Dict[str, Any]:
+        import updater
+        if not manual and not self.config.get("check_updates_on_startup", True):
+            return {"available": False, "message": "Update checks are turned off in Settings."}
+        try:
+            avail, manifest, msg = updater.fetch_update_manifest(current_ver=version.APP_VERSION)
+        except Exception as e:
+            return {"available": False, "message": f"Could not check for updates: {e}"}
+        self.config["last_update_check_time"] = time.strftime("%Y-%m-%d %H:%M")
+        app_config.save_config(self.config)
+        if not (avail and manifest):
+            return {"available": False, "message": msg or "You are up to date.", "last": self.config["last_update_check_time"]}
+        self._pending_manifest = manifest
+        skipped = manifest["version"] == self.config.get("skipped_update_version") and not manual
+        return {"available": not skipped, "version": manifest["version"], "notes": manifest.get("notes", ""), "size": manifest.get("size", 0),
+                "message": f"Update available: v{manifest['version']}", "last": self.config["last_update_check_time"]}
+
+    def update_check_startup(self) -> None:
+        """Background check at startup; tells the page only when there is something to show."""
+        def run():
+            r = self.update_check(manual=False)
+            if r.get("available"):
+                self.emit("update", r)
+        threading.Thread(target=run, daemon=True, name="update-check").start()
+
+    def update_skip(self, ver: str) -> bool:
+        self.config["skipped_update_version"] = str(ver)
+        return bool(app_config.save_config(self.config))
+
+    def update_install(self) -> Dict[str, Any]:
+        import os
+        import sys
+        import updater
+        manifest = getattr(self, "_pending_manifest", None)
+        if not manifest:
+            return {"ok": False, "error": "No update is waiting. Check for updates first."}
+        if not getattr(sys, "frozen", False):
+            return {"ok": False, "error": "Updates install only in the packaged app."}
+        server_browser.get_slot_sniper().stop()
+        curr = os.path.abspath(sys.executable)
+        new = curr + ".new"
+
+        def task():
+            self.log(f"[UPDATE] Downloading v{manifest['version']}...")
+            ok, msg = updater.download_and_verify_binary(manifest, new)
+            if not ok:
+                self.log(f"[UPDATE ERROR] {msg}")
+                raise RuntimeError(msg)
+            self.log("[UPDATE] Download verified (size, SHA-256 and signature). Applying...")
+            self.shutdown()
+            updater.spawn_updater_helper_and_exit(curr, new)
+
+        return self._start_job("update_install", task)
