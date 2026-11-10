@@ -324,7 +324,7 @@ export const ServerRadarPreview: React.FC = () => {
   const gflTotalPlayers = useMemo(() => {
     if (!gflLive?.players) return 62;
     const curr = parseInt(gflLive.players.split('/')[0], 10);
-    return isNaN(curr) ? 62 : curr;
+    return isNaN(curr) ? 62 : Math.max(0, curr - Math.max(0, Number(gflLive.bots) || 0));
   }, [gflLive]);
 
   const gflPlayerNames = useMemo(() => {
@@ -959,7 +959,11 @@ export const ServerRadarPreview: React.FC = () => {
           const mapStart = getMapStartTime(server.id, currentMap, liveInfo?.map_start_time);
           const mapDuration = Math.max(0, nowSec - mapStart);
           const regionalPing = getEstimatedRegionalPing(server.region);
-          const currPlayersNum = currentPlayers ? parseInt(currentPlayers.split('/')[0], 10) : 0;
+          const currPlayersRaw = currentPlayers ? parseInt(currentPlayers.split('/')[0], 10) : 0;
+          // Bots are not players: the geo estimate and the badge use humans only (same rule as the totals)
+          const botsNum = Math.max(0, Number(liveInfo?.bots) || 0);
+          const currPlayersNum = Math.max(0, currPlayersRaw - botsNum);
+          const mostlyBots = botsNum >= 3 && botsNum * 2 >= currPlayersRaw;
           const serverPlayerNames = liveInfo?.players_list?.map((p) => p.name) || [];
           const commMapTier = getMapTierAndMapper(currentMap);
 
@@ -1102,6 +1106,15 @@ export const ServerRadarPreview: React.FC = () => {
                       <Users className="w-3 h-3 text-[#2ECC71]" />
                       <span className="text-[#2ECC71] font-bold">{currentPlayers || (isOnline ? 'Online' : 'Offline')}</span>
                     </div>
+                    {mostlyBots && (
+                      <div
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1F1410] border border-[#5A3322] text-[11px] font-code text-[#EB8E6D] font-bold"
+                        title={`${botsNum} of the ${currPlayersRaw} players on this server are bots (about ${currPlayersNum} real). Totals on this site exclude them.`}
+                      >
+                        <span aria-hidden="true">🤖</span>
+                        <span>MOSTLY BOTS ({botsNum}/{currPlayersRaw})</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#121C18] border border-[#1E2E26] text-[11px] font-code text-[#00F0FF]" title={`Estimated route latency: ${regionalPing.userLocation} ➔ ${regionalPing.serverLocation}`}>
                       <Radio className="w-3 h-3 text-[#00F0FF]" />
                       <span className="font-bold">{regionalPing.display}</span>

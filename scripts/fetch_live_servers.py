@@ -187,6 +187,29 @@ def query_a2s_info(host: str, port: int, timeout: float = 1.4) -> Dict[str, Any]
         "ping": "Err"
     }
 
+def query_a2s_roster_count(host: str, port: int, timeout: float = 1.5):
+    """Number of entries in the A2S_PLAYER reply (humans only), or None if the server did not answer."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.settimeout(timeout)
+    try:
+        target_ip = socket.gethostbyname(host)
+        sock.sendto(b"\xFF\xFF\xFF\xFF\x55\xFF\xFF\xFF\xFF", (target_ip, port))
+        data, addr = sock.recvfrom(4096)
+        if addr[0] != target_ip:
+            return None
+        if len(data) >= 9 and data[4] == 0x41:
+            sock.sendto(b"\xFF\xFF\xFF\xFF\x55" + data[5:9], (target_ip, port))
+            data, addr = sock.recvfrom(8192)
+            if addr[0] != target_ip:
+                return None
+        if len(data) > 5 and data[4] == 0x44:
+            return int(data[5])
+    except Exception:
+        return None
+    finally:
+        sock.close()
+    return None
+
 def query_a2s_players(host: str, port: int, timeout: float = 2.0) -> List[Dict[str, Any]]:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(timeout)
@@ -365,6 +388,12 @@ def main():
     for s in servers:
         sid = s["id"]
         info = query_a2s_info(s["host"], s["port"], timeout=1.3)
+        # Some servers (Net4All, FYS) report bots=0 but count bots in "players"; A2S_PLAYER lists humans only.
+        if info.get("online") and info.get("curr_players", 0) > 0 and info.get("bots", 0) == 0:
+            _rc = query_a2s_roster_count(s["host"], s["port"])
+            if _rc is not None and _rc < info["curr_players"]:
+                info["bots"] = info["curr_players"] - _rc
+                info["humans"] = _rc
         player_list = []
         if s["allow_players"] and info.get("online"):
             player_list = query_a2s_players(s["host"], s["port"], timeout=2.8)

@@ -2246,7 +2246,7 @@ class CS2TruePanoramaApp(tk.Tk):
                 "during 64-player Zombie Escape / smoke utility, fix Display/Alt-Tab freezes (MPO), change network rate settings & DNS "
                 "network responsiveness, and clean temporary files (each step can be undone or is a cache Windows rebuilds)."
             ),
-            font=(theme.FONT_UI, theme.FS_12), fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_RAISED, justify="left", anchor="w", wraplength=760
+            font=(theme.FONT_UI, theme.FS_12), fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_RAISED, justify="left", anchor="w", wraplength=1000
         ).pack(anchor="w", fill="x", pady=(1, 0))
 
         Label(content, text="ENGINE PERFORMANCE TWEAKS", font=(theme.FONT_UI, theme.FS_18, "bold"), fg=FG_WHITE, bg=BG_CARD).pack(anchor="w")
@@ -2462,7 +2462,7 @@ class CS2TruePanoramaApp(tk.Tk):
         left = Frame(row, bg=BG_CARD)
         left.pack(side="left", fill="both", expand=True)
         Label(left, text=title, font=(theme.FONT_UI, theme.FS_15, "bold"), fg=FG_WHITE, bg=BG_CARD, anchor="w").pack(anchor="w", fill="x")
-        Label(left, text=desc, font=(theme.FONT_UI, theme.FS_12), fg=theme.TEXT_SECONDARY, bg=BG_CARD, wraplength=600, justify="left", anchor="w").pack(anchor="w", fill="x")
+        Label(left, text=desc, font=(theme.FONT_UI, theme.FS_12), fg=theme.TEXT_SECONDARY, bg=BG_CARD, wraplength=900, justify="left", anchor="w").pack(anchor="w", fill="x")
 
         right = Frame(row, bg=BG_CARD)
         right.pack(side="right")
