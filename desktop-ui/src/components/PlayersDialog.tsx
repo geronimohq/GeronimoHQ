@@ -14,16 +14,19 @@ export default function PlayersDialog({ srv, onClose, onConnect }: { srv: Srv; o
   const [status, setStatus] = useState('Fetching player roster from server...');
   const [q, setQ] = useState('');
   const [sort, setSort] = useState<{ k: SortKey; dir: 1 | -1 }>({ k: 'score', dir: -1 });
-  const load = useCallback(() => {
-    setStatus('Fetching player roster from server...');
+  const loaded = useRef(false);
+  // silent = the automatic refresh: it swaps the rows in place (no "Fetching" flash) and keeps the old list if one query fails
+  const load = useCallback((silent = false) => {
+    if (!silent) setStatus('Fetching player roster from server...');
     void api.players(srv.id).then((r) => {
-      if (!r.success) { setRows([]); setStatus(r.error || 'The server did not answer the player list request.'); return; }
+      if (!r.success) { if (!silent || !loaded.current) { setRows([]); setStatus(r.error || 'The server did not answer the player list request.'); } return; }
+      loaded.current = true;
       setRows(r.players); setStatus(r.players.length ? '' : 'No active players currently connected');
     });
   }, [srv.id]);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;          // the parent passes a new function on every repaint; it must not restart the load
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); const t = setInterval(() => load(true), 5000); return () => clearInterval(t); }, [load]);
   useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === 'Escape') closeRef.current(); }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k); }, []);
 
   const shown = useMemo(() => {
@@ -49,7 +52,7 @@ export default function PlayersDialog({ srv, onClose, onConnect }: { srv: Srv; o
         </div>
         <div className="mctable" style={{ maxHeight: '46vh' }}>
           <table><thead><tr>{th('rank', '#')}{th('name', 'Player name')}{th('score', 'Score / points')}{th('time', 'Session time')}</tr></thead>
-            <tbody>{status ? <tr><td colSpan={4} className="decal" style={{ padding: 18 }}>{status}</td></tr> : shown.map((r, i) => <tr key={i}><td className="mono">{r.rank}</td><td>{r.name}</td><td className="mono">{r.score}</td><td className="mono">{r.time}</td></tr>)}</tbody></table>
+            <tbody>{status ? <tr><td colSpan={4} className="decal" style={{ padding: 18 }}>{status}</td></tr> : shown.map((r, i) => <tr key={i}><td className="mono">{r.rank}</td><td title={r.name === '[Connecting...]' ? 'The server lists this player without a name until they finish loading into the game. This list refreshes every 5 seconds.' : undefined}>{r.name}</td><td className="mono">{r.score}</td><td className="mono">{r.time}</td></tr>)}</tbody></table>
         </div>
         <div className="btns" style={{ justifyContent: 'space-between' }}>
           <button className="btn cut amber pri" onClick={() => { sfx.click(); onConnect(); onClose(); }}>Connect to server</button>

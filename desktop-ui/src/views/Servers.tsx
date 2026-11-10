@@ -229,12 +229,12 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
                 <div className="fhead">
                   <h2>{featured.name.replace(/ 24\/7$/, '')} <em>24/7</em></h2>
                   <div className="toplinks">
-                    <div className="r1">
-                      <button className="btn cut ghost sm" onClick={() => link(featured, '3d')}>3D map</button>
-                      {featured.website && <button className="btn cut ghost sm" onClick={() => link(featured, 'portal')}>Portal</button>}
-                      {featured.discord && <button className="btn cut ghost sm" onClick={() => link(featured, 'discord')}>Discord</button>}
+                    <div className="links" style={{ marginTop: 0 }}>
+                      <button className="lnk" onClick={() => link(featured, '3d')}>3D map</button>
+                      <button className="lnk" onClick={() => link(featured, 'sound')}>Soundtrack</button>
+                      {featured.discord && <button className="lnk" onClick={() => link(featured, 'discord')}>Discord</button>}
+                      {featured.website && <button className="lnk" onClick={() => link(featured, 'portal')}>Portal</button>}
                     </div>
-                    <div className="r2"><button className="btn cut ghost sm" onClick={() => link(featured, 'sound')}>Soundtrack</button></div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>

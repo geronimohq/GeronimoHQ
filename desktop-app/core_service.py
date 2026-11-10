@@ -138,22 +138,44 @@ class Core:
             except Exception:
                 pass
         cur_map = info.get("map") if online else None
-        since, exact = self._map_clock(sid, cur_map)
+        since, exact = self._map_clock(sid, cur_map, s["host"], int(s["port"]), humans)
         return {"id": sid, "online": online, "map": cur_map, "players": total, "bots": bots,
                 "humans": humans, "max": int(info.get("max_players") or 0), "ping": info.get("rtt") if online else None,
                 "name_live": info.get("server_name") if online else None, "geo": geo, "at": time.time(),
                 "map_since": since, "map_exact": exact}
 
-    def _map_clock(self, sid: str, cur_map: Optional[str]):
+    @staticmethod
+    def _probe_map_start(c: Dict[str, Any], host: str, port: int) -> None:
+        try:
+            r = server_browser.query_server_players(host, port)
+            durs = [int(p.get("seconds") or 0) for p in (r.get("players") or []) if int(p.get("seconds") or 0) > 0]
+            if durs:
+                now = time.time()
+                est = now - max(durs)
+                if abs(est - c["start"]) > 30 or not c["exact"]:
+                    c["start"], c["exact"] = est, True
+        except Exception:
+            pass
+        finally:
+            c["probing"] = False
+
+    def _map_clock(self, sid: str, cur_map: Optional[str], host: Optional[str] = None, port: int = 0, humans: int = 0):
         """Per-server map start, kept for the life of the app (like 1.6.0): exact once a map change was seen,
         otherwise a lower bound from the first sighting. GFL uses the ZE Graph start time."""
         clocks = self.__dict__.setdefault("_map_clocks", {})
         if not cur_map:
             return 0, False
         c = clocks.get(sid)
-        if c is None or c["map"] != cur_map:
-            c = {"map": cur_map, "start": time.time(), "exact": c is not None}
+        changed = c is None or c["map"] != cur_map
+        if changed:
+            c = {"map": cur_map, "start": time.time(), "exact": c is not None, "probed": 0.0, "probing": False}
             clocks[sid] = c
+        # A player's connection time restarts on a map change, so the longest one is how long the map has run
+        # (the website backend uses the same rule). Checked in the background on a new map and then every minute.
+        if host and humans > 0 and not c["probing"] and time.time() - c["probed"] > (0 if changed else 60):
+            c["probing"] = True
+            c["probed"] = time.time()
+            threading.Thread(target=self._probe_map_start, args=(c, host, port), daemon=True, name="map-clock").start()
         if sid == "gfl":
             try:
                 m = server_browser.query_zegraph_match_now()

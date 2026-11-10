@@ -458,3 +458,15 @@ class TrayFallback(unittest.TestCase):
         api.win_minimize()
         tray.start.assert_called_once()
         api._window.hide.assert_called_once()
+
+
+class MapClockRoster(unittest.TestCase):
+    def test_longest_player_session_sets_the_map_start(self):
+        core, _ = make_core()
+        c = {"map": "m", "start": 10_000.0, "exact": False, "probed": 0.0, "probing": True}
+        players = {"success": True, "players": [{"seconds": 90}, {"seconds": 1500}, {"seconds": 0}]}
+        with mock.patch.object(server_browser, "query_server_players", return_value=players), mock.patch("time.time", return_value=20_000.0):
+            core._probe_map_start(c, "h", 1)
+        self.assertEqual(c["start"], 18_500.0)
+        self.assertTrue(c["exact"])
+        self.assertFalse(c["probing"])
