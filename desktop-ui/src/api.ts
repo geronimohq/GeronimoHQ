@@ -1,4 +1,4 @@
-import type { AppInfo, EngineState, LogLine, Match, Srv, Status } from './types';
+import type { AppInfo, AutoexecState, DashboardData, DnsState, EngineState, LogLine, LaunchState, MaintState, Match, PlayerRow, SniperStatus, Srv, Status } from './types';
 
 type Fn = (...a: unknown[]) => Promise<unknown>;
 declare global {
@@ -43,6 +43,30 @@ export const api = {
   engineRestore: () => call<{ ok: boolean; error?: string }>('engine_restore'),
   powerSet: (plan: 'balanced' | 'high') => call<{ ok: boolean; plan?: string }>('power_set', plan),
   restoreSummary: () => call<string>('restore_summary'),
+  connect: (id: string) => call<{ ok: boolean; error?: string }>('server_connect', id),
+  players: (id: string) => call<{ success: boolean; players: PlayerRow[]; error?: string; name?: string }>('server_players', id),
+  sniperStart: (id: string, max: number) => call<{ ok: boolean }>('sniper_start', id, max),
+  sniperStop: () => call<{ ok: boolean }>('sniper_stop'),
+  sniperStatus: () => call<SniperStatus>('sniper_status'),
+  dashboard: () => call<DashboardData>('dashboard'),
+  openPath: (kind: string) => call<boolean>('open_path', kind),
+  openUrl: (url: string) => call<boolean>('open_url', url),
+  relaunchAdmin: () => call<{ ok: boolean }>('relaunch_admin'),
+  maintState: () => call<MaintState>('maint_state'),
+  maintRun: (opts: Record<string, boolean>) => call<{ ok: boolean; error?: string }>('maint_run', opts),
+  maintTool: (name: string) => call<{ ok: boolean; error?: string }>('maint_tool', name),
+  launchState: () => call<LaunchState>('launch_state'),
+  launchSave: (o: string) => call<{ ok: boolean; error?: string }>('launch_save', o),
+  boost: () => call<{ ok: boolean; msg: string }>('boost_run'),
+  cs2Running: () => call<boolean>('cs2_running'),
+  dnsState: () => call<DnsState>('dns_state'),
+  dnsBenchmark: () => call<{ ok: boolean; error?: string }>('dns_benchmark'),
+  dnsApply: (p: string, s: string, n: string) => call<{ ok: boolean; error?: string }>('dns_apply', p, s, n),
+  dnsRestore: () => call<{ ok: boolean; error?: string }>('dns_restore'),
+  autoexecState: () => call<AutoexecState>('autoexec_state'),
+  autoexecInstall: () => call<{ ok: boolean; error?: string }>('autoexec_install'),
+  autoexecRestore: () => call<{ ok: boolean; error?: string }>('autoexec_restore'),
+  autoexecFps: (n: number) => call<{ ok: boolean; error?: string }>('autoexec_fps', n),
   winMin: () => call<void>('win_minimize'),
   winMax: () => call<void>('win_maximize'),
   winClose: () => call<void>('win_close'),
@@ -71,6 +95,22 @@ async function mock(name: string, ...args: unknown[]): Promise<unknown> {
     case 'engine_state': return { power_plan: 'Balanced', autoexec: { state: 'app_block', text: 'Autoexec: found' }, cs2_found: true, cs2_exe: true, cfg_dir: true };
     case 'engine_apply': case 'engine_restore': setTimeout(() => window.__emit?.('job', { name, ok: true }), 800); return { ok: true };
     case 'power_set': return { ok: true, plan: 'Balanced' };
+    case 'server_connect': return { ok: true };
+    case 'server_players': return { success: true, name: 'Sample', players: [{ name: 'Player One', score: 12, time: '10m 02s' }, { name: 'Player Two', score: 7, time: '04m 40s' }] };
+    case 'sniper_start': case 'sniper_stop': return { ok: true };
+    case 'sniper_status': return { text: '● SLOT SNIPER: IDLE', state: 'idle', target: '', active: false };
+    case 'dashboard': return { cs2_dir: 'C:/cs2', cfg_dir: 'C:/cs2/cfg', autoexec: { state: 'app_block', text: 'Autoexec: found' }, drive: { drive: 'E:', total_gb: 1000, free_gb: 330, used_gb: 670, used_pct: 67, is_critical: false }, days_opt: 4, days_maint: 4 };
+    case 'open_path': case 'open_url': return true;
+    case 'relaunch_admin': return { ok: false };
+    case 'maint_state': return { drives: [{ drive: 'C:', total_gb: 500, free_gb: 120, used_gb: 380, used_pct: 76, is_critical: false }, { drive: 'E:', total_gb: 1000, free_gb: 330, used_gb: 670, used_pct: 67, is_critical: false }], admin: false, days_maint: 4 };
+    case 'maint_run': case 'maint_tool': setTimeout(() => window.__emit?.('job', { name: 'maint_run', ok: true }), 800); return { ok: true };
+    case 'launch_state': return { current: '-novid -threads 4', vdf_found: true, warnings: ["'-threads' detected: Causes thread contention."], recommended: '-novid -nojoy', suggestions: [] };
+    case 'launch_save': case 'autoexec_install': case 'autoexec_restore': case 'autoexec_fps': case 'dns_apply': case 'dns_restore': return { ok: true };
+    case 'boost_run': return { ok: false, msg: 'CS2 is not running (sample).' };
+    case 'cs2_running': return false;
+    case 'dns_state': return { interface: 'Ethernet', current: 'Automatic (ISP / DHCP)', found: true, admin: false, providers: [{ id: 'cloudflare', name: 'Cloudflare Gaming (1.1.1.1)', primary: '1.1.1.1', secondary: '1.0.0.1', desc: 'Ultra-fast global edge network.' }] };
+    case 'dns_benchmark': setTimeout(() => { window.__emit?.('dns_results', [{ name: 'Cloudflare Gaming (1.1.1.1)', primary: '1.1.1.1', secondary: '1.0.0.1', avg_ms: 12.4, jitter_ms: 1.1, reachable: true, fastest: true, rank: 1 }]); window.__emit?.('job', { name: 'dns_benchmark', ok: true }); }, 900); return { ok: true };
+    case 'autoexec_state': return { state: 'app_block', status: 'Autoexec: found', path: 'C:/cs2/cfg/autoexec.cfg', text: '// sample\nrate 786432\nsnd_mixahead 0.025\nbind "F7" "say hi"\n', cfg: true };
     case 'restore_summary': return 'This undoes the app\'s engine changes.';
     default: return undefined;
   }

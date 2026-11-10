@@ -279,3 +279,255 @@ class Core:
 
     def restore_summary(self) -> str:
         return REVERT_ALL_SUMMARY
+
+    # ---------- server actions ----------
+    def server_connect(self, sid: str) -> Dict[str, Any]:
+        s = self._find_server(sid)
+        if not s:
+            return {"ok": False, "error": "Unknown server."}
+        server_browser.connect_to_server(s["host"], int(s["port"]), s.get("name") or sid,
+                                         log_callback=lambda m: self.log(m, "SERVERS"),
+                                         completion_callback=lambda ok, msg: self.emit("connect", {"id": sid, "ok": ok, "msg": msg}))
+        return {"ok": True}
+
+    def server_players(self, sid: str) -> Dict[str, Any]:
+        s = self._find_server(sid)
+        if not s:
+            return {"success": False, "players": [], "error": "Unknown server."}
+        r = server_browser.query_server_players(s["host"], int(s["port"]))
+        return {"success": bool(r.get("success")), "players": r.get("players", []), "error": r.get("error", ""), "name": s.get("name")}
+
+    def sniper_start(self, sid: str, max_players: int) -> Dict[str, Any]:
+        s = self._find_server(sid)
+        if not s:
+            return {"ok": False}
+        info = server_browser.query_server_info(s["host"], int(s["port"]))
+        full = bool(info.get("online")) and int(info.get("curr_players") or 0) >= int(info.get("max_players") or 64)
+        server_browser.get_slot_sniper().start(
+            s["host"], int(s["port"]), s.get("name") or sid, target_max_players=int(max_players), tier_label="",
+            status_cb=lambda state, text: self.emit("sniper", self.sniper_status()), initial_is_full=full)
+        self.log(f"Slot Sniper armed for {s.get('name')} (join at <= {int(max_players)})", "SERVERS")
+        return {"ok": True}
+
+    def sniper_stop(self) -> Dict[str, Any]:
+        server_browser.get_slot_sniper().stop()
+        self.log("Slot Sniper disarmed", "SERVERS")
+        return {"ok": True}
+
+    def sniper_status(self) -> Dict[str, Any]:
+        st = server_browser.get_slot_sniper().get_status()
+        text, state = server_browser.sniper_status_bar(st)
+        return {"text": text, "state": state, "target": st.get("target_name") or "", "active": bool(st.get("is_active"))}
+
+    # ---------- dashboard, files, links, admin ----------
+    def dashboard(self) -> Dict[str, Any]:
+        cs2_dir = self.paths.get("cs2_dir") or self.paths.get("cs2_exe")
+        drive = None
+        if cs2_dir:
+            letter = (cs2_dir[:2] or "").upper()
+            for d in core_logic.get_drives_info():
+                if d["drive"].upper().startswith(letter):
+                    drive = d
+        auto = None
+        try:
+            auto = core_logic.get_autoexec_status(self.paths.get("cfg_dir"), self.config.get("autoexec_last_app_save"))
+        except Exception:
+            pass
+        return {"cs2_dir": self.paths.get("cs2_dir"), "cfg_dir": self.paths.get("cfg_dir"), "autoexec": auto, "drive": drive,
+                "days_opt": app_config.get_days_since_optimization(self.config), "days_maint": app_config.get_days_since_maintenance(self.config)}
+
+    def open_path(self, kind: str) -> bool:
+        import os
+        target = {"cfg": self.paths.get("cfg_dir"), "appdata": app_config.get_storage_dir()}.get(kind)
+        if not target or not os.path.isdir(target):
+            return False
+        os.startfile(target)
+        return True
+
+    def open_url(self, url: str) -> bool:
+        import os
+        import webbrowser
+        if not isinstance(url, str) or not url.startswith(("https://", "http://", "steam://")):
+            return False
+        try:
+            if url.startswith("steam://"):
+                os.startfile(url)
+            else:
+                webbrowser.open(url)
+            return True
+        except Exception:
+            return False
+
+    def relaunch_admin(self) -> Dict[str, Any]:
+        import ctypes
+        import os
+        import sys
+        exe, params = sys.executable, ""
+        if not getattr(sys, "frozen", False):
+            params = '"' + os.path.join(os.path.dirname(os.path.abspath(__file__)), "web_main.py") + '"'
+        ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", exe, params, None, 1)
+        if ret > 32:
+            threading.Timer(0.6, lambda: os._exit(0)).start()
+            return {"ok": True}
+        self.log("[ADMIN] Elevation request was cancelled or declined. Continuing in standard mode.")
+        return {"ok": False}
+
+    # ---------- PC maintenance ----------
+    def maint_state(self) -> Dict[str, Any]:
+        return {"drives": core_logic.get_drives_info(), "admin": bool(core_logic.is_admin()),
+                "days_maint": app_config.get_days_since_maintenance(self.config)}
+
+    def maint_run(self, opts: Dict[str, Any]) -> Dict[str, Any]:
+        opts = opts or {}
+
+        def task():
+            self.log("--- Starting PC cleanup ---")
+            total = {"files": 0, "bytes": 0}
+
+            def tally(res):
+                files, nbytes, logs = res
+                total["files"] += files
+                total["bytes"] += nbytes
+                for l in logs:
+                    self.log(l)
+
+            if opts.get("temp"):
+                tally(core_logic.clean_windows_temp_files())
+            if opts.get("win_update"):
+                tally(core_logic.clean_windows_update_cache())
+            if opts.get("discord_steam"):
+                tally(core_logic.clean_discord_and_steam_cache(self.paths.get("steam_path")))
+            if opts.get("thumb"):
+                tally(core_logic.clean_explorer_thumbnail_cache())
+            if opts.get("recycle"):
+                _ok, logs = core_logic.empty_recycle_bin()
+                for l in logs:
+                    self.log(l)
+            if opts.get("dns"):
+                _ok, logs = core_logic.flush_dns_cache()
+                for l in logs:
+                    self.log(l)
+            app_config.update_maintenance_timestamp(self.config)
+            self.log(f"--- Cleanup finished: {total['files']} files, {total['bytes'] / (1024 * 1024):.1f} MB freed ---")
+
+        return self._start_job("maint_run", task)
+
+    def maint_tool(self, name: str) -> Dict[str, Any]:
+        tools = {"cleanmgr": core_logic.launch_cleanmgr, "trim": core_logic.run_ssd_trim, "startup": core_logic.open_startup_apps,
+                 "sfc": core_logic.run_sfc_scan, "dism": core_logic.run_dism_restore, "winsxs": core_logic.run_dism_component_cleanup}
+        fn = tools.get(name)
+        if not fn:
+            return {"ok": False, "error": "Unknown tool."}
+        if name in ("trim", "sfc", "dism", "winsxs") and not core_logic.is_admin():
+            self.log("[ADMIN REQUIRED] This repair tool needs Administrator. Use Relaunch as Administrator.")
+            return {"ok": False, "error": "Administrator is required for this tool."}
+
+        def task():
+            res = fn()
+            logs = res[1] if isinstance(res[1], list) else [res[1]]
+            for l in logs:
+                self.log(l)
+
+        return self._start_job(f"maint_{name}", task)
+
+    # ---------- launch options ----------
+    def launch_state(self) -> Dict[str, Any]:
+        import hardware_info
+        cur, vdf = hardware_info.get_current_launch_options(self.paths.get("steam_path"))
+        analysis = hardware_info.analyze_launch_options(cur or "")
+        return {"current": cur or "", "vdf_found": bool(vdf), "warnings": analysis.get("warnings", []),
+                "recommended": analysis.get("recommended", ""), "suggestions": analysis.get("suggestions", [])}
+
+    def launch_save(self, options: str) -> Dict[str, Any]:
+        import hardware_info
+        _cur, vdf = hardware_info.get_current_launch_options(self.paths.get("steam_path"))
+        if not vdf:
+            return {"ok": False, "error": "Steam localconfig.vdf was not found."}
+        ok, logs = core_logic.save_launch_options(vdf, (options or "").strip())
+        for l in logs:
+            self.log(l)
+        return {"ok": bool(ok)}
+
+    # ---------- live booster & DNS ----------
+    def boost_run(self) -> Dict[str, Any]:
+        ok, msg = core_logic.boost_cs2_process()
+        self.log(msg)
+        return {"ok": bool(ok), "msg": msg}
+
+    def cs2_running(self) -> bool:
+        try:
+            return bool(core_logic.is_cs2_running())
+        except Exception:
+            return False
+
+    def dns_state(self) -> Dict[str, Any]:
+        iface = core_logic.get_active_network_interface()
+        return {"interface": iface.get("interface_name"), "current": iface.get("current_dns"), "found": bool(iface.get("found")),
+                "providers": [dict(p) for p in core_logic.DNS_PROVIDERS], "admin": bool(core_logic.is_admin())}
+
+    def dns_benchmark(self) -> Dict[str, Any]:
+        def task():
+            self.log("Benchmarking gaming DNS providers...")
+            res = core_logic.benchmark_all_dns_providers()
+            self.emit("dns_results", [{"name": r.get("name"), "primary": r.get("primary"), "secondary": r.get("secondary"),
+                                       "avg_ms": round(float(r.get("avg_ms", 0)), 1), "jitter_ms": round(float(r.get("jitter_ms", 0)), 1),
+                                       "reachable": bool(r.get("reachable")), "fastest": bool(r.get("is_fastest")), "rank": r.get("rank")} for r in res])
+            self.log("DNS benchmark finished.")
+
+        return self._start_job("dns_benchmark", task)
+
+    def dns_apply(self, primary: str, secondary: str, name: str) -> Dict[str, Any]:
+        if not core_logic.is_admin():
+            return {"ok": False, "error": "Changing DNS needs Administrator. Use Relaunch as Administrator."}
+        ok, logs = core_logic.apply_dns_provider(primary, secondary, name)
+        for l in logs:
+            self.log(l)
+        return {"ok": bool(ok)}
+
+    def dns_restore(self) -> Dict[str, Any]:
+        if not core_logic.is_admin():
+            return {"ok": False, "error": "Changing DNS needs Administrator. Use Relaunch as Administrator."}
+        ok, logs = core_logic.restore_dns_to_dhcp()
+        for l in logs:
+            self.log(l)
+        return {"ok": bool(ok)}
+
+    # ---------- autoexec ----------
+    def autoexec_state(self) -> Dict[str, Any]:
+        import os
+        st = core_logic.get_autoexec_status(self.paths.get("cfg_dir"), self.config.get("autoexec_last_app_save"))
+        text = ""
+        if st.get("path") and os.path.isfile(st["path"]):
+            try:
+                with open(st["path"], "r", encoding="utf-8", errors="ignore") as f:
+                    text = f.read()[:60000]
+            except Exception:
+                pass
+        return {"state": st.get("state"), "status": st.get("text"), "path": st.get("path"), "text": text, "cfg": bool(self.paths.get("cfg_dir"))}
+
+    def autoexec_install(self) -> Dict[str, Any]:
+        if not self.paths.get("cfg_dir"):
+            return {"ok": False, "error": "CS2 cfg folder not found."}
+        ok, logs = core_logic.install_autoexec(self.paths["cfg_dir"])
+        for l in logs:
+            self.log(l)
+        return {"ok": bool(ok)}
+
+    def autoexec_restore(self) -> Dict[str, Any]:
+        if not self.paths.get("cfg_dir"):
+            return {"ok": False, "error": "CS2 cfg folder not found."}
+        ok, logs = core_logic.restore_autoexec_backup(self.paths["cfg_dir"])
+        for l in logs:
+            self.log(l)
+        return {"ok": bool(ok)}
+
+    def autoexec_fps(self, fps: int) -> Dict[str, Any]:
+        if not self.paths.get("cfg_dir"):
+            return {"ok": False, "error": "CS2 cfg folder not found."}
+        fps = int(fps)
+        if not (0 <= fps <= 1000):
+            return {"ok": False, "error": "Enter an FPS limit from 0 (unlimited) to 1000."}
+        ok, logs = core_logic.set_framerate_limit(self.paths["cfg_dir"], fps)
+        for l in logs:
+            self.log(l)
+        return {"ok": bool(ok)}

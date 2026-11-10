@@ -6,7 +6,12 @@ import { sfx } from './sound';
 import { ModalHost, useModal } from './components/Modal';
 import Servers from './views/Servers';
 import Engine, { ALL_ON, type Opts } from './views/Engine';
-import type { AppInfo, LogLine } from './types';
+import Dashboard from './views/Dashboard';
+import Maintenance from './views/Maintenance';
+import Launch from './views/Launch';
+import Booster from './views/Booster';
+import Autoexec from './views/Autoexec';
+import type { AppInfo, LogLine, SniperStatus } from './types';
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -51,6 +56,9 @@ function Shell() {
   const [opts, setOpts] = useState<Opts>(ALL_ON);
   const [sound, setSound] = useState(sfx.on);
   const [busy, setBusy] = useState(false);
+  const [sniper, setSniper] = useState<SniperStatus | null>(null);
+  const [tier, setTierState] = useState<number>(() => { try { return Number(localStorage.getItem('sniperTier')) || 62; } catch { return 62; } });
+  const setTier = (n: number) => { setTierState(n); try { localStorage.setItem('sniperTier', String(n)); } catch { /* ignore */ } };
   const openModal = useModal();
   const native = useNative();
   const logEnd = useRef<HTMLDivElement>(null);
@@ -63,6 +71,10 @@ function Shell() {
   useEffect(() => {
     void api.appInfo().then(setInfo);
     void api.logHistory().then((h) => setLogs(h));
+    const pollSniper = () => { void api.sniperStatus().then(setSniper); };
+    pollSniper();
+    const sniperTimer = setInterval(pollSniper, 1500);
+    const offS = on<SniperStatus>('sniper', setSniper);
     const off1 = on<LogLine>('log', (l) => setLogs((p) => [...p.slice(-399), l]));
     const off2 = on<{ name: string; ok: boolean }>('job', (j) => {
       setBusy(false);
@@ -71,11 +83,13 @@ function Shell() {
         openModal(j.ok
           ? { kind: 'ok', label: 'Notification', title: 'Optimization applied', body: 'The selected tweaks are done. Every change has an undo: Restore Defaults brings back your previous settings. The log lists each step.' }
           : { kind: 'warn', label: 'Problem', title: 'Optimization stopped', body: 'Something failed. The log lists each step.' });
+      } else if (j.name === 'maint_run') {
+        openModal({ kind: 'ok', label: 'Notification', title: 'Clean-up finished', body: 'Each step is listed in the log, with the space it freed.' });
       } else if (j.name === 'engine_restore') {
         openModal({ kind: 'ok', label: 'Notification', title: 'Restore finished', body: 'Each step is listed in the log. DNS and Steam launch options were not changed.' });
       }
     });
-    return () => { off1(); off2(); };
+    return () => { off1(); off2(); offS(); clearInterval(sniperTimer); };
   }, [openModal]);
 
   useEffect(() => { logEnd.current?.scrollIntoView({ block: 'end' }); }, [logs, drawer]);
@@ -138,10 +152,15 @@ function Shell() {
         <main className="content" style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <AnimatePresence mode="wait">
             <motion.div key={view} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {view === 'servers' && <Servers info={info} log={addLog} />}
+              {view === 'dashboard' && <Dashboard go={go} />}
+              {view === 'maintenance' && <Maintenance busy={busy} setBusy={setBusy} />}
+              {view === 'launch' && <Launch />}
+              {view === 'booster' && <Booster />}
+              {view === 'autoexec' && <Autoexec />}
+              {view === 'servers' && <Servers info={info} log={addLog} sniper={sniper} tier={tier} setTier={setTier} />}
               {view === 'engine' && <Engine opts={opts} setOpts={setOpts} onApplied={runApply} log={addLog} />}
-              {view !== 'servers' && view !== 'engine' && (
-                <div className="glass card ph brk"><div className="big">{NAV.find((n) => n.id === view)?.label.toUpperCase()}</div><div>This screen is not in the new app yet. It is still in the classic app.</div><div className="decal" style={{ marginTop: 8 }}>Built so far: ZE Game Servers, Engine Tweaks</div></div>
+              {!['servers', 'engine', 'dashboard', 'maintenance', 'launch', 'booster', 'autoexec'].includes(view) && (
+                <div className="glass card ph brk"><div className="big">{NAV.find((n) => n.id === view)?.label.toUpperCase()}</div><div>This screen is not in the new app yet. It is still in the classic app.</div><div className="decal" style={{ marginTop: 8 }}>Built so far: Dashboard, Engine, Autoexec, Launch Options, Booster &amp; DNS, Servers, Maintenance</div></div>
               )}
             </motion.div>
           </AnimatePresence>
@@ -157,6 +176,10 @@ function Shell() {
           <div ref={logEnd} />
         </div>
       </section>
+      <footer className="statusbar">
+        <span className={`sn ${sniper?.state ?? 'idle'}`}>{sniper?.text ?? '\u25CF SLOT SNIPER: IDLE'}</span>
+        <span className="decal">Hobby project · not affiliated with Valve</span>
+      </footer>
     </div>
   );
 }

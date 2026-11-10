@@ -4,7 +4,8 @@ import { Play, Plus, Search } from 'lucide-react';
 import { api } from '../api';
 import { sfx } from '../sound';
 import { Geo } from '../components/Geo';
-import type { AppInfo, Match, Srv, Status } from '../types';
+import { useModal } from '../components/Modal';
+import type { AppInfo, Match, SniperStatus, Srv, Status } from '../types';
 
 type GeoMode = 'country' | 'region';
 const botsMostly = (s?: Status) => !!s && (s.bots ?? 0) >= 3 && (s.bots ?? 0) * 2 >= (s.players ?? 0);
@@ -31,7 +32,7 @@ function MapTimer({ since, exact }: { since: number; exact: boolean }) {
   return <span className="cell">&#9201; {exact ? '' : '≥ '}{m}:{String(s).padStart(2, '0')} on map</span>;
 }
 
-const Row = memo(function Row({ srv, st, mode, onMode, since }: { srv: Srv; st?: Status; mode: GeoMode; onMode: (m: GeoMode) => void; since?: number }) {
+const Row = memo(function Row({ srv, st, mode, onMode, since, armed, onConnect, onPlayers, onSniper }: { srv: Srv; st?: Status; mode: GeoMode; onMode: (m: GeoMode) => void; since?: number; armed: boolean; onConnect: () => void; onPlayers: () => void; onSniper: () => void }) {
   const humans = st?.humans ?? 0;
   const fp = useFlash(humans), fg = useFlash(st?.ping);
   return (
@@ -52,9 +53,9 @@ const Row = memo(function Row({ srv, st, mode, onMode, since }: { srv: Srv; st?:
       </div>
       <Geo countries={st?.geo?.countries ?? []} regions={st?.geo?.regions ?? []} mode={mode} onMode={onMode} humans={humans} />
       <div className="dock">
-        <button className={`btn cut amber pri sm${st?.online ? '' : ' dim'}`} onClick={sfx.click}>Connect</button>
-        <button className="btn cut ghost sm" onClick={sfx.click}>Sniper</button>
-        <button className="btn cut ghost sm" onClick={sfx.click}>Players</button>
+        <button className={`btn cut amber pri sm${st?.online ? '' : ' dim'}`} onClick={onConnect}>Connect</button>
+        <button className={`btn cut ${armed ? 'armed' : 'ghost'} sm`} aria-pressed={armed} onClick={onSniper}>{armed ? 'Sniper armed' : 'Sniper'}</button>
+        <button className="btn cut ghost sm" onClick={onPlayers}>Players</button>
       </div>
     </article>
   );
@@ -84,7 +85,8 @@ function AddServer({ onClose, onSaved }: { onClose: () => void; onSaved: () => v
   );
 }
 
-export default function Servers({ info, log }: { info: AppInfo | null; log: (tag: string, msg: string) => void }) {
+export default function Servers({ info, log, sniper, tier, setTier }: { info: AppInfo | null; log: (tag: string, msg: string) => void; sniper: SniperStatus | null; tier: number; setTier: (n: number) => void }) {
+  const openModal = useModal();
   const [catalog, setCatalog] = useState<Srv[]>([]);
   const [st, setSt] = useState<Record<string, Status>>({});
   const [rate, setRateState] = useState(info?.refresh_seconds ?? 5);
@@ -151,6 +153,29 @@ export default function Servers({ info, log }: { info: AppInfo | null; log: (tag
     return () => clearInterval(t);
   }, []);
 
+  const connect = (s: Srv) => {
+    sfx.click();
+    void api.connect(s.id).then((r) => {
+      if (!r.ok) openModal({ kind: 'warn', label: 'Problem', title: 'Could not connect', body: r.error });
+      else log('SERVERS', `Connecting to ${s.name}`);
+    });
+  };
+  const players = async (s: Srv) => {
+    sfx.click();
+    const r = await api.players(s.id);
+    openModal({
+      kind: r.success ? 'ok' : 'warn', label: 'Active players', title: s.name,
+      body: r.success
+        ? (r.players.length ? <div className="roster">{r.players.map((p, i) => <div key={i} className="rrow"><span>{p.name}</span><span className="mono">{p.score}</span><span className="mono">{p.time}</span></div>)}</div> : 'No players on the server right now.')
+        : (r.error || 'The server did not answer the player list request.'),
+    });
+  };
+  const toggleSniper = (s: Srv) => {
+    sfx.click();
+    if (sniper?.active && sniper.target === s.name) { void api.sniperStop(); return; }
+    void api.sniperStart(s.id, tier);
+  };
+  const isArmed = (s: Srv) => !!sniper?.active && sniper.target === s.name;
   const f = featured ? st[featured.id] : undefined;
   const fHumans = f?.humans ?? 0;
   const ringDash = f?.online && f.max ? Math.min(1, (f.players ?? 0) / f.max) : 0;
@@ -196,9 +221,9 @@ export default function Servers({ info, log }: { info: AppInfo | null; log: (tag
                 <div className="stat"><span>Humans <b style={{ color: 'var(--cyan)' }}>{match.human_score ?? '-'}</b></span><span>Zombies <b style={{ color: 'var(--bad)' }}>{match.zombie_score ?? '-'}</b></span><span>Extends <b>{match.extend_count ?? '-'}/3</b></span></div>
                 <Geo countries={f?.geo?.countries ?? []} regions={f?.geo?.regions ?? []} mode={modes[featured.id] ?? 'country'} onMode={setMode(featured.id)} humans={fHumans} />
                 <div className="dock">
-                  <button className="btn cut amber pri sm" onClick={sfx.click}><Play size={13} /> Connect</button>
-                  <button className="btn cut ghost sm" onClick={sfx.click}>Sniper</button>
-                  <button className="btn cut ghost sm" onClick={sfx.click}>Players</button>
+                  <button className="btn cut amber pri sm" onClick={() => connect(featured)}><Play size={13} /> Connect</button>
+                  <button className={`btn cut ${isArmed(featured) ? 'armed' : 'ghost'} sm`} aria-pressed={isArmed(featured)} onClick={() => toggleSniper(featured)}>{isArmed(featured) ? 'Sniper armed' : 'Sniper'}</button>
+                  <button className="btn cut ghost sm" onClick={() => void players(featured)}>Players</button>
                   <button className="btn cut ghost sm" onClick={() => { sfx.toggle(); try { void navigator.clipboard.writeText(`${featured.host}:${featured.port}`); } catch { /* ignore */ } }}>Copy IP</button>
                 </div>
               </div>
@@ -214,13 +239,16 @@ export default function Servers({ info, log }: { info: AppInfo | null; log: (tag
         </div>
         <div className="search"><Search size={15} style={{ color: 'var(--tx3)' }} /><label className="sr" htmlFor="q">Filter servers</label>
           <input id="q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter by name, map or region" /></div>
+        <div className="seg" role="group" aria-label="Sniper target" title="The Slot Sniper joins when the player count falls to this number or lower">
+          {[61, 62, 63].map((n) => <button key={n} aria-pressed={tier === n} onClick={() => { sfx.click(); setTier(n); }}>{'\u2264'}{n}</button>)}
+        </div>
         {totals.humans !== undefined && <span className="pill" title="Human players on the catalog servers that answered recently"><i className="dot cy" />{totals.humans} PLAYERS IN-GAME</span>}
         {totals.online !== undefined && <span className="pill">{totals.online} / {totals.total} SERVERS ONLINE</span>}
         <button className="btn cut sm ghost" onClick={() => { sfx.click(); setAdding(true); }}><Plus size={13} /> Add server</button>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {list.map((s) => <Row key={s.id} srv={s} st={st[s.id]} mode={modes[s.id] ?? 'country'} onMode={setMode(s.id)} since={seen.current[s.id]?.since} />)}
+        {list.map((s) => <Row key={s.id} srv={s} st={st[s.id]} mode={modes[s.id] ?? 'country'} onMode={setMode(s.id)} since={seen.current[s.id]?.since} armed={isArmed(s)} onConnect={() => connect(s)} onPlayers={() => void players(s)} onSniper={() => toggleSniper(s)} />)}
         {!list.length && <div className="glass card ph">No servers match.</div>}
       </div>
       <AnimatePresence>{adding && <AddServer onClose={() => setAdding(false)} onSaved={() => { log('SERVERS', 'Server saved'); loadCatalog(); }} />}</AnimatePresence>

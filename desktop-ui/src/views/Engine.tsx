@@ -78,7 +78,7 @@ export default function Engine({ opts, setOpts, onApplied, log }: {
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-        <button className="btn cut amber pri" onClick={() => { sfx.click(); onApplied(); }}>&#9889; Apply selected tweaks</button>
+        <button className="btn cut ghost" onClick={() => { sfx.click(); onApplied(); }}>&#9889; Apply selected tweaks</button>
       </div>
     </section>
   );

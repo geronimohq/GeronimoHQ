@@ -226,3 +226,17 @@ body{display:flex;flex-direction:column}
 .rail{position:static;align-self:start;max-height:100%;overflow-y:auto}
 .content{min-height:0;overflow-y:auto;overflow-x:hidden;padding:0 8px 4px 0;margin-right:-4px}
 .log .body{max-height:120px}
+
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.dcard{min-height:150px}
+.btn.armed{color:var(--ink);--fill:var(--ok);background:linear-gradient(135deg,#34d399,var(--ok))}
+.roster{display:flex;flex-direction:column;gap:2px;max-height:320px;overflow:auto;padding-right:6px}
+.rrow{display:grid;grid-template-columns:1fr 54px 90px;gap:10px;padding:6px 8px;border-radius:8px;background:var(--inset);color:var(--tx)}
+.statusbar{display:flex;justify-content:space-between;gap:12px;padding:6px 12px;flex:none;font:500 11px var(--f-mono);letter-spacing:.04em}
+.statusbar .sn{color:var(--tx3)} .statusbar .sn.armed{color:var(--ok)} .statusbar .sn.triggered{color:var(--amber)} .statusbar .sn.cooldown{color:var(--cyan)}
+
+.code{margin:8px 0 6px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--inset);font:13px var(--f-mono);color:var(--amber);white-space:pre-wrap;word-break:break-all;user-select:text}
+.warnline{color:var(--cyan);margin-top:4px}
+.editor{max-height:340px;overflow:auto;border-radius:10px;border:1px solid var(--line);background:var(--inset);padding:8px 0;font:12px/1.7 var(--f-mono);user-select:text}
+.ln{display:flex}.ln .no{width:44px;flex:none;text-align:right;padding-right:12px;color:var(--tx3)}
+.cl{white-space:pre;color:var(--tx)}.cl .k{color:var(--cyan)}.cl .s{color:var(--amber)}.cl .n{color:var(--violet)}.cl.c{color:var(--tx3)}

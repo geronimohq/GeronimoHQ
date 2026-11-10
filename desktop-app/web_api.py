@@ -133,3 +133,81 @@ class Api:
 
     def restore_summary(self) -> str:
         return self.core.restore_summary()
+
+    # server actions
+    def server_connect(self, sid: str) -> Dict[str, Any]:
+        return self.core.server_connect(sid)
+
+    def server_players(self, sid: str) -> Dict[str, Any]:
+        return self.core.server_players(sid)
+
+    def sniper_start(self, sid: str, max_players: int) -> Dict[str, Any]:
+        return self.core.sniper_start(sid, int(max_players))
+
+    def sniper_stop(self) -> Dict[str, Any]:
+        return self.core.sniper_stop()
+
+    def sniper_status(self) -> Dict[str, Any]:
+        return self.core.sniper_status()
+
+    # dashboard, files, links, admin
+    def dashboard(self) -> Dict[str, Any]:
+        return self.core.dashboard()
+
+    def open_path(self, kind: str) -> bool:
+        return self.core.open_path(kind)
+
+    def open_url(self, url: str) -> bool:
+        return self.core.open_url(url)
+
+    def relaunch_admin(self) -> Dict[str, Any]:
+        return self.core.relaunch_admin()
+
+    # PC maintenance
+    def maint_state(self) -> Dict[str, Any]:
+        return self.core.maint_state()
+
+    def maint_run(self, opts: Dict[str, Any]) -> Dict[str, Any]:
+        return self.core.maint_run(opts)
+
+    def maint_tool(self, name: str) -> Dict[str, Any]:
+        return self.core.maint_tool(name)
+
+    # launch options
+    def launch_state(self) -> Dict[str, Any]:
+        return self.core.launch_state()
+
+    def launch_save(self, options: str) -> Dict[str, Any]:
+        return self.core.launch_save(options)
+
+    # live booster & DNS
+    def boost_run(self) -> Dict[str, Any]:
+        return self.core.boost_run()
+
+    def cs2_running(self) -> bool:
+        return self.core.cs2_running()
+
+    def dns_state(self) -> Dict[str, Any]:
+        return self.core.dns_state()
+
+    def dns_benchmark(self) -> Dict[str, Any]:
+        return self.core.dns_benchmark()
+
+    def dns_apply(self, primary: str, secondary: str, name: str) -> Dict[str, Any]:
+        return self.core.dns_apply(primary, secondary, name)
+
+    def dns_restore(self) -> Dict[str, Any]:
+        return self.core.dns_restore()
+
+    # autoexec
+    def autoexec_state(self) -> Dict[str, Any]:
+        return self.core.autoexec_state()
+
+    def autoexec_install(self) -> Dict[str, Any]:
+        return self.core.autoexec_install()
+
+    def autoexec_restore(self) -> Dict[str, Any]:
+        return self.core.autoexec_restore()
+
+    def autoexec_fps(self, fps: int) -> Dict[str, Any]:
+        return self.core.autoexec_fps(int(fps))
