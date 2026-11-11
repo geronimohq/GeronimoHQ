@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { ZE_SERVERS, type ZEServer } from '../data/zeServers';
 import { 
   fetchLiveTelemetry, 
@@ -999,8 +1000,8 @@ export const ServerRadarPreview: React.FC = () => {
             >
               <div>
                 {/* 1. Top Badges & External Links Header */}
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap sm:shrink-0">
                     <span className="tier-5-badge bg-[#121C18] border border-[#1E2E26] text-[#FFFFFF]">
                       {server.countryCode}
                     </span>
@@ -1018,7 +1019,7 @@ export const ServerRadarPreview: React.FC = () => {
                   </div>
 
                   {/* Time on map + links: Map collection(s) (Steam), 3D map, Discord, Portal. Wraps to a second line instead of overflowing. */}
-                  <div className="flex items-center justify-end flex-wrap gap-1.5 min-w-0">
+                  <div className="flex items-center justify-start sm:justify-end flex-wrap gap-1.5 min-w-0">
                     <span className="text-[#00F0FF] text-[10px] font-code font-bold bg-[#121C18] px-2 py-0.5 rounded border border-[#00F0FF]/40 flex items-center gap-1">
                       <Clock className="w-2.5 h-2.5 text-[#00F0FF]" />
                       {formatMapElapsed(mapDuration)}
@@ -1266,8 +1267,8 @@ export const ServerRadarPreview: React.FC = () => {
       {/* ==================================================================== */}
       {/* LIVE PLAYERS ROSTER MODAL                                            */}
       {/* ==================================================================== */}
-      {activeModalServer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+      {activeModalServer && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
           <div className="relative w-full max-w-2xl bg-slate-950 border border-cyan-500/50 rounded-2xl p-6 shadow-[0_0_50px_rgba(0,240,255,0.25)] flex flex-col max-h-[85vh]">
             
             {/* Modal Header */}
@@ -1413,11 +1414,11 @@ export const ServerRadarPreview: React.FC = () => {
 
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* GFL Map Soundtrack Modal */}
-      {showMusicModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+      {showMusicModal && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-slate-950 border border-purple-500/50 rounded-2xl p-6 max-w-2xl w-full max-h-[85vh] flex flex-col shadow-[0_0_50px_rgba(168,85,247,0.25)] relative">
             
             {/* Modal Header */}
@@ -1519,7 +1520,7 @@ export const ServerRadarPreview: React.FC = () => {
 
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* ==================================================================== */}
       {/* STEAM GAME SERVER DIRECT CONNECT MODAL (SCENARIO 1 & SCENARIO 2)     */}

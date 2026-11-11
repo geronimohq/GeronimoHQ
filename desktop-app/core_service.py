@@ -315,6 +315,16 @@ class Core:
         self.installed_maps(force=True)
         return {"ok": ok}
 
+    def workshop_open(self, wid: str) -> Dict[str, Any]:
+        """Opens the Steam workshop page of an item the Map Cleaner listed (the id must come from the last scan, never from the page alone)."""
+        wid = str(wid or "")
+        with self._lock:
+            listed = wid in getattr(self, "_maps", {})
+        if not (wid.isdigit() and listed):
+            return {"ok": False}
+        ok = self.open_url(f"steam://url/CommunityFilePage/{wid}") or self.open_url(f"https://steamcommunity.com/sharedfiles/filedetails/?id={wid}")
+        return {"ok": ok}
+
     def map_get(self, map_name: str, wid: str = "") -> Dict[str, Any]:
         """Opens the map's Steam workshop page (Subscribe there), or a workshop search when its id is not known."""
         import urllib.parse
@@ -988,7 +998,7 @@ class Core:
     @staticmethod
     def _map_rows(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         return [{"id": str(m.get("id")), "name": m.get("name"), "status": m.get("status_label"), "type": m.get("status_type"),
-                 "sub": bool(m.get("is_subscribed")), "asset": bool(m.get("is_server_asset")), "protected": bool(m.get("is_protected")),
+                 "sub": bool(m.get("is_subscribed")), "subscribed": bool(m.get("is_officially_subscribed")), "asset": bool(m.get("is_server_asset")), "protected": bool(m.get("is_protected")),
                  "workshop": bool(m.get("is_workshop")), "dupe": bool(m.get("has_duplicate")), "size": int(m.get("size_bytes") or 0),
                  "size_str": m.get("size_str"), "mtime": m.get("mtime_str")} for m in items]
 

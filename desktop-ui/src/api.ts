@@ -118,6 +118,7 @@ export const api = {
   mapsNews: () => call<MapsNews>('maps_news'),
   collectionSize: (id: string) => call<PackSize>('collection_size', id),
   collectionOpen: (id: string) => call<{ ok: boolean }>('collection_open', id),
+  workshopOpen: (id: string) => call<{ ok: boolean }>('workshop_open', id),
   winMax: () => call<boolean>('win_maximize'),
   winClose: () => call<void>('win_close'),
   winResize: (edge: string) => call<void>('win_resize', edge),
@@ -169,8 +170,8 @@ async function mock(name: string, ...args: unknown[]): Promise<unknown> {
     case 'set_last_page': return undefined;
     case 'maps_settings': return { communities: ['gfl'], protect_recent: true };
     case 'maps_scan': setTimeout(() => { window.__emit?.('maps', [
-      { id: '1', name: 'ze_sample_a', status: 'Subscribed (GFL ZE Collection)', type: 'subscribed', sub: true, asset: false, protected: true, workshop: true, dupe: false, size: 14000000, size_str: '13.4 MB', mtime: '2026-10-02 14:45' },
-      { id: '2', name: 'ze_temp_b', status: 'Not played in 30+ days', type: 'temp', sub: false, asset: false, protected: false, workshop: true, dupe: false, size: 2400000000, size_str: '2.24 GB', mtime: '2026-09-13 11:53' }]); window.__emit?.('job', { name: 'maps_scan', ok: true }); }, 600); return { ok: true };
+      { id: '3000000001', name: 'ze_sample_a', status: 'Subscribed (GFL ZE Collection)', type: 'subscribed', sub: true, subscribed: true, asset: false, protected: true, workshop: true, dupe: false, size: 14000000, size_str: '13.4 MB', mtime: '2026-10-02 14:45' },
+      { id: '3000000002', name: 'ze_temp_b', status: 'Not played in 30+ days', type: 'temp', sub: false, asset: false, protected: false, workshop: true, dupe: false, size: 2400000000, size_str: '2.24 GB', mtime: '2026-09-13 11:53' }]); window.__emit?.('job', { name: 'maps_scan', ok: true }); }, 600); return { ok: true };
     case 'maps_delete': setTimeout(() => window.__emit?.('maps_deleted', { count: 1, freed: 2400000000 }), 500); return { ok: true };
     case 'maps_backup': case 'maps_restore': return { ok: true, count: 0, dir: '' };
     case 'presence_state': case 'presence_toggle': case 'presence_clear': case 'presence_standby': return { enabled: true, connected: false, status: 'Standby (CS2 closed)', details: '', state: '', buttons: [], cs2_running: false, tracked: '' };
@@ -180,7 +181,7 @@ async function mock(name: string, ...args: unknown[]): Promise<unknown> {
     case 'maps_news': return { known: true, new: 0, missing: 0, total: 360 };
     case 'map_help': return { map: { name: 'ze_demo_map', wid: '' }, collections: [{ id: '1', label: 'Demo collection', kind: 'maps', total: 100, installed: 40, known: true, match: true }] };
     case 'collection_size': return { ok: true, missing: 60, known: 60, unknown: 0, bytes: 12000000000 };
-    case 'collection_open': return { ok: true };
+    case 'collection_open': case 'workshop_open': return { ok: true };
     case 'update_install': return { ok: false, error: 'Updates install only in the packaged app.' };
     case 'hw_info': return { cpu: 'AMD Ryzen 7 5700X3D 8-Core Processor [3D V-Cache Detected]', gpu: 'AMD Radeon RX 6600', profile: 'AMD 3D V-Cache detected. Windows Balanced allows AMD CPPC to properly schedule game threads.', recommended_plan: 'balanced' };
     case 'ze_customizer': return { ok: true, message: 'Sample', keys: ['F7', 'F8'], hud: 0, vm: true };

@@ -11,6 +11,7 @@ type Filter = 'all' | 'temp' | 'sub' | 'assets';
 const COMMS: [string, string][] = [['gfl', 'GFL']];     // only GFL re-uploads the maps it runs, so only GFL's collection protects maps; 'Active' covers the rest
 const RECENT_DAYS = 30;                                  // keep in step with RECENT_DAYS in custom_map_cleaner.py
 const GB = 1024 ** 3;
+const isSubscribed = (m: MapRow) => !!m.subscribed && !m.asset;           // the 'Subscribed maps' tab: what Steam has you subscribed to
 const isTemp = (m: MapRow) => !m.sub && !m.asset && m.workshop;
 const selectable = (m: MapRow) => !m.protected && !m.asset;          // bulk buttons never pick asset packs
 const canTick = (m: MapRow, allowAssets: boolean) => selectable(m) || (m.asset && allowAssets);
@@ -51,10 +52,10 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
   const toggleRecent = () => { setRecent(!recent); sfx.toggle(); scan(comms, !recent); };
 
   const unusedLabel = recent ? `Not played in ${RECENT_DAYS}+ days` : 'Not protected';       // what the old 'Temp downloads' tab really is: everything that nothing protects
-  const counts = useMemo(() => ({ all: rows.length, temp: rows.filter(isTemp).length, sub: rows.filter((m) => m.sub && !m.asset).length, assets: rows.filter((m) => m.asset).length }), [rows]);
+  const counts = useMemo(() => ({ all: rows.length, temp: rows.filter(isTemp).length, sub: rows.filter(isSubscribed).length, assets: rows.filter((m) => m.asset).length }), [rows]);
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase();
-    const f = rows.filter((m) => (filter === 'all' || (filter === 'temp' && isTemp(m)) || (filter === 'sub' && m.sub && !m.asset) || (filter === 'assets' && m.asset)) && (!t || `${m.name} ${m.id} ${m.status}`.toLowerCase().includes(t)));
+    const f = rows.filter((m) => (filter === 'all' || (filter === 'temp' && isTemp(m)) || (filter === 'sub' && isSubscribed(m)) || (filter === 'assets' && m.asset)) && (!t || `${m.name} ${m.id} ${m.status}`.toLowerCase().includes(t)));
     return f.sort((a, b) => (a[sort.k] < b[sort.k] ? -1 : a[sort.k] > b[sort.k] ? 1 : 0) * sort.dir);
   }, [rows, filter, q, sort]);
   const selBytes = rows.filter((m) => sel.has(m.id)).reduce((n, m) => n + m.size, 0);
@@ -73,7 +74,7 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
   };
   const backup = async () => { sfx.click(); const r = await api.mapsBackup(); openModal({ kind: r.count ? 'ok' : 'warn', label: 'Backup', title: r.count ? `Backed up ${r.count} VPK files` : 'No server asset VPKs found', body: r.count ? r.dir : undefined }); };
   const restore = async () => { sfx.click(); const r = await api.mapsRestore(); openModal({ kind: r.count ? 'ok' : 'warn', label: 'Restore', title: r.count ? `Restored ${r.count} VPK files` : 'No matching backups to restore' }); };
-  const th = (k: 'name' | 'size' | 'mtime', label: string) => <th onClick={() => { sfx.click(); setSort({ k, dir: sort.k === k ? (-sort.dir as 1 | -1) : 1 }); }} className="srt">{label}{sort.k === k ? (sort.dir === 1 ? ' \u25B2' : ' \u25BC') : ''}</th>;
+  const th = (k: 'name' | 'size' | 'mtime', label: string, tip?: string) => <th onClick={() => { sfx.click(); setSort({ k, dir: sort.k === k ? (-sort.dir as 1 | -1) : 1 }); }} className="srt" title={tip}>{label}{sort.k === k ? (sort.dir === 1 ? ' \u25B2' : ' \u25BC') : ''}</th>;
 
   return createPortal(
     <motion.div className="scrim on" role="dialog" aria-modal="true" aria-labelledby="mcTitle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -93,22 +94,28 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
           <label className="chk" title="Advanced. Lets you tick server asset packs (models, sounds) to delete them. Servers need these to join."><input type="checkbox" checked={allowAssets} onChange={toggleAssets} />Allow deleting server asset packs (advanced)</label></div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', margin: '10px 0' }}>
           <div className="seg" role="group" aria-label="Filter">
-            {([['all', 'All maps'], ['temp', unusedLabel], ['sub', 'Subscribed packs'], ['assets', 'Server assets']] as [Filter, string][]).map(([k, l]) => (
+            {([['all', 'All maps'], ['temp', unusedLabel], ['sub', 'Subscribed maps'], ['assets', 'Server assets']] as [Filter, string][]).map(([k, l]) => (
               <button key={k} aria-pressed={filter === k} onClick={() => { sfx.click(); setFilter(k); }}>{l} ({counts[k]})</button>))}
           </div>
           <div className="search"><Search size={14} style={{ color: 'var(--tx3)' }} /><label className="sr" htmlFor="mq">Search maps</label><input id="mq" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search maps" /></div>
           <span className="mono" style={{ fontSize: 12, color: 'var(--tx)' }}>Total: {rows.length} maps ({fmt(total)}) | Selected: {sel.size} ({fmt(selBytes)})</span>
         </div>
         <div className="mctable">
-          <table><thead><tr><th style={{ width: 34 }} />{th('name', 'Map / asset package')}<th>Workshop ID</th><th>Status</th>{th('size', 'Size')}{th('mtime', 'Last played / modified')}</tr></thead>
+          <table><thead><tr><th style={{ width: 34 }} />{th('name', 'Map / asset package')}<th>Workshop ID</th><th>Status</th>{th('size', 'Size')}{th('mtime', 'Last modified', `CS2 does not record when you last played a map. This is the date Steam or CS2 last touched the map's files, which is the best guide the cleaner has. A map counts as 'Not played in ${RECENT_DAYS}+ days' only when this date is older than ${RECENT_DAYS} days.`)}</tr></thead>
             <tbody>
               {busy && !rows.length && <tr><td colSpan={6} className="decal" style={{ padding: 20 }}>Scanning maps\u2026</td></tr>}
               {shown.map((m) => (
                 <tr key={m.id} className={isTemp(m) ? 'tmp' : ''}>
                   <td><input type="checkbox" aria-label={`Select ${m.name}`} disabled={!canTick(m, allowAssets)} checked={sel.has(m.id)} onChange={() => { const n = new Set(sel); if (n.has(m.id)) n.delete(m.id); else n.add(m.id); setSel(n); }} /></td>
-                  <td>{m.name}</td><td className="mono">{m.id}</td><td>{m.status}</td><td className="mono">{m.size_str}</td><td className="mono">{m.mtime}</td>
+                  <td>{/^\d{6,}$/.test(m.id)
+                    ? <a className="mcl" href="#" title="Open this map's Steam workshop page" onClick={(e) => { e.preventDefault(); sfx.click(); void api.workshopOpen(m.id); }}>{m.name}</a>
+                    : m.name}</td><td className="mono">{m.id}</td><td>{m.status}</td><td className="mono">{m.size_str}</td><td className="mono">{m.mtime}</td>
                 </tr>))}
             </tbody></table>
+        </div>
+        <div className="decal" style={{ margin: '8px 2px 0', textTransform: 'none', letterSpacing: 0, lineHeight: 1.5 }}>
+          <b>About the date:</b> CS2 does not record when you last played a map, so &quot;Last modified&quot; is the date Steam or CS2 last touched the map&apos;s files. Only maps older than {RECENT_DAYS} days are listed as &quot;{unusedLabel}&quot; while Active is on.
+          <br /><b>Same map twice?</b> That is most probably a subscription from a different pack, for example GFL&apos;s own copy of a map that another server also plays. Delete with caution: removing the wrong copy can make a server download the map again or show it as missing.
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
           <button className="btn cut ghost sm" onClick={() => pick(rows.filter((m) => isTemp(m) && selectable(m)).map((m) => m.id))}>Select all {unusedLabel.toLowerCase()} (safe)</button>

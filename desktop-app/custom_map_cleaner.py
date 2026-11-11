@@ -410,6 +410,7 @@ def scan_custom_maps(steam_path: str, cs2_dir: str = None, protected_communities
                     comm_key = next((k for k in member_keys if k in protected_communities), member_keys[0])
                     comm_badge = COMMUNITY_SERVER_ROSTERS.get(comm_key, {}).get("badge", comm_badge)
                 is_official_gfl = (workshop_id in subscribed_ids)
+                recent_hit = bool(protect_recent and latest_mtime > 0 and (now_ts - latest_mtime <= RECENT_DAYS * 86400))
                 if is_official_gfl:
                     owner = comm_key if member_keys else "gfl"
                     pretty = COMMUNITY_SERVER_ROSTERS.get(owner, {}).get("name", "GFL Server Pack")
@@ -418,12 +419,17 @@ def scan_custom_maps(steam_path: str, cs2_dir: str = None, protected_communities
                     status_label = f"⭐ Subscribed ({pretty})" if is_sub else (f"📁 {pretty} (Protection Disabled)" if owner == "gfl" else "📁 Subscribed")
                     status_type = "subscribed" if is_sub else "temp"
                     is_protected = is_sub
+                    if not is_protected and recent_hit:           # a subscribed map you used lately is "Active" like any other
+                        is_sub = True
+                        status_label = f"🕒 Active Rotation (Last {RECENT_DAYS}d)"
+                        status_type = "recent_rotation"
+                        is_protected = True
                 elif comm_key and comm_key in protected_communities:
                     is_sub = True
                     status_label = comm_badge
                     status_type = "community_protected"
                     is_protected = True
-                elif protect_recent and latest_mtime > 0 and (now_ts - latest_mtime <= RECENT_DAYS * 86400):
+                elif recent_hit:
                     is_sub = True
                     status_label = f"🕒 Active Rotation (Last {RECENT_DAYS}d)"
                     status_type = "recent_rotation"
