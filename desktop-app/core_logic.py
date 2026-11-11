@@ -272,15 +272,17 @@ def clean_cs2_temp_dumps(cs2_dir: Optional[str]) -> Tuple[int, int, List[str]]:
                         pass
 
     if cs2_dir and os.path.exists(cs2_dir):
+        # Crash dumps only. Never "*.log" outside the dumps folder: game/csgo/console.log is what the Log Analyzer and the Discord
+        # server detection read, and other tools keep their logs there too.
         check_folders = [
-            os.path.join(cs2_dir, "game", "bin", "win64"),
-            os.path.join(cs2_dir, "game", "csgo"),
-            os.path.join(cs2_dir, "game", "csgo", "dumps"),
+            (os.path.join(cs2_dir, "game", "bin", "win64"), ["*.dmp", "crash_*.txt"]),
+            (os.path.join(cs2_dir, "game", "csgo"), ["*.dmp", "crash_*.txt"]),
+            (os.path.join(cs2_dir, "game", "csgo", "dumps"), ["*.dmp", "*.mdmp", "*.tmp", "*.log", "crash_*.txt"]),
         ]
-        for folder in check_folders:
+        for folder, patterns in check_folders:
             if not os.path.exists(folder):
                 continue
-            for ext in ["*.dmp", "*.tmp", "*.log", "crash_*.txt"]:
+            for ext in patterns:
                 for fp in glob.glob(os.path.join(folder, ext)):
                     try:
                         sz = os.path.getsize(fp)
@@ -614,21 +616,22 @@ def save_launch_options(vdf_path: str, new_options: str) -> Tuple[bool, List[str
             shutil.copyfile(vdf_path, backup_vdf)
             logs.append("[BACKUP] Created backup of Steam localconfig.vdf")
 
-        with open(vdf_path, "r", encoding="utf-8", errors="ignore") as f:
+        import steam_vdf
+        with open(vdf_path, "r", encoding="utf-8", errors="ignore", newline="") as f:      # newline="": keep the file's own line endings
             content = f.read()
 
-        if '"LaunchOptions"' in content:
-            new_content = re.sub(r'("LaunchOptions"\s+)"[^"]*"', rf'\1"{new_options}"', content)
-        else:
-            pattern = r'("730"\s*\{)'
-            if re.search(pattern, content):
-                replacement = rf'\1\n\t\t\t\t\t"LaunchOptions"\t\t"{new_options}"'
-                new_content = re.sub(pattern, replacement, content, count=1)
-            else:
-                return False, ["[ERROR] Counter-Strike 2 (730) block not found in Steam config."]
+        # Edit only CS2's own block (Software > Valve > Steam > apps > 730) and leave every other byte, and every other game, as it is.
+        try:
+            new_content = steam_vdf.set_launch_options(content, new_options, "730")
+            if steam_vdf.get_launch_options(new_content, "730") != (new_options or "").strip().replace("\r", " ").replace("\n", " "):
+                return False, ["[ERROR] Safety check failed: the edited file did not read back correctly. Nothing was written."]
+        except steam_vdf.VdfError as e:
+            return False, [f"[ERROR] Could not safely edit Steam's config ({e}). Nothing was written."]
 
-        with open(vdf_path, "w", encoding="utf-8") as f:
+        tmp_path = vdf_path + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8", newline="") as f:
             f.write(new_content)
+        os.replace(tmp_path, vdf_path)
 
         logs.append(f"[SUCCESS] Updated CS2 Launch Options in Steam to: '{new_options}'")
         logs.append("[NOTE] If Steam was running, restart Steam to reflect the new launch options.")
@@ -760,6 +763,9 @@ def boost_cs2_process() -> Tuple[bool, str]:
 
 # ----------------- SAFE PC MAINTENANCE -----------------
 
+TEMP_MIN_AGE_SECONDS = 24 * 3600
+
+
 def clean_windows_temp_files() -> Tuple[int, int, List[str]]:
     """Cleans %TEMP% and %SystemRoot%\\Temp. Skips locked/open files safely."""
     logs = []
@@ -775,14 +781,30 @@ def clean_windows_temp_files() -> Tuple[int, int, List[str]]:
     if os.path.exists(win_temp):
         target_dirs.append(win_temp)
 
+    # Never touch this app's own unpacked files (a one-file exe lives in %TEMP%\_MEIxxxx while it runs, and so do other PyInstaller apps),
+    # and leave files from the last 24 hours alone: they belong to programs that are running or installing right now.
+    own_root = getattr(sys, "_MEIPASS", None)
+    own_root = os.path.normcase(os.path.abspath(own_root)) if own_root else None
+    cutoff = time.time() - TEMP_MIN_AGE_SECONDS
+
+    def protected(path: str) -> bool:
+        low = os.path.normcase(os.path.abspath(path))
+        if own_root and (low == own_root or low.startswith(own_root + os.sep)):
+            return True
+        return any(part.startswith("_mei") for part in low.split(os.sep))
+
     for folder in target_dirs:
         folder_deleted = 0
         folder_freed = 0
         try:
             for root, dirs, files in os.walk(folder, topdown=False):
+                if protected(root):
+                    continue
                 for f in files:
                     file_path = os.path.join(root, f)
                     try:
+                        if os.path.getmtime(file_path) > cutoff:
+                            continue
                         sz = os.path.getsize(file_path)
                         os.remove(file_path)
                         folder_deleted += 1

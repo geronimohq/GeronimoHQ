@@ -216,7 +216,8 @@ class MapCleaner(unittest.TestCase):
         core, events = make_core()
         self._scan(core, events)
         self.assertFalse(core.maps_delete(["999", "../../windows"])["ok"])        # unknown ids are refused
-        with mock.patch.object(custom_map_cleaner, "delete_custom_maps", return_value=(1, 5, ["[CLEANED]"])) as dele:
+        with mock.patch.object(custom_map_cleaner, "scan_custom_maps", return_value=list(self.ROWS)), \
+                mock.patch.object(custom_map_cleaner, "delete_custom_maps", return_value=(1, 5, ["[CLEANED]"])) as dele:     # delete re-scans first
             self.assertTrue(core.maps_delete(["111", "999"])["ok"])
             for _ in range(200):
                 if any(e[0] == "maps_deleted" for e in events):

@@ -308,6 +308,7 @@ def scan_custom_maps(steam_path: str, cs2_dir: str = None, protected_communities
 
             # Check if this workshop folder is a Server Asset Pack or custom user VPK
             is_asset, asset_name, is_custom = is_asset_pack_or_custom(folder, workshop_id, title)
+            is_official_gfl = (workshop_id in subscribed_ids)      # defined for every folder, not only for maps
             if is_asset:
                 title = asset_name
                 map_type = "Custom Asset VPK" if is_custom else "Server Asset Pack"

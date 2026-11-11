@@ -30,8 +30,8 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     const o1 = on<MapRow[]>('maps', (r) => { setRows(r); setSel(new Set()); });
     const o2 = on<{ name: string }>('job', (j) => { if (j.name === 'maps_scan') setBusy(false); });
-    const o3 = on<{ count: number; freed: number }>('maps_deleted', (d) => {
-      openModal({ kind: 'ok', label: 'Clean complete', title: `Deleted ${d.count} maps`, body: `Reclaimed ${(d.freed / GB).toFixed(2)} GB of storage.` });
+    const o3 = on<{ count: number; freed: number; skipped?: number }>('maps_deleted', (d) => {
+      openModal({ kind: 'ok', label: 'Clean complete', title: `Deleted ${d.count} maps`, body: `Reclaimed ${(d.freed / GB).toFixed(2)} GB of storage.${d.skipped ? `\n\n${d.skipped} selected item(s) were skipped because they are now protected or no longer on disk.` : ''}` });
       scan(comms, recent);
     });
     void api.mapsSettings().then((s) => { setComms(s.communities); setRecent(s.protect_recent); scan(s.communities, s.protect_recent); first.current = false; });
@@ -60,7 +60,7 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
     openModal({
       kind: 'q', label: 'Confirm', title: `Delete ${ids.length} maps?`,
       body: `This permanently removes ${ids.length} maps (${fmt(selBytes)}). It cannot be undone.\n\nSubscribed server packs and official maps are protected. If you visit a server that plays one of these maps, CS2 downloads it again.`,
-      confirm: { text: 'Delete maps', run: async () => { setBusy(true); const r = await api.mapsDelete(ids); if (!r.ok) { setBusy(false); openModal({ kind: 'warn', label: 'Problem', title: 'Not started', body: r.error }); } } },
+      confirm: { text: 'Delete maps', run: async () => { setBusy(true); const r = await api.mapsDelete(ids, comms, recent); if (!r.ok) { setBusy(false); openModal({ kind: 'warn', label: 'Problem', title: 'Not started', body: r.error }); } } },
     });
   };
   const backup = async () => { sfx.click(); const r = await api.mapsBackup(); openModal({ kind: r.count ? 'ok' : 'warn', label: 'Backup', title: r.count ? `Backed up ${r.count} VPK files` : 'No server asset VPKs found', body: r.count ? r.dir : undefined }); };

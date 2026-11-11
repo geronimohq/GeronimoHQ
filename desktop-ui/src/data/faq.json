@@ -46,6 +46,10 @@
    {
     "q": "Why should I purge DirectX & Vulkan shader caches?",
     "a": "After GPU driver updates (NVIDIA/AMD) or CS2 game patches, old compiled shader caches can become corrupted or misaligned, leading to severe stutter when rendering smokes, fire, and particle effects. Purging the cache allows the driver to recompile fresh, optimized shaders on clean launch."
+   },
+   {
+    "q": "What does 'Clean CS2 crash dumps & temp files' delete?",
+    "a": "Only crash reports: .dmp files and crash_*.txt in the CS2 bin and csgo folders, the contents of csgo\\dumps, and CS2 minidumps in %LOCALAPPDATA%\\CrashDumps. It never deletes console.log or other .log files, because the Log Analyzer and the Discord server detection read console.log."
    }
   ]
  },
@@ -115,6 +119,10 @@
    {
     "q": "Are the Optimizer and PC Maintenance meant to increase my max FPS?",
     "a": "They are NOT meant to artificially inflate maximum FPS beyond your physical CPU/GPU limits. Instead, they are engineered for System Stability, Frame-Time Consistency (1% Lows), Micro-Stutter Prevention during 64-player Zombie Escape & heavy utility, Display/Alt-Tab Reliability (MPO), Sub-Tick & DNS Network Responsiveness, and SSD/OS Health."
+   },
+   {
+    "q": "Does 'Apply to Steam' change the launch options of my other games?",
+    "a": "No. The app edits only Counter-Strike 2's own entry in the Steam account that logged in last, and leaves every other game and every other line of the file as it was. Quotes and backslashes in your options are saved correctly. If the file cannot be read safely, nothing is written. Steam must be closed first: if Steam is running the app refuses to save, because Steam would overwrite the change when it exits. A backup (localconfig.vdf.backup) is kept next to the file."
    }
   ]
  },
@@ -212,6 +220,10 @@
    {
     "q": "What happens if I delete a map and later rejoin a server running that map?",
     "a": "When you join a server that plays it again, CS2 asks 'Confirm Workshop Download' and downloads the map from the Steam workshop after you accept. Deleting downloaded maps only removes files that can be downloaded again; it does not affect your account. The app asks you to confirm before it deletes anything, and the confirmation cannot be undone."
+   },
+   {
+    "q": "How does the Map Cleaner make sure protected maps are not deleted?",
+    "a": "When you press Delete, the app scans again with the protection choices shown on screen at that moment and deletes only what is still unprotected and still on disk. Subscribed server packs and server asset packs can never be ticked, and anything that became protected since you ticked it is skipped and reported."
    }
   ]
  },
@@ -231,6 +243,10 @@
    {
     "q": "What do 'Verify Workshop VPK health' and 'Repair corrupted VPKs' check, and what can they miss?",
     "a": "Verify reads every workshop pack under steamapps/workshop/content/730 (all your Steam libraries that hold CS2) and checks the pack's index and that every data part it points to is on disk and long enough. That finds downloads that stopped half way, missing or short archive parts, empty or unreadable files, wrong file signatures and folders with leftover temporary files. It cannot see changed bytes inside a file that is complete and the right size, because that would mean reading every file in full. Repair removes only the packs Verify flagged. It refuses anything that is not a plain workshop item folder, never follows links, and skips a pack that changed in the last 15 minutes because Steam may still be downloading it. Removed packs are not sent to the recycle bin. A subscribed map is downloaded again by Steam on its next check, or when you join a server that needs it; maps you only played once are asked for again with a download dialog."
+   },
+   {
+    "q": "Which temporary files does the Windows temp clean-up delete?",
+    "a": "Files in your %TEMP% folder and in Windows\\Temp that are older than 24 hours and not in use. Anything newer is left alone because a running program or an installer may still need it, and the app never touches its own unpacked files or the temporary folders of other single-file apps. Locked files are skipped."
    }
   ]
  },

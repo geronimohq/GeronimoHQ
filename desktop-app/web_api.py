@@ -438,8 +438,8 @@ class Api:
     def maps_scan(self, communities: List[str], protect_recent: bool) -> Dict[str, Any]:
         return self.core.maps_scan(list(communities or []), bool(protect_recent))
 
-    def maps_delete(self, ids: List[str]) -> Dict[str, Any]:
-        return self.core.maps_delete(list(ids or []))
+    def maps_delete(self, ids: List[str], communities: List[str] = None, protect_recent: bool = None) -> Dict[str, Any]:
+        return self.core.maps_delete(list(ids or []), None if communities is None else list(communities), None if protect_recent is None else bool(protect_recent))
 
     def maps_backup(self) -> Dict[str, Any]:
         return self.core.maps_backup()

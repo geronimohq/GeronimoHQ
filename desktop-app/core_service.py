@@ -36,6 +36,9 @@ class Core:
         self._lock = threading.Lock()
         self._busy: Optional[str] = None
         self._maps: Dict[str, Dict[str, Any]] = {}
+        self._scan_lock = threading.Lock()
+        self._scan_pending = None
+        self._scan_running = False
         import presence_service
         self.presence = presence_service.PresenceService(self)      # created here, started by web_main (no threads in tests)
         self._pool = concurrent.futures.ThreadPoolExecutor(max_workers=8, thread_name_prefix="srvq")
@@ -627,6 +630,12 @@ class Core:
         _cur, vdf = hardware_info.get_current_launch_options(self.paths.get("steam_path"))
         if not vdf:
             return {"ok": False, "error": "Steam localconfig.vdf was not found."}
+        try:
+            steam_open = bool(core_logic.is_steam_running())
+        except Exception:
+            steam_open = False
+        if steam_open:
+            return {"ok": False, "error": "Steam is running. Close Steam completely first, otherwise it overwrites this change when it exits. Then press Apply again."}
         ok, logs = core_logic.save_launch_options(vdf, (options or "").strip())
         for l in logs:
             self.log(l)
@@ -819,32 +828,70 @@ class Core:
         self.config["cleaner_protect_recent"] = bool(protect_recent)
         app_config.save_config(self.config)
 
-        def task():
-            items = custom_map_cleaner.scan_custom_maps(self.paths.get("steam_path"), self.paths.get("cs2_dir"), set(comms), bool(protect_recent))
-            with self._lock:
-                self._maps = {str(m.get("id")): m for m in items}      # the ONLY source of paths for delete/backup (never trust the page)
-            rows = [{"id": str(m.get("id")), "name": m.get("name"), "status": m.get("status_label"), "type": m.get("status_type"),
-                     "sub": bool(m.get("is_subscribed")), "asset": bool(m.get("is_server_asset")), "protected": bool(m.get("is_protected")),
-                     "workshop": bool(m.get("is_workshop")), "dupe": bool(m.get("has_duplicate")), "size": int(m.get("size_bytes") or 0),
-                     "size_str": m.get("size_str"), "mtime": m.get("mtime_str")} for m in items]
-            self.emit("maps", rows)
-            self.log(f"Map scan found {len(rows)} custom maps", "SYSTEM")
+        # Scans are not "jobs": a long SFC or DISM run must not make them refuse, and a refused scan used to leave the table
+        # showing old protection flags. The newest request always wins and runs as soon as the current scan ends.
+        with self._scan_lock:
+            self._scan_pending = (set(comms), bool(protect_recent))
+            if self._scan_running:
+                return {"ok": True, "queued": True}
+            self._scan_running = True
 
-        return self._start_job("maps_scan", task)
+        def worker():
+            try:
+                while True:
+                    with self._scan_lock:
+                        req, self._scan_pending = self._scan_pending, None
+                    if req is None:
+                        break
+                    try:
+                        items = custom_map_cleaner.scan_custom_maps(self.paths.get("steam_path"), self.paths.get("cs2_dir"), req[0], req[1])
+                    except Exception as e:
+                        self.log(f"[ERROR] Map scan failed: {e}")
+                        items = []
+                    with self._lock:
+                        self._maps = {str(m.get("id")): m for m in items}      # paths for backup; delete re-scans, it never trusts this or the page
+                    self.emit("maps", self._map_rows(items))
+                    self.log(f"Map scan found {len(items)} custom maps", "SYSTEM")
+            finally:
+                with self._scan_lock:
+                    self._scan_running = False
+                self.emit("job", {"name": "maps_scan", "ok": True})
 
-    def maps_delete(self, ids: List[str]) -> Dict[str, Any]:
+        threading.Thread(target=worker, daemon=True, name="maps-scan").start()
+        return {"ok": True}
+
+    @staticmethod
+    def _map_rows(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        return [{"id": str(m.get("id")), "name": m.get("name"), "status": m.get("status_label"), "type": m.get("status_type"),
+                 "sub": bool(m.get("is_subscribed")), "asset": bool(m.get("is_server_asset")), "protected": bool(m.get("is_protected")),
+                 "workshop": bool(m.get("is_workshop")), "dupe": bool(m.get("has_duplicate")), "size": int(m.get("size_bytes") or 0),
+                 "size_str": m.get("size_str"), "mtime": m.get("mtime_str")} for m in items]
+
+    def maps_delete(self, ids: List[str], communities: Optional[List[str]] = None, protect_recent: Optional[bool] = None) -> Dict[str, Any]:
         import custom_map_cleaner
         with self._lock:
-            items = [self._maps[i] for i in (ids or []) if i in getattr(self, "_maps", {})]
-        if not items:
+            wanted = {str(i) for i in (ids or []) if str(i) in getattr(self, "_maps", {})}     # ids the last scan really listed; anything else is refused
+        if not wanted:
             return {"ok": False, "error": "Nothing selected."}
+        if communities is None:
+            communities = list(self.config.get("cleaner_protected_comms", list(self.COMMUNITIES)))
+        if protect_recent is None:
+            protect_recent = bool(self.config.get("cleaner_protect_recent", True))
+        comms = {c for c in communities if c in self.COMMUNITIES}
 
         def task():
+            # Re-scan right now with the protection choices the page shows, so what is deleted can never be older or less protected
+            # than what the user sees. Protected packs, server assets and anything no longer on disk are skipped.
+            fresh = custom_map_cleaner.scan_custom_maps(self.paths.get("steam_path"), self.paths.get("cs2_dir"), comms, bool(protect_recent))
+            items = [m for m in fresh if str(m.get("id")) in wanted and not m.get("is_protected") and not m.get("is_server_asset")]
+            skipped = len(wanted) - len(items)
+            if skipped:
+                self.log(f"[MAP CLEANER] Skipped {skipped} selected item(s): now protected, a server asset pack, or no longer on disk.")
             count, freed, logs = custom_map_cleaner.delete_custom_maps(items)
             for l in logs:
                 self.log(l)
             self.log(f"[MAP CLEANER] Deleted {count} custom maps. Freed {freed / (1024 ** 3):.2f} GB.")
-            self.emit("maps_deleted", {"count": count, "freed": freed})
+            self.emit("maps_deleted", {"count": count, "freed": freed, "skipped": skipped})
 
         return self._start_job("maps_delete", task)
 
