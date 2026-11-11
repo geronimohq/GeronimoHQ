@@ -18,7 +18,7 @@
    },
    {
     "q": "How do updates work?",
-    "a": "The app checks geronimohq.com for a signed update manifest. The new exe is only offered when its Ed25519 signature, size and SHA-256 match, so a tampered file is rejected. Settings shows the last check and a Check now button. Your settings and logs are kept when the app updates."
+    "a": "The app checks geronimohq.com for a signed update manifest. The new exe is only offered when its Ed25519 signature, size and SHA-256 match, so a tampered file is rejected. Settings shows the last check and a Check now button, and Check now also brings up the update banner with its Update now button. Your settings and logs are kept when the app updates."
    },
    {
     "q": "Does it find Steam and CS2 if they are on another drive or in another library?",

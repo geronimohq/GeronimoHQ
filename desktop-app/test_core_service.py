@@ -543,3 +543,20 @@ class UpdateInstallExit(unittest.TestCase):
                 mock.patch.object(updater, "spawn_updater_helper_and_exit", side_effect=SystemExit(0)):
             self.assertTrue(core.update_install()["ok"])
             self.assertTrue(called.wait(5), "the app must exit, not just the job thread (sys.exit(0) in a thread ends only that thread)")
+
+
+class ManualUpdateCheck(unittest.TestCase):
+    def test_check_now_shows_the_update_banner_even_after_it_was_dismissed_or_skipped(self):
+        import updater
+        events = []
+        core = core_service.Core(emit=lambda e, d: events.append((e, d)))
+        manifest = {"version": "9.9.9", "notes": "n", "size": 1, "url": "https://geronimohq.com/x.exe", "sha256": "0" * 64, "signature": "0" * 128}
+        core.config["skipped_update_version"] = "9.9.9"                                  # the user once pressed 'Skip this version'
+        with mock.patch.object(updater, "fetch_update_manifest", return_value=(True, manifest, "")), mock.patch("app_config.save_config", return_value=True):
+            r = core.update_check(manual=True)
+        self.assertTrue(r["available"])
+        self.assertTrue(any(e == "update" and d["version"] == "9.9.9" for e, d in events))
+        events.clear()
+        with mock.patch.object(updater, "fetch_update_manifest", return_value=(True, manifest, "")), mock.patch("app_config.save_config", return_value=True):
+            core.update_check(manual=False)                                              # the silent startup check does not emit by itself
+        self.assertFalse(any(e == "update" for e, d in events))

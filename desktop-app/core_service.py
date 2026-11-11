@@ -995,8 +995,11 @@ class Core:
             return {"available": False, "message": msg or "You are up to date.", "last": self.config["last_update_check_time"]}
         self._pending_manifest = manifest
         skipped = manifest["version"] == self.config.get("skipped_update_version") and not manual
-        return {"available": not skipped, "version": manifest["version"], "notes": manifest.get("notes", ""), "size": manifest.get("size", 0),
-                "message": f"Update available: v{manifest['version']}", "last": self.config["last_update_check_time"]}
+        result = {"available": not skipped, "version": manifest["version"], "notes": manifest.get("notes", ""), "size": manifest.get("size", 0),
+                  "message": f"Update available: v{manifest['version']}", "last": self.config["last_update_check_time"]}
+        if manual and result["available"]:
+            self.emit("update", result)          # "Check now" must also show the banner with the Update now button, not only a line in Settings
+        return result
 
     def update_check_startup(self) -> None:
         """Background check at startup; tells the page only when there is something to show."""
