@@ -161,7 +161,7 @@ class Core:
             except Exception:
                 pass
         cur_map = info.get("map") if online else None
-        mm = self.map_check(cur_map) if online else None
+        mm = self.map_check(cur_map) if online and s.get("group") != "china" else None        # the missing-map warning is for the global servers only
         since, exact = self._map_clock(sid, cur_map, None if s.get("group") == "china" else s["host"], int(s["port"]), humans)
         return {"id": sid, "online": online, "map": cur_map, "players": total, "bots": bots,
                 "humans": humans, "max": int(info.get("max_players") or 0), "ping": info.get("rtt") if online else None,

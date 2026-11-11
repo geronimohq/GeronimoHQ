@@ -136,6 +136,16 @@ class CoreDialog(Base):
         self.assertEqual(ou.call_count, 1)
 
 
+class ChinaExcluded(Base):
+    def test_planet_china_servers_never_get_the_missing_map_warning(self):
+        core = core_service.Core()
+        info = {"online": True, "map": "ze_not_on_this_pc", "curr_players": 5, "bots": 0, "max_players": 64, "rtt": 40, "server_name": "x"}
+        with mock.patch.object(core_service.server_browser, "query_server_info", return_value=info),                 mock.patch.object(core, "installed_maps", return_value={"ids": set(), "names": set(), "known": True}),                 mock.patch.object(core_service.server_browser, "_get_s2ze_map_meta", return_value={"addon": "123456789"}),                 mock.patch.object(core, "_china_servers", return_value=[{"id": "exg_1", "name": "EXG", "host": "1.2.3.4", "port": 27015, "region": "x", "cluster": "c", "group": "china"}]),                 mock.patch.dict(core.paths, {"cs2_dir": "C:/cs2"}):
+            self.assertFalse(core.server_status("exg_1")["map_missing"])
+            gfl = core.server_status("gfl")
+        self.assertTrue(gfl["map_missing"])                                                  # a global server with the same map still warns
+
+
 class CleanerProtection(Base):
     def test_protection_follows_collection_membership_and_assets_are_protected(self):
         with tempfile.TemporaryDirectory() as steam:
