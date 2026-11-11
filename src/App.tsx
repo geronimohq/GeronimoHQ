@@ -5,6 +5,8 @@ import { PepeHeroStage } from './components/PepeHeroStage';
 import { BananaHeroStage } from './components/BananaHeroStage';
 import { DownloadRamSection } from './components/DownloadRamSection';
 import { ServerRadarPreview } from './components/ServerRadarPreview';
+import { WorldNewsTicker } from './components/WorldNewsTicker';
+import { WorldNewsSection } from './components/WorldNewsSection';
 import { CS2AutoexecGeneratorSection } from './components/CS2AutoexecGeneratorSection';
 import { CS2CommandCenterPreview } from './components/CS2CommandCenterPreview';
 import { DeployHudFooter } from './components/DeployHudFooter';
@@ -178,7 +180,10 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main id="main-content" tabIndex={-1} className="relative z-10 flex-grow flex flex-col items-center outline-none">
-        
+
+        {/* WORLD NEWS: breaking / latest headline strip (the full channel is further down) */}
+        <WorldNewsTicker theme={theme} />
+
         {/* ASYMMETRIC BENTO-GRID COMMAND HEADER */}
         <div id="hero-stage" className="w-full max-w-6xl mx-auto pt-6 pb-2 px-4 scroll-mt-32">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
@@ -314,6 +319,9 @@ export const App: React.FC = () => {
 
         {/* MODULE 1: ZOMBIE ESCAPE SERVER RADAR + 24H TIMELINE + MAP & LASER ENCYCLOPEDIA */}
         <ServerRadarPreview />
+
+        {/* WORLD NEWS CHANNEL: automated headlines about disasters, war, science and aliens (scripts/fetch_world_news.py) */}
+        <WorldNewsSection theme={theme} />
 
         {/* MODULE 2: INTERACTIVE WEB CS2 AUTOEXEC & ZE BINDS GENERATOR (#cfg-studio) */}
         <CS2AutoexecGeneratorSection />

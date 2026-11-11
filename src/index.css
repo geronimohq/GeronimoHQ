@@ -533,3 +533,13 @@
   .tier-5-badge { display: inline-flex; }
   .hud-data-pill { display: inline-flex; }
 }
+
+/* World News ticker: a continuous marquee of two identical copies; hover/focus pauses it, reduced motion turns it into a scrollable row */
+.news-ticker-track { display: inline-flex; white-space: nowrap; animation: newsTicker var(--news-dur, 60s) linear infinite; will-change: transform; }
+.news-ticker-copy { display: inline-flex; align-items: center; gap: 2.5rem; padding-right: 2.5rem; }
+.news-ticker:hover .news-ticker-track, .news-ticker:focus-within .news-ticker-track { animation-play-state: paused; }
+@keyframes newsTicker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .news-ticker-track { animation: none; }
+  .news-ticker-viewport { overflow-x: auto !important; }
+}

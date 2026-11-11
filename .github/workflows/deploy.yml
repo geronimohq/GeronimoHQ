@@ -58,6 +58,10 @@ jobs:
         run: python scripts/resolve_workshop_maps.py
         continue-on-error: true
 
+      - name: Collect world news headlines (best effort)
+        run: python scripts/fetch_world_news.py
+        continue-on-error: true
+
       - name: Build site with Vite
         run: npm run build
 
