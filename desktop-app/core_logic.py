@@ -98,26 +98,10 @@ def is_admin() -> bool:
         return False
 
 def find_steam_path() -> Optional[str]:
-    reg_keys = [
-        (winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam"),
-        (winreg.HKEY_LOCAL_MACHINE, r"Software\Valve\Steam"),
-        (winreg.HKEY_LOCAL_MACHINE, r"Software\WOW6432Node\Valve\Steam"),
-    ]
-    for hive, subkey in reg_keys:
-        try:
-            with winreg.OpenKey(hive, subkey) as k:
-                val, _ = winreg.QueryValueEx(k, "SteamPath")
-                if os.path.exists(val):
-                    return os.path.normpath(val)
-        except Exception:
-            continue
-    
-    for drive in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-        for sub in [r"Program Files (x86)\Steam", r"Program Files\Steam", "Steam"]:
-            p = f"{drive}:\\{sub}"
-            if os.path.exists(p):
-                return p
-    return None
+    """Steam's install folder (registry, uninstall entry, fixed-drive defaults). See steam_paths.py."""
+    import steam_paths
+    return steam_paths.find_steam_path()
+
 
 def get_steam_active_persona(steam_path: Optional[str] = None) -> Optional[str]:
     """Reads Steam's loginusers.vdf to find the user's active Steam Persona Name."""
@@ -146,58 +130,12 @@ def get_steam_active_persona(steam_path: Optional[str] = None) -> Optional[str]:
     return None
 
 def find_cs2_paths() -> Dict[str, Optional[str]]:
+    """Steam, the CS2 install, its cfg folder and autoexec.cfg. The library that Steam's own appmanifest_730.acf points to wins,
+    and a custom install folder name is honoured. See steam_paths.py."""
+    import steam_paths
     steam_path = find_steam_path()
-    result = {
-        "steam_path": steam_path,
-        "cs2_dir": None,
-        "cs2_exe": None,
-        "cfg_dir": None,
-        "autoexec_cfg": None
-    }
-    
-    library_folders = []
-    if steam_path:
-        library_folders.append(steam_path)
-        vdf_path = os.path.join(steam_path, "steamapps", "libraryfolders.vdf")
-        if os.path.exists(vdf_path):
-            try:
-                with open(vdf_path, "r", encoding="utf-8", errors="ignore") as f:
-                    content = f.read()
-                matches = re.findall(r'"path"\s+"([^"]+)"', content)
-                for m in matches:
-                    clean_path = m.replace(r"\\", "\\")
-                    if clean_path not in library_folders and os.path.exists(clean_path):
-                        library_folders.append(clean_path)
-            except Exception:
-                pass
-
-    for drive in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-        extra = f"{drive}:\\SteamLibrary"
-        if os.path.exists(extra) and extra not in library_folders:
-            library_folders.append(extra)
-
-    for lib in library_folders:
-        potential_cs2 = os.path.join(lib, "steamapps", "common", "Counter-Strike Global Offensive")
-        exe_path = os.path.join(potential_cs2, "game", "bin", "win64", "cs2.exe")
-        if os.path.exists(exe_path):
-            result["cs2_dir"] = potential_cs2
-            result["cs2_exe"] = exe_path
-            cfg_path = os.path.join(potential_cs2, "game", "csgo", "cfg")
-            if os.path.exists(cfg_path):
-                result["cfg_dir"] = cfg_path
-                auto_file = os.path.join(cfg_path, "autoexec.cfg")
-                if os.path.exists(auto_file):
-                    result["autoexec_cfg"] = auto_file
-                else:
-                    try:
-                        for f_name in os.listdir(cfg_path):
-                            if f_name.lower() == "autoexec.cfg":
-                                result["autoexec_cfg"] = os.path.join(cfg_path, f_name)
-                                break
-                    except Exception:
-                        pass
-            break
-
+    result: Dict[str, Optional[str]] = {"steam_path": steam_path, "cs2_dir": None, "cs2_exe": None, "cfg_dir": None, "autoexec_cfg": None}
+    result.update(steam_paths.find_cs2(steam_paths.steam_libraries(steam_path)))
     return result
 
 # ----------------- CS2 OPTIMIZATIONS -----------------
@@ -219,6 +157,7 @@ def clean_shader_caches() -> Tuple[int, int, List[str]]:
             os.path.join(local_app_data, "NVIDIA", "GLCache"),
             os.path.join(local_app_data, "AMD", "DxCache"),
             os.path.join(local_app_data, "Intel", "ShaderCache"),
+            os.path.join(os.path.dirname(local_app_data), "LocalLow", "Intel", "ShaderCache"),      # Intel keeps a second cache under LocalLow
         ])
     if app_data:
         target_dirs.append(os.path.join(app_data, "NVIDIA", "ComputeCache"))
@@ -272,15 +211,17 @@ def clean_cs2_temp_dumps(cs2_dir: Optional[str]) -> Tuple[int, int, List[str]]:
                         pass
 
     if cs2_dir and os.path.exists(cs2_dir):
+        # Crash dumps only. Never "*.log" outside the dumps folder: game/csgo/console.log is what the Log Analyzer and the Discord
+        # server detection read, and other tools keep their logs there too.
         check_folders = [
-            os.path.join(cs2_dir, "game", "bin", "win64"),
-            os.path.join(cs2_dir, "game", "csgo"),
-            os.path.join(cs2_dir, "game", "csgo", "dumps"),
+            (os.path.join(cs2_dir, "game", "bin", "win64"), ["*.dmp", "crash_*.txt"]),
+            (os.path.join(cs2_dir, "game", "csgo"), ["*.dmp", "crash_*.txt"]),
+            (os.path.join(cs2_dir, "game", "csgo", "dumps"), ["*.dmp", "*.mdmp", "*.tmp", "*.log", "crash_*.txt"]),
         ]
-        for folder in check_folders:
+        for folder, patterns in check_folders:
             if not os.path.exists(folder):
                 continue
-            for ext in ["*.dmp", "*.tmp", "*.log", "crash_*.txt"]:
+            for ext in patterns:
                 for fp in glob.glob(os.path.join(folder, ext)):
                     try:
                         sz = os.path.getsize(fp)
@@ -510,8 +451,8 @@ def set_framerate_limit(cfg_dir: str, fps: int) -> Tuple[bool, List[str]]:
             pass
 
     val_str = str(fps) if fps > 0 else "0"
-    if re.search(r"^\s*fps_max\s+\d+", content, re.MULTILINE):
-        content = re.sub(r"^\s*fps_max\s+\d+.*$", f"fps_max {val_str}                                   // Framerate limit", content, flags=re.MULTILINE)
+    if re.search(r'^\s*fps_max\s+"?\d+"?', content, re.MULTILINE):
+        content = re.sub(r'^\s*fps_max\s+"?\d+"?.*$', f"fps_max {val_str}                                   // Framerate limit", content, flags=re.MULTILINE)
     else:
         content = f"fps_max {val_str}\n" + content
 
@@ -588,17 +529,65 @@ def restore_previous_power_plan(cfg: Dict[str, Any]) -> List[str]:
         return [f"[ERROR] Could not restore power plan: {e}"]
 
 
+def decode_console(data: bytes) -> str:
+    """Console tools write in the PC's OEM code page, and sfc writes UTF-16. Decode both instead of showing garbage in any language."""
+    if not data:
+        return ""
+    if b"\x00" in data[:200]:
+        try:
+            return data.decode("utf-16-le", errors="replace").replace("\x00", "")
+        except Exception:
+            pass
+    try:
+        return data.decode("utf-8")                       # strict: valid UTF-8 is almost never produced by accident from OEM text
+    except UnicodeDecodeError:
+        pass
+    try:
+        oem = f"cp{ctypes.windll.kernel32.GetOEMCP()}"
+        return data.decode(oem, errors="replace")
+    except Exception:
+        return data.decode("utf-8", errors="replace")
+
+
+def run_tool(args: List[str], timeout: int) -> Tuple[Optional[int], str, bool]:
+    """Runs a console tool WITHOUT a shell (so a timeout really stops it). Returns (exit code, output text, timed_out)."""
+    try:
+        res = subprocess.run(args, capture_output=True, timeout=timeout, creationflags=CREATE_NO_WINDOW)
+        return res.returncode, decode_console(res.stdout or b"") + decode_console(res.stderr or b""), False
+    except subprocess.TimeoutExpired:
+        return None, "", True
+    except FileNotFoundError:
+        return None, f"{args[0]} was not found on this PC", False
+    except Exception as e:
+        return None, str(e), False
+
+
+def _power_plan_guids() -> List[str]:
+    rc, out, _ = run_tool(["powercfg", "/list"], 15)
+    return [g.lower() for g in re.findall(r"[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}", out)] if rc == 0 else []
+
+
 def set_power_plan(plan_mode: str) -> List[str]:
     logs = []
-    guid = GUID_BALANCED if plan_mode.lower() == "balanced" else GUID_HIGH_PERF
-    target_name = "Balanced" if plan_mode.lower() == "balanced" else "High Performance"
+    want_balanced = plan_mode.lower() == "balanced"
+    guid = GUID_BALANCED if want_balanced else GUID_HIGH_PERF
+    target_name = "Balanced" if want_balanced else "High Performance"
     try:
-        cmd = f"powercfg /setactive {guid}"
-        res = subprocess.run(cmd, capture_output=True, text=True, shell=True, creationflags=0x08000000)
-        if res.returncode == 0:
+        if guid.lower() not in _power_plan_guids() and not want_balanced:
+            # Many laptops (Modern Standby) hide the High Performance plan. Windows can usually create it again from its built-in id.
+            rc, out, _ = run_tool(["powercfg", "/duplicatescheme", GUID_HIGH_PERF], 15)
+            new = re.search(r"[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}", out) if rc == 0 else None
+            if new:
+                guid = new.group(0)
+                logs.append("[INFO] The High Performance plan was hidden on this PC, so it was created again.")
+            else:
+                logs.append("[ERROR] The High Performance power plan is not available on this PC (common on laptops). Your current plan was kept.")
+                return logs
+        rc, out, _ = run_tool(["powercfg", "/setactive", guid], 15)
+        if rc == 0:
             logs.append(f"[SUCCESS] Power plan switched to: {target_name}")
         else:
-            logs.append(f"[INFO] powercfg notice: {res.stderr or res.stdout}")
+            logs.append(f"[ERROR] Could not switch the power plan to {target_name}: {out.strip()[:200]}")
     except Exception as e:
         logs.append(f"[ERROR] Could not switch power plan: {e}")
     return logs
@@ -614,21 +603,22 @@ def save_launch_options(vdf_path: str, new_options: str) -> Tuple[bool, List[str
             shutil.copyfile(vdf_path, backup_vdf)
             logs.append("[BACKUP] Created backup of Steam localconfig.vdf")
 
-        with open(vdf_path, "r", encoding="utf-8", errors="ignore") as f:
+        import steam_vdf
+        with open(vdf_path, "r", encoding="utf-8", errors="ignore", newline="") as f:      # newline="": keep the file's own line endings
             content = f.read()
 
-        if '"LaunchOptions"' in content:
-            new_content = re.sub(r'("LaunchOptions"\s+)"[^"]*"', rf'\1"{new_options}"', content)
-        else:
-            pattern = r'("730"\s*\{)'
-            if re.search(pattern, content):
-                replacement = rf'\1\n\t\t\t\t\t"LaunchOptions"\t\t"{new_options}"'
-                new_content = re.sub(pattern, replacement, content, count=1)
-            else:
-                return False, ["[ERROR] Counter-Strike 2 (730) block not found in Steam config."]
+        # Edit only CS2's own block (Software > Valve > Steam > apps > 730) and leave every other byte, and every other game, as it is.
+        try:
+            new_content = steam_vdf.set_launch_options(content, new_options, "730")
+            if steam_vdf.get_launch_options(new_content, "730") != (new_options or "").strip().replace("\r", " ").replace("\n", " "):
+                return False, ["[ERROR] Safety check failed: the edited file did not read back correctly. Nothing was written."]
+        except steam_vdf.VdfError as e:
+            return False, [f"[ERROR] Could not safely edit Steam's config ({e}). Nothing was written."]
 
-        with open(vdf_path, "w", encoding="utf-8") as f:
+        tmp_path = vdf_path + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8", newline="") as f:
             f.write(new_content)
+        os.replace(tmp_path, vdf_path)
 
         logs.append(f"[SUCCESS] Updated CS2 Launch Options in Steam to: '{new_options}'")
         logs.append("[NOTE] If Steam was running, restart Steam to reflect the new launch options.")
@@ -760,6 +750,9 @@ def boost_cs2_process() -> Tuple[bool, str]:
 
 # ----------------- SAFE PC MAINTENANCE -----------------
 
+TEMP_MIN_AGE_SECONDS = 24 * 3600
+
+
 def clean_windows_temp_files() -> Tuple[int, int, List[str]]:
     """Cleans %TEMP% and %SystemRoot%\\Temp. Skips locked/open files safely."""
     logs = []
@@ -775,14 +768,30 @@ def clean_windows_temp_files() -> Tuple[int, int, List[str]]:
     if os.path.exists(win_temp):
         target_dirs.append(win_temp)
 
+    # Never touch this app's own unpacked files (a one-file exe lives in %TEMP%\_MEIxxxx while it runs, and so do other PyInstaller apps),
+    # and leave files from the last 24 hours alone: they belong to programs that are running or installing right now.
+    own_root = getattr(sys, "_MEIPASS", None)
+    own_root = os.path.normcase(os.path.abspath(own_root)) if own_root else None
+    cutoff = time.time() - TEMP_MIN_AGE_SECONDS
+
+    def protected(path: str) -> bool:
+        low = os.path.normcase(os.path.abspath(path))
+        if own_root and (low == own_root or low.startswith(own_root + os.sep)):
+            return True
+        return any(part.startswith("_mei") for part in low.split(os.sep))
+
     for folder in target_dirs:
         folder_deleted = 0
         folder_freed = 0
         try:
             for root, dirs, files in os.walk(folder, topdown=False):
+                if protected(root):
+                    continue
                 for f in files:
                     file_path = os.path.join(root, f)
                     try:
+                        if os.path.getmtime(file_path) > cutoff:
+                            continue
                         sz = os.path.getsize(file_path)
                         os.remove(file_path)
                         folder_deleted += 1
@@ -981,19 +990,17 @@ def run_ssd_trim() -> Tuple[bool, List[str]]:
     if not is_admin():
         logs.append("[ADMIN REQUIRED] SSD TRIM optimization requires Administrator privileges.")
         return False, logs
-
-    try:
-        logs.append("[TRIM] Running media-specific TRIM optimization (defrag /C /O)...")
-        res = subprocess.run("defrag /C /O", capture_output=True, text=True, shell=True, creationflags=CREATE_NO_WINDOW)
-        if res.returncode == 0:
-            logs.append("[SUCCESS] Completed SSD TRIM optimization for all connected volumes.")
-            return True, logs
-        else:
-            logs.append(f"[TRIM NOTICE] {res.stdout.strip() or res.stderr.strip()}")
-            return True, logs
-    except Exception as e:
-        logs.append(f"[TRIM ERROR] Could not run defrag /O: {e}")
+    logs.append("[TRIM] Running media-specific TRIM optimization (defrag /C /O)...")
+    rc, out, timed_out = run_tool(["defrag", "/C", "/O"], 30 * 60)
+    if timed_out:
+        logs.append("[TRIM ERROR] Windows did not finish TRIM within 30 minutes, so the app stopped waiting.")
         return False, logs
+    if rc == 0:
+        logs.append("[SUCCESS] Completed SSD TRIM optimization for all connected volumes.")
+        return True, logs
+    logs.append(f"[TRIM ERROR] defrag returned code {rc}: {out.strip()[-250:]}")
+    return False, logs
+
 
 def run_sfc_scan() -> Tuple[bool, List[str]]:
     """Runs System File Checker (sfc /scannow). Requires Admin."""
@@ -1001,61 +1008,60 @@ def run_sfc_scan() -> Tuple[bool, List[str]]:
     if not is_admin():
         logs.append("[ADMIN REQUIRED] System File Checker (SFC) requires Administrator privileges.")
         return False, logs
-
-    try:
-        logs.append("[SFC] Scanning Windows protected system DLLs (sfc /scannow). Please wait a few minutes...")
-        res = subprocess.run("sfc /scannow", capture_output=True, text=True, shell=True, creationflags=CREATE_NO_WINDOW)
-        stdout = res.stdout.strip()
-        if "Windows Resource Protection did not find any integrity violations" in stdout:
-            logs.append("[SUCCESS] SFC check complete: Zero system file corruptions detected.")
-        elif "successfully repaired them" in stdout:
-            logs.append("[SUCCESS] SFC check complete: Found and repaired corrupted system DLLs!")
-        else:
-            logs.append(f"[SFC OUTPUT] {stdout[-200:] if len(stdout) > 200 else stdout}")
-        return True, logs
-    except Exception as e:
-        logs.append(f"[SFC ERROR] Failed running SFC scan: {e}")
+    logs.append("[SFC] Scanning Windows protected system DLLs (sfc /scannow). Please wait a few minutes...")
+    rc, out, timed_out = run_tool(["sfc", "/scannow"], 60 * 60)
+    if timed_out:
+        logs.append("[SFC ERROR] System File Checker did not finish within 60 minutes, so the app stopped waiting.")
         return False, logs
+    text = " ".join(out.split())
+    low = text.lower()
+    if rc is None:
+        logs.append(f"[SFC ERROR] Failed running SFC scan: {text}")
+        return False, logs
+    if "did not find any integrity violations" in low:
+        logs.append("[SUCCESS] SFC check complete: Zero system file corruptions detected.")
+        return True, logs
+    if "successfully repaired them" in low:
+        logs.append("[SUCCESS] SFC check complete: Found and repaired corrupted system DLLs!")
+        return True, logs
+    if "unable to fix" in low or "could not perform the requested operation" in low:
+        logs.append(f"[SFC ERROR] SFC found a problem it could not fix: {text[-220:]}")
+        return False, logs
+    if rc != 0:
+        logs.append(f"[SFC ERROR] SFC stopped with code {rc}: {text[-220:]}")
+        return False, logs
+    logs.append(f"[SFC] Finished. Windows reported (message not in a language the app knows): {text[-220:]}")
+    return True, logs
+
+
+def _run_dism(args: List[str], label: str, ok_text: str) -> Tuple[bool, List[str]]:
+    logs: List[str] = []
+    if not is_admin():
+        logs.append(f"[ADMIN REQUIRED] {label} requires Administrator privileges.")
+        return False, logs
+    logs.append(f"[DISM] {label}... Please wait a few minutes.")
+    rc, out, timed_out = run_tool(["dism"] + args, 90 * 60)
+    if timed_out:
+        logs.append(f"[DISM ERROR] {label} did not finish within 90 minutes, so the app stopped waiting.")
+        return False, logs
+    if rc == 0:
+        logs.append(f"[SUCCESS] {ok_text}")
+        return True, logs
+    logs.append(f"[DISM ERROR] {label} returned code {rc}: {' '.join(out.split())[-250:]}")
+    return False, logs
+
 
 def run_dism_restore() -> Tuple[bool, List[str]]:
     """Runs dism /online /cleanup-image /restorehealth. Requires Admin."""
-    logs = []
-    if not is_admin():
-        logs.append("[ADMIN REQUIRED] DISM Image Restore requires Administrator privileges.")
-        return False, logs
+    return _run_dism(["/online", "/cleanup-image", "/restorehealth"], "Checking and repairing the Windows Component Store (dism /restorehealth)",
+                     "DISM restore completed: Windows Component Store is healthy.")
 
-    try:
-        logs.append("[DISM] Checking and repairing Windows Component Store (dism /restorehealth)... Please wait a few minutes.")
-        res = subprocess.run("dism /online /cleanup-image /restorehealth", capture_output=True, text=True, shell=True, creationflags=CREATE_NO_WINDOW)
-        if res.returncode == 0:
-            logs.append("[SUCCESS] DISM restore completed: Windows Component Store is healthy.")
-            return True, logs
-        else:
-            logs.append(f"[DISM NOTICE] {res.stdout[-250:] if len(res.stdout) > 250 else res.stdout}")
-            return True, logs
-    except Exception as e:
-        logs.append(f"[DISM ERROR] Failed running DISM: {e}")
-        return False, logs
 
 def run_dism_component_cleanup() -> Tuple[bool, List[str]]:
     """Runs dism /online /cleanup-image /startcomponentcleanup. Requires Admin."""
-    logs = []
-    if not is_admin():
-        logs.append("[ADMIN REQUIRED] DISM WinSxS Cleanup requires Administrator privileges.")
-        return False, logs
+    return _run_dism(["/online", "/cleanup-image", "/startcomponentcleanup"], "Purging superseded Windows update components from WinSxS",
+                     "DISM WinSxS component cleanup completed successfully.")
 
-    try:
-        logs.append("[DISM] Purging superseded Windows update components from WinSxS...")
-        res = subprocess.run("dism /online /cleanup-image /startcomponentcleanup", capture_output=True, text=True, shell=True, creationflags=CREATE_NO_WINDOW)
-        if res.returncode == 0:
-            logs.append("[SUCCESS] DISM WinSxS component cleanup completed successfully.")
-            return True, logs
-        else:
-            logs.append(f"[DISM NOTICE] {res.stdout[-250:] if len(res.stdout) > 250 else res.stdout}")
-            return True, logs
-    except Exception as e:
-        logs.append(f"[DISM ERROR] Failed running DISM component cleanup: {e}")
-        return False, logs
 
 def open_startup_apps() -> Tuple[bool, str]:
     """Opens Windows native Startup Apps settings page."""
@@ -1112,37 +1118,68 @@ DNS_PROVIDERS: List[Dict[str, str]] = [
     },
 ]
 
-def get_active_network_interface() -> Dict[str, Any]:
-    """Detects the active physical/connected Windows network interface and its current DNS."""
-    info = {
-        "interface_name": "Ethernet",
-        "current_dns": "Automatic (ISP / DHCP)",
-        "found": False,
-    }
+def _default_route_interface_index() -> Optional[int]:
+    """Index of the adapter Windows really uses to reach the internet (the default route), asked from Windows directly, so it does not
+    depend on the language of any command output and ignores idle, virtual (Hyper-V, VPN) and disconnected adapters."""
+    import socket
+    import struct
+    for probe in ("8.8.8.8", "1.1.1.1"):
+        try:
+            idx = ctypes.c_ulong(0)
+            dest = struct.unpack("<L", socket.inet_aton(probe))[0]
+            if ctypes.windll.iphlpapi.GetBestInterface(dest, ctypes.byref(idx)) == 0 and idx.value > 1:      # 1 = loopback
+                return int(idx.value)
+        except Exception:
+            continue
+    return None
+
+
+def _legacy_english_interface() -> Optional[str]:
+    """Old method, kept only as a fallback: first 'Enabled / Connected' row of netsh's table (English Windows only)."""
     try:
-        res = subprocess.run(
-            ["netsh", "interface", "show", "interface"],
-            capture_output=True, text=True, timeout=5, creationflags=CREATE_NO_WINDOW
-        )
+        res = subprocess.run(["netsh", "interface", "show", "interface"], capture_output=True, text=True, timeout=5, creationflags=CREATE_NO_WINDOW)
         if res.returncode == 0:
             for line in res.stdout.splitlines():
                 parts = line.split()
                 if len(parts) >= 4 and parts[0].lower() == "enabled" and parts[1].lower() == "connected":
-                    iface_name = " ".join(parts[3:]).strip()
-                    if iface_name:
-                        info["interface_name"] = iface_name
-                        info["found"] = True
-                        break
+                    name = " ".join(parts[3:]).strip()
+                    if name:
+                        return name
     except Exception:
         pass
+    return None
+
+
+def get_active_network_interface() -> Dict[str, Any]:
+    """The adapter that carries the default route and its current DNS. 'interface_ref' is what netsh is given (the adapter index,
+    which netsh accepts in place of a name, so localized adapter names and Windows languages do not matter)."""
+    info: Dict[str, Any] = {
+        "interface_name": "Ethernet",
+        "interface_ref": "Ethernet",
+        "current_dns": "Automatic (ISP / DHCP)",
+        "found": False,
+    }
+    idx = _default_route_interface_index()
+    if idx:
+        info["interface_ref"] = str(idx)
+        info["interface_name"] = f"adapter #{idx}"
+        info["found"] = True
+    else:
+        legacy = _legacy_english_interface()
+        if legacy:
+            info["interface_ref"] = info["interface_name"] = legacy
+            info["found"] = True
 
     try:
         res_dns = subprocess.run(
-            ["netsh", "interface", "ip", "show", "dns", f'name={info["interface_name"]}'],
+            ["netsh", "interface", "ipv4", "show", "dnsservers", f'name={info["interface_ref"]}'],
             capture_output=True, text=True, timeout=5, creationflags=CREATE_NO_WINDOW
         )
         if res_dns.returncode == 0:
             out = res_dns.stdout
+            quoted = re.search(r'"([^"]+)"', out)               # the adapter's own name is quoted in the first line, in every language
+            if quoted:
+                info["interface_name"] = quoted.group(1)
             ips = re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", out)
             if "DHCP" in out.upper():
                 if ips:
@@ -1275,8 +1312,9 @@ def apply_dns_provider(primary_ip: str, secondary_ip: str, provider_name: str) -
         return False, logs
 
     iface_info = get_active_network_interface()
-    iface = iface_info["interface_name"]
-    logs.append(f"[DNS OPTIMIZER] Configuring active adapter '{iface}' -> {provider_name}...")
+    iface = iface_info["interface_ref"]
+    shown = iface_info["interface_name"]
+    logs.append(f"[DNS OPTIMIZER] Configuring active adapter '{shown}' -> {provider_name}...")
 
     try:
         res1 = subprocess.run(
@@ -1294,7 +1332,7 @@ def apply_dns_provider(primary_ip: str, secondary_ip: str, provider_name: str) -
             logs.append(f"[ERROR] Could not set primary DNS ({primary_ip}): {err}")
             return False, logs
 
-        logs.append(f"[SUCCESS] Primary DNS set to {primary_ip} on '{iface}'.")
+        logs.append(f"[SUCCESS] Primary DNS set to {primary_ip} on '{shown}'.")
 
         if secondary_ip:
             res2 = subprocess.run(
@@ -1302,11 +1340,14 @@ def apply_dns_provider(primary_ip: str, secondary_ip: str, provider_name: str) -
                 capture_output=True, text=True, timeout=8, creationflags=CREATE_NO_WINDOW
             )
             if res2.returncode != 0:
-                subprocess.run(
+                res2 = subprocess.run(
                     ["netsh", "interface", "ipv4", "add", "dnsservers", f"name={iface}", secondary_ip, "index=2"],
                     capture_output=True, text=True, timeout=8, creationflags=CREATE_NO_WINDOW
                 )
-            logs.append(f"[SUCCESS] Secondary failover DNS set to {secondary_ip}.")
+            if res2.returncode == 0:
+                logs.append(f"[SUCCESS] Secondary failover DNS set to {secondary_ip}.")
+            else:
+                logs.append(f"[WARN] The secondary DNS ({secondary_ip}) could not be added: {(res2.stdout or res2.stderr or '').strip()}")
 
         _, flush_logs = flush_dns_cache()
         logs.extend(flush_logs)
@@ -1324,8 +1365,9 @@ def restore_dns_to_dhcp() -> Tuple[bool, List[str]]:
         return False, logs
 
     iface_info = get_active_network_interface()
-    iface = iface_info["interface_name"]
-    logs.append(f"[DNS RESTORE] Reverting adapter '{iface}' to Automatic ISP DNS (DHCP)...")
+    iface = iface_info["interface_ref"]
+    shown = iface_info["interface_name"]
+    logs.append(f"[DNS RESTORE] Reverting adapter '{shown}' to Automatic ISP DNS (DHCP)...")
 
     try:
         res = subprocess.run(
@@ -1338,7 +1380,7 @@ def restore_dns_to_dhcp() -> Tuple[bool, List[str]]:
                 capture_output=True, text=True, timeout=8, creationflags=CREATE_NO_WINDOW
             )
         if res.returncode == 0 or "already" in (res.stdout or "").lower():
-            logs.append(f"[REVERTED] Restored '{iface}' to Automatic ISP Default (DHCP).")
+            logs.append(f"[REVERTED] Restored '{shown}' to Automatic ISP Default (DHCP).")
             _, flush_logs = flush_dns_cache()
             logs.extend(flush_logs)
             return True, logs
@@ -1450,21 +1492,13 @@ def check_vpk_integrity(vpk_path: str) -> Tuple[bool, str]:
 
 def scan_workshop_vpk_addons(steam_path: Optional[str], cs2_exe: Optional[str]) -> Dict[str, Any]:
     """Scans Steam Workshop content folders (steamapps/workshop/content/730) and verifies VPK header integrity."""
+    import steam_paths
     candidate_dirs = []
-    if cs2_exe and os.path.exists(cs2_exe):
-        # cs2.exe is at <Lib>/steamapps/common/Counter-Strike Global Offensive/game/bin/win64/cs2.exe
-        try:
-            steamapps_dir = os.path.abspath(os.path.join(os.path.dirname(cs2_exe), "..", "..", "..", "..", ".."))
-            ws_dir = os.path.join(steamapps_dir, "workshop", "content", "730")
-            if os.path.isdir(ws_dir):
-                candidate_dirs.append(ws_dir)
-        except Exception:
-            pass
-
-    if steam_path and os.path.exists(steam_path):
-        ws_dir2 = os.path.join(steam_path, "steamapps", "workshop", "content", "730")
-        if os.path.isdir(ws_dir2) and ws_dir2 not in candidate_dirs:
-            candidate_dirs.append(ws_dir2)
+    libs = steam_paths.steam_libraries(steam_path)
+    cs2_lib = steam_paths.library_of(os.path.abspath(os.path.join(os.path.dirname(cs2_exe), "..", "..", "..")) if cs2_exe and os.path.exists(cs2_exe) else None)
+    if cs2_lib:
+        libs = [cs2_lib] + [l for l in libs if os.path.normcase(os.path.abspath(l)) != os.path.normcase(os.path.abspath(cs2_lib))]
+    candidate_dirs = steam_paths.workshop_dirs(libs)
 
     addons: List[Dict[str, Any]] = []
     total_bytes = 0
@@ -1871,12 +1905,18 @@ def analyze_cs2_session_logs(cs2_exe: Optional[str]) -> Dict[str, Any]:
             except Exception as e:
                 report["message"] = f"Could not read console.log: {e}"
 
-    if report["frame_hitch_events"] > 15 or report["net_jitter_events"] > 15:
-        report["grade"] = "B (MINOR SPIKES DETECTED)"
-        report["recommendation"] = "Minor frame hitches or network jitter detected. Run 'APPLY SAFE CS2 CPU PRIORITY BOOST' and benchmark your Gaming DNS."
+    if str(report.get("message", "")).startswith("Could not read"):
+        report["grade"] = "N/A (LOG NOT READABLE)"
+        report["recommendation"] = "The log could not be read, so no grade is given. Close CS2 and try again."
+    elif not report.get("found"):
+        report["grade"] = "N/A (NO LOG YET)"
+        report["recommendation"] = "There is no console.log yet, so there is nothing to grade. Add -condebug to your launch options and play a session."
     elif report["frame_hitch_events"] > 40 or report["net_jitter_events"] > 40:
         report["grade"] = "C (ATTENTION RECOMMENDED)"
         report["recommendation"] = "High frame-time or network spikes detected. Apply Safe CS2 CPU Priority Boost, switch to Cloudflare Gaming DNS, and verify SSD health."
+    elif report["frame_hitch_events"] > 15 or report["net_jitter_events"] > 15:
+        report["grade"] = "B (MINOR SPIKES DETECTED)"
+        report["recommendation"] = "Minor frame hitches or network jitter detected. Run 'APPLY SAFE CS2 CPU PRIORITY BOOST' and benchmark your Gaming DNS."
 
     return report
 

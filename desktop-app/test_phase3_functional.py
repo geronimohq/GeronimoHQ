@@ -121,9 +121,29 @@ class P3_D13_GsiPortBusy(unittest.TestCase):
         a = cs2_gsi.CS2GSIServer(port=0)
         self.assertTrue(a.start())
         try:
-            b = cs2_gsi.CS2GSIServer(port=a.httpd.server_address[1])
-            self.assertFalse(b.start())
-            self.assertIn("already in use", b.last_error)
+            busy = a.httpd.server_address[1]
+            b = cs2_gsi.CS2GSIServer(port=busy)
+            self.assertTrue(b.start())                       # a taken port is no longer fatal: the listener moves to the next free one
+            self.assertNotEqual(b.port, busy)
+            b.stop()
+            # Every port in the range taken: that is still reported, not hidden.
+            import socket
+            held = []
+            try:
+                for p in range(busy + 1, busy + 11):
+                    s = socket.socket()
+                    try:
+                        s.bind(("127.0.0.1", p))
+                        s.listen(1)
+                        held.append(s)
+                    except OSError:
+                        s.close()                            # already taken by something else: just as good
+                c = cs2_gsi.CS2GSIServer(port=busy)
+                self.assertFalse(c.start())
+                self.assertIn("in use", c.last_error)
+            finally:
+                for s in held:
+                    s.close()
         finally:
             a.stop()
 

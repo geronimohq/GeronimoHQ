@@ -270,6 +270,7 @@ def spawn_updater_helper_and_exit(current_exe_path: str, new_exe_path: str):
     # 20-second health check run immediately, miss the just-started app and launch a second copy.
 
     script = f"""@echo off
+chcp 65001 >nul
 setlocal
 cd /d "{exe_dir}"
 ping -n 2 127.0.0.1 >nul

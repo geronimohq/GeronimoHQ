@@ -6,6 +6,21 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 
+def _apply_elevation_handoff() -> None:
+    """An elevated copy can run as a different Windows account. Before anything reads APPDATA or looks for Steam, adopt the original
+    user's folders so settings, logs and the ready signal stay in one place."""
+    for arg in sys.argv[1:]:
+        if arg.startswith("--appdata=") and os.path.isdir(arg[len("--appdata="):]):
+            os.environ["APPDATA"] = arg[len("--appdata="):]
+        elif arg.startswith("--steam=") and os.path.isdir(arg[len("--steam="):]):
+            os.environ["CS2CC_STEAM_PATH"] = arg[len("--steam="):]
+        elif arg.startswith("--user="):
+            os.environ["CS2CC_ORIGINAL_USER"] = arg[len("--user="):]
+
+
+_apply_elevation_handoff()
+
+
 def resource_dir() -> str:
     return getattr(sys, "_MEIPASS", HERE)
 
@@ -58,13 +73,24 @@ def _main() -> int:
         return 0          # another copy is running; it was asked to show itself
     index = os.path.join(resource_dir(), "web", "index.html")
     if not os.path.exists(index):
-        print(f"UI not built: {index} is missing. Run `npm run build` in desktop-ui.")
+        log_line(f"UI files missing: {index}")
         return 2
+    import webview2_check
+    wv2 = webview2_check.runtime_version()
+    if not wv2:
+        log_line("WebView2 runtime not found; showing the install message")
+        webview2_check.explain_and_offer_install()
+        return 3
+    log_line(f"WebView2 runtime {wv2}")
     api = Api()
+    orig_user, now_user = os.environ.get("CS2CC_ORIGINAL_USER", ""), os.environ.get("USERNAME", "")
+    if "--elevated" in sys.argv and orig_user and now_user and orig_user.lower() != now_user.lower():
+        api.core.log(f"[ADMIN] This administrator copy runs as the Windows account '{now_user}', not '{orig_user}'. Settings kept per Windows user "
+                     f"(Game DVR, Start with Windows) apply to '{now_user}'. Your settings and Steam folders are still read from '{orig_user}'.")
     hidden = "--minimized" in sys.argv
     ww, wh, wx, wy = centered(1400, 880)
     window = webview.create_window(
-        "CS2 Command Center", url=index, js_api=api, width=ww, height=wh, x=wx, y=wy, min_size=(980, 640),
+        "CS2 Command Center", url=index, js_api=api, width=ww, height=wh, x=wx, y=wy, min_size=(min(980, ww), min(640, wh)),
         frameless=True, easy_drag=False, background_color="#080a0e", text_select=False, hidden=hidden)
     api._attach(window)
 
@@ -91,7 +117,9 @@ def _main() -> int:
     debug = bool(os.environ.get("CS2CC_DEBUG"))
     # WebView2 cannot share one data folder between a standard and an elevated process, so each gets its own.
     import app_config
-    sp = os.path.join(app_config.get_storage_dir(), "webview2-admin" if "--elevated" in sys.argv else "webview2")
+    # Browser cache is machine-local data: LOCALAPPDATA, not the roaming profile that some PCs sync over the network.
+    local_base = os.path.join(os.environ.get("LOCALAPPDATA") or app_config.get_storage_dir(), "CS2CommandCenter")
+    sp = os.path.join(local_base, "webview2-admin" if "--elevated" in sys.argv else "webview2")
     os.makedirs(sp, exist_ok=True)
     if os.environ.get("CS2CC_BENCH"):
         webview.start(bench, window, debug=debug, storage_path=sp)

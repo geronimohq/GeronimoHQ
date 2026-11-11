@@ -9,7 +9,7 @@ import type { EngineState } from '../types';
 export const TWEAKS = [
   { key: 'shaders', group: 'engine', title: 'Optimize shader pre-caching & purge caches', desc: 'Removes fragmented GPU/DirectX shaders. Recommended after game patches to eliminate micro-stutters.' },
   { key: 'autoexec', group: 'engine', title: 'Append low-latency engine autoexec config', desc: 'Appends safe Source 2 rate, telemetry and audio latency tweaks (snd_mixahead 0.025) while preserving custom binds.' },
-  { key: 'dumps', group: 'win', title: 'Clean CS2 crash dumps & temp files', desc: 'Removes old WER minidumps and crash logs from the CS2 directory to reclaim storage and load cleaner.' },
+  { key: 'dumps', group: 'win', title: 'Clean CS2 crash dumps & temp files', desc: 'Removes old crash dumps (.dmp) and crash reports from the CS2 folders. It never deletes console.log.' },
   { key: 'gamedvr', group: 'win', title: 'Disable Windows Game DVR background capture', desc: 'Stops Windows Xbox background frame capture, cutting DWM latency and background GPU load.' },
   { key: 'fullscreen', group: 'win', title: 'Disable fullscreen optimizations (Direct-Flip)', desc: 'Forces exclusive display presentation for cs2.exe, bypassing Windows desktop compositor lag.' },
 ] as const;

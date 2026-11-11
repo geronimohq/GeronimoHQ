@@ -19,6 +19,14 @@
    {
     "q": "How do updates work?",
     "a": "The app checks geronimohq.com for a signed update manifest. The new exe is only offered when its Ed25519 signature, size and SHA-256 match, so a tampered file is rejected. Settings shows the last check and a Check now button. Your settings and logs are kept when the app updates."
+   },
+   {
+    "q": "Does it find Steam and CS2 if they are on another drive or in another library?",
+    "a": "Yes. The app asks Steam itself: its registry entries, its list of game libraries, and the file that says where Counter-Strike 2 is installed (even under a custom folder name). It also checks the usual folders on your fixed drives. Network and removable drives are never probed. If CS2 or Steam is moved while the app is open, restart the app."
+   },
+   {
+    "q": "The app window does not open and a message mentions WebView2. What is that?",
+    "a": "The app window is drawn by the Microsoft Edge WebView2 Runtime, a free Microsoft component that Windows 11 and up-to-date Windows 10 already have. If it is missing, the app shows a message with a button that opens Microsoft's download page. Install the 'Evergreen Bootstrapper' and start the app again."
    }
   ]
  },
@@ -46,6 +54,18 @@
    {
     "q": "Why should I purge DirectX & Vulkan shader caches?",
     "a": "After GPU driver updates (NVIDIA/AMD) or CS2 game patches, old compiled shader caches can become corrupted or misaligned, leading to severe stutter when rendering smokes, fire, and particle effects. Purging the cache allows the driver to recompile fresh, optimized shaders on clean launch."
+   },
+   {
+    "q": "What does 'Clean CS2 crash dumps & temp files' delete?",
+    "a": "Only crash reports: .dmp files and crash_*.txt in the CS2 bin and csgo folders, the contents of csgo\\dumps, and CS2 minidumps in %LOCALAPPDATA%\\CrashDumps. It never deletes console.log or other .log files, because the Log Analyzer and the Discord server detection read console.log."
+   },
+   {
+    "q": "The app said 'Finished with problems'. What does that mean?",
+    "a": "One or more steps of Optimize, Restore, Clean-up or a repair tool could not do their job, for example a power plan that does not exist on your PC, a Windows tool that returned an error, or a step that needs Administrator. Every other step still ran. The activity log marks each failed step with [ERROR] and says why. The app no longer shows a plain success message when a step failed."
+   },
+   {
+    "q": "My PC has no 'High Performance' power plan. What happens?",
+    "a": "Many laptops hide that plan. The app asks Windows to create it again from its built-in definition. If Windows refuses, the log says so with [ERROR] and your current plan is kept. Nothing is switched to a different plan behind your back."
    }
   ]
  },
@@ -73,6 +93,10 @@
    {
     "q": "Why do Zombie Escape & 64-player servers experience choke or stutter?",
     "a": "In 64-player community servers, the server broadcasts massive amounts of entity updates, particle data, and zombie positions every tick. Setting 'rate 1000000' (maximum 8 Mbps bandwidth allocation) prevents your client from dropping entity packets when 60 players shoot and throw grenades simultaneously."
+   },
+   {
+    "q": "Which network adapter does the DNS change use, and does it work on non-English Windows?",
+    "a": "The one Windows really uses to reach the internet (its default route), asked from Windows directly, so it works in any Windows language, on Wi-Fi or cable, and ignores virtual adapters such as VPN or Hyper-V. Restore changes the same adapter back to automatic DNS."
    }
   ]
  },
@@ -115,6 +139,10 @@
    {
     "q": "Are the Optimizer and PC Maintenance meant to increase my max FPS?",
     "a": "They are NOT meant to artificially inflate maximum FPS beyond your physical CPU/GPU limits. Instead, they are engineered for System Stability, Frame-Time Consistency (1% Lows), Micro-Stutter Prevention during 64-player Zombie Escape & heavy utility, Display/Alt-Tab Reliability (MPO), Sub-Tick & DNS Network Responsiveness, and SSD/OS Health."
+   },
+   {
+    "q": "Does 'Apply to Steam' change the launch options of my other games?",
+    "a": "No. The app edits only Counter-Strike 2's own entry in the Steam account that logged in last, and leaves every other game and every other line of the file as it was. Quotes and backslashes in your options are saved correctly. If the file cannot be read safely, nothing is written. Steam must be closed first: if Steam is running the app refuses to save, because Steam would overwrite the change when it exits. A backup (localconfig.vdf.backup) is kept next to the file."
    }
   ]
  },
@@ -212,6 +240,10 @@
    {
     "q": "What happens if I delete a map and later rejoin a server running that map?",
     "a": "When you join a server that plays it again, CS2 asks 'Confirm Workshop Download' and downloads the map from the Steam workshop after you accept. Deleting downloaded maps only removes files that can be downloaded again; it does not affect your account. The app asks you to confirm before it deletes anything, and the confirmation cannot be undone."
+   },
+   {
+    "q": "How does the Map Cleaner make sure protected maps are not deleted?",
+    "a": "When you press Delete, the app scans again with the protection choices shown on screen at that moment and deletes only what is still unprotected and still on disk. Subscribed server packs and server asset packs can never be ticked, and anything that became protected since you ticked it is skipped and reported."
    }
   ]
  },
@@ -231,6 +263,22 @@
    {
     "q": "What do 'Verify Workshop VPK health' and 'Repair corrupted VPKs' check, and what can they miss?",
     "a": "Verify reads every workshop pack under steamapps/workshop/content/730 (all your Steam libraries that hold CS2) and checks the pack's index and that every data part it points to is on disk and long enough. That finds downloads that stopped half way, missing or short archive parts, empty or unreadable files, wrong file signatures and folders with leftover temporary files. It cannot see changed bytes inside a file that is complete and the right size, because that would mean reading every file in full. Repair removes only the packs Verify flagged. It refuses anything that is not a plain workshop item folder, never follows links, and skips a pack that changed in the last 15 minutes because Steam may still be downloading it. Removed packs are not sent to the recycle bin. A subscribed map is downloaded again by Steam on its next check, or when you join a server that needs it; maps you only played once are asked for again with a download dialog."
+   },
+   {
+    "q": "Which temporary files does the Windows temp clean-up delete?",
+    "a": "Files in your %TEMP% folder and in Windows\\Temp that are older than 24 hours and not in use. Anything newer is left alone because a running program or an installer may still need it, and the app never touches its own unpacked files or the temporary folders of other single-file apps. Locked files are skipped."
+   },
+   {
+    "q": "Windows asks for another administrator's password when I use Relaunch as Administrator. Is that a problem?",
+    "a": "No, but it matters for two things. The elevated copy still uses your own settings, logs and Steam folders. Windows settings that are stored per user (Game DVR, Start with Windows) are saved for the account that approved the prompt, and the activity log says so. Changes that apply to the whole PC (power plan, DNS, MPO commands) work the same either way."
+   },
+   {
+    "q": "SFC, DISM and TRIM take a long time. Do they block the rest of the app?",
+    "a": "No. They run in their own slot, so Optimize, Restore, the Map Cleaner and updates still work. Only one of these long tools runs at a time. The app stops waiting after 30 minutes (TRIM), 60 minutes (SFC) or 90 minutes (DISM) and tells you. The result is reported from Windows' own exit codes and also works on non-English Windows."
+   },
+   {
+    "q": "Why does the Log Analyzer show 'N/A' instead of a grade?",
+    "a": "A grade needs a readable console.log. If there is none yet (add -condebug to your launch options and play a session) or it cannot be read, the analyzer says so instead of showing a good grade. More than 15 frame or network events grade B, more than 40 grade C."
    }
   ]
  },

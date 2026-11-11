@@ -1,9 +1,9 @@
 {
-  "version": "2.0.4",
+  "version": "2.0.5",
   "build_date": "2026-11-11",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "1FE7A3561D4A8244A1CCEE6424A4951CED0F2315CF1E46F34E7EF8DE0EF72BCD",
-  "size": 27344544,
-  "notes": "Fixes Verify Workshop VPK health (it reported 0 packs) and the log analyzer, adds a deeper download check and safer repair, and corrects the app descriptions on the website.",
-  "signature": "64f88588bd660411e32b9ac7043be00a95bd92829ad4519a857b967d4178d015689544bce64538c8c2b782e76d5f2430a130bfd0beb0b2a566e2a48ed260070b"
+  "sha256": "F657168EE634CF7E6CC47E372E63C4689C7AF8B590BB263B2EE1ACCCE97352BA",
+  "size": 27377438,
+  "notes": "Safer launch options, temp and dump cleaners and Map Cleaner; works on more PCs (any Steam drive, any Windows language, missing WebView2 message); honest results for repairs and a fuller Help & FAQ.",
+  "signature": "48a464e68951bda5e1c50455ab197877500889788357ad821deffa86a61e3ca0da8d43acf552518d2826a9f000c80a9cc38174a21c46550257eaa44eb3e30507"
 }

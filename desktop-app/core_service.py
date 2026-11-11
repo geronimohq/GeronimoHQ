@@ -4,6 +4,7 @@ Everything here calls the same logic modules the Tk app uses (core_logic, server
 updater). The UI talks to this class through web_api.Api. Events (log lines, finished jobs) go out through `emit`.
 """
 import concurrent.futures
+import re
 import threading
 import time
 from typing import Any, Dict, List, Optional
@@ -36,11 +37,16 @@ class Core:
         self._lock = threading.Lock()
         self._busy: Optional[str] = None
         self._maps: Dict[str, Dict[str, Any]] = {}
+        self._scan_lock = threading.Lock()
+        self._scan_pending = None
+        self._scan_running = False
         import presence_service
         self.presence = presence_service.PresenceService(self)      # created here, started by web_main (no threads in tests)
         self._pool = concurrent.futures.ThreadPoolExecutor(max_workers=8, thread_name_prefix="srvq")
         self.exit_cb = None
         self._maps_lock = threading.Lock()
+        self._tl = threading.local()
+        self._busy_long: Optional[str] = None
         self._maps_cache = None
         try:
             self.paths = core_logic.find_cs2_paths()
@@ -48,8 +54,13 @@ class Core:
             self.paths = {}
 
     # ---------- logging ----------
+    _tl = threading.local()                                          # per job thread: how many steps reported an error
+    PROBLEM_RE = re.compile(r"^\[(?:[A-Z ]*ERROR|ADMIN REQUIRED|FAILED)\]")
+
     def log(self, msg: Any, tag: str = "SYSTEM") -> None:
         entry = {"t": time.strftime("%H:%M:%S"), "tag": tag, "msg": str(msg)}
+        if hasattr(self._tl, "problems") and self.PROBLEM_RE.match(entry["msg"]):
+            self._tl.problems += 1                                   # a step of the running job reported a failure
         with self._lock:
             self.log_buf.append(entry)
             del self.log_buf[:-400]
@@ -167,30 +178,13 @@ class Core:
 
     # ---------- missing-map check ----------
     def _steam_libraries(self) -> List[str]:
-        import os
-        import re
-        libs: List[str] = []
-        seen: set = set()
-        steam = self.paths.get("steam_path")
-        if steam and os.path.exists(steam):
-            libs.append(steam)
-            seen.add(os.path.normcase(os.path.abspath(steam)))
-            vdf = os.path.join(steam, "steamapps", "libraryfolders.vdf")
-            try:
-                with open(vdf, "r", encoding="utf-8", errors="ignore") as fh:
-                    for m in re.findall(r'"path"\s+"([^"]+)"', fh.read()):
-                        p = m.replace("\\\\", "\\")
-                        if os.path.normcase(os.path.abspath(p)) not in seen and os.path.exists(p):
-                            libs.append(p)
-                            seen.add(os.path.normcase(os.path.abspath(p)))
-            except Exception:
-                pass
-        cs2 = self.paths.get("cs2_dir")
-        if cs2:
-            lib = os.path.dirname(os.path.dirname(os.path.dirname(cs2)))        # ...\SteamLibrary\steamapps\common\<game> -> ...\SteamLibrary
-            if lib and os.path.exists(lib) and os.path.normcase(os.path.abspath(lib)) not in seen:
-                libs.append(lib)
-        return libs
+        """Where installed workshop maps count: CS2 only loads workshop content from the library it is installed in, so that library
+        alone decides whether a map is installed. (Leftovers in an old library are ignored.) Falls back to all libraries when CS2's is unknown."""
+        import steam_paths
+        cs2_lib = steam_paths.library_of(self.paths.get("cs2_dir"))
+        if cs2_lib:
+            return [cs2_lib]
+        return steam_paths.steam_libraries(self.paths.get("steam_path"))
 
     def installed_maps(self, force: bool = False) -> Dict[str, Any]:
         """Workshop ids (folders holding a .vpk) and map names found on this PC. Cached for 20 s; names come from each item's
@@ -339,23 +333,29 @@ class Core:
         return {"power_plan": plan[0], "autoexec": auto, "cs2_found": bool(self.paths.get("cs2_dir")),
                 "cs2_exe": bool(self.paths.get("cs2_exe")), "cfg_dir": bool(self.paths.get("cfg_dir"))}
 
-    def _start_job(self, name: str, fn) -> Dict[str, Any]:
+    def _start_job(self, name: str, fn, long: bool = False) -> Dict[str, Any]:
+        """Runs fn in a thread. Two slots: the normal one, and one for long Windows repair tools (SFC, DISM, TRIM) so a 30-minute scan
+        cannot make Optimize, Restore or an update install refuse to start. The 'job' event carries how many steps reported an error."""
+        attr = "_busy_long" if long else "_busy"
         with self._lock:
-            if self._busy:
-                return {"ok": False, "error": f"'{self._busy}' is still running."}
-            self._busy = name
+            if getattr(self, attr):
+                return {"ok": False, "error": f"'{getattr(self, attr)}' is still running."}
+            setattr(self, attr, name)
 
         def run():
             ok = True
+            self._tl.problems = 0
             try:
                 fn()
             except Exception as e:
                 ok = False
                 self.log(f"[ERROR] {name}: {e}")
             finally:
+                problems = self._tl.problems
+                del self._tl.problems
                 with self._lock:
-                    self._busy = None
-                self.emit("job", {"name": name, "ok": ok})
+                    setattr(self, attr, None)
+                self.emit("job", {"name": name, "ok": ok, "problems": problems})
 
         threading.Thread(target=run, daemon=True, name=f"job-{name}").start()
         return {"ok": True}
@@ -541,6 +541,13 @@ class Core:
         import sys
         page = page if re.fullmatch(r"[a-z]{3,12}", str(page or "")) else ""
         extra = f"--elevated --page={page}" if page else "--elevated"
+        # Windows may ask for ANOTHER account's password (family PCs, work PCs). The elevated copy then sees that account's APPDATA and registry,
+        # so it is told where this account's data and Steam are, and who the original user was.
+        import getpass
+        handoff = {"appdata": os.environ.get("APPDATA", ""), "steam": self.paths.get("steam_path") or "", "user": getpass.getuser()}
+        for key, val in handoff.items():
+            if val:
+                extra += f' "--{key}={val}"'
         exe = sys.executable
         if getattr(sys, "frozen", False):
             params = extra
@@ -612,7 +619,7 @@ class Core:
             for l in logs:
                 self.log(l)
 
-        return self._start_job(f"maint_{name}", task)
+        return self._start_job(f"maint_{name}", task, long=name in ("trim", "sfc", "dism", "winsxs"))
 
     # ---------- launch options ----------
     def launch_state(self) -> Dict[str, Any]:
@@ -627,6 +634,12 @@ class Core:
         _cur, vdf = hardware_info.get_current_launch_options(self.paths.get("steam_path"))
         if not vdf:
             return {"ok": False, "error": "Steam localconfig.vdf was not found."}
+        try:
+            steam_open = bool(core_logic.is_steam_running())
+        except Exception:
+            steam_open = False
+        if steam_open:
+            return {"ok": False, "error": "Steam is running. Close Steam completely first, otherwise it overwrites this change when it exits. Then press Apply again."}
         ok, logs = core_logic.save_launch_options(vdf, (options or "").strip())
         for l in logs:
             self.log(l)
@@ -742,13 +755,17 @@ class Core:
 
     def settings_save(self, values: Dict[str, Any]) -> Dict[str, Any]:
         app_config.apply_settings(self.config, values or {})
+        startup_ok = True
         try:
-            app_config.set_windows_startup(bool(self.config.get("start_with_windows")), bool(self.config.get("start_minimized")))
+            startup_ok = bool(app_config.set_windows_startup(bool(self.config.get("start_with_windows")), bool(self.config.get("start_minimized"))))
         except Exception as e:
-            self.log(f"[SETTINGS] Windows startup could not be updated: {e}")
+            startup_ok = False
+            self.log(f"[ERROR] Windows startup could not be updated: {e}")
+        if not startup_ok:
+            self.log("[ERROR] Start with Windows could not be changed (Windows refused the registry entry). The other settings were saved.")
         ok = bool(app_config.save_config(self.config))
-        self.log("Settings saved" if ok else "[SETTINGS] Settings could not be saved")
-        return {"ok": ok, "refresh_seconds": self._refresh_seconds()}
+        self.log("Settings saved" if ok else "[ERROR] Settings could not be saved")
+        return {"ok": ok, "startup_ok": startup_ok, "refresh_seconds": self._refresh_seconds()}
 
     def settings_reset(self) -> Dict[str, Any]:
         app_config.reset_settings(self.config)
@@ -819,32 +836,70 @@ class Core:
         self.config["cleaner_protect_recent"] = bool(protect_recent)
         app_config.save_config(self.config)
 
-        def task():
-            items = custom_map_cleaner.scan_custom_maps(self.paths.get("steam_path"), self.paths.get("cs2_dir"), set(comms), bool(protect_recent))
-            with self._lock:
-                self._maps = {str(m.get("id")): m for m in items}      # the ONLY source of paths for delete/backup (never trust the page)
-            rows = [{"id": str(m.get("id")), "name": m.get("name"), "status": m.get("status_label"), "type": m.get("status_type"),
-                     "sub": bool(m.get("is_subscribed")), "asset": bool(m.get("is_server_asset")), "protected": bool(m.get("is_protected")),
-                     "workshop": bool(m.get("is_workshop")), "dupe": bool(m.get("has_duplicate")), "size": int(m.get("size_bytes") or 0),
-                     "size_str": m.get("size_str"), "mtime": m.get("mtime_str")} for m in items]
-            self.emit("maps", rows)
-            self.log(f"Map scan found {len(rows)} custom maps", "SYSTEM")
+        # Scans are not "jobs": a long SFC or DISM run must not make them refuse, and a refused scan used to leave the table
+        # showing old protection flags. The newest request always wins and runs as soon as the current scan ends.
+        with self._scan_lock:
+            self._scan_pending = (set(comms), bool(protect_recent))
+            if self._scan_running:
+                return {"ok": True, "queued": True}
+            self._scan_running = True
 
-        return self._start_job("maps_scan", task)
+        def worker():
+            try:
+                while True:
+                    with self._scan_lock:
+                        req, self._scan_pending = self._scan_pending, None
+                    if req is None:
+                        break
+                    try:
+                        items = custom_map_cleaner.scan_custom_maps(self.paths.get("steam_path"), self.paths.get("cs2_dir"), req[0], req[1])
+                    except Exception as e:
+                        self.log(f"[ERROR] Map scan failed: {e}")
+                        items = []
+                    with self._lock:
+                        self._maps = {str(m.get("id")): m for m in items}      # paths for backup; delete re-scans, it never trusts this or the page
+                    self.emit("maps", self._map_rows(items))
+                    self.log(f"Map scan found {len(items)} custom maps", "SYSTEM")
+            finally:
+                with self._scan_lock:
+                    self._scan_running = False
+                self.emit("job", {"name": "maps_scan", "ok": True})
 
-    def maps_delete(self, ids: List[str]) -> Dict[str, Any]:
+        threading.Thread(target=worker, daemon=True, name="maps-scan").start()
+        return {"ok": True}
+
+    @staticmethod
+    def _map_rows(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        return [{"id": str(m.get("id")), "name": m.get("name"), "status": m.get("status_label"), "type": m.get("status_type"),
+                 "sub": bool(m.get("is_subscribed")), "asset": bool(m.get("is_server_asset")), "protected": bool(m.get("is_protected")),
+                 "workshop": bool(m.get("is_workshop")), "dupe": bool(m.get("has_duplicate")), "size": int(m.get("size_bytes") or 0),
+                 "size_str": m.get("size_str"), "mtime": m.get("mtime_str")} for m in items]
+
+    def maps_delete(self, ids: List[str], communities: Optional[List[str]] = None, protect_recent: Optional[bool] = None) -> Dict[str, Any]:
         import custom_map_cleaner
         with self._lock:
-            items = [self._maps[i] for i in (ids or []) if i in getattr(self, "_maps", {})]
-        if not items:
+            wanted = {str(i) for i in (ids or []) if str(i) in getattr(self, "_maps", {})}     # ids the last scan really listed; anything else is refused
+        if not wanted:
             return {"ok": False, "error": "Nothing selected."}
+        if communities is None:
+            communities = list(self.config.get("cleaner_protected_comms", list(self.COMMUNITIES)))
+        if protect_recent is None:
+            protect_recent = bool(self.config.get("cleaner_protect_recent", True))
+        comms = {c for c in communities if c in self.COMMUNITIES}
 
         def task():
+            # Re-scan right now with the protection choices the page shows, so what is deleted can never be older or less protected
+            # than what the user sees. Protected packs, server assets and anything no longer on disk are skipped.
+            fresh = custom_map_cleaner.scan_custom_maps(self.paths.get("steam_path"), self.paths.get("cs2_dir"), comms, bool(protect_recent))
+            items = [m for m in fresh if str(m.get("id")) in wanted and not m.get("is_protected") and not m.get("is_server_asset")]
+            skipped = len(wanted) - len(items)
+            if skipped:
+                self.log(f"[MAP CLEANER] Skipped {skipped} selected item(s): now protected, a server asset pack, or no longer on disk.")
             count, freed, logs = custom_map_cleaner.delete_custom_maps(items)
             for l in logs:
                 self.log(l)
             self.log(f"[MAP CLEANER] Deleted {count} custom maps. Freed {freed / (1024 ** 3):.2f} GB.")
-            self.emit("maps_deleted", {"count": count, "freed": freed})
+            self.emit("maps_deleted", {"count": count, "freed": freed, "skipped": skipped})
 
         return self._start_job("maps_delete", task)
 
@@ -852,13 +907,26 @@ class Core:
         import os
         return os.path.join(app_config.get_storage_dir(), "backups", "custom_assets")
 
+    def _workshop_item_dir(self, wid: str) -> Optional[str]:
+        import os
+        import steam_paths
+        lib = steam_paths.library_of(self.paths.get("cs2_dir"))
+        dirs = steam_paths.workshop_dirs([lib]) if lib else steam_paths.workshop_dirs(steam_paths.steam_libraries(self.paths.get("steam_path")))
+        if not dirs and lib:
+            dirs = [os.path.join(lib, "steamapps", "workshop", "content", "730")]
+        return os.path.join(dirs[0], wid) if dirs and str(wid).isdigit() else None
+
     def maps_backup(self) -> Dict[str, Any]:
         import os
         import shutil
+        import custom_map_cleaner
         dest = self._vpk_backup_dir()
         os.makedirs(dest, exist_ok=True)
         copied = 0
-        for m in list(getattr(self, "_maps", {}).values()):
+        maps = list(getattr(self, "_maps", {}).values())
+        if not maps:                                             # no scan has run in this session: scan now instead of backing up nothing
+            maps = custom_map_cleaner.scan_custom_maps(self.paths.get("steam_path"), self.paths.get("cs2_dir"))
+        for m in maps:
             if m.get("is_server_asset") or "3793587501" in str(m.get("id")):
                 folder = m.get("path")
                 if folder and os.path.isdir(folder):
@@ -876,13 +944,13 @@ class Core:
         if not os.path.isdir(src_dir) or not os.listdir(src_dir):
             return {"ok": True, "count": 0}
         restored = 0
-        maps = getattr(self, "_maps", {})
         for f in os.listdir(src_dir):
             if f.endswith(".vpk") and "_" in f:
                 wid, vpk_name = f.split("_", 1)
-                m = maps.get(wid)
-                if m and m.get("path") and os.path.isdir(m["path"]):
-                    shutil.copy2(os.path.join(src_dir, f), os.path.join(m["path"], vpk_name))
+                target = self._workshop_item_dir(wid)               # works even when the folder was deleted: it is recreated
+                if target:
+                    os.makedirs(target, exist_ok=True)
+                    shutil.copy2(os.path.join(src_dir, f), os.path.join(target, vpk_name))
                     restored += 1
         self.log(f"[RESTORE] Restored {restored} custom asset VPK(s)")
         return {"ok": True, "count": restored}

@@ -164,7 +164,10 @@ class GsiTests(unittest.TestCase):
         return c.getresponse().status
 
     def test_binds_localhost_only(self):
-        self.assertIn('("127.0.0.1", self.port)', open(os.path.join(HERE, "cs2_gsi.py"), encoding="utf-8").read())
+        import re
+        src = open(os.path.join(HERE, "cs2_gsi.py"), encoding="utf-8").read()
+        self.assertTrue(re.search(r'\("127\.0\.0\.1", (self\.)?port\)', src))      # still bound to localhost only (port may come from a fallback loop)
+        self.assertNotIn("0.0.0.0", src)
 
     def test_valid_payload(self):
         self.assertEqual(self.post(json.dumps({"map": {"name": "ze_x"}})), 200)

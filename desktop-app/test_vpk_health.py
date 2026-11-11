@@ -40,6 +40,11 @@ def write_multi(folder, wid, chunk_len=4000, make_chunk=True, short=False):
 
 class VpkHealth(unittest.TestCase):
     def setUp(self):
+        # Hermetic: the scan must see only the fake folders below, never this PC's real Steam libraries (repair deletes folders).
+        import steam_paths
+        for patcher in (mock.patch.object(steam_paths, "steam_libraries", return_value=[]), mock.patch.object(steam_paths, "find_steam_path", return_value=None)):
+            patcher.start()
+            self.addCleanup(patcher.stop)
         self.tmp = tempfile.TemporaryDirectory()
         root = self.tmp.name
         self.ws = os.path.join(root, "steamapps", "workshop", "content", "730")

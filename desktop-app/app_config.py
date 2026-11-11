@@ -8,6 +8,8 @@ import sys
 import json
 import winreg
 import datetime
+import threading
+import shutil
 from typing import Dict, Any
 
 def get_storage_dir() -> str:
@@ -113,7 +115,11 @@ def load_config() -> Dict[str, Any]:
                 if isinstance(saved, dict):
                     cfg.update(saved)
         except Exception:
-            pass
+            # An unreadable config used to reset every setting silently. Keep the damaged file so nothing is lost for good.
+            try:
+                shutil.copyfile(CONFIG_FILE, CONFIG_FILE + ".corrupt")
+            except Exception:
+                pass
     if not cfg.get("discord_client_id"):
         cfg["discord_client_id"] = DEFAULT_DISCORD_CLIENT_ID
     # Synchronize startup state with actual Windows registry
@@ -122,16 +128,22 @@ def load_config() -> Dict[str, Any]:
         cfg["start_minimized"] = is_windows_startup_minimized()
     return cfg
 
+_SAVE_LOCK = threading.Lock()
+
+
 def save_config(cfg: Dict[str, Any]) -> bool:
     # AUDIT 1c-D6: atomic write (temp file + replace) so a crash or a full disk can
     # never leave a half-written config that silently resets every setting.
-    tmp = CONFIG_FILE + ".tmp"
+    # The lock and the per-thread temp name keep two saves at the same moment (Settings and a finishing job) from clobbering each other.
+    tmp = f"{CONFIG_FILE}.{threading.get_ident()}.tmp"
     try:
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(cfg, f, indent=2)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp, CONFIG_FILE)
+        with _SAVE_LOCK:
+            snapshot = json.dumps(cfg, indent=2)
+            with open(tmp, "w", encoding="utf-8") as f:
+                f.write(snapshot)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, CONFIG_FILE)
         return True
     except Exception:
         try:

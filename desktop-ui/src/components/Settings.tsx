@@ -32,7 +32,10 @@ export default function Settings({ onClose, onSaved, openDiscord, log }: { onClo
   useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k); }, [onClose]);
   if (!v) return null;
   const set = <K extends keyof SettingsValues>(k: K, val: SettingsValues[K]) => setV({ ...v, [k]: val });
-  const save = async () => { const r = await api.settingsSave(v); sfx.toggle(); onSaved(r.refresh_seconds); onClose(); };
+  const save = async () => {
+    const r = await api.settingsSave(v); sfx.toggle(); onSaved(r.refresh_seconds); onClose();
+    if (r.startup_ok === false) openModal({ kind: 'warn', label: 'Start with Windows', title: 'Could not change Start with Windows', body: 'Windows refused the startup entry. The other settings were saved. See the activity log.' });
+  };
   // like 1.6.0: Reset only fills the dialog with the defaults; nothing changes until Save is clicked
   const reset = () => openModal({ kind: 'q', label: 'Confirm', title: 'Reset app settings?', body: 'Are you sure you want to restore default configuration settings? Your presence key and timestamps are kept.',
     confirm: { text: 'Reset', run: () => { setV({ ...v, ...DEFAULTS }); setNote('Defaults restored in the dialog. Click Save to keep them.'); log('SYSTEM', '[SETTINGS] Defaults restored in the dialog. Click Save to keep them.'); } } });

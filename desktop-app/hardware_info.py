@@ -125,19 +125,17 @@ def get_current_launch_options(steam_path: Optional[str]) -> Tuple[Optional[str]
     if not steam_path or not os.path.exists(steam_path):
         return None, None
 
-    vdfs = glob.glob(os.path.join(steam_path, "userdata", "*", "config", "localconfig.vdf"))
-    for vf in vdfs:
-        try:
-            with open(vf, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read()
-            match = re.search(r'"730"[\s\S]*?"LaunchOptions"\s+"([^"]*)"', content)
-            if match:
-                return match.group(1), vf
-        except Exception:
-            continue
-
-    fallback_vdf = vdfs[0] if vdfs else None
-    return "", fallback_vdf
+    # The account that logged in last, and only CS2's own block (never another game's options).
+    import steam_vdf
+    vf = steam_vdf.localconfig_path(steam_path)
+    if not vf:
+        return "", None
+    try:
+        with open(vf, "r", encoding="utf-8", errors="ignore") as f:
+            opts = steam_vdf.get_launch_options(f.read(), "730")
+        return (opts if opts is not None else ""), vf
+    except (OSError, steam_vdf.VdfError):
+        return "", vf
 
 def analyze_launch_options(current_opts: str) -> Dict[str, Any]:
     opts = current_opts.strip() if current_opts else ""

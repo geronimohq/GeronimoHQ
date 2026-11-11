@@ -33,7 +33,7 @@ declare const __APP_EXE_SHA256__: string;
 declare const __APP_EXE_SIZE_MB__: number;
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=2.0.4';
+  const downloadUrl = '/CS2_Command_Center.exe?v=2.0.5';
   const exeSha256 = typeof __APP_EXE_SHA256__ !== 'undefined' ? __APP_EXE_SHA256__ : '66B78485C7C1F5622C12B702D07C83B7CEC781E344DC7AFE35B0272B494E7A01';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -50,6 +50,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
       details: [
         '1-Click Optimize: applies the engine tweaks you selected (shader cache purge, low-latency autoexec block, crash-dump cleanup, Game DVR off, fullscreen optimizations off) and your chosen Windows power plan. Restore Defaults reverts them.',
         'Hardware detection: reads your CPU and GPU, recognises AMD 3D V-Cache (X3D) and laptop CPUs, and recommends a matching Windows power plan.',
+        'Finds Steam and CS2 wherever they are installed (any drive or library, even a custom folder name) and tells you clearly if the Microsoft WebView2 component is missing.',
         'Persistent CyberDeck Status Bar: Live slot sniper state and the DNS your adapter really uses. The Dashboard shows whether CS2 was found and where it is installed.',
         'New dark-glass interface with a reactor-core backdrop on every tab, left-rail navigation, and mouse back/forward buttons for moving between tabs.'
       ],
@@ -283,7 +284,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v2.0.4
+              v2.0.5
             </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-2xl">

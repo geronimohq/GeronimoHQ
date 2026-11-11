@@ -9,7 +9,7 @@ const D = PAGES.dashboard;
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return <div className="glass card brk dcard"><div className="sect" style={{ marginBottom: 10 }}>{title}</div>{children}</div>;
 }
-const ago = (d: number | null | undefined) => (d == null ? 'Never' : d === 0 ? 'Today' : `${d}d ago`);
+const ago = (d: number | null | undefined) => (d == null || d >= 999 ? 'Never' : d === 0 ? 'Today' : `${d}d ago`);
 
 export default function Dashboard({ go }: { go: (id: 'servers' | 'maintenance' | 'engine') => void }) {
   const [d, setD] = useState<DashboardData | null>(null);
