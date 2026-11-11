@@ -47,9 +47,12 @@ class PresenceService:
     def start(self) -> None:
         cfg_dir = self.core.paths.get("cfg_dir")
         try:
-            if cfg_dir:
-                cs2_gsi.ensure_gsi_config_installed(cfg_dir)
-            cs2_gsi.get_gsi_server(on_state_update=self._on_gsi).start()
+            server = cs2_gsi.get_gsi_server(on_state_update=self._on_gsi)
+            started = server.start()                       # first: the config file must name the port that really worked
+            if started and cfg_dir:
+                cs2_gsi.ensure_gsi_config_installed(cfg_dir, server.port)
+            if not started:
+                self.core.log(f"[GSI] Live game state feed could not start: {server.last_error}. Discord falls back to matching the map and your Steam name.")
         except Exception as e:
             self.core.log(f"[GSI] Live game state feed could not start: {e}")
         if not self.thread:

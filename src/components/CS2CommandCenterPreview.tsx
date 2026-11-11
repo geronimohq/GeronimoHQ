@@ -50,6 +50,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
       details: [
         '1-Click Optimize: applies the engine tweaks you selected (shader cache purge, low-latency autoexec block, crash-dump cleanup, Game DVR off, fullscreen optimizations off) and your chosen Windows power plan. Restore Defaults reverts them.',
         'Hardware detection: reads your CPU and GPU, recognises AMD 3D V-Cache (X3D) and laptop CPUs, and recommends a matching Windows power plan.',
+        'Finds Steam and CS2 wherever they are installed (any drive or library, even a custom folder name) and tells you clearly if the Microsoft WebView2 component is missing.',
         'Persistent CyberDeck Status Bar: Live slot sniper state and the DNS your adapter really uses. The Dashboard shows whether CS2 was found and where it is installed.',
         'New dark-glass interface with a reactor-core backdrop on every tab, left-rail navigation, and mouse back/forward buttons for moving between tabs.'
       ],

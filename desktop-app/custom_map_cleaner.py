@@ -231,27 +231,11 @@ def scan_custom_maps(steam_path: str, cs2_dir: str = None, protected_communities
 
     # 1. Search Steam Workshop content (AppID 730 = CS2)
     # Search all Steam library folders
-    library_folders = []
-    if steam_path and os.path.exists(steam_path):
-        library_folders.append(steam_path)
-        vdf_path = os.path.join(steam_path, "steamapps", "libraryfolders.vdf")
-        if os.path.exists(vdf_path):
-            try:
-                with open(vdf_path, "r", encoding="utf-8", errors="ignore") as f:
-                    content = f.read()
-                matches = re.findall(r'"path"\s+"([^"]+)"', content)
-                for m in matches:
-                    clean_path = m.replace(r"\\", "\\")
-                    if clean_path not in library_folders and os.path.exists(clean_path):
-                        library_folders.append(clean_path)
-            except Exception:
-                pass
-
-    # Check drives C to H for SteamLibrary as fallback
-    for drive in ["C", "D", "E", "F", "G", "H"]:
-        p = f"{drive}:\\SteamLibrary"
-        if os.path.exists(p) and p not in library_folders:
-            library_folders.append(p)
+    import steam_paths
+    library_folders = steam_paths.steam_libraries(steam_path)
+    cs2_lib = steam_paths.library_of(cs2_dir)
+    if cs2_lib and os.path.normcase(os.path.abspath(cs2_lib)) not in {os.path.normcase(os.path.abspath(l)) for l in library_folders}:
+        library_folders.append(cs2_lib)
 
     subscribed_ids = get_subscribed_workshop_ids(library_folders)
 

@@ -33,8 +33,8 @@ class ScanScope(unittest.TestCase):
                 os.makedirs(folder)
                 open(os.path.join(folder, os.path.basename(folder) + ".vpk"), "wb").write(body)
             open(os.path.join(maps, "publish_data.txt"), "w").write('"publish_data"\n{\n\t"title"\t\t"ze_test_map"\n}\n')
-            skip_real_libraries = lambda p: False if re.fullmatch(r"[A-Za-z]:\\SteamLibrary", str(p)) else real_exists(p)
-            with mock.patch.object(custom_map_cleaner.os.path, "exists", side_effect=skip_real_libraries):
+            import steam_paths
+            with mock.patch.object(steam_paths, "steam_libraries", return_value=[steam]):        # only the fake Steam folder; never this PC's libraries
                 items = custom_map_cleaner.scan_custom_maps(steam, None, set(), False)
         by = {str(i["id"]): i for i in items}
         self.assertIn("3793587501", by)

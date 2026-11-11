@@ -19,6 +19,14 @@
    {
     "q": "How do updates work?",
     "a": "The app checks geronimohq.com for a signed update manifest. The new exe is only offered when its Ed25519 signature, size and SHA-256 match, so a tampered file is rejected. Settings shows the last check and a Check now button. Your settings and logs are kept when the app updates."
+   },
+   {
+    "q": "Does it find Steam and CS2 if they are on another drive or in another library?",
+    "a": "Yes. The app asks Steam itself: its registry entries, its list of game libraries, and the file that says where Counter-Strike 2 is installed (even under a custom folder name). It also checks the usual folders on your fixed drives. Network and removable drives are never probed. If CS2 or Steam is moved while the app is open, restart the app."
+   },
+   {
+    "q": "The app window does not open and a message mentions WebView2. What is that?",
+    "a": "The app window is drawn by the Microsoft Edge WebView2 Runtime, a free Microsoft component that Windows 11 and up-to-date Windows 10 already have. If it is missing, the app shows a message with a button that opens Microsoft's download page. Install the 'Evergreen Bootstrapper' and start the app again."
    }
   ]
  },
@@ -77,6 +85,10 @@
    {
     "q": "Why do Zombie Escape & 64-player servers experience choke or stutter?",
     "a": "In 64-player community servers, the server broadcasts massive amounts of entity updates, particle data, and zombie positions every tick. Setting 'rate 1000000' (maximum 8 Mbps bandwidth allocation) prevents your client from dropping entity packets when 60 players shoot and throw grenades simultaneously."
+   },
+   {
+    "q": "Which network adapter does the DNS change use, and does it work on non-English Windows?",
+    "a": "The one Windows really uses to reach the internet (its default route), asked from Windows directly, so it works in any Windows language, on Wi-Fi or cable, and ignores virtual adapters such as VPN or Hyper-V. Restore changes the same adapter back to automatic DNS."
    }
   ]
  },
@@ -247,6 +259,10 @@
    {
     "q": "Which temporary files does the Windows temp clean-up delete?",
     "a": "Files in your %TEMP% folder and in Windows\\Temp that are older than 24 hours and not in use. Anything newer is left alone because a running program or an installer may still need it, and the app never touches its own unpacked files or the temporary folders of other single-file apps. Locked files are skipped."
+   },
+   {
+    "q": "Windows asks for another administrator's password when I use Relaunch as Administrator. Is that a problem?",
+    "a": "No, but it matters for two things. The elevated copy still uses your own settings, logs and Steam folders. Windows settings that are stored per user (Game DVR, Start with Windows) are saved for the account that approved the prompt, and the activity log says so. Changes that apply to the whole PC (power plan, DNS, MPO commands) work the same either way."
    }
   ]
  },

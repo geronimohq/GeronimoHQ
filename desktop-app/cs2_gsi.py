@@ -44,16 +44,17 @@ GSI_CONFIG_CONTENT = """"CS2 Command Center GSI"
 }
 """
 
-def ensure_gsi_config_installed(cfg_dir: str) -> bool:
-    """Installs the official Valve GSI configuration into cs2 cfg folder."""
+def ensure_gsi_config_installed(cfg_dir: str, port: int = DEFAULT_GSI_PORT) -> bool:
+    """Installs the official Valve GSI configuration into cs2 cfg folder, pointing at the port the listener really got."""
     if not cfg_dir or not os.path.exists(cfg_dir):
         return False
     success = False
+    content = GSI_CONFIG_CONTENT.strip().replace("127.0.0.1:3000", f"127.0.0.1:{int(port)}")
     for cfg_name in GSI_CONFIG_NAMES:
         target_path = os.path.join(cfg_dir, cfg_name)
         try:
             with open(target_path, "w", encoding="utf-8") as f:
-                f.write(GSI_CONFIG_CONTENT.strip())
+                f.write(content)
             success = True
         except Exception:
             pass
@@ -150,24 +151,29 @@ class CS2GSIServer:
                 pass
 
     def start(self) -> bool:
+        """Listens on the first free local port from the default upwards (port 3000 is often taken by other programs on a developer-style PC).
+        The port that worked is in self.port, and the game's config file must be written with it."""
         if self.running:
             return True
-        try:
-            self.httpd = _ExclusiveHTTPServer(("127.0.0.1", self.port), _GSIRequestHandler)
-            self.httpd.on_payload = self._handle_payload
-            self.running = True
-            self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
-            self.thread.start()
-            self.last_error = ""
-            return True
-        except OSError as e:
-            self.running = False
-            self.last_error = f"port {self.port} is already in use by another program ({e.__class__.__name__})"
-            return False
-        except Exception as e:
-            self.running = False
-            self.last_error = str(e)
-            return False
+        first = self.port
+        for port in range(first, first + 11):
+            try:
+                self.httpd = _ExclusiveHTTPServer(("127.0.0.1", port), _GSIRequestHandler)
+                self.port = port
+                self.httpd.on_payload = self._handle_payload
+                self.running = True
+                self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
+                self.thread.start()
+                self.last_error = ""
+                return True
+            except OSError as e:
+                self.last_error = f"ports {first} to {first + 10} are all in use by other programs ({e.__class__.__name__})"
+                continue
+            except Exception as e:
+                self.last_error = str(e)
+                break
+        self.running = False
+        return False
 
     def stop(self):
         self.running = False

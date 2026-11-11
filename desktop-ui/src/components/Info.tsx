@@ -19,7 +19,7 @@ export function Info({ title, badge, text, children, open = true, tone = 'var(--
 
 /** Reminder banner shown on Engine Tweaks and PC Maintenance (same rules as the classic app: 7 days). */
 export function WeeklyBanner({ daysOpt, daysMaint, go, actions }: { daysOpt: number | null | undefined; daysMaint: number | null | undefined; go: (id: 'engine' | 'maintenance') => void; actions?: { label: string; run: () => void }[] }) {
-  const age = (d: number | null | undefined) => (d == null ? 'not yet run' : d === 0 ? 'today' : `${d}d ago`);
+  const age = (d: number | null | undefined) => (d == null || d >= 999 ? 'not yet run' : d === 0 ? 'today' : `${d}d ago`);
   const optOld = daysOpt == null || daysOpt > 7, mOld = daysMaint == null || daysMaint > 7;
   const both = optOld && mOld;
   const bad = optOld || mOld;

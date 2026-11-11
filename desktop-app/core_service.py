@@ -170,30 +170,13 @@ class Core:
 
     # ---------- missing-map check ----------
     def _steam_libraries(self) -> List[str]:
-        import os
-        import re
-        libs: List[str] = []
-        seen: set = set()
-        steam = self.paths.get("steam_path")
-        if steam and os.path.exists(steam):
-            libs.append(steam)
-            seen.add(os.path.normcase(os.path.abspath(steam)))
-            vdf = os.path.join(steam, "steamapps", "libraryfolders.vdf")
-            try:
-                with open(vdf, "r", encoding="utf-8", errors="ignore") as fh:
-                    for m in re.findall(r'"path"\s+"([^"]+)"', fh.read()):
-                        p = m.replace("\\\\", "\\")
-                        if os.path.normcase(os.path.abspath(p)) not in seen and os.path.exists(p):
-                            libs.append(p)
-                            seen.add(os.path.normcase(os.path.abspath(p)))
-            except Exception:
-                pass
-        cs2 = self.paths.get("cs2_dir")
-        if cs2:
-            lib = os.path.dirname(os.path.dirname(os.path.dirname(cs2)))        # ...\SteamLibrary\steamapps\common\<game> -> ...\SteamLibrary
-            if lib and os.path.exists(lib) and os.path.normcase(os.path.abspath(lib)) not in seen:
-                libs.append(lib)
-        return libs
+        """Where installed workshop maps count: CS2 only loads workshop content from the library it is installed in, so that library
+        alone decides whether a map is installed. (Leftovers in an old library are ignored.) Falls back to all libraries when CS2's is unknown."""
+        import steam_paths
+        cs2_lib = steam_paths.library_of(self.paths.get("cs2_dir"))
+        if cs2_lib:
+            return [cs2_lib]
+        return steam_paths.steam_libraries(self.paths.get("steam_path"))
 
     def installed_maps(self, force: bool = False) -> Dict[str, Any]:
         """Workshop ids (folders holding a .vpk) and map names found on this PC. Cached for 20 s; names come from each item's
@@ -544,6 +527,13 @@ class Core:
         import sys
         page = page if re.fullmatch(r"[a-z]{3,12}", str(page or "")) else ""
         extra = f"--elevated --page={page}" if page else "--elevated"
+        # Windows may ask for ANOTHER account's password (family PCs, work PCs). The elevated copy then sees that account's APPDATA and registry,
+        # so it is told where this account's data and Steam are, and who the original user was.
+        import getpass
+        handoff = {"appdata": os.environ.get("APPDATA", ""), "steam": self.paths.get("steam_path") or "", "user": getpass.getuser()}
+        for key, val in handoff.items():
+            if val:
+                extra += f' "--{key}={val}"'
         exe = sys.executable
         if getattr(sys, "frozen", False):
             params = extra
