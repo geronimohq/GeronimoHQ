@@ -1,9 +1,9 @@
 {
-  "version": "2.0.9",
+  "version": "2.0.10",
   "build_date": "2026-11-12",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "3FBB7C05A0B433D6167098F304953117EDB4D47171FF64258A67AB6CBC8858FC",
-  "size": 27456870,
-  "notes": "Map Cleaner: Duplicates tab removed, Not played in 30+ days tab, protects any server asset pack found by looking inside it (also Chinese servers). Website: mapper names read from each map's workshop page.",
-  "signature": "b5fa87904f4ba1e8f3c194bfba9614646d9c6ab3d1f66465597808094ba5e090376a88b1d3632fc5dad86adde08cc6a5aedad28a10fa4b77027b29b7aad2de00"
+  "sha256": "63E994D2E4E3B1E31DC05A67E66D08C77E47F2C9B6088C93D9C58578E47081B3",
+  "size": 27458667,
+  "notes": "Map Cleaner: maps used in the last 30 days are now always protected (also subscribed ones), clearer 'Last modified' date, Subscribed maps tab, clickable maps and a note about duplicates. Website: card and players window layout fixes.",
+  "signature": "fa3331dc2d499833af87bc06d11bde42d08fd56d10ce788ac61683c710004b028b582ba5d646405e6296d318226f3de684a2da6c839f6ca807920125e4c2ac0d"
 }
