@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AppWindow, Binary, ChevronDown, Gauge, Globe2, LayoutDashboard, MessageSquare, Minus, Monitor, Rocket, Square, Wifi, Wrench, X, Zap, HelpCircle } from 'lucide-react';
-import { api, isNative, on } from './api';
+import { api, IN_APP, isNative, on } from './api';
 import { sfx } from './sound';
 import { ModalHost, useModal, type ModalSpec } from './components/Modal';
 import Servers from './views/Servers';
@@ -19,7 +19,8 @@ import Settings from './components/Settings';
 import { Reactor } from './components/Reactor';
 import { TooltipLayer } from './components/TooltipLayer';
 import type { HwInfo } from './types';
-import type { AppInfo, LogLine, SniperStatus, UpdateInfo } from './types';
+import type { AppInfo, LogLine, SniperStatus, ToolResult, UpdateInfo } from './types';
+import { resultModal } from './toolText';
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -53,7 +54,7 @@ function useNative(): boolean {
     if (n) return;
     const f = () => setN(isNative());
     window.addEventListener('pywebviewready', f);
-    const t = setTimeout(f, 1500);
+    const t = setTimeout(f, IN_APP ? 90000 : 1500);
     return () => { window.removeEventListener('pywebviewready', f); clearTimeout(t); };
   }, [n]);
   return n;
@@ -108,29 +109,35 @@ function Shell() {
     const offU = on<UpdateInfo>('update', setUpdate);
     const offM = on<boolean>('maximized', setMaxed);
     const off1 = on<LogLine>('log', (l) => setLogs((p) => [...p.slice(-399), l]));
-    const off2 = on<{ name: string; ok: boolean; problems?: number }>('job', (j) => {
+    const off2 = on<{ name: string; ok: boolean; problems?: number; already?: number; changed?: number }>('job', (j) => {
       setBusy(false);
       void api.appInfo().then(setInfo);
       const n = j.problems ?? 0;
+      const same = (j.already ?? 0) > 0 && (j.changed ?? 0) === 0;                // every step found nothing to change
+      const some = (j.already ?? 0) > 0 && (j.changed ?? 0) > 0 ? ` ${j.already} step${j.already === 1 ? ' was' : 's were'} already set and left as ${j.already === 1 ? 'it was' : 'they were'}.` : '';
+      const nothing = (what: string): ModalSpec => ({ kind: 'ok', label: 'No changes', title: 'Nothing to change', body: `${what}\n\nThe log lists each step.` });
       const partial = (title: string, what: string): ModalSpec => ({ kind: 'warn', label: 'Finished with problems', title, body: `${n} step${n === 1 ? '' : 's'} reported an error while ${what}. The activity log marks each one with [ERROR]; the other steps were done.` });
       const TOOLS: Record<string, string> = { maint_trim: 'SSD TRIM', maint_sfc: 'System File Checker', maint_dism: 'DISM repair', maint_winsxs: 'WinSxS clean-up' };
       if (j.name === 'engine_apply') {
         openModal(!j.ok
           ? { kind: 'warn', label: 'Problem', title: 'Optimization stopped', body: 'Something failed. The log lists each step.' }
           : n > 0 ? partial('Optimization finished with problems', 'applying the tweaks')
-          : { kind: 'ok', label: 'Notification', title: 'Optimization applied', body: 'The selected tweaks are done. Every change has an undo: Restore Defaults brings back your previous settings. The log lists each step.' });
+          : same ? nothing('Everything you selected was already set on this PC, so nothing was changed.')
+          : { kind: 'ok', label: 'Notification', title: 'Optimization applied', body: `The selected tweaks are done.${some} Every change has an undo: Restore Defaults brings back your previous settings. The log lists each step.` });
       } else if (j.name === 'maint_run') {
         openModal(!j.ok || n > 0 ? partial('Clean-up finished with problems', 'cleaning')
-          : { kind: 'ok', label: 'Notification', title: 'Clean-up finished', body: 'Each step is listed in the log, with the space it freed.' });
+          : same ? nothing('No files were found in the places you selected, so nothing was cleaned.')
+          : { kind: 'ok', label: 'Notification', title: 'Clean-up finished', body: `Each step is listed in the log, with the space it freed.${some}` });
       } else if (j.name === 'engine_restore') {
         openModal(!j.ok || n > 0 ? partial('Restore finished with problems', 'restoring')
-          : { kind: 'ok', label: 'Notification', title: 'Restore finished', body: 'Each step is listed in the log. DNS and Steam launch options were not changed.' });
-      } else if (TOOLS[j.name]) {
-        openModal(!j.ok || n > 0 ? partial(`${TOOLS[j.name]} did not complete`, 'running it')
-          : { kind: 'ok', label: 'Notification', title: `${TOOLS[j.name]} finished`, body: 'The result is in the activity log.' });
+          : same ? nothing('Everything was already at its original setting, so nothing was changed. DNS and Steam launch options are never touched by Restore.')
+          : { kind: 'ok', label: 'Notification', title: 'Restore finished', body: `Each step is listed in the log. DNS and Steam launch options were not changed.${some}` });
+      } else if (TOOLS[j.name] && !j.ok) {                                  // a normal ending shows the tool's own result window (tool_result); this is only the crash case
+        openModal({ kind: 'warn', label: 'Problem', title: `${TOOLS[j.name]} did not complete`, body: 'The app hit an unexpected error while running it. The activity log has the details.' });
       }
     });
-    return () => { off1(); off2(); offS(); offU(); offM(); clearInterval(sniperTimer); clearInterval(dnsTimer); };
+    const off3 = on<ToolResult>('tool_result', (r) => openModal(resultModal(r)));
+    return () => { off1(); off2(); off3(); offS(); offU(); offM(); clearInterval(sniperTimer); clearInterval(dnsTimer); };
   }, [openModal]);
 
   useEffect(() => { logEnd.current?.scrollIntoView({ block: 'end' }); }, [logs, drawer]);

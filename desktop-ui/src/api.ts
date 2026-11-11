@@ -1,4 +1,4 @@
-import type { Track, AnalyzerResult, AppInfo, AutoexecState, HwInfo, VpkResult, UpdateInfo, PresenceState, MapsSettings, MpoState, SettingsValues, DashboardData, DnsState, EngineState, LogLine, LaunchState, MaintState, Match, PlayerRow, SniperStatus, Srv, Status, MapHelp, PackSize } from './types';
+import type { Track, AnalyzerResult, AppInfo, AutoexecState, HwInfo, VpkResult, UpdateInfo, PresenceState, MapsSettings, MpoState, SettingsValues, DashboardData, DnsState, EngineState, LogLine, LaunchState, MaintState, Match, PlayerRow, SniperStatus, Srv, Status, MapHelp, MapsNews, PackSize } from './types';
 
 type Fn = (...a: unknown[]) => Promise<unknown>;
 declare global {
@@ -14,11 +14,14 @@ export function on<T>(ev: string, cb: (d: T) => void): () => void {
   return () => listeners.get(ev)?.delete(cb as (d: never) => void);
 }
 
-/** Resolves when the native bridge exists; after 1.5 s the page assumes a plain browser and uses sample data. */
+/** The desktop app serves this page from its own local server (http://127.0.0.1:port). Inside the app the page must NEVER show sample data:
+ *  on a slow PC the engine can take many seconds to attach, and showing the sample CPU/GPU instead of the real ones once misled a laptop owner.
+ *  A plain browser or the dev server (any other address) uses sample data after 1.5 s; add ?demo=1 to force that anywhere. */
+export const IN_APP = window.location.hostname === '127.0.0.1' && !/[?&]demo=1\b/.test(window.location.search);
 const ready = new Promise<void>((res) => {
   if (window.pywebview?.api) return res();
   window.addEventListener('pywebviewready', () => res());
-  setTimeout(res, 1500);
+  setTimeout(res, IN_APP ? 90000 : 1500);
 });
 export const isNative = () => !!window.pywebview?.api;
 
@@ -26,6 +29,7 @@ async function call<T>(name: string, ...args: unknown[]): Promise<T> {
   await ready;
   const fn = window.pywebview?.api?.[name];
   if (fn) return (await fn(...args)) as T;
+  if (IN_APP) throw new Error('The app engine did not start. Close the app and open it again.');
   return (await mock(name, ...args)) as T;
 }
 
@@ -50,7 +54,7 @@ export const api = {
   engineState: () => call<EngineState>('engine_state'),
   engineApply: (opts: Record<string, unknown>) => call<{ ok: boolean; error?: string }>('engine_apply', opts),
   engineRestore: () => call<{ ok: boolean; error?: string }>('engine_restore'),
-  powerSet: (plan: 'balanced' | 'high') => call<{ ok: boolean; plan?: string }>('power_set', plan),
+  powerSet: (plan: 'balanced' | 'high') => call<{ ok: boolean; plan?: string; changed?: boolean }>('power_set', plan),
   restoreSummary: () => call<string>('restore_summary'),
   connect: (id: string) => call<{ ok: boolean; error?: string }>('server_connect', id),
   players: (id: string) => call<{ success: boolean; players: PlayerRow[]; error?: string; name?: string }>('server_players', id),
@@ -66,19 +70,19 @@ export const api = {
   mapThumb: (map: string) => call<string>('map_thumb', map),
   maintState: () => call<MaintState>('maint_state'),
   maintRun: (opts: Record<string, boolean>) => call<{ ok: boolean; error?: string }>('maint_run', opts),
-  maintTool: (name: string) => call<{ ok: boolean; error?: string }>('maint_tool', name),
+  maintTool: (name: string) => call<{ ok: boolean; error?: string; started?: number }>('maint_tool', name),
   launchState: () => call<LaunchState>('launch_state'),
   launchSave: (o: string) => call<{ ok: boolean; error?: string }>('launch_save', o),
-  boost: () => call<{ ok: boolean; msg: string }>('boost_run'),
+  boost: () => call<{ ok: boolean; msg: string; already?: boolean }>('boost_run'),
   cs2Running: () => call<boolean>('cs2_running'),
   dnsState: () => call<DnsState>('dns_state'),
   dnsBenchmark: () => call<{ ok: boolean; error?: string }>('dns_benchmark'),
   dnsApply: (p: string, s: string, n: string) => call<{ ok: boolean; error?: string }>('dns_apply', p, s, n),
   dnsRestore: () => call<{ ok: boolean; error?: string }>('dns_restore'),
   autoexecState: () => call<AutoexecState>('autoexec_state'),
-  autoexecInstall: () => call<{ ok: boolean; error?: string }>('autoexec_install'),
-  autoexecRestore: () => call<{ ok: boolean; error?: string }>('autoexec_restore'),
-  autoexecFps: (n: number) => call<{ ok: boolean; error?: string }>('autoexec_fps', n),
+  autoexecInstall: () => call<{ ok: boolean; error?: string; changed?: boolean }>('autoexec_install'),
+  autoexecRestore: () => call<{ ok: boolean; error?: string; changed?: boolean }>('autoexec_restore'),
+  autoexecFps: (n: number) => call<{ ok: boolean; error?: string; changed?: boolean }>('autoexec_fps', n),
   mpo: () => call<MpoState>('mpo_state'),
   settingsGet: () => call<SettingsValues>('settings_get'),
   settingsSave: (v: Partial<SettingsValues>) => call<{ ok: boolean; startup_ok?: boolean; refresh_seconds: number }>('settings_save', v),
@@ -99,8 +103,8 @@ export const api = {
   updateSkip: (v: string) => call<boolean>('update_skip', v),
   updateInstall: () => call<{ ok: boolean; error?: string }>('update_install'),
   hw: () => call<HwInfo>('hw_info'),
-  zeCustomizer: (o: Record<string, unknown>) => call<{ ok: boolean; message: string; keys: string[]; hud: number; vm: boolean }>('ze_customizer', o),
-  autoexecSave: (t: string) => call<{ ok: boolean; error?: string; path?: string }>('autoexec_save', t),
+  zeCustomizer: (o: Record<string, unknown>) => call<{ ok: boolean; changed?: boolean; message: string; keys: string[]; hud: number; vm: boolean }>('ze_customizer', o),
+  autoexecSave: (t: string) => call<{ ok: boolean; error?: string; path?: string; changed?: boolean }>('autoexec_save', t),
   logAnalyze: () => call<AnalyzerResult>('log_analyze'),
   dnsCustom: (p: string, s: string) => call<{ ok: boolean; error?: string }>('dns_custom', p, s),
   vpkVerify: () => call<VpkResult>('vpk_verify'),
@@ -111,6 +115,7 @@ export const api = {
   memTrim: (low: boolean) => call<void>('mem_trim', low),
   mapGet: (map: string, wid: string) => call<{ ok: boolean; kind: string }>('map_get', map, wid),
   mapHelp: (sid: string, map: string, wid: string, mode = '') => call<MapHelp>('map_help', sid, map, wid, mode),
+  mapsNews: () => call<MapsNews>('maps_news'),
   collectionSize: (id: string) => call<PackSize>('collection_size', id),
   collectionOpen: (id: string) => call<{ ok: boolean }>('collection_open', id),
   winMax: () => call<boolean>('win_maximize'),
@@ -147,7 +152,7 @@ async function mock(name: string, ...args: unknown[]): Promise<unknown> {
     case 'dashboard': return { cs2_dir: 'C:/cs2', cfg_dir: 'C:/cs2/cfg', autoexec: { state: 'app_block', text: 'Autoexec: found' }, drive: { drive: 'E:', total_gb: 1000, free_gb: 330, used_gb: 670, used_pct: 67, is_critical: false }, days_opt: 4, days_maint: 4 };
     case 'open_path': case 'open_url': return true;
     case 'relaunch_admin': return { ok: false };
-    case 'maint_state': return { drives: [{ drive: 'C:', total_gb: 500, free_gb: 120, used_gb: 380, used_pct: 76, is_critical: false }, { drive: 'E:', total_gb: 1000, free_gb: 330, used_gb: 670, used_pct: 67, is_critical: false }], admin: false, days_maint: 4 };
+    case 'maint_state': return { drives: [{ drive: 'C:', total_gb: 500, free_gb: 120, used_gb: 380, used_pct: 76, is_critical: false }, { drive: 'E:', total_gb: 1000, free_gb: 330, used_gb: 670, used_pct: 67, is_critical: false }], admin: false, days_maint: 4, tool_run: null, tool_last: {} };
     case 'maint_run': case 'maint_tool': setTimeout(() => window.__emit?.('job', { name: 'maint_run', ok: true }), 800); return { ok: true };
     case 'launch_state': return { current: '-novid -threads 4', vdf_found: true, warnings: ["'-threads' detected: Causes thread contention."], recommended: '-novid -nojoy', suggestions: [] };
     case 'launch_save': case 'autoexec_install': case 'autoexec_restore': case 'autoexec_fps': case 'dns_apply': case 'dns_restore': return { ok: true };
@@ -172,6 +177,7 @@ async function mock(name: string, ...args: unknown[]): Promise<unknown> {
     case 'presence_broadcast': return { ok: true };
     case 'update_check': return { available: false, message: 'You are up to date (sample).', last: '' };
     case 'update_skip': return true;
+    case 'maps_news': return { known: true, new: 0, missing: 0, total: 360 };
     case 'map_help': return { map: { name: 'ze_demo_map', wid: '' }, collections: [{ id: '1', label: 'Demo collection', kind: 'maps', total: 100, installed: 40, known: true, match: true }] };
     case 'collection_size': return { ok: true, missing: 60, known: 60, unknown: 0, bytes: 12000000000 };
     case 'collection_open': return { ok: true };

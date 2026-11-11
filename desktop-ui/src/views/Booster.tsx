@@ -32,7 +32,7 @@ export default function Booster() {
     sfx.click();
     const r = await api.boost();
     setBoostMsg(r.msg);
-    openModal({ kind: r.ok ? 'ok' : 'warn', label: 'Live CPU priority boost', title: r.ok ? 'Boost applied' : 'Not applied', body: r.msg });
+    openModal({ kind: r.ok ? 'ok' : 'warn', label: 'Live CPU priority boost', title: r.ok ? (r.already ? 'Already boosted' : 'Boost applied') : 'Not applied', body: r.msg });
     void api.cs2Running().then(setRunning);
   };
   const runBench = async () => {

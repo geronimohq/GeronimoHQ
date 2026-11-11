@@ -4,6 +4,7 @@ Everything here calls the same logic modules the Tk app uses (core_logic, server
 updater). The UI talks to this class through web_api.Api. Events (log lines, finished jobs) go out through `emit`.
 """
 import concurrent.futures
+import datetime
 import re
 import threading
 import time
@@ -47,6 +48,7 @@ class Core:
         self._maps_lock = threading.Lock()
         self._tl = threading.local()
         self._busy_long: Optional[str] = None
+        self._tool_run: Optional[Dict[str, Any]] = None                  # the long Windows tool running now: name, start time, percent
         self._maps_cache = None
         try:
             self.paths = core_logic.find_cs2_paths()
@@ -56,11 +58,18 @@ class Core:
     # ---------- logging ----------
     _tl = threading.local()                                          # per job thread: how many steps reported an error
     PROBLEM_RE = re.compile(r"^\[(?:[A-Z ]*ERROR|ADMIN REQUIRED|FAILED)\]")
+    ALREADY_RE = re.compile(r"^\[ALREADY\]")                      # a step found nothing to change (already set, already clean, nothing to remove)
+    CHANGED_RE = re.compile(r"^\[(?:SUCCESS|REVERTED|SHADERS|ZE STUDIO|AUTOEXEC)\]")
 
     def log(self, msg: Any, tag: str = "SYSTEM") -> None:
         entry = {"t": time.strftime("%H:%M:%S"), "tag": tag, "msg": str(msg)}
         if hasattr(self._tl, "problems") and self.PROBLEM_RE.match(entry["msg"]):
             self._tl.problems += 1                                   # a step of the running job reported a failure
+        if hasattr(self._tl, "already"):
+            if self.ALREADY_RE.match(entry["msg"]):
+                self._tl.already += 1
+            elif self.CHANGED_RE.match(entry["msg"]):
+                self._tl.changed += 1
         with self._lock:
             self.log_buf.append(entry)
             del self.log_buf[:-400]
@@ -161,13 +170,14 @@ class Core:
             except Exception:
                 pass
         cur_map = info.get("map") if online else None
-        mm = self.map_check(cur_map, sid) if online and s.get("group") != "china" else None        # the missing-map warning is for the global servers only
+        mm = self.map_check(cur_map, sid) if online else None                                       # Planet China too: no map pack there, so the link goes straight to the map's own page
         since, exact = self._map_clock(sid, cur_map, None if s.get("group") == "china" else s["host"], int(s["port"]), humans)
         return {"id": sid, "online": online, "map": cur_map, "players": total, "bots": bots,
                 "humans": humans, "max": int(info.get("max_players") or 0), "ping": info.get("rtt") if online else None,
                 "name_live": info.get("server_name") if online else None, "geo": geo, "at": time.time(),
                 "map_since": since, "map_exact": exact,
-                "map_missing": bool(mm and mm["missing"]), "map_wid": (mm or {}).get("wid", "")}
+                "map_missing": bool(mm and mm["missing"]), "map_wid": (mm or {}).get("wid", ""),
+                "map_reupload": bool(mm and mm.get("reupload")), "map_pending": int((mm or {}).get("pending", 0))}
 
     @staticmethod
     def _probe_map_start(c: Dict[str, Any], host: str, port: int) -> None:
@@ -204,7 +214,7 @@ class Core:
             c = self._maps_cache
             if c and not force and time.time() - c["at"] < 20:
                 return c
-            ids, names = set(), set()
+            ids, names, id_names = set(), set(), {}
             for lib in self._steam_libraries():
                 for folder in glob.glob(os.path.join(lib, "steamapps", "workshop", "content", "730", "*")):
                     wid = os.path.basename(folder)
@@ -219,13 +229,14 @@ class Core:
                             m = re.search(r'"%s"\s+"([^"]+)"' % key, txt)
                             if m:
                                 names.add(m.group(1).strip().lower())
+                                id_names.setdefault(wid, set()).add(m.group(1).strip().lower())
                     except Exception:
                         pass
             cs2 = self.paths.get("cs2_dir")
             if cs2:
                 for v in glob.glob(os.path.join(cs2, "game", "csgo", "maps", "**", "*.vpk"), recursive=True):
                     names.add(os.path.splitext(os.path.basename(v))[0].lower())
-            self._maps_cache = {"at": time.time(), "ids": ids, "names": names, "known": bool(self._steam_libraries())}
+            self._maps_cache = {"at": time.time(), "ids": ids, "names": names, "id_names": id_names, "known": bool(self._steam_libraries())}
             return self._maps_cache
 
     def map_check(self, map_name: Optional[str], sid: Optional[str] = None) -> Optional[Dict[str, Any]]:
@@ -242,6 +253,13 @@ class Core:
             if not inst.get("known"):
                 return None
             import workshop_collections
+            if sid and workshop_collections.reuploads(sid):
+                # GFL uploads its own copy of every map it runs, so only an installed item of GFL's collection counts (a same-named map from the
+                # mapper or another server is a different item). Its items are hidden from the public API, so the map's id is not known.
+                have = workshop_collections.reupload_has_map(sid, name, inst)
+                if have is not None:
+                    pending = len(workshop_collections.map_ids(sid) - set(inst["ids"]))
+                    return {"missing": not have, "wid": "", "name": name, "reupload": True, "pending": pending}
             exact = workshop_collections.exact_map_id(sid, name) if sid else ""
             if exact:
                 return {"missing": exact not in inst["ids"], "wid": exact, "name": name}
@@ -261,7 +279,21 @@ class Core:
         prefix = name[:3] if name[:3] in ("ze_", "zm_") else ""
         mode = mode if mode in ("maps", "assets") else ("maps" if name else "")      # a missing-map warning only offers map lists; the two links offer one kind each
         cols = workshop_collections.state(sid, installed, prefix, mode)
-        return {"map": ({"name": name, "wid": str(wid) if str(wid).isdigit() else ""} if name else None), "collections": cols}
+        reup = workshop_collections.reuploads(sid) and mode == "maps"
+        pending = len(workshop_collections.map_ids(sid) - set(installed)) if reup else 0
+        # a server that re-uploads its maps has no single-map page worth opening: the mapper's item is not the one the server uses
+        return {"map": ({"name": name, "wid": str(wid) if str(wid).isdigit() else ""} if name and not reup else None), "collections": cols,
+                "reupload": reup, "pending": pending, "map_name": name}
+
+    def maps_news(self) -> Dict[str, Any]:
+        """New maps added to GFL's collection since the app last looked (and not subscribed yet), for the Map Cleaner and the server list."""
+        import workshop_collections
+        installed = set(self.installed_maps()["ids"])
+        r = workshop_collections.news("gfl", installed, self.config.get("gfl_news"))
+        if r["known"] and r["state"] != self.config.get("gfl_news"):
+            self.config["gfl_news"] = r["state"]
+            app_config.save_config(self.config)
+        return {"known": r["known"], "new": r["new"], "missing": r["missing"], "total": r["total"]}
 
     def collection_size(self, cid: str) -> Dict[str, Any]:
         """Rough download size of what is missing from one of the known collections (public item sizes; hidden items are 'unknown')."""
@@ -390,17 +422,19 @@ class Core:
         def run():
             ok = True
             self._tl.problems = 0
+            self._tl.already = 0
+            self._tl.changed = 0
             try:
                 fn()
             except Exception as e:
                 ok = False
                 self.log(f"[ERROR] {name}: {e}")
             finally:
-                problems = self._tl.problems
-                del self._tl.problems
+                problems, already, changed = self._tl.problems, self._tl.already, self._tl.changed
+                del self._tl.problems, self._tl.already, self._tl.changed
                 with self._lock:
                     setattr(self, attr, None)
-                self.emit("job", {"name": name, "ok": ok, "problems": problems})
+                self.emit("job", {"name": name, "ok": ok, "problems": problems, "already": already, "changed": changed})
 
         threading.Thread(target=run, daemon=True, name=f"job-{name}").start()
         return {"ok": True}
@@ -430,7 +464,10 @@ class Core:
                 files, freed, logs = core_logic.clean_shader_caches()
                 for l in logs:
                     self.log(l)
-                self.log(f"Shader cache purge: {files} files cleaned ({freed / (1024 * 1024):.2f} MB freed).")
+                if files:
+                    self.log(f"Shader cache purge: {files} files cleaned ({freed / (1024 * 1024):.2f} MB freed).")
+                else:
+                    self.log("[ALREADY] No shader cache files were found; nothing to clean.")
             if opts.get("dumps"):
                 _f, _b, logs = core_logic.clean_cs2_temp_dumps(self.paths.get("cs2_dir"))
                 for l in logs:
@@ -464,9 +501,10 @@ class Core:
             return {"ok": False}
         core_logic.remember_power_plan(self.config)
         app_config.save_config(self.config)
-        for l in core_logic.set_power_plan(plan):
+        logs = core_logic.set_power_plan(plan)
+        for l in logs:
             self.log(l)
-        return {"ok": True, "plan": core_logic.get_active_power_plan()[0]}
+        return {"ok": True, "plan": core_logic.get_active_power_plan()[0], "changed": not any(l.startswith("[ALREADY]") for l in logs)}
 
     def restore_summary(self) -> str:
         return REVERT_ALL_SUMMARY
@@ -611,7 +649,8 @@ class Core:
     # ---------- PC maintenance ----------
     def maint_state(self) -> Dict[str, Any]:
         return {"drives": core_logic.get_drives_info(), "admin": bool(core_logic.is_admin()),
-                "days_maint": app_config.get_days_since_maintenance(self.config)}
+                "days_maint": app_config.get_days_since_maintenance(self.config),
+                "tool_run": dict(self._tool_run) if self._tool_run else None, "tool_last": self.config.get("maint_tool_last") or {}}
 
     def maint_run(self, opts: Dict[str, Any]) -> Dict[str, Any]:
         opts = opts or {}
@@ -644,6 +683,8 @@ class Core:
                 for l in logs:
                     self.log(l)
             app_config.update_maintenance_timestamp(self.config)
+            if total["files"] == 0 and any(opts.get(k) for k in ("temp", "win_update", "discord_steam", "thumb")):
+                self.log("[ALREADY] No files were found in the places you selected; nothing was cleaned.")
             self.log(f"--- Cleanup finished: {total['files']} files, {total['bytes'] / (1024 * 1024):.1f} MB freed ---")
 
         return self._start_job("maint_run", task)
@@ -658,13 +699,40 @@ class Core:
             self.log("[ADMIN REQUIRED] This repair tool needs Administrator. Use Relaunch as Administrator.")
             return {"ok": False, "error": "Administrator is required for this tool."}
 
-        def task():
-            res = fn()
-            logs = res[1] if isinstance(res[1], list) else [res[1]]
-            for l in logs:
-                self.log(l)
+        long = name in ("trim", "sfc", "dism", "winsxs")
+        started = time.time()
 
-        return self._start_job(f"maint_{name}", task, long=name in ("trim", "sfc", "dism", "winsxs"))
+        def task():
+            if not long:
+                res = fn()
+                logs = res[1] if isinstance(res[1], list) else [res[1]]
+                for l in logs:
+                    self.log(l)
+                return
+            self._tool_run = {"name": name, "started": started, "pct": None}
+            self.emit("tool_progress", dict(self._tool_run))
+
+            def progress(pct: float) -> None:
+                self._tool_run = {"name": name, "started": started, "pct": pct}
+                self.emit("tool_progress", dict(self._tool_run))
+
+            try:
+                res = core_logic.run_repair(name, progress)
+                for l in res["logs"]:
+                    self.log(l)
+                last = dict(self.config.get("maint_tool_last") or {})
+                last[name] = {"at": datetime.datetime.now().isoformat(timespec="seconds"), "status": res["status"], "ok": res["ok"],
+                              "headline": res["headline"], "seconds": res["seconds"]}
+                self.config["maint_tool_last"] = last
+                app_config.save_config(self.config)
+                self.emit("tool_result", {k: v for k, v in res.items() if k != "logs"})
+            finally:
+                self._tool_run = None
+
+        r = self._start_job(f"maint_{name}", task, long=long)
+        if r.get("ok") and long:
+            r["started"] = started
+        return r
 
     # ---------- launch options ----------
     def launch_state(self) -> Dict[str, Any]:
@@ -693,8 +761,9 @@ class Core:
     # ---------- live booster & DNS ----------
     def boost_run(self) -> Dict[str, Any]:
         ok, msg = core_logic.boost_cs2_process()
-        self.log(msg)
-        return {"ok": bool(ok), "msg": msg}
+        already = bool(ok) and "already at HIGH" in msg
+        self.log(("[ALREADY] " + msg) if already else msg)
+        return {"ok": bool(ok), "msg": msg, "already": already}
 
     def cs2_running(self) -> bool:
         try:
@@ -739,10 +808,13 @@ class Core:
         import os
         st = core_logic.get_autoexec_status(self.paths.get("cfg_dir"), self.config.get("autoexec_last_app_save"))
         text = ""
+        truncated = False                                        # a file longer than the preview must not be edited in the app: saving would cut it
         if st.get("path") and os.path.isfile(st["path"]):
             try:
                 with open(st["path"], "r", encoding="utf-8", errors="ignore") as f:
-                    text = f.read()[:60000]
+                    text = f.read()
+                truncated = len(text) > 60000
+                text = text[:60000]
             except Exception:
                 pass
         personal = None
@@ -752,7 +824,7 @@ class Core:
             pass
         return {"state": st.get("state"), "status": st.get("text"), "path": st.get("path"), "text": text, "cfg": bool(self.paths.get("cfg_dir")),
                 "cfg_dir": self.paths.get("cfg_dir"), "personal_vm": bool(personal and personal.get("has_personal_viewmodel")),
-                "personal_lines": (personal or {}).get("lines", [])}
+                "personal_lines": (personal or {}).get("lines", []), "truncated": truncated}
 
     def autoexec_install(self) -> Dict[str, Any]:
         if not self.paths.get("cfg_dir"):
@@ -760,7 +832,7 @@ class Core:
         ok, logs = core_logic.install_autoexec(self.paths["cfg_dir"])
         for l in logs:
             self.log(l)
-        return {"ok": bool(ok)}
+        return {"ok": bool(ok), "changed": not any(l.startswith("[ALREADY]") for l in logs)}
 
     def autoexec_restore(self) -> Dict[str, Any]:
         if not self.paths.get("cfg_dir"):
@@ -768,7 +840,7 @@ class Core:
         ok, logs = core_logic.restore_autoexec_backup(self.paths["cfg_dir"])
         for l in logs:
             self.log(l)
-        return {"ok": bool(ok)}
+        return {"ok": bool(ok), "changed": not any(l.startswith("[ALREADY]") for l in logs)}
 
     def autoexec_fps(self, fps: int) -> Dict[str, Any]:
         if not self.paths.get("cfg_dir"):
@@ -779,7 +851,7 @@ class Core:
         ok, logs = core_logic.set_framerate_limit(self.paths["cfg_dir"], fps)
         for l in logs:
             self.log(l)
-        return {"ok": bool(ok)}
+        return {"ok": bool(ok), "changed": not any(l.startswith("[ALREADY]") for l in logs), "fps": fps}
 
     # ---------- GPU / MPO ----------
     def mpo_state(self) -> Dict[str, Any]:
@@ -1111,8 +1183,8 @@ class Core:
         if isinstance(res, tuple):
             ok, logs = res
             res = {"success": ok, "message": logs[-1] if logs else "Updated autoexec.cfg", "logs": logs}
-        self.log(f"[ZE CUSTOMIZER] {res.get('message')}")
-        return {"ok": bool(res.get("success")), "message": res.get("message", ""), "keys": [clean["duck_key"], clean["voice_mute_key"]], "hud": clean["hud_color"], "vm": clean["ze_laser_viewmodel"]}
+        self.log(f"[ALREADY] {res.get('message')}" if res.get("unchanged") else f"[ZE CUSTOMIZER] {res.get('message')}")
+        return {"ok": bool(res.get("success")), "changed": not res.get("unchanged"), "message": res.get("message", ""), "keys": [clean["duck_key"], clean["voice_mute_key"]], "hud": clean["hud_color"], "vm": clean["ze_laser_viewmodel"]}
 
     def autoexec_save(self, text: str) -> Dict[str, Any]:
         import os
@@ -1124,6 +1196,14 @@ class Core:
         try:
             if os.path.exists(path):
                 try:
+                    with open(path, "r", encoding="utf-8", errors="ignore", newline="") as f:
+                        on_disk = f.read()
+                    if on_disk.replace("\r\n", "\n") == str(text).replace("\r\n", "\n"):
+                        self.log("[ALREADY] autoexec.cfg was not saved: the text is identical to the file, so there was nothing to change.")
+                        return {"ok": True, "changed": False, "path": path}         # the backup is kept too: it still holds the version before the last real edit
+                except Exception:
+                    pass
+                try:
                     shutil.copy2(path, path + ".manual_bak")
                 except Exception:
                     pass
@@ -1132,7 +1212,7 @@ class Core:
             self.config["autoexec_last_app_save"] = {"path": path, "sha256": core_logic.file_sha256(path), "time": time.strftime("%Y-%m-%d %H:%M")}
             app_config.save_config(self.config)
             self.log(f"[AUTOEXEC] Manual changes saved to: {path}")
-            return {"ok": True, "path": path}
+            return {"ok": True, "changed": True, "path": path}
         except Exception as e:
             return {"ok": False, "error": f"Failed to save autoexec.cfg: {e}"}
 

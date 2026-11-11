@@ -119,6 +119,8 @@ def identify_community_for_map(clean_name: str, workshop_id: str, title: str = "
     for key, comm in COMMUNITY_SERVER_ROSTERS.items():
         if workshop_id in comm["asset_ids"]:
             return key, comm["badge"]
+        if key == "gfl":
+            continue            # GFL re-uploads every map it runs: only the ids in GFL's own collection make a map GFL's (a same-named map is another item)
         if clean_low in comm["signature_maps"]:
             return key, comm["badge"]
         if any(k in title_low for k in comm["keywords"]):

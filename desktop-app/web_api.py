@@ -385,6 +385,9 @@ class Api:
     def maint_run(self, opts: Dict[str, Any]) -> Dict[str, Any]:
         return self.core.maint_run(opts)
 
+    def maps_news(self) -> Dict[str, Any]:
+        return self.core.maps_news()
+
     def maint_tool(self, name: str) -> Dict[str, Any]:
         return self.core.maint_tool(name)
 
