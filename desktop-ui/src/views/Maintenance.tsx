@@ -66,7 +66,7 @@ export default function Maintenance({ busy, setBusy, go }: { busy: boolean; setB
   };
   const repair = () => openModal({
     kind: 'q', label: 'Confirm', title: 'Repair corrupted VPKs?', body: 'Removes only damaged or incomplete Workshop folders so Steam downloads them again cleanly. Healthy maps are not touched.',
-    confirm: { text: 'Repair', run: async () => { const r = await api.vpkRepair(); openModal({ kind: 'ok', label: 'Workshop VPK repair', title: r.count ? 'Repair complete' : 'Nothing to repair', body: r.message }); } },
+    confirm: { text: 'Repair', run: async () => { const r = await api.vpkRepair(); openModal({ kind: r.count ? 'ok' : (r.skipped ? 'warn' : 'ok'), label: 'Workshop VPK repair', title: r.count ? 'Repair complete' : (r.skipped ? 'Nothing was removed' : 'Nothing to repair'), body: r.message }); } },
   });
 
   return (

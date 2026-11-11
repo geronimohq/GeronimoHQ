@@ -40,7 +40,7 @@ export default function Mpo() {
           {m && <span className="pill" style={{ color: m.disabled ? 'var(--cyan)' : 'var(--ok)' }}><i className={`dot ${m.disabled ? 'cy' : ''}`} />{m.badge}</span>}
         </div>
         <div className="decal" style={{ marginTop: 12 }}>Current PC configuration</div>
-        <div className="t">{m ? (m.disabled ? 'MODIFIED / CUSTOM: MPO is DISABLED (registry override active: DisableOverlays = 1)' : 'WINDOWS DEFAULT: MPO is ENABLED (standard Windows hardware multi-plane composition)') : '...'}</div>
+        <div className="t">{m ? (m.disabled ? 'MODIFIED / CUSTOM: MPO is DISABLED (a registry override is active, see below)' : 'WINDOWS DEFAULT: MPO is ENABLED (standard Windows hardware multi-plane composition)') : '...'}</div>
         <div className="decal" style={{ marginTop: 10 }}>Live system / registry inspection (read only)</div>
         <pre className="code">{m ? `Registry Key: ${m.detail}` : '...'}</pre>
       </div>

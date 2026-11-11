@@ -58,6 +58,14 @@
    {
     "q": "What does 'Clean CS2 crash dumps & temp files' delete?",
     "a": "Only crash reports: .dmp files and crash_*.txt in the CS2 bin and csgo folders, the contents of csgo\\dumps, and CS2 minidumps in %LOCALAPPDATA%\\CrashDumps. It never deletes console.log or other .log files, because the Log Analyzer and the Discord server detection read console.log."
+   },
+   {
+    "q": "The app said 'Finished with problems'. What does that mean?",
+    "a": "One or more steps of Optimize, Restore, Clean-up or a repair tool could not do their job, for example a power plan that does not exist on your PC, a Windows tool that returned an error, or a step that needs Administrator. Every other step still ran. The activity log marks each failed step with [ERROR] and says why. The app no longer shows a plain success message when a step failed."
+   },
+   {
+    "q": "My PC has no 'High Performance' power plan. What happens?",
+    "a": "Many laptops hide that plan. The app asks Windows to create it again from its built-in definition. If Windows refuses, the log says so with [ERROR] and your current plan is kept. Nothing is switched to a different plan behind your back."
    }
   ]
  },
@@ -263,6 +271,14 @@
    {
     "q": "Windows asks for another administrator's password when I use Relaunch as Administrator. Is that a problem?",
     "a": "No, but it matters for two things. The elevated copy still uses your own settings, logs and Steam folders. Windows settings that are stored per user (Game DVR, Start with Windows) are saved for the account that approved the prompt, and the activity log says so. Changes that apply to the whole PC (power plan, DNS, MPO commands) work the same either way."
+   },
+   {
+    "q": "SFC, DISM and TRIM take a long time. Do they block the rest of the app?",
+    "a": "No. They run in their own slot, so Optimize, Restore, the Map Cleaner and updates still work. Only one of these long tools runs at a time. The app stops waiting after 30 minutes (TRIM), 60 minutes (SFC) or 90 minutes (DISM) and tells you. The result is reported from Windows' own exit codes and also works on non-English Windows."
+   },
+   {
+    "q": "Why does the Log Analyzer show 'N/A' instead of a grade?",
+    "a": "A grade needs a readable console.log. If there is none yet (add -condebug to your launch options and play a session) or it cannot be read, the analyzer says so instead of showing a good grade. More than 15 frame or network events grade B, more than 40 grade C."
    }
   ]
  },

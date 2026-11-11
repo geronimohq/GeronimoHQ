@@ -451,8 +451,8 @@ def set_framerate_limit(cfg_dir: str, fps: int) -> Tuple[bool, List[str]]:
             pass
 
     val_str = str(fps) if fps > 0 else "0"
-    if re.search(r"^\s*fps_max\s+\d+", content, re.MULTILINE):
-        content = re.sub(r"^\s*fps_max\s+\d+.*$", f"fps_max {val_str}                                   // Framerate limit", content, flags=re.MULTILINE)
+    if re.search(r'^\s*fps_max\s+"?\d+"?', content, re.MULTILINE):
+        content = re.sub(r'^\s*fps_max\s+"?\d+"?.*$', f"fps_max {val_str}                                   // Framerate limit", content, flags=re.MULTILINE)
     else:
         content = f"fps_max {val_str}\n" + content
 
@@ -529,17 +529,65 @@ def restore_previous_power_plan(cfg: Dict[str, Any]) -> List[str]:
         return [f"[ERROR] Could not restore power plan: {e}"]
 
 
+def decode_console(data: bytes) -> str:
+    """Console tools write in the PC's OEM code page, and sfc writes UTF-16. Decode both instead of showing garbage in any language."""
+    if not data:
+        return ""
+    if b"\x00" in data[:200]:
+        try:
+            return data.decode("utf-16-le", errors="replace").replace("\x00", "")
+        except Exception:
+            pass
+    try:
+        return data.decode("utf-8")                       # strict: valid UTF-8 is almost never produced by accident from OEM text
+    except UnicodeDecodeError:
+        pass
+    try:
+        oem = f"cp{ctypes.windll.kernel32.GetOEMCP()}"
+        return data.decode(oem, errors="replace")
+    except Exception:
+        return data.decode("utf-8", errors="replace")
+
+
+def run_tool(args: List[str], timeout: int) -> Tuple[Optional[int], str, bool]:
+    """Runs a console tool WITHOUT a shell (so a timeout really stops it). Returns (exit code, output text, timed_out)."""
+    try:
+        res = subprocess.run(args, capture_output=True, timeout=timeout, creationflags=CREATE_NO_WINDOW)
+        return res.returncode, decode_console(res.stdout or b"") + decode_console(res.stderr or b""), False
+    except subprocess.TimeoutExpired:
+        return None, "", True
+    except FileNotFoundError:
+        return None, f"{args[0]} was not found on this PC", False
+    except Exception as e:
+        return None, str(e), False
+
+
+def _power_plan_guids() -> List[str]:
+    rc, out, _ = run_tool(["powercfg", "/list"], 15)
+    return [g.lower() for g in re.findall(r"[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}", out)] if rc == 0 else []
+
+
 def set_power_plan(plan_mode: str) -> List[str]:
     logs = []
-    guid = GUID_BALANCED if plan_mode.lower() == "balanced" else GUID_HIGH_PERF
-    target_name = "Balanced" if plan_mode.lower() == "balanced" else "High Performance"
+    want_balanced = plan_mode.lower() == "balanced"
+    guid = GUID_BALANCED if want_balanced else GUID_HIGH_PERF
+    target_name = "Balanced" if want_balanced else "High Performance"
     try:
-        cmd = f"powercfg /setactive {guid}"
-        res = subprocess.run(cmd, capture_output=True, text=True, shell=True, creationflags=0x08000000)
-        if res.returncode == 0:
+        if guid.lower() not in _power_plan_guids() and not want_balanced:
+            # Many laptops (Modern Standby) hide the High Performance plan. Windows can usually create it again from its built-in id.
+            rc, out, _ = run_tool(["powercfg", "/duplicatescheme", GUID_HIGH_PERF], 15)
+            new = re.search(r"[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}", out) if rc == 0 else None
+            if new:
+                guid = new.group(0)
+                logs.append("[INFO] The High Performance plan was hidden on this PC, so it was created again.")
+            else:
+                logs.append("[ERROR] The High Performance power plan is not available on this PC (common on laptops). Your current plan was kept.")
+                return logs
+        rc, out, _ = run_tool(["powercfg", "/setactive", guid], 15)
+        if rc == 0:
             logs.append(f"[SUCCESS] Power plan switched to: {target_name}")
         else:
-            logs.append(f"[INFO] powercfg notice: {res.stderr or res.stdout}")
+            logs.append(f"[ERROR] Could not switch the power plan to {target_name}: {out.strip()[:200]}")
     except Exception as e:
         logs.append(f"[ERROR] Could not switch power plan: {e}")
     return logs
@@ -942,19 +990,17 @@ def run_ssd_trim() -> Tuple[bool, List[str]]:
     if not is_admin():
         logs.append("[ADMIN REQUIRED] SSD TRIM optimization requires Administrator privileges.")
         return False, logs
-
-    try:
-        logs.append("[TRIM] Running media-specific TRIM optimization (defrag /C /O)...")
-        res = subprocess.run("defrag /C /O", capture_output=True, text=True, shell=True, creationflags=CREATE_NO_WINDOW)
-        if res.returncode == 0:
-            logs.append("[SUCCESS] Completed SSD TRIM optimization for all connected volumes.")
-            return True, logs
-        else:
-            logs.append(f"[TRIM NOTICE] {res.stdout.strip() or res.stderr.strip()}")
-            return True, logs
-    except Exception as e:
-        logs.append(f"[TRIM ERROR] Could not run defrag /O: {e}")
+    logs.append("[TRIM] Running media-specific TRIM optimization (defrag /C /O)...")
+    rc, out, timed_out = run_tool(["defrag", "/C", "/O"], 30 * 60)
+    if timed_out:
+        logs.append("[TRIM ERROR] Windows did not finish TRIM within 30 minutes, so the app stopped waiting.")
         return False, logs
+    if rc == 0:
+        logs.append("[SUCCESS] Completed SSD TRIM optimization for all connected volumes.")
+        return True, logs
+    logs.append(f"[TRIM ERROR] defrag returned code {rc}: {out.strip()[-250:]}")
+    return False, logs
+
 
 def run_sfc_scan() -> Tuple[bool, List[str]]:
     """Runs System File Checker (sfc /scannow). Requires Admin."""
@@ -962,61 +1008,60 @@ def run_sfc_scan() -> Tuple[bool, List[str]]:
     if not is_admin():
         logs.append("[ADMIN REQUIRED] System File Checker (SFC) requires Administrator privileges.")
         return False, logs
-
-    try:
-        logs.append("[SFC] Scanning Windows protected system DLLs (sfc /scannow). Please wait a few minutes...")
-        res = subprocess.run("sfc /scannow", capture_output=True, text=True, shell=True, creationflags=CREATE_NO_WINDOW)
-        stdout = res.stdout.strip()
-        if "Windows Resource Protection did not find any integrity violations" in stdout:
-            logs.append("[SUCCESS] SFC check complete: Zero system file corruptions detected.")
-        elif "successfully repaired them" in stdout:
-            logs.append("[SUCCESS] SFC check complete: Found and repaired corrupted system DLLs!")
-        else:
-            logs.append(f"[SFC OUTPUT] {stdout[-200:] if len(stdout) > 200 else stdout}")
-        return True, logs
-    except Exception as e:
-        logs.append(f"[SFC ERROR] Failed running SFC scan: {e}")
+    logs.append("[SFC] Scanning Windows protected system DLLs (sfc /scannow). Please wait a few minutes...")
+    rc, out, timed_out = run_tool(["sfc", "/scannow"], 60 * 60)
+    if timed_out:
+        logs.append("[SFC ERROR] System File Checker did not finish within 60 minutes, so the app stopped waiting.")
         return False, logs
+    text = " ".join(out.split())
+    low = text.lower()
+    if rc is None:
+        logs.append(f"[SFC ERROR] Failed running SFC scan: {text}")
+        return False, logs
+    if "did not find any integrity violations" in low:
+        logs.append("[SUCCESS] SFC check complete: Zero system file corruptions detected.")
+        return True, logs
+    if "successfully repaired them" in low:
+        logs.append("[SUCCESS] SFC check complete: Found and repaired corrupted system DLLs!")
+        return True, logs
+    if "unable to fix" in low or "could not perform the requested operation" in low:
+        logs.append(f"[SFC ERROR] SFC found a problem it could not fix: {text[-220:]}")
+        return False, logs
+    if rc != 0:
+        logs.append(f"[SFC ERROR] SFC stopped with code {rc}: {text[-220:]}")
+        return False, logs
+    logs.append(f"[SFC] Finished. Windows reported (message not in a language the app knows): {text[-220:]}")
+    return True, logs
+
+
+def _run_dism(args: List[str], label: str, ok_text: str) -> Tuple[bool, List[str]]:
+    logs: List[str] = []
+    if not is_admin():
+        logs.append(f"[ADMIN REQUIRED] {label} requires Administrator privileges.")
+        return False, logs
+    logs.append(f"[DISM] {label}... Please wait a few minutes.")
+    rc, out, timed_out = run_tool(["dism"] + args, 90 * 60)
+    if timed_out:
+        logs.append(f"[DISM ERROR] {label} did not finish within 90 minutes, so the app stopped waiting.")
+        return False, logs
+    if rc == 0:
+        logs.append(f"[SUCCESS] {ok_text}")
+        return True, logs
+    logs.append(f"[DISM ERROR] {label} returned code {rc}: {' '.join(out.split())[-250:]}")
+    return False, logs
+
 
 def run_dism_restore() -> Tuple[bool, List[str]]:
     """Runs dism /online /cleanup-image /restorehealth. Requires Admin."""
-    logs = []
-    if not is_admin():
-        logs.append("[ADMIN REQUIRED] DISM Image Restore requires Administrator privileges.")
-        return False, logs
+    return _run_dism(["/online", "/cleanup-image", "/restorehealth"], "Checking and repairing the Windows Component Store (dism /restorehealth)",
+                     "DISM restore completed: Windows Component Store is healthy.")
 
-    try:
-        logs.append("[DISM] Checking and repairing Windows Component Store (dism /restorehealth)... Please wait a few minutes.")
-        res = subprocess.run("dism /online /cleanup-image /restorehealth", capture_output=True, text=True, shell=True, creationflags=CREATE_NO_WINDOW)
-        if res.returncode == 0:
-            logs.append("[SUCCESS] DISM restore completed: Windows Component Store is healthy.")
-            return True, logs
-        else:
-            logs.append(f"[DISM NOTICE] {res.stdout[-250:] if len(res.stdout) > 250 else res.stdout}")
-            return True, logs
-    except Exception as e:
-        logs.append(f"[DISM ERROR] Failed running DISM: {e}")
-        return False, logs
 
 def run_dism_component_cleanup() -> Tuple[bool, List[str]]:
     """Runs dism /online /cleanup-image /startcomponentcleanup. Requires Admin."""
-    logs = []
-    if not is_admin():
-        logs.append("[ADMIN REQUIRED] DISM WinSxS Cleanup requires Administrator privileges.")
-        return False, logs
+    return _run_dism(["/online", "/cleanup-image", "/startcomponentcleanup"], "Purging superseded Windows update components from WinSxS",
+                     "DISM WinSxS component cleanup completed successfully.")
 
-    try:
-        logs.append("[DISM] Purging superseded Windows update components from WinSxS...")
-        res = subprocess.run("dism /online /cleanup-image /startcomponentcleanup", capture_output=True, text=True, shell=True, creationflags=CREATE_NO_WINDOW)
-        if res.returncode == 0:
-            logs.append("[SUCCESS] DISM WinSxS component cleanup completed successfully.")
-            return True, logs
-        else:
-            logs.append(f"[DISM NOTICE] {res.stdout[-250:] if len(res.stdout) > 250 else res.stdout}")
-            return True, logs
-    except Exception as e:
-        logs.append(f"[DISM ERROR] Failed running DISM component cleanup: {e}")
-        return False, logs
 
 def open_startup_apps() -> Tuple[bool, str]:
     """Opens Windows native Startup Apps settings page."""
@@ -1860,12 +1905,18 @@ def analyze_cs2_session_logs(cs2_exe: Optional[str]) -> Dict[str, Any]:
             except Exception as e:
                 report["message"] = f"Could not read console.log: {e}"
 
-    if report["frame_hitch_events"] > 15 or report["net_jitter_events"] > 15:
-        report["grade"] = "B (MINOR SPIKES DETECTED)"
-        report["recommendation"] = "Minor frame hitches or network jitter detected. Run 'APPLY SAFE CS2 CPU PRIORITY BOOST' and benchmark your Gaming DNS."
+    if str(report.get("message", "")).startswith("Could not read"):
+        report["grade"] = "N/A (LOG NOT READABLE)"
+        report["recommendation"] = "The log could not be read, so no grade is given. Close CS2 and try again."
+    elif not report.get("found"):
+        report["grade"] = "N/A (NO LOG YET)"
+        report["recommendation"] = "There is no console.log yet, so there is nothing to grade. Add -condebug to your launch options and play a session."
     elif report["frame_hitch_events"] > 40 or report["net_jitter_events"] > 40:
         report["grade"] = "C (ATTENTION RECOMMENDED)"
         report["recommendation"] = "High frame-time or network spikes detected. Apply Safe CS2 CPU Priority Boost, switch to Cloudflare Gaming DNS, and verify SSD health."
+    elif report["frame_hitch_events"] > 15 or report["net_jitter_events"] > 15:
+        report["grade"] = "B (MINOR SPIKES DETECTED)"
+        report["recommendation"] = "Minor frame hitches or network jitter detected. Run 'APPLY SAFE CS2 CPU PRIORITY BOOST' and benchmark your Gaming DNS."
 
     return report
 

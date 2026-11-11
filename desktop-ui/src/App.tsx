@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AppWindow, Binary, ChevronDown, Gauge, Globe2, LayoutDashboard, MessageSquare, Minus, Monitor, Rocket, Square, Wifi, Wrench, X, Zap, HelpCircle } from 'lucide-react';
 import { api, isNative, on } from './api';
 import { sfx } from './sound';
-import { ModalHost, useModal } from './components/Modal';
+import { ModalHost, useModal, type ModalSpec } from './components/Modal';
 import Servers from './views/Servers';
 import Engine, { ALL_ON, type Opts } from './views/Engine';
 import Dashboard from './views/Dashboard';
@@ -108,17 +108,26 @@ function Shell() {
     const offU = on<UpdateInfo>('update', setUpdate);
     const offM = on<boolean>('maximized', setMaxed);
     const off1 = on<LogLine>('log', (l) => setLogs((p) => [...p.slice(-399), l]));
-    const off2 = on<{ name: string; ok: boolean }>('job', (j) => {
+    const off2 = on<{ name: string; ok: boolean; problems?: number }>('job', (j) => {
       setBusy(false);
       void api.appInfo().then(setInfo);
+      const n = j.problems ?? 0;
+      const partial = (title: string, what: string): ModalSpec => ({ kind: 'warn', label: 'Finished with problems', title, body: `${n} step${n === 1 ? '' : 's'} reported an error while ${what}. The activity log marks each one with [ERROR]; the other steps were done.` });
+      const TOOLS: Record<string, string> = { maint_trim: 'SSD TRIM', maint_sfc: 'System File Checker', maint_dism: 'DISM repair', maint_winsxs: 'WinSxS clean-up' };
       if (j.name === 'engine_apply') {
-        openModal(j.ok
-          ? { kind: 'ok', label: 'Notification', title: 'Optimization applied', body: 'The selected tweaks are done. Every change has an undo: Restore Defaults brings back your previous settings. The log lists each step.' }
-          : { kind: 'warn', label: 'Problem', title: 'Optimization stopped', body: 'Something failed. The log lists each step.' });
+        openModal(!j.ok
+          ? { kind: 'warn', label: 'Problem', title: 'Optimization stopped', body: 'Something failed. The log lists each step.' }
+          : n > 0 ? partial('Optimization finished with problems', 'applying the tweaks')
+          : { kind: 'ok', label: 'Notification', title: 'Optimization applied', body: 'The selected tweaks are done. Every change has an undo: Restore Defaults brings back your previous settings. The log lists each step.' });
       } else if (j.name === 'maint_run') {
-        openModal({ kind: 'ok', label: 'Notification', title: 'Clean-up finished', body: 'Each step is listed in the log, with the space it freed.' });
+        openModal(!j.ok || n > 0 ? partial('Clean-up finished with problems', 'cleaning')
+          : { kind: 'ok', label: 'Notification', title: 'Clean-up finished', body: 'Each step is listed in the log, with the space it freed.' });
       } else if (j.name === 'engine_restore') {
-        openModal({ kind: 'ok', label: 'Notification', title: 'Restore finished', body: 'Each step is listed in the log. DNS and Steam launch options were not changed.' });
+        openModal(!j.ok || n > 0 ? partial('Restore finished with problems', 'restoring')
+          : { kind: 'ok', label: 'Notification', title: 'Restore finished', body: 'Each step is listed in the log. DNS and Steam launch options were not changed.' });
+      } else if (TOOLS[j.name]) {
+        openModal(!j.ok || n > 0 ? partial(`${TOOLS[j.name]} did not complete`, 'running it')
+          : { kind: 'ok', label: 'Notification', title: `${TOOLS[j.name]} finished`, body: 'The result is in the activity log.' });
       }
     });
     return () => { off1(); off2(); offS(); offU(); offM(); clearInterval(sniperTimer); clearInterval(dnsTimer); };
@@ -249,7 +258,7 @@ function Shell() {
           <div ref={logEnd} />
         </div>
       </section>
-      <AnimatePresence>{settingsOpen && <Settings onClose={() => setSettingsOpen(false)} onSaved={() => addLog('SYSTEM', 'Settings saved')} openDiscord={() => { setSettingsOpen(false); go('discord'); }} log={addLog} />}</AnimatePresence>
+      <AnimatePresence>{settingsOpen && <Settings onClose={() => setSettingsOpen(false)} onSaved={() => { addLog('SYSTEM', 'Settings saved'); void api.appInfo().then(setInfo); }} openDiscord={() => { setSettingsOpen(false); go('discord'); }} log={addLog} />}</AnimatePresence>
       <footer className="statusbar">
         <span className={`sn ${sniper?.state ?? 'idle'}`}>{sniper?.text ?? '\u25CF SLOT SNIPER: IDLE'}</span>
         {dnsInfo && <span className="sn dns">{dnsInfo.text}</span>}

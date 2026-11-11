@@ -1145,7 +1145,7 @@ class ServerSlotSniper:
         self.tier_label = tier_label
         self.is_active = True
         self.has_seen_full = initial_is_full
-        self._stop_event.clear()
+        self._stop_event = threading.Event()               # a NEW signal per run: an old watcher that is mid-query can never be revived by this start
         self.status_callback = status_cb
         self.success_callback = success_cb
         tier_info = f" [Priority: ≤ {target_max_players}]" if target_max_players else ""
@@ -1154,7 +1154,7 @@ class ServerSlotSniper:
         if self.status_callback:
             self.status_callback("active", self.last_status)
 
-        self.thread = threading.Thread(target=self._run_loop, daemon=True)
+        self.thread = threading.Thread(target=self._run_loop, args=(self._stop_event,), daemon=True)
         self.thread.start()
         return True
 
@@ -1167,7 +1167,7 @@ class ServerSlotSniper:
         if self.status_callback:
             self.status_callback("stopped", "Slot Sniper disarmed.")
 
-    def _run_loop(self):
+    def _run_loop(self, stop_event):
         # OPTION 1: True Silent Slot Sniper
         # Polls live player count at lowest & safest UDP A2S_INFO interval (0.25s) with 0 CS2 interaction.
         # Leaves CS2 completely calm (0 RAM stacking, 0 SDR session leaks, 0 clipboard spam).
@@ -1177,11 +1177,11 @@ class ServerSlotSniper:
         check_count = 0
         consecutive_timeouts = 0
 
-        while not self._stop_event.is_set():
+        while not stop_event.is_set():
             # If CS2 was closed while sniper was running, stop safely
             if not is_cs2_running():
                 self.is_active = False
-                self._stop_event.set()
+                stop_event.set()
                 if self.status_callback:
                     self.status_callback("stopped", "CS2 closed — Slot Sniper stopped.")
                 break
@@ -1190,7 +1190,7 @@ class ServerSlotSniper:
 
             # 1. Detect live player count at lowest & safest UDP A2S_INFO timeout (0.45s)
             info = query_server_info(self.target_host, self.target_port, timeout=0.45)
-            if self._stop_event.is_set():
+            if stop_event.is_set():
                 break
 
             if info.get("online"):
@@ -1212,7 +1212,7 @@ class ServerSlotSniper:
                 # Instantly execute in-engine console connect, stop the sniper loop, and start 10s cooldown.
                 if not is_full:
                     self.is_active = False
-                    self._stop_event.set()
+                    stop_event.set()
                     self.last_fired_time = time.time()
 
                     fast_console_connect(self.target_host, self.target_port, restore_previous_window=False)
@@ -1240,7 +1240,7 @@ class ServerSlotSniper:
                 if self.status_callback:
                     self.status_callback("waiting", f"Active: Sniping {self.target_name} (Checking player count via UDP)...")
 
-            if self._stop_event.wait(poll_interval):
+            if stop_event.wait(poll_interval):
                 break
 
     def get_status(self) -> Dict[str, Any]:

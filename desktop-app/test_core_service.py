@@ -96,7 +96,7 @@ class Engine(unittest.TestCase):
         ps["optimize_windows_game_dvr"].assert_called_once()
         ps["install_autoexec"].assert_not_called()
         ps["clean_cs2_temp_dumps"].assert_not_called()
-        self.assertIn(("job", {"name": "engine_apply", "ok": True}), events)
+        self.assertTrue(any(e == "job" and d["name"] == "engine_apply" and d["ok"] and d["problems"] == 0 for e, d in events))
         self.assertTrue(any(e[0] == "log" for e in events))
 
     def test_second_job_is_refused_while_one_runs(self):

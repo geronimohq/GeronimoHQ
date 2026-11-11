@@ -4,6 +4,7 @@ Everything here calls the same logic modules the Tk app uses (core_logic, server
 updater). The UI talks to this class through web_api.Api. Events (log lines, finished jobs) go out through `emit`.
 """
 import concurrent.futures
+import re
 import threading
 import time
 from typing import Any, Dict, List, Optional
@@ -44,6 +45,8 @@ class Core:
         self._pool = concurrent.futures.ThreadPoolExecutor(max_workers=8, thread_name_prefix="srvq")
         self.exit_cb = None
         self._maps_lock = threading.Lock()
+        self._tl = threading.local()
+        self._busy_long: Optional[str] = None
         self._maps_cache = None
         try:
             self.paths = core_logic.find_cs2_paths()
@@ -51,8 +54,13 @@ class Core:
             self.paths = {}
 
     # ---------- logging ----------
+    _tl = threading.local()                                          # per job thread: how many steps reported an error
+    PROBLEM_RE = re.compile(r"^\[(?:[A-Z ]*ERROR|ADMIN REQUIRED|FAILED)\]")
+
     def log(self, msg: Any, tag: str = "SYSTEM") -> None:
         entry = {"t": time.strftime("%H:%M:%S"), "tag": tag, "msg": str(msg)}
+        if hasattr(self._tl, "problems") and self.PROBLEM_RE.match(entry["msg"]):
+            self._tl.problems += 1                                   # a step of the running job reported a failure
         with self._lock:
             self.log_buf.append(entry)
             del self.log_buf[:-400]
@@ -325,23 +333,29 @@ class Core:
         return {"power_plan": plan[0], "autoexec": auto, "cs2_found": bool(self.paths.get("cs2_dir")),
                 "cs2_exe": bool(self.paths.get("cs2_exe")), "cfg_dir": bool(self.paths.get("cfg_dir"))}
 
-    def _start_job(self, name: str, fn) -> Dict[str, Any]:
+    def _start_job(self, name: str, fn, long: bool = False) -> Dict[str, Any]:
+        """Runs fn in a thread. Two slots: the normal one, and one for long Windows repair tools (SFC, DISM, TRIM) so a 30-minute scan
+        cannot make Optimize, Restore or an update install refuse to start. The 'job' event carries how many steps reported an error."""
+        attr = "_busy_long" if long else "_busy"
         with self._lock:
-            if self._busy:
-                return {"ok": False, "error": f"'{self._busy}' is still running."}
-            self._busy = name
+            if getattr(self, attr):
+                return {"ok": False, "error": f"'{getattr(self, attr)}' is still running."}
+            setattr(self, attr, name)
 
         def run():
             ok = True
+            self._tl.problems = 0
             try:
                 fn()
             except Exception as e:
                 ok = False
                 self.log(f"[ERROR] {name}: {e}")
             finally:
+                problems = self._tl.problems
+                del self._tl.problems
                 with self._lock:
-                    self._busy = None
-                self.emit("job", {"name": name, "ok": ok})
+                    setattr(self, attr, None)
+                self.emit("job", {"name": name, "ok": ok, "problems": problems})
 
         threading.Thread(target=run, daemon=True, name=f"job-{name}").start()
         return {"ok": True}
@@ -605,7 +619,7 @@ class Core:
             for l in logs:
                 self.log(l)
 
-        return self._start_job(f"maint_{name}", task)
+        return self._start_job(f"maint_{name}", task, long=name in ("trim", "sfc", "dism", "winsxs"))
 
     # ---------- launch options ----------
     def launch_state(self) -> Dict[str, Any]:
@@ -741,13 +755,17 @@ class Core:
 
     def settings_save(self, values: Dict[str, Any]) -> Dict[str, Any]:
         app_config.apply_settings(self.config, values or {})
+        startup_ok = True
         try:
-            app_config.set_windows_startup(bool(self.config.get("start_with_windows")), bool(self.config.get("start_minimized")))
+            startup_ok = bool(app_config.set_windows_startup(bool(self.config.get("start_with_windows")), bool(self.config.get("start_minimized"))))
         except Exception as e:
-            self.log(f"[SETTINGS] Windows startup could not be updated: {e}")
+            startup_ok = False
+            self.log(f"[ERROR] Windows startup could not be updated: {e}")
+        if not startup_ok:
+            self.log("[ERROR] Start with Windows could not be changed (Windows refused the registry entry). The other settings were saved.")
         ok = bool(app_config.save_config(self.config))
-        self.log("Settings saved" if ok else "[SETTINGS] Settings could not be saved")
-        return {"ok": ok, "refresh_seconds": self._refresh_seconds()}
+        self.log("Settings saved" if ok else "[ERROR] Settings could not be saved")
+        return {"ok": ok, "startup_ok": startup_ok, "refresh_seconds": self._refresh_seconds()}
 
     def settings_reset(self) -> Dict[str, Any]:
         app_config.reset_settings(self.config)
@@ -889,13 +907,26 @@ class Core:
         import os
         return os.path.join(app_config.get_storage_dir(), "backups", "custom_assets")
 
+    def _workshop_item_dir(self, wid: str) -> Optional[str]:
+        import os
+        import steam_paths
+        lib = steam_paths.library_of(self.paths.get("cs2_dir"))
+        dirs = steam_paths.workshop_dirs([lib]) if lib else steam_paths.workshop_dirs(steam_paths.steam_libraries(self.paths.get("steam_path")))
+        if not dirs and lib:
+            dirs = [os.path.join(lib, "steamapps", "workshop", "content", "730")]
+        return os.path.join(dirs[0], wid) if dirs and str(wid).isdigit() else None
+
     def maps_backup(self) -> Dict[str, Any]:
         import os
         import shutil
+        import custom_map_cleaner
         dest = self._vpk_backup_dir()
         os.makedirs(dest, exist_ok=True)
         copied = 0
-        for m in list(getattr(self, "_maps", {}).values()):
+        maps = list(getattr(self, "_maps", {}).values())
+        if not maps:                                             # no scan has run in this session: scan now instead of backing up nothing
+            maps = custom_map_cleaner.scan_custom_maps(self.paths.get("steam_path"), self.paths.get("cs2_dir"))
+        for m in maps:
             if m.get("is_server_asset") or "3793587501" in str(m.get("id")):
                 folder = m.get("path")
                 if folder and os.path.isdir(folder):
@@ -913,13 +944,13 @@ class Core:
         if not os.path.isdir(src_dir) or not os.listdir(src_dir):
             return {"ok": True, "count": 0}
         restored = 0
-        maps = getattr(self, "_maps", {})
         for f in os.listdir(src_dir):
             if f.endswith(".vpk") and "_" in f:
                 wid, vpk_name = f.split("_", 1)
-                m = maps.get(wid)
-                if m and m.get("path") and os.path.isdir(m["path"]):
-                    shutil.copy2(os.path.join(src_dir, f), os.path.join(m["path"], vpk_name))
+                target = self._workshop_item_dir(wid)               # works even when the folder was deleted: it is recreated
+                if target:
+                    os.makedirs(target, exist_ok=True)
+                    shutil.copy2(os.path.join(src_dir, f), os.path.join(target, vpk_name))
                     restored += 1
         self.log(f"[RESTORE] Restored {restored} custom asset VPK(s)")
         return {"ok": True, "count": restored}
