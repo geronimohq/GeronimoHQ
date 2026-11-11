@@ -8,16 +8,18 @@ import { useModal } from './Modal';
 import type { MapRow } from '../types';
 
 type Filter = 'all' | 'temp' | 'sub' | 'assets' | 'dupes';
-const COMMS: [string, string][] = [['gfl', 'GFL'], ['possession', 'Possession (PSE)'], ['rss', 'RSS Revenant'], ['mapeadores_cola', 'Mapeadores / cOLa']];
+const COMMS: [string, string][] = [['gfl', 'GFL'], ['possession', 'Possession (PSE)'], ['rss', 'RSS Revenant'], ['mapeadores_cola', 'Mapeadores / cOLa'], ['net4all', 'Net4All']];
 const GB = 1024 ** 3;
 const isTemp = (m: MapRow) => !m.sub && !m.asset && m.workshop;
-const selectable = (m: MapRow) => !m.protected && !m.asset;
+const selectable = (m: MapRow) => !m.protected && !m.asset;          // bulk buttons never pick asset packs
+const canTick = (m: MapRow, allowAssets: boolean) => selectable(m) || (m.asset && allowAssets);
 const fmt = (b: number) => (b >= GB ? `${(b / GB).toFixed(2)} GB` : `${(b / 1048576).toFixed(0)} MB`);
 
 export default function MapCleaner({ onClose }: { onClose: () => void }) {
   const [rows, setRows] = useState<MapRow[]>([]);
-  const [comms, setComms] = useState<string[]>(['gfl', 'possession', 'rss', 'mapeadores_cola']);
+  const [comms, setComms] = useState<string[]>(['gfl', 'possession', 'rss', 'mapeadores_cola', 'net4all']);
   const [recent, setRecent] = useState(true);
+  const [allowAssets, setAllowAssets] = useState(false);     // advanced, never remembered: asset packs can only be ticked one by one
   const [filter, setFilter] = useState<Filter>('all');
   const [q, setQ] = useState('');
   const [sel, setSel] = useState<Set<string>>(new Set());
@@ -42,6 +44,7 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
   }, []);
 
   const toggleComm = (id: string) => { const n = comms.includes(id) ? comms.filter((c) => c !== id) : [...comms, id]; setComms(n); sfx.toggle(); scan(n, recent); };
+  const toggleAssets = () => { sfx.toggle(); if (allowAssets) setSel(new Set([...sel].filter((id) => !rows.find((m) => m.id === id)?.asset))); setAllowAssets(!allowAssets); };
   const toggleRecent = () => { setRecent(!recent); sfx.toggle(); scan(comms, !recent); };
 
   const counts = useMemo(() => ({ all: rows.length, temp: rows.filter(isTemp).length, sub: rows.filter((m) => m.sub && !m.asset).length, assets: rows.filter((m) => m.asset).length, dupes: rows.filter((m) => m.dupe).length }), [rows]);
@@ -57,10 +60,11 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
   const del = () => {
     const ids = [...sel];
     if (!ids.length) { openModal({ kind: 'warn', label: 'Nothing selected', title: 'Tick the maps to delete first' }); return; }
+    const assets = rows.filter((m) => sel.has(m.id) && m.asset);
     openModal({
-      kind: 'q', label: 'Confirm', title: `Delete ${ids.length} maps?`,
-      body: `This permanently removes ${ids.length} maps (${fmt(selBytes)}). It cannot be undone.\n\nSubscribed server packs and official maps are protected. If you visit a server that plays one of these maps, CS2 downloads it again.`,
-      confirm: { text: 'Delete maps', run: async () => { setBusy(true); const r = await api.mapsDelete(ids, comms, recent); if (!r.ok) { setBusy(false); openModal({ kind: 'warn', label: 'Problem', title: 'Not started', body: r.error }); } } },
+      kind: 'q', label: 'Confirm', title: `Delete ${ids.length} ${assets.length ? 'items' : 'maps'}?`,
+      body: `This permanently removes ${ids.length} item(s) (${fmt(selBytes)}). It cannot be undone.\n\nSubscribed server packs and official maps are protected. If you visit a server that plays one of these maps, CS2 downloads it again.${assets.length ? `\n\nIncluded: ${assets.length} SERVER ASSET PACK(S) (${assets.map((m) => m.name).join(', ')}). Servers need their asset packs to join and show correctly. If you are still subscribed on Steam, Steam may download them again; unsubscribe on Steam to keep them gone. Use Backup custom VPK first if unsure.` : ''}`,
+      confirm: { text: assets.length ? 'Delete including asset packs' : 'Delete maps', run: async () => { setBusy(true); const r = await api.mapsDelete(ids, comms, recent, allowAssets); if (!r.ok) { setBusy(false); openModal({ kind: 'warn', label: 'Problem', title: 'Not started', body: r.error }); } } },
     });
   };
   const backup = async () => { sfx.click(); const r = await api.mapsBackup(); openModal({ kind: r.count ? 'ok' : 'warn', label: 'Backup', title: r.count ? `Backed up ${r.count} VPK files` : 'No server asset VPKs found', body: r.count ? r.dir : undefined }); };
@@ -70,11 +74,13 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
   return createPortal(
     <motion.div className="scrim on" role="dialog" aria-modal="true" aria-labelledby="mcTitle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div className="cut modal brk mc" initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.97, opacity: 0 }}>
-        <div className="decal">// maintenance</div><h3 id="mcTitle">CS2 &amp; Zombie Escape custom map cleaner</h3>
+        <div className="decal">// maintenance</div><h3 id="mcTitle">CS2 &amp; Zombie Escape custom map cleaner <span className="mono" style={{ fontSize: 11, color: 'var(--amber)', border: '1px solid var(--amber)', padding: '1px 7px', marginLeft: 8, verticalAlign: 'middle' }}>BETA</span></h3>
+        <div style={{ color: 'var(--amber)', marginTop: 4, fontWeight: 600 }}>Beta: check carefully before deleting anything. Deleted files cannot be restored by this app.</div>
         <div style={{ color: 'var(--tx2)', marginTop: 4 }}>Free up space by removing unneeded custom workshop maps. Subscribed server map packs and official Valve maps are detected and protected.</div>
         <div className="mcprot"><span className="sect">Protect packs</span>
           {COMMS.map(([id, label]) => <label key={id} className="chk"><input type="checkbox" checked={comms.includes(id)} onChange={() => toggleComm(id)} />{label}</label>)}
-          <label className="chk"><input type="checkbox" checked={recent} onChange={toggleRecent} />Active (last 14 days)</label></div>
+          <label className="chk"><input type="checkbox" checked={recent} onChange={toggleRecent} />Active (last 14 days)</label>
+          <label className="chk" title="Advanced. Lets you tick server asset packs (models, sounds) to delete them. Servers need these to join."><input type="checkbox" checked={allowAssets} onChange={toggleAssets} />Allow deleting server asset packs (advanced)</label></div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', margin: '10px 0' }}>
           <div className="seg" role="group" aria-label="Filter">
             {([['all', 'All maps'], ['temp', 'Temp downloads'], ['sub', 'Subscribed packs'], ['assets', 'Server assets'], ['dupes', 'Duplicates']] as [Filter, string][]).map(([k, l]) => (
@@ -89,7 +95,7 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
               {busy && !rows.length && <tr><td colSpan={6} className="decal" style={{ padding: 20 }}>Scanning maps\u2026</td></tr>}
               {shown.map((m) => (
                 <tr key={m.id} className={m.dupe ? 'dup' : isTemp(m) ? 'tmp' : ''}>
-                  <td><input type="checkbox" aria-label={`Select ${m.name}`} disabled={!selectable(m)} checked={sel.has(m.id)} onChange={() => { const n = new Set(sel); if (n.has(m.id)) n.delete(m.id); else n.add(m.id); setSel(n); }} /></td>
+                  <td><input type="checkbox" aria-label={`Select ${m.name}`} disabled={!canTick(m, allowAssets)} checked={sel.has(m.id)} onChange={() => { const n = new Set(sel); if (n.has(m.id)) n.delete(m.id); else n.add(m.id); setSel(n); }} /></td>
                   <td>{m.name}</td><td className="mono">{m.id}</td><td>{m.status}</td><td className="mono">{m.size_str}</td><td className="mono">{m.mtime}</td>
                 </tr>))}
             </tbody></table>

@@ -9,7 +9,7 @@ a = Analysis(
     ['web_main.py'],
     pathex=[],
     binaries=webview_binaries,
-    datas=[('app.ico', '.'), ('app.png', '.'), ('s2ze_maps_cache.json', '.'), ('web', 'web')] + webview_datas,
+    datas=[('app.ico', '.'), ('app.png', '.'), ('s2ze_maps_cache.json', '.'), ('server_collections.json', '.'), ('server_collections_snapshot.json', '.'), ('web', 'web')] + webview_datas,
     hiddenimports=['pystray._win32', 'clr_loader', 'pythonnet'] + webview_hidden,
     hookspath=[],
     hooksconfig={},

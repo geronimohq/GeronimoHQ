@@ -33,7 +33,7 @@ declare const __APP_EXE_SHA256__: string;
 declare const __APP_EXE_SIZE_MB__: number;
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=2.0.5';
+  const downloadUrl = '/CS2_Command_Center.exe?v=2.0.6';
   const exeSha256 = typeof __APP_EXE_SHA256__ !== 'undefined' ? __APP_EXE_SHA256__ : '66B78485C7C1F5622C12B702D07C83B7CEC781E344DC7AFE35B0272B494E7A01';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -73,9 +73,10 @@ export const CS2CommandCenterPreview: React.FC = () => {
         'Humans only: bots are subtracted from the player count, with a MOSTLY BOTS badge and a bots-excluded note on bot-heavy servers.',
         'Time on map per server: exact for GFL (from ZE Graph) and measured from player connection times elsewhere; a leading ">=" marks a minimum.',
         'Geo radar (estimate): Country or Region view per server, filling the card width up to two lines. It is an estimate from name signals and time of day; no player is identified.',
-        'Missing-map warning: when a server plays a map that is not on your PC, an amber "Map not installed. Get it" link opens that map\'s Steam workshop page so you can subscribe before joining.',
+        'Missing-map warning: when a server plays a map that is not on your PC, an amber "Map not installed. Get it" link offers the single map (small) or the server\'s whole Steam collection, with how many items you have and roughly how many GB it would download. RSS has no collection, so its link opens the map\'s own workshop page.',
+        'Map pack and Server assets links on each server: the Map pack opens that server\'s Steam map collections (GFL, Possession, Mapeadores, cOLa-TeaM, Net4All); Server assets opens its asset packs (GFL, Possession, Mapeadores, cOLa-TeaM, Net4All, RSS).',
         'Planet China: pick a community cluster (EXG, FyS, MoeUB, ZL, 93X). Those servers block the live player list, so the Players dialog is not offered there.',
-        'Connect, Copy IP, Players list, 3D map, soundtrack, community Discord and portal links on every row, plus the GFL slot priority and a Refresh all button.'
+        'Connect, Copy IP (copies the ready-to-paste "connect ip:port" console command), Players list, 3D map, soundtrack, community Discord and portal links on every row, plus the GFL slot priority and a Refresh all button.'
       ],
       parameters: [
         { name: 'Queries', value: 'Steam A2S over UDP', desc: 'Read-only server info; no game memory access' },
@@ -181,7 +182,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
       icon: <HardDrive className="w-5 h-5 text-emerald-400" />,
       summary: 'Scans your CS2 workshop maps to free SSD space, protects subscribed server packs, and checks every workshop pack for damaged or unfinished downloads.',
       details: [
-        'Protected packs: subscribed server map packs and server asset packs (GFL, Possession, RSS, Mapeadores / cOLa) are detected and cannot be ticked. An option also protects maps played in the last 14 days.',
+        'Protected packs: maps are protected by exact membership in each server\'s Steam collection (GFL, Possession, Mapeadores / cOLa, Net4All; RSS by the map list it publishes), and server asset packs cannot be ticked unless you switch on an advanced option. The cleaner is marked Beta: check carefully before deleting anything. An option also protects maps played in the last 14 days.',
         '1-click "Select all temp downloads (safe)" ticks only maps you are not subscribed to. Deleting asks for confirmation and cannot be undone.',
         'Verify Workshop VPK health: reads each pack\'s index and confirms that every data part is on disk and complete, so a download that stopped half way is found, not just a bad file header.',
         'Repair corrupted VPKs removes only the damaged workshop folders. It never follows links and skips anything changed in the last 15 minutes. Steam can download the map again afterwards.',
@@ -284,11 +285,14 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v2.0.5
+              v2.0.6
+            </span>
+            <span className="text-xs font-code px-2 py-0.5 bg-amber-950 text-amber-300 border border-amber-500/50 rounded uppercase">
+              Experimental
             </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-2xl">
-            Want seamless PC integration without manual file editing? Explore the full capabilities of the standalone desktop companion below.
+            Want seamless PC integration without manual file editing? Explore the full capabilities of the standalone desktop companion below. This app is experimental: it is new and still being tested, so read what a tool does before you run it, and check carefully before deleting anything with the map cleaner.
           </p>
         </div>
 

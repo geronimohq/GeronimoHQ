@@ -73,7 +73,7 @@ class ScanAndDeleteFlow(unittest.TestCase):
         self.core._maps = {"1": {}, "2": {}, "3": {}}                                  # what the last scan listed
         deleted = []
 
-        def fake_delete(items):
+        def fake_delete(items, allow_assets=False):
             deleted.extend(str(m["id"]) for m in items)
             return len(items), 10 * len(items), []
         with mock.patch.object(custom_map_cleaner, "scan_custom_maps", return_value=fresh) as scan, \
@@ -85,6 +85,25 @@ class ScanAndDeleteFlow(unittest.TestCase):
         self.assertEqual(done["skipped"], 2)                                           # 2 and 3; id 4 was never listed so it never got this far
         self.assertEqual(scan.call_args[0][2], {"gfl", "rss"})                        # the choices from the page, not stale ones
         self.assertTrue(scan.call_args[0][3])
+
+
+    def test_asset_pack_reaches_the_delete_step_only_when_allowed_and_never_when_not_ticked(self):
+        fresh = [{"id": 3, "is_protected": True, "is_server_asset": True, "path": "x3", "size_bytes": 10},
+                 {"id": 2, "is_protected": True, "is_server_asset": False, "path": "x2", "size_bytes": 10}]
+        self.core._maps = {"2": {}, "3": {}}
+        for allow, expect in ((False, []), (True, ["3"])):
+            self.events.clear() if hasattr(self.events, "clear") else None
+            got = []
+
+            def fake_delete(items, allow_assets=False, _g=got):
+                _g.extend(str(m["id"]) for m in items)
+                return len(items), 10 * len(items), []
+            with mock.patch.object(custom_map_cleaner, "scan_custom_maps", return_value=fresh),                     mock.patch.object(custom_map_cleaner, "delete_custom_maps", side_effect=fake_delete) as dm:
+                self.assertTrue(self.core.maps_delete(["3", "2"], ["gfl"], True, allow)["ok"])
+                wait_for(self.events, "maps_deleted")
+            self.assertEqual(got, expect)                                                  # a protected map (2) is never deleted, allowed or not
+            self.assertEqual(dm.call_args.kwargs.get("allow_assets"), allow)
+            time.sleep(0.2)
 
 
 if __name__ == "__main__":

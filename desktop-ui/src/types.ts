@@ -1,7 +1,13 @@
 export interface GeoRow { code: string; name: string; pct: number; count: number }
+export interface Pack { id: string; label: string; kind: 'maps' | 'assets' | 'default' | 'item' }
+export interface MapHelp {
+  map: { name: string; wid: string } | null;
+  collections: { id: string; label: string; kind: string; total: number; installed: number; known: boolean; match: boolean }[];
+}
+export interface PackSize { ok: boolean; missing: number; known: number; unknown: number; bytes: number }
 export interface Srv {
   id: string; name: string; host: string; port: number; region: string; flag: string; discord: string; website?: string;
-  featured: boolean; custom: boolean; group: 'global' | 'china'; cluster: string; cluster_id?: string; cluster_desc?: string;
+  featured: boolean; custom: boolean; group: 'global' | 'china'; cluster: string; packs?: Pack[]; cluster_id?: string; cluster_desc?: string;
 }
 export interface Status {
   id: string; online: boolean; map?: string | null; players?: number; bots?: number; humans?: number; max?: number;

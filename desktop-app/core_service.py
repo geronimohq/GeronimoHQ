@@ -114,12 +114,20 @@ class Core:
         for s in server_browser.get_all_servers():
             out.append({"id": s.get("id"), "name": s.get("name"), "host": s.get("host"), "port": int(s.get("port") or 0),
                         "region": s.get("region") or "", "flag": s.get("flag") or "", "discord": s.get("discord") or "", "website": s.get("website") or "",
-                        "featured": bool(s.get("is_featured")), "custom": bool(s.get("is_custom")), "group": "global", "cluster": ""})
+                        "featured": bool(s.get("is_featured")), "custom": bool(s.get("is_custom")), "group": "global", "cluster": "",
+                        "packs": self._packs(str(s.get("id") or ""))})
         for s in self._china_servers():
             out.append({"id": s["id"], "name": s.get("name"), "host": s["host"], "port": int(s["port"]), "region": s["region"],
                         "flag": "", "discord": "", "website": "", "featured": False, "custom": False, "group": "china", "cluster": s["cluster"],
                         "cluster_id": s.get("cluster_id", ""), "cluster_desc": s.get("cluster_desc", "")})
         return out
+
+    @staticmethod
+    def _packs(sid: str) -> List[Dict[str, str]]:
+        """This server's own workshop collections (map list, default map, assets); the page shows a Map pack link when there are any."""
+        import workshop_collections
+        own = workshop_collections.load_config()["servers"].get(sid, [])
+        return [{"id": e["id"], "label": e["label"], "kind": e["kind"]} for e in own]
 
     def _find_server(self, sid: str) -> Optional[Dict[str, Any]]:
         for s in server_browser.get_all_servers():
@@ -153,7 +161,7 @@ class Core:
             except Exception:
                 pass
         cur_map = info.get("map") if online else None
-        mm = self.map_check(cur_map) if online else None
+        mm = self.map_check(cur_map, sid) if online and s.get("group") != "china" else None        # the missing-map warning is for the global servers only
         since, exact = self._map_clock(sid, cur_map, None if s.get("group") == "china" else s["host"], int(s["port"]), humans)
         return {"id": sid, "online": online, "map": cur_map, "players": total, "bots": bots,
                 "humans": humans, "max": int(info.get("max_players") or 0), "ping": info.get("rtt") if online else None,
@@ -220,8 +228,10 @@ class Core:
             self._maps_cache = {"at": time.time(), "ids": ids, "names": names, "known": bool(self._steam_libraries())}
             return self._maps_cache
 
-    def map_check(self, map_name: Optional[str]) -> Optional[Dict[str, Any]]:
-        """None when the check does not apply; otherwise {missing, wid, name}. Only ze_/zm_ community maps are checked."""
+    def map_check(self, map_name: Optional[str], sid: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """None when the check does not apply; otherwise {missing, wid, name}. Only ze_/zm_ community maps are checked.
+        When the server's own map list gives the exact workshop id of this map, that id alone decides (a same-named map from another
+        server's workshop item is a different download); otherwise the id from the map site plus the map name decide."""
         name = (map_name or "").replace("\\", "/").split("/")[-1].strip().lower()
         if name.endswith(".vpk"):
             name = name[:-4]
@@ -231,12 +241,47 @@ class Core:
             inst = self.installed_maps()
             if not inst.get("known"):
                 return None
+            import workshop_collections
+            exact = workshop_collections.exact_map_id(sid, name) if sid else ""
+            if exact:
+                return {"missing": exact not in inst["ids"], "wid": exact, "name": name}
             meta = server_browser._get_s2ze_map_meta(name) or {}
             wid = str(meta.get("addon") or "")
             have = (wid and wid in inst["ids"]) or name in inst["names"] or name.replace("_p", "") in inst["names"]
             return {"missing": not have, "wid": wid if wid.isdigit() else "", "name": name}
         except Exception:
             return None
+
+    def map_help(self, sid: str, map_name: str = "", wid: str = "", mode: str = "") -> Dict[str, Any]:
+        """Everything the 'Map not installed' / 'Map pack' dialog shows: the single map (small) and this server's collections with how many
+        of their items are already installed. Network failures fall back to the snapshot shipped with the app."""
+        import workshop_collections
+        installed = self.installed_maps()["ids"]
+        name = (map_name or "").replace("\\", "/").split("/")[-1].strip().lower()
+        prefix = name[:3] if name[:3] in ("ze_", "zm_") else ""
+        mode = mode if mode in ("maps", "assets") else ("maps" if name else "")      # a missing-map warning only offers map lists; the two links offer one kind each
+        cols = workshop_collections.state(sid, installed, prefix, mode)
+        return {"map": ({"name": name, "wid": str(wid) if str(wid).isdigit() else ""} if name else None), "collections": cols}
+
+    def collection_size(self, cid: str) -> Dict[str, Any]:
+        """Rough download size of what is missing from one of the known collections (public item sizes; hidden items are 'unknown')."""
+        import workshop_collections
+        if not any(e["id"] == str(cid) for e in workshop_collections.all_entries()):
+            return {"ok": False}
+        r = workshop_collections.size_of_missing(str(cid), self.installed_maps()["ids"])
+        r["ok"] = True
+        return r
+
+    def collection_open(self, cid: str) -> Dict[str, Any]:
+        """Opens one of the known collections' Steam page (ids are checked against the list, never taken from the page as given)."""
+        import workshop_collections
+        entry = next((e for e in workshop_collections.all_entries() if e["id"] == str(cid)), None)
+        if not entry:
+            return {"ok": False}
+        ok = self.open_url(f"steam://url/CommunityFilePage/{entry['id']}")
+        self.log(f"[MAPS] Opened the Steam page of '{entry['label']}'. Press Subscribe there; Steam downloads the maps in the background.")
+        self.installed_maps(force=True)
+        return {"ok": ok}
 
     def map_get(self, map_name: str, wid: str = "") -> Dict[str, Any]:
         """Opens the map's Steam workshop page (Subscribe there), or a workshop search when its id is not known."""
@@ -823,7 +868,7 @@ class Core:
                 pass
 
     # ---------- custom map cleaner ----------
-    COMMUNITIES = ("gfl", "possession", "rss", "mapeadores_cola")
+    COMMUNITIES = ("gfl", "possession", "rss", "mapeadores_cola", "net4all")
 
     def maps_settings(self) -> Dict[str, Any]:
         comms = self.config.get("cleaner_protected_comms", list(self.COMMUNITIES))
@@ -875,7 +920,7 @@ class Core:
                  "workshop": bool(m.get("is_workshop")), "dupe": bool(m.get("has_duplicate")), "size": int(m.get("size_bytes") or 0),
                  "size_str": m.get("size_str"), "mtime": m.get("mtime_str")} for m in items]
 
-    def maps_delete(self, ids: List[str], communities: Optional[List[str]] = None, protect_recent: Optional[bool] = None) -> Dict[str, Any]:
+    def maps_delete(self, ids: List[str], communities: Optional[List[str]] = None, protect_recent: Optional[bool] = None, allow_assets: bool = False) -> Dict[str, Any]:
         import custom_map_cleaner
         with self._lock:
             wanted = {str(i) for i in (ids or []) if str(i) in getattr(self, "_maps", {})}     # ids the last scan really listed; anything else is refused
@@ -891,11 +936,12 @@ class Core:
             # Re-scan right now with the protection choices the page shows, so what is deleted can never be older or less protected
             # than what the user sees. Protected packs, server assets and anything no longer on disk are skipped.
             fresh = custom_map_cleaner.scan_custom_maps(self.paths.get("steam_path"), self.paths.get("cs2_dir"), comms, bool(protect_recent))
-            items = [m for m in fresh if str(m.get("id")) in wanted and not m.get("is_protected") and not m.get("is_server_asset")]
+            # Server asset packs are only deleted when the user explicitly allowed it for this delete; protected maps never are.
+            items = [m for m in fresh if str(m.get("id")) in wanted and ((m.get("is_server_asset") and allow_assets) or (not m.get("is_protected") and not m.get("is_server_asset")))]
             skipped = len(wanted) - len(items)
             if skipped:
                 self.log(f"[MAP CLEANER] Skipped {skipped} selected item(s): now protected, a server asset pack, or no longer on disk.")
-            count, freed, logs = custom_map_cleaner.delete_custom_maps(items)
+            count, freed, logs = custom_map_cleaner.delete_custom_maps(items, allow_assets=bool(allow_assets))
             for l in logs:
                 self.log(l)
             self.log(f"[MAP CLEANER] Deleted {count} custom maps. Freed {freed / (1024 ** 3):.2f} GB.")
@@ -995,8 +1041,11 @@ class Core:
             return {"available": False, "message": msg or "You are up to date.", "last": self.config["last_update_check_time"]}
         self._pending_manifest = manifest
         skipped = manifest["version"] == self.config.get("skipped_update_version") and not manual
-        return {"available": not skipped, "version": manifest["version"], "notes": manifest.get("notes", ""), "size": manifest.get("size", 0),
-                "message": f"Update available: v{manifest['version']}", "last": self.config["last_update_check_time"]}
+        result = {"available": not skipped, "version": manifest["version"], "notes": manifest.get("notes", ""), "size": manifest.get("size", 0),
+                  "message": f"Update available: v{manifest['version']}", "last": self.config["last_update_check_time"]}
+        if manual and result["available"]:
+            self.emit("update", result)          # "Check now" must also show the banner with the Update now button, not only a line in Settings
+        return result
 
     def update_check_startup(self) -> None:
         """Background check at startup; tells the page only when there is something to show."""

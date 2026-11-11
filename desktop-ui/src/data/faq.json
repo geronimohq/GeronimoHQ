@@ -14,11 +14,11 @@
    },
    {
     "q": "Does this app communicate with external servers or collect telemetry?",
-    "a": "There are no ads, no accounts and no tracking, and the app never sends your Steam login, files or personal data anywhere. It does contact these places: game servers directly (UDP A2S queries for player counts, maps and ping); ZE Graph (zegraph.xyz) for the GFL round scores, country mix and map pictures; geronimohq.com for the signed update check and the same server totals the website shows; and the Discord app on your own PC through a local pipe. Steam, the Steam workshop and your browser only open when you click something."
+    "a": "There are no ads, no accounts and no tracking, and the app never sends your Steam login, files or personal data anywhere. It does contact these places: game servers directly (UDP A2S queries for player counts, maps and ping); ZE Graph (zegraph.xyz) for the GFL round scores, country mix and map pictures; geronimohq.com for the signed update check, the server totals the website shows, and the list of server collections; Steam's public workshop data (api.steampowered.com, no login) for the item lists and sizes of the server collections; and the Discord app on your own PC through a local pipe. Steam, the Steam workshop and your browser only open when you click something."
    },
    {
     "q": "How do updates work?",
-    "a": "The app checks geronimohq.com for a signed update manifest. The new exe is only offered when its Ed25519 signature, size and SHA-256 match, so a tampered file is rejected. Settings shows the last check and a Check now button. Your settings and logs are kept when the app updates."
+    "a": "The app checks geronimohq.com for a signed update manifest. The new exe is only offered when its Ed25519 signature, size and SHA-256 match, so a tampered file is rejected. Settings shows the last check and a Check now button, and Check now also brings up the update banner with its Update now button. Your settings and logs are kept when the app updates."
    },
    {
     "q": "Does it find Steam and CS2 if they are on another drive or in another library?",
@@ -173,7 +173,7 @@
    },
    {
     "q": "What does 'Map not installed. Get it' mean?",
-    "a": "The server is playing a Zombie Escape map that is not on your PC, so joining would fail with 'Required map is missing on your client'. The amber link appears on the server's row, or next to Copy IP on the GFL card. Click it and Steam opens that map's workshop page. Press Subscribe, Steam downloads it in the background, and the warning disappears within about 20 seconds of the map appearing in your folders. If the app does not know a map's workshop page, the click opens a workshop search for the map name instead. Downloading the map through another tool does not work: CS2 only uses workshop maps that Steam itself downloaded."
+    "a": "The server is playing a Zombie Escape map that is not on your PC. The amber link (on the server's row, or next to Copy IP on the GFL card) opens a small window with your options (RSS has no map collection, so there the link goes straight to the map's own workshop page, from the item its author or mapper published). 'This map only' opens that map's Steam page: press Subscribe and Steam downloads just that map (if the page is not known it opens a workshop search). 'Whole server collection' opens the server's Steam collection and shows how many of its items you already have and roughly how many GB subscribing would download. You can also simply join: CS2 then asks 'Confirm Workshop Download' and fetches that one map after you accept. The warning disappears about 20 seconds after the map is in your folders. The check covers the global servers only; Planet China servers are not checked. Downloading maps through another tool does not work, because CS2 only uses workshop content that Steam itself downloaded."
    },
    {
     "q": "What is the 'Launch Delay' setting for?",
@@ -194,6 +194,10 @@
    {
     "q": "How does Planet China work, and why is there no Players button there?",
     "a": "Planet China lists the Chinese communities in clusters (EXG, FyS, MoeUB, ZL, 93X). Pick a cluster in 'Select community cluster' and only its servers are listed and queried. Chinese servers block the live player list (A2S_PLAYER), so the Players dialog and name-based features are not offered there. Player counts, ping and map still work."
+   },
+   {
+    "q": "What is the 'Map pack' link, and should I subscribe to the whole collection?",
+    "a": "'Map pack' opens the server's Steam map collections: GFL, Possession (ZE and ZM), Mapeadores (maps and default map), cOLa-TeaM and Net4All. 'Server assets' sits beside it for servers with an asset pack (GFL, Possession with three, Mapeadores, cOLa-TeaM, Net4All, RSS) and opens the pack's Steam page, with whether you already have it; these hold the models, sounds and skins the server uses and are small. RSS has no map collection, so it only has Server assets. Subscribing to a whole collection makes Steam download every map in it, which can be tens of GB (for example cOLa is about 160 GB and Possession ZE about 106 GB). Subscribe only to the servers you really play. A collection does not always contain the map a server is playing right now, so the single-map option stays available. The collection lists are fetched from Steam's public workshop data about once a day, with a copy built into the app for offline use."
    }
   ]
  },
@@ -235,15 +239,19 @@
   "qa": [
    {
     "q": "Why should I clean custom maps?",
-    "a": "Custom Zombie Escape maps downloaded from the Steam workshop are stored as .vpk packages (mostly in steamapps/workshop/content/730) and can range from 50 MB to 2.5 GB each. Over time, active ZE players accumulate tens or hundreds of GB of stale map packages. The cleaner lets you sort by file size or last played date and delete the maps you no longer need. Subscribed server map packs, server asset packs and official Valve maps are protected and cannot be ticked."
+    "a": "Custom Zombie Escape maps downloaded from the Steam workshop are stored as .vpk packages (mostly in steamapps/workshop/content/730) and can range from 50 MB to 2.5 GB each. Over time, active ZE players accumulate tens or hundreds of GB of stale map packages. The cleaner lets you sort by file size or last played date and delete the maps you no longer need. Subscribed server map packs, server asset packs and official Valve maps are protected. The cleaner is a beta: check carefully before deleting anything. Server asset packs can be ticked only after you switch on 'Allow deleting server asset packs (advanced)'; the bulk Select buttons never pick them."
    },
    {
     "q": "What happens if I delete a map and later rejoin a server running that map?",
     "a": "When you join a server that plays it again, CS2 asks 'Confirm Workshop Download' and downloads the map from the Steam workshop after you accept. Deleting downloaded maps only removes files that can be downloaded again; it does not affect your account. The app asks you to confirm before it deletes anything, and the confirmation cannot be undone."
    },
    {
+    "q": "The app says a server's map is not installed, but I have a map with the same name. Why?",
+    "a": "Different servers can publish a map with the same name as different Steam workshop items (for example RSS and GFL each have their own ze_surf_facility_p). CS2 downloads the exact item the server runs, so a same-named copy from another server does not count. When the server's own map list is known (RSS, Possession, Mapeadores, cOLa, Net4All), the app checks that exact item, and the 'Get it' link opens the right one. The lists are built into the app and updated with each release."
+   },
+   {
     "q": "How does the Map Cleaner make sure protected maps are not deleted?",
-    "a": "When you press Delete, the app scans again with the protection choices shown on screen at that moment and deletes only what is still unprotected and still on disk. Subscribed server packs and server asset packs can never be ticked, and anything that became protected since you ticked it is skipped and reported."
+    "a": "Protection groups (GFL, Possession, RSS, Mapeadores / cOLa, Net4All) work by exact membership: a map is protected when its workshop id is in the matching server's Steam collection (RSS has no Steam collection, so the app uses the map list RSS publishes on its own website instead), so one tick is enough even if the same map is in several servers' collections. Server asset packs (the servers' asset packs and collections) cannot be ticked unless you switch on 'Allow deleting server asset packs (advanced)', and then only one by one; the confirmation names them, and servers need them to join, so Steam may download them again if you stay subscribed. When you press Delete, the app scans again with the protection choices shown at that moment and deletes only what is still unprotected and still on disk; anything that became protected is skipped and reported."
    }
   ]
  },

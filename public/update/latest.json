@@ -1,9 +1,9 @@
 {
-  "version": "2.0.5",
+  "version": "2.0.6",
   "build_date": "2026-11-11",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "F657168EE634CF7E6CC47E372E63C4689C7AF8B590BB263B2EE1ACCCE97352BA",
-  "size": 27377438,
-  "notes": "Safer launch options, temp and dump cleaners and Map Cleaner; works on more PCs (any Steam drive, any Windows language, missing WebView2 message); honest results for repairs and a fuller Help & FAQ.",
-  "signature": "48a464e68951bda5e1c50455ab197877500889788357ad821deffa86a61e3ca0da8d43acf552518d2826a9f000c80a9cc38174a21c46550257eaa44eb3e30507"
+  "sha256": "20660B974EF4EAF61A18D0184F13528D6ED0192BDC1684B52194E2A01B597723",
+  "size": 27429589,
+  "notes": "Server map collections and asset packs (Map pack / Server assets links), exact map checks (RSS fixed), Copy IP copies the connect command, Check now shows the update banner, Map Cleaner marked Beta and can remove asset packs on request.",
+  "signature": "299288351005bf54a795a52ca569086381b451877f0fcd7de54e2121ba7cb1c705ffc8af2f1e87071c96854df22189fc86dee44daee81578305fc19b8d23cb05"
 }

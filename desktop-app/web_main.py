@@ -113,7 +113,12 @@ def _main() -> int:
     log_line("tray icon started" if api.tray.start() else "tray icon FAILED to start")
     web_tray.listen_for_show(api.show_window)
     import threading
-    threading.Thread(target=lambda: (api.core.presence.start(), api.core.update_check_startup()), daemon=True, name="late-start").start()   # not needed for the first paint
+    def _late():
+        api.core.presence.start()
+        api.core.update_check_startup()
+        import workshop_collections
+        workshop_collections.refresh_all_async()          # the server collections: at most one refresh a day
+    threading.Thread(target=_late, daemon=True, name="late-start").start()   # not needed for the first paint
     debug = bool(os.environ.get("CS2CC_DEBUG"))
     # WebView2 cannot share one data folder between a standard and an elevated process, so each gets its own.
     import app_config
@@ -165,6 +170,12 @@ def selftest(window, api) -> None:
             out.append(f"ok   {n}")
         except Exception:
             out.append(f"FAIL {n}: {traceback.format_exc(limit=2).strip().splitlines()[-1]}")
+    try:                                                # the collection list and the snapshot must be inside the exe
+        import workshop_collections as _wc
+        _g = _wc.entries_for("gfl")[0]["id"]
+        out.append(f"info collections: {len(_wc.load_config()['servers'])} servers, GFL snapshot {len(_wc.cached_children(_g) or [])} items, assets {len(_wc.asset_ids())}")
+    except Exception:
+        out.append(f"FAIL collections: {traceback.format_exc(limit=2).strip().splitlines()[-1]}")
     for n in ("vpk_verify", "log_analyze"):            # read-only; the message is recorded so an empty or failed scan is visible, not just a crash
         try:
             r = getattr(api, n)()
