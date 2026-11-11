@@ -62,7 +62,7 @@ export const DeployHudFooter: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-slate-400 font-tech leading-relaxed">
-              Need more downloaded RAM? Broke your ankles on Cybo lasers, got a cursed ZE map suggestion, or wanna flame our 420W toaster? Transmit your signal to Geronimo HQ via direct encrypted pigeon:
+              Need more downloaded RAM? Found a bug, got a map suggestion, or just wanna say &quot;this is fine&quot; while the server is on fire? Transmit your signal to Geronimo HQ via direct encrypted pigeon:
             </p>
 
             {/* Email Terminal Card */}
@@ -113,7 +113,7 @@ export const DeployHudFooter: React.FC = () => {
             <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2 text-xs font-code">
               <div className="flex justify-between py-0.5 border-b border-[#1E2E26]">
                 <span className="text-slate-400">CS2 APP</span>
-                <span className="text-emerald-400 font-bold">v2.0.7 // EXPERIMENTAL</span>
+                <span className="text-emerald-400 font-bold">v2.0.8 // EXPERIMENTAL</span>
               </div>
               <div className="flex justify-between py-0.5 border-b border-[#1E2E26]">
                 <span className="text-slate-400">ZE CLUSTER</span>

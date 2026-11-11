@@ -27,16 +27,25 @@ OFFICIAL_MAPS = {
     "lobby_mapveto", "warehouse_vanity", "de_train_vanity", "graphics_settings", "de_poseidon"
 }
 
-# Known community server asset / content packs that must NEVER be deleted
-# (Prevents giant red ERROR models, missing textures, and missing player skins)
+# Known community server asset / content packs that are never deleted unless the user ticks "Allow deleting server asset packs"
+# (they hold the models, textures and player skins a server needs; without them you see giant red ERROR models).
+# The list per server is confirmed by the owner; retired packs are not listed on purpose.
 KNOWN_SERVER_ASSETS = {
     "3793587501": "GFL Clan ZE - Server Assets & Content Pack",
-    "3160448201": "GFL Clan ZE - Content Pack",
     "3535955403": "Possession ZE (PSE) - General Contents Pack (Tokyo)",
+    "3698341219": "Possession ZE (PSE) - Asset Pack",
+    "3333820862": "Possession ZE (PSE) / cOLa-TeaM ZE - Shared Content Pack",
+    "3782730321": "RSS Zombie Escape - Asset Pack 1",
+    "3782731016": "RSS Zombie Escape - Asset Pack 2",
+    "3782731693": "RSS Zombie Escape - Asset Pack 3",
+    "3782732358": "RSS Zombie Escape - Asset Pack 4",
+    "3161970271": "Net4All ZE - Asset Pack",
     "3157469866": "Mapeadores ZE - Asset Pack (EU)",
-    "3304608958": "cOLa-TeaM ZE - Asset Pack Part 1 (EU)",
-    "3333820862": "cOLa-TeaM ZE - Server Content Pack Part 2 (EU)",
+    "3304608958": "cOLa-TeaM ZE - Asset Pack (EU)",
 }
+
+# A map or file used within this many days counts as part of the player's current rotation and is protected by "Active".
+RECENT_DAYS = 30
 
 # Community Server Pack & Rotation Definitions
 COMMUNITY_SERVER_ROSTERS = {
@@ -45,7 +54,7 @@ COMMUNITY_SERVER_ROSTERS = {
         "name": "GFL Clan ZE (NA)",
         "badge": "⭐ Subscribed (GFL Server Pack)",
         "keywords": ["gfl", "gflclan", "gfl clan"],
-        "asset_ids": {"3793587501", "3160448201"},
+        "asset_ids": {"3793587501"},
         "signature_maps": {
             "ze_lotr_helms_deep_p", "ze_deadcore_s7", "ze_dark_souls_ptd_v0_4",
             "ze_shroomforest3_p", "ze_pirates_port_royal_v5_6", "ze_paramount",
@@ -58,7 +67,7 @@ COMMUNITY_SERVER_ROSTERS = {
         "name": "Possession ZE (PSE Tokyo)",
         "badge": "🛡️ Possession Rotation (PROTECTED)",
         "keywords": ["possession", "pse", "possession-jp"],
-        "asset_ids": {"3535955403", "3075687337", "3076940469", "3103181471"},
+        "asset_ids": {"3535955403", "3698341219", "3333820862"},
         "signature_maps": {
             "ze_colorlicouspilar_p", "ze_colorlicouspilar", "ze_colors_p", "ze_biohazard2_sewer_v4c", "ze_boatescape",
             "ze_frostdrake", "ze_sandstorm_cs2", "ze_predator_ultimate_p",
@@ -71,7 +80,7 @@ COMMUNITY_SERVER_ROSTERS = {
         "name": "RSS Zombie Escape (EU/Global)",
         "badge": "🛡️ RSS Rotation (PROTECTED)",
         "keywords": ["rss", "revenant", "rss-ze"],
-        "asset_ids": {"3716633440"},
+        "asset_ids": {"3782730321", "3782731016", "3782731693", "3782732358"},
         "signature_maps": {
             "ze_obff_npst_v24", "ze_santassination_v3", "ze_lila_panic_escape_v2",
             "ze_serpentis_temple_cs2", "ze_ffvii_mako_reactor_v6", "ze_potc_p",
@@ -83,7 +92,7 @@ COMMUNITY_SERVER_ROSTERS = {
         "name": "Mapeadores & cOLa (EU)",
         "badge": "🛡️ Mapeadores/cOLa (PROTECTED)",
         "keywords": ["mapeadores", "cola", "cola-team"],
-        "asset_ids": {"3157469866", "3304608958", "3333820862"},
+        "asset_ids": {"3157469866", "3304608958"},
         "signature_maps": {
             "ze_castlevania_64", "ze_ancient_wrath_v2", "ze_voodoo_islands_p"
         }
@@ -93,7 +102,7 @@ COMMUNITY_SERVER_ROSTERS = {
         "name": "Net4All ZE (Russia)",
         "badge": "🛡️ Net4All Rotation (PROTECTED)",
         "keywords": ["net4all"],
-        "asset_ids": set(),
+        "asset_ids": {"3161970271"},
         "signature_maps": set()
     },
     "exg": {
@@ -242,7 +251,7 @@ def scan_custom_maps(steam_path: str, cs2_dir: str = None, protected_communities
     import time
     now_ts = time.time()
     if protected_communities is None:
-        protected_communities = {"gfl", "possession", "rss", "mapeadores_cola", "exg"}
+        protected_communities = {"gfl"}          # only GFL (which re-uploads every map it runs) is protected by its collection; "Active" covers the rest
 
     maps_list = []
     seen_ids = set()
@@ -349,7 +358,7 @@ def scan_custom_maps(steam_path: str, cs2_dir: str = None, protected_communities
                     pretty = COMMUNITY_SERVER_ROSTERS.get(owner, {}).get("name", "GFL Server Pack")
                     comm_key = owner
                     is_sub = (owner in protected_communities)
-                    status_label = f"⭐ Subscribed ({pretty})" if is_sub else f"📁 {pretty} (Protection Disabled)"
+                    status_label = f"⭐ Subscribed ({pretty})" if is_sub else (f"📁 {pretty} (Protection Disabled)" if owner == "gfl" else f"📁 Subscribed ({pretty}), not protected")
                     status_type = "subscribed" if is_sub else "temp"
                     is_protected = is_sub
                 elif comm_key and comm_key in protected_communities:
@@ -357,9 +366,9 @@ def scan_custom_maps(steam_path: str, cs2_dir: str = None, protected_communities
                     status_label = comm_badge
                     status_type = "community_protected"
                     is_protected = True
-                elif protect_recent and latest_mtime > 0 and (now_ts - latest_mtime <= 14 * 86400):
+                elif protect_recent and latest_mtime > 0 and (now_ts - latest_mtime <= RECENT_DAYS * 86400):
                     is_sub = True
-                    status_label = "🕒 Active Rotation (Last 14d)"
+                    status_label = f"🕒 Active Rotation (Last {RECENT_DAYS}d)"
                     status_type = "recent_rotation"
                     is_protected = True
                 else:
@@ -416,9 +425,9 @@ def scan_custom_maps(steam_path: str, cs2_dir: str = None, protected_communities
                         status_label = comm_badge
                         status_type = "community_protected"
                         is_protected = True
-                    elif protect_recent and (now_ts - st.st_mtime <= 14 * 86400):
+                    elif protect_recent and (now_ts - st.st_mtime <= RECENT_DAYS * 86400):
                         is_sub = True
-                        status_label = "🕒 Active Rotation (Last 14d)"
+                        status_label = f"🕒 Active Rotation (Last {RECENT_DAYS}d)"
                         status_type = "recent_rotation"
                         is_protected = True
                     else:

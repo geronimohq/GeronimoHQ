@@ -259,7 +259,7 @@ class ComprehensiveApplicationAudit(unittest.TestCase):
             "⭐ Subscribed (GFL ZE Collection)",
             "⭐ Subscribed (GFL Server Pack)",
             "📁 Subscribed (GFL Protection Disabled)",
-            "🕒 Active Rotation (Last 14d)",
+            "🕒 Active Rotation (Last 30d)",
             "📁 Temp Download (Safe Clean)",
             "🛡️ Essential Server Asset",
             "📦 Custom Map (.vpk)",

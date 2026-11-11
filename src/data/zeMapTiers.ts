@@ -1009,6 +1009,7 @@ const HOF_MAPPERS = /Kuroki|ViSral|Hannibal|Luffaren|Airvulpes|Clown|Kaemon|Nipp
  * comes first from the S2ZE / Steam Workshop catalog (the workshop author of that exact map), because the
  * hand-typed registry and the keyword guesses were often wrong or only a generic label.
  * Order: catalog person -> curated registry name -> catalog generic label -> "Mapper not listed" (never a made-up name).
+ * The page then replaces "Mapper not listed" with the map's workshop creator when the build found one (applyResolvedMapper).
  */
 export function getMapTierAndMapper(mapName?: string): MapTierData {
   const base = getMapTierAndMapperRaw(mapName);
@@ -1025,7 +1026,18 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
     if (!curated) return { ...base, mapper: S2ZE_GENERIC, isHallOfFameMapper: false };
   }
   if (PLACEHOLDER_MAPPERS.has(base.mapper)) {
-    return { ...base, mapper: exact === S2ZE_GENERIC ? S2ZE_GENERIC : 'Mapper not listed', isHallOfFameMapper: false };
+    return { ...base, mapper: exact === S2ZE_GENERIC ? S2ZE_GENERIC : MAPPER_NOT_LISTED, isHallOfFameMapper: false };
   }
-  return base;
+  return base.mapper ? base : { ...base, mapper: MAPPER_NOT_LISTED };       // never an empty "by:" pill
+}
+
+export const MAPPER_NOT_LISTED = 'Mapper not listed';
+
+/**
+ * Fills "Mapper not listed" from the workshop creator that scripts/resolve_workshop_maps.py found for this exact map
+ * (see src/utils/mapWorkshop.ts). A mapper the catalog or the curated registry already names is never replaced.
+ */
+export function applyResolvedMapper(tier: MapTierData, resolved?: string): MapTierData {
+  if (!resolved || (tier.mapper && tier.mapper !== MAPPER_NOT_LISTED)) return tier;
+  return { ...tier, mapper: resolved, isHallOfFameMapper: HOF_MAPPERS.test(resolved) };
 }

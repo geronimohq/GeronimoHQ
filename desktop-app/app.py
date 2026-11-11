@@ -7661,11 +7661,11 @@ class CS2TruePanoramaApp(tk.Tk):
         cb_eu.pack(side="left", padx=(0, 6))
         add_tooltip(cb_eu, "Protect Mapeadores and cOLa-TeaM European custom maps and asset packs.")
 
-        cb_rec = Checkbutton(prot_bar, text="🕒 Active (Last 14d)", variable=var_prot_recent, font=(theme.FONT_UI, theme.FS_13),
+        cb_rec = Checkbutton(prot_bar, text="🕒 Active (Last 30d)", variable=var_prot_recent, font=(theme.FONT_UI, theme.FS_13),
                                 fg=theme.TEXT_PRIMARY, bg=theme.SURFACE_INSET, selectcolor=theme.SURFACE_INSET, activebackground=theme.SURFACE_INSET,
                                 activeforeground=theme.TEXT_PRIMARY, cursor="hand2", command=_on_prot_changed)
         cb_rec.pack(side="left", padx=(0, 6))
-        add_tooltip(cb_rec, "Protect custom maps played in the last 14 days so active rotation maps are preserved.")
+        add_tooltip(cb_rec, "Protect custom maps played in the last 30 days so active rotation maps are preserved.")
 
         # View Filter Pill Tabs (ALL / TEMP DOWNLOADS / SUBSCRIBED PACK / DUPLICATES)
         filter_tabs_bar = Frame(dlg, bg=theme.SURFACE_INSET)
