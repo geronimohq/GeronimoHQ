@@ -161,7 +161,7 @@ class Core:
             except Exception:
                 pass
         cur_map = info.get("map") if online else None
-        mm = self.map_check(cur_map) if online and s.get("group") != "china" else None        # the missing-map warning is for the global servers only
+        mm = self.map_check(cur_map, sid) if online and s.get("group") != "china" else None        # the missing-map warning is for the global servers only
         since, exact = self._map_clock(sid, cur_map, None if s.get("group") == "china" else s["host"], int(s["port"]), humans)
         return {"id": sid, "online": online, "map": cur_map, "players": total, "bots": bots,
                 "humans": humans, "max": int(info.get("max_players") or 0), "ping": info.get("rtt") if online else None,
@@ -228,8 +228,10 @@ class Core:
             self._maps_cache = {"at": time.time(), "ids": ids, "names": names, "known": bool(self._steam_libraries())}
             return self._maps_cache
 
-    def map_check(self, map_name: Optional[str]) -> Optional[Dict[str, Any]]:
-        """None when the check does not apply; otherwise {missing, wid, name}. Only ze_/zm_ community maps are checked."""
+    def map_check(self, map_name: Optional[str], sid: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """None when the check does not apply; otherwise {missing, wid, name}. Only ze_/zm_ community maps are checked.
+        When the server's own map list gives the exact workshop id of this map, that id alone decides (a same-named map from another
+        server's workshop item is a different download); otherwise the id from the map site plus the map name decide."""
         name = (map_name or "").replace("\\", "/").split("/")[-1].strip().lower()
         if name.endswith(".vpk"):
             name = name[:-4]
@@ -239,6 +241,10 @@ class Core:
             inst = self.installed_maps()
             if not inst.get("known"):
                 return None
+            import workshop_collections
+            exact = workshop_collections.exact_map_id(sid, name) if sid else ""
+            if exact:
+                return {"missing": exact not in inst["ids"], "wid": exact, "name": name}
             meta = server_browser._get_s2ze_map_meta(name) or {}
             wid = str(meta.get("addon") or "")
             have = (wid and wid in inst["ids"]) or name in inst["names"] or name.replace("_p", "") in inst["names"]

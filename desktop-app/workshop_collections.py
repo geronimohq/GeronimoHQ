@@ -204,7 +204,17 @@ def communities_of(wid: str) -> List[str]:
         ids = cached_children(e["id"])
         if ids and wid in set(ids):
             out.append(e["community"])
+    for comm, ids in (_snapshot().get("community_ids") or {}).items():      # groups with a published map list but no Steam collection (RSS)
+        if comm not in out and wid in set(ids):
+            out.append(comm)
     return out
+
+
+def exact_map_id(server_id: str, map_name: str) -> str:
+    """The workshop id THIS server uses for a map name ('' when unknown). Several different workshop items can carry the same map name, so a
+    name that merely matches something installed is not proof that the server's own copy is installed."""
+    names = (_snapshot().get("name_ids") or {}).get(server_id) or {}
+    return str(names.get((map_name or "").strip().lower(), ""))
 
 
 def asset_ids() -> Set[str]:

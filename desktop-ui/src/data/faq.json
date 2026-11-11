@@ -246,8 +246,12 @@
     "a": "When you join a server that plays it again, CS2 asks 'Confirm Workshop Download' and downloads the map from the Steam workshop after you accept. Deleting downloaded maps only removes files that can be downloaded again; it does not affect your account. The app asks you to confirm before it deletes anything, and the confirmation cannot be undone."
    },
    {
+    "q": "The app says a server's map is not installed, but I have a map with the same name. Why?",
+    "a": "Different servers can publish a map with the same name as different Steam workshop items (for example RSS and GFL each have their own ze_surf_facility_p). CS2 downloads the exact item the server runs, so a same-named copy from another server does not count. When the server's own map list is known (RSS, Possession, Mapeadores, cOLa, Net4All), the app checks that exact item, and the 'Get it' link opens the right one. The lists are built into the app and updated with each release."
+   },
+   {
     "q": "How does the Map Cleaner make sure protected maps are not deleted?",
-    "a": "Protection groups (GFL, Possession, RSS, Mapeadores / cOLa, Net4All) work by exact membership: a map is protected when its workshop id is in the matching server's Steam collection, so one tick is enough even if the same map is in several servers' collections. Server asset packs (everything in the servers' asset collections) can never be ticked. When you press Delete, the app scans again with the protection choices shown at that moment and deletes only what is still unprotected and still on disk; anything that became protected is skipped and reported."
+    "a": "Protection groups (GFL, Possession, RSS, Mapeadores / cOLa, Net4All) work by exact membership: a map is protected when its workshop id is in the matching server's Steam collection (RSS has no Steam collection, so the app uses the map list RSS publishes on its own website instead), so one tick is enough even if the same map is in several servers' collections. Server asset packs (everything in the servers' asset collections) can never be ticked. When you press Delete, the app scans again with the protection choices shown at that moment and deletes only what is still unprotected and still on disk; anything that became protected is skipped and reported."
    }
   ]
  },

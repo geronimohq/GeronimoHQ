@@ -182,7 +182,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
       icon: <HardDrive className="w-5 h-5 text-emerald-400" />,
       summary: 'Scans your CS2 workshop maps to free SSD space, protects subscribed server packs, and checks every workshop pack for damaged or unfinished downloads.',
       details: [
-        'Protected packs: maps are protected by exact membership in each server\'s Steam collection (GFL, Possession, RSS, Mapeadores / cOLa, Net4All), and server asset packs cannot be ticked. An option also protects maps played in the last 14 days.',
+        'Protected packs: maps are protected by exact membership in each server\'s Steam collection (GFL, Possession, Mapeadores / cOLa, Net4All; RSS by the map list it publishes), and server asset packs cannot be ticked. An option also protects maps played in the last 14 days.',
         '1-click "Select all temp downloads (safe)" ticks only maps you are not subscribed to. Deleting asks for confirmation and cannot be undone.',
         'Verify Workshop VPK health: reads each pack\'s index and confirms that every data part is on disk and complete, so a download that stopped half way is found, not just a bad file header.',
         'Repair corrupted VPKs removes only the damaged workshop folders. It never follows links and skips anything changed in the last 15 minutes. Steam can download the map again afterwards.',

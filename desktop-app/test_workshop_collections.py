@@ -146,6 +146,36 @@ class ChinaExcluded(Base):
         self.assertTrue(gfl["map_missing"])                                                  # a global server with the same map still warns
 
 
+class ExactIds(Base):
+    """The RSS case: a map with the same name is installed, but it is another workshop item than the one the server uses."""
+
+    def test_snapshot_has_the_rss_list_and_each_servers_own_ids(self):
+        rss = wc.exact_map_id("rss", "ze_surf_facility_p")
+        self.assertTrue(rss.isdigit())
+        self.assertNotEqual(rss, "3554884666")                                                   # GFL's item with the same name is another workshop item
+        self.assertEqual(wc.exact_map_id("rss", "ZE_SURF_FACILITY_P"), rss)                      # case does not matter
+        self.assertEqual(wc.exact_map_id("rss", "ze_not_a_real_map"), "")
+        self.assertEqual(wc.exact_map_id("gfl", "ze_surf_facility_p"), "")                       # GFL's list has no titles: falls back to the old check
+
+    def test_rss_list_makes_rss_a_community_without_a_steam_collection(self):
+        rss_id = wc.exact_map_id("rss", "ze_surf_facility_p")
+        self.assertIn("rss", wc.communities_of(rss_id))
+
+    def test_a_same_named_map_from_another_server_is_not_enough(self):
+        core = core_service.Core()
+        wid = wc.exact_map_id("rss", "ze_surf_facility_p")
+        other = "3554884666"
+        self.assertNotEqual(wid, other)
+        with mock.patch.object(core, "installed_maps", return_value={"ids": {other}, "names": {"ze_surf_facility_p"}, "known": True}), \
+                mock.patch.dict(core.paths, {"cs2_dir": "C:/cs2"}):
+            r = core.map_check("ze_surf_facility_p", "rss")
+            self.assertTrue(r["missing"])                                                       # RSS uses a different item than the one installed
+            self.assertEqual(r["wid"], wid)                                                     # and the link opens the right one
+        with mock.patch.object(core, "installed_maps", return_value={"ids": {wid}, "names": set(), "known": True}), \
+                mock.patch.dict(core.paths, {"cs2_dir": "C:/cs2"}):
+            self.assertFalse(core.map_check("ze_surf_facility_p", "rss")["missing"])
+
+
 class CleanerProtection(Base):
     def test_protection_follows_collection_membership_and_assets_are_protected(self):
         with tempfile.TemporaryDirectory() as steam:
