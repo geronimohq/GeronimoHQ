@@ -170,6 +170,12 @@ def selftest(window, api) -> None:
             out.append(f"ok   {n}")
         except Exception:
             out.append(f"FAIL {n}: {traceback.format_exc(limit=2).strip().splitlines()[-1]}")
+    try:                                                # the collection list and the snapshot must be inside the exe
+        import workshop_collections as _wc
+        _g = _wc.entries_for("gfl")[0]["id"]
+        out.append(f"info collections: {len(_wc.load_config()['servers'])} servers, GFL snapshot {len(_wc.cached_children(_g) or [])} items, assets {len(_wc.asset_ids())}")
+    except Exception:
+        out.append(f"FAIL collections: {traceback.format_exc(limit=2).strip().splitlines()[-1]}")
     for n in ("vpk_verify", "log_analyze"):            # read-only; the message is recorded so an empty or failed scan is visible, not just a crash
         try:
             r = getattr(api, n)()
