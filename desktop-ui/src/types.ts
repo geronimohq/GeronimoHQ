@@ -44,7 +44,7 @@ export interface SettingsValues {
   start_with_windows: boolean; start_minimized: boolean; minimize_to_tray_on_close: boolean; open_on_page: string; sniper_sound_enabled: boolean;
   server_refresh_speed: string; discord_rpc_enabled: boolean; check_updates_on_startup: boolean; speeds: string[]; pages: string[];
 }
-export interface MapRow { id: string; name: string; status: string; type: string; sub: boolean; asset: boolean; protected: boolean; workshop: boolean; dupe: boolean; size: number; size_str: string; mtime: string }
+export interface MapRow { id: string; name: string; status: string; type: string; sub: boolean; subscribed?: boolean; asset: boolean; protected: boolean; workshop: boolean; dupe: boolean; size: number; size_str: string; mtime: string }
 export interface MapsSettings { communities: string[]; protect_recent: boolean }
 export interface PresenceState { enabled: boolean; connected: boolean; status: string; details: string; state: string; buttons: string[]; cs2_running: boolean; tracked: string }
 export interface UpdateInfo { available: boolean; version?: string; notes?: string; size?: number; message?: string; last?: string }

@@ -260,6 +260,7 @@ body{display:flex;flex-direction:column}
 .mctable table{width:100%;border-collapse:collapse;font-size:12.5px}
 .mctable th{position:sticky;top:0;background:rgba(14,20,27,.97);text-align:left;padding:8px 10px;font:600 11px var(--f-head);letter-spacing:.08em;text-transform:uppercase;color:var(--tx);border-bottom:1px solid var(--line-hi)}
 .mctable th.srt{cursor:pointer}
+.mctable a.mcl{color:inherit;text-decoration:none;border-bottom:1px dotted var(--tx3)}.mctable a.mcl:hover{color:var(--cyan);border-bottom-color:var(--cyan)}
 .mctable td{padding:6px 10px;border-top:1px solid rgba(255,255,255,.05);color:var(--tx)}
 .mctable tr.tmp td{color:var(--tx2)}.mctable tr.dup td{color:#EB8E6D}
 .mctable tr:hover td{background:rgba(255,255,255,.04)}

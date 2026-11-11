@@ -127,6 +127,9 @@ class Api:
     def map_get(self, map_name: str, wid: str = "") -> Dict[str, Any]:
         return self.core.map_get(map_name, wid)
 
+    def workshop_open(self, wid: str) -> Dict[str, Any]:
+        return self.core.workshop_open(str(wid or ""))
+
     def map_help(self, sid: str, map_name: str = "", wid: str = "", mode: str = "") -> Dict[str, Any]:
         return self.core.map_help(sid, map_name, wid, str(mode or ""))
 

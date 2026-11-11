@@ -130,6 +130,26 @@ class Labels(unittest.TestCase):
         self.assertEqual(rows["9100002"]["status_label"], "📁 Subscribed")                # no server name, not protected
         self.assertFalse(rows["9100002"]["is_protected"])
 
+    def test_a_subscribed_map_used_lately_is_protected_by_active_and_never_listed_as_not_played(self):
+        import time
+        with tempfile.TemporaryDirectory() as steam:
+            for wid in ("9200001", "9200002"):
+                item(steam, wid, "ze_sub_" + wid, {"maps/ze_sub_%s.vpk" % wid: 1})
+            old = time.time() - 60 * 86400
+            d = os.path.join(steam, "steamapps", "workshop", "content", "730", "9200002")
+            for fn in os.listdir(d):
+                os.utime(os.path.join(d, fn), (old, old))
+            os.utime(d, (old, old))
+            member = {"9200001": ["possession"], "9200002": ["possession"]}                  # both subscribed, both in PSE's collection
+            with mock.patch.object(steam_paths, "steam_libraries", return_value=[steam]),                     mock.patch.object(wc, "communities_of", side_effect=lambda w: member.get(w, [])), mock.patch.object(wc, "asset_ids", return_value=set()),                     mock.patch.object(c, "get_subscribed_workshop_ids", return_value={"9200001", "9200002"}):
+                on = {r["id"]: r for r in c.scan_custom_maps(steam, None, {"gfl"}, True)}
+                off = {r["id"]: r for r in c.scan_custom_maps(steam, None, {"gfl"}, False)}
+        self.assertTrue(on["9200001"]["is_protected"])                                      # touched just now: Active protects it
+        self.assertIn("Active", on["9200001"]["status_label"])
+        self.assertFalse(on["9200002"]["is_protected"])                                     # 60 days old: listed as not played
+        self.assertEqual(on["9200002"]["status_label"], "📁 Subscribed")
+        self.assertFalse(off["9200001"]["is_protected"])                                    # Active switched off: nothing protects it
+
 
 if __name__ == "__main__":
     unittest.main()
