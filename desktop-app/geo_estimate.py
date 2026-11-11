@@ -113,7 +113,14 @@ def estimate_countries(server_region: str, total_players: int, player_names: Opt
     is_eu = any(k in reg for k in ("france", "fr", "spain", "es", "eu"))
     is_asia = any(k in reg for k in ("japan", "tokyo", "jp", "korea", "kr", "china", "cn", "hong kong"))  # AUDIT: China clusters
 
-    if is_na:
+    # Chinese community clusters (EXG, FyS ...) are 'Hong Kong / BGP Multi-Line' or 'Mainland China / BGP Multi-Line': Chinese-language communities,
+    # so the estimate is mostly China. (They used to get the generic Asia split, which put Japan first on every Chinese server.)
+    is_china = "bgp" in reg or "mainland" in reg or "hong kong" in reg
+
+    if is_china:
+        w = {"CN": 3.4 * asia_d, "KR": 0.12 * asia_d, "JP": 0.10 * asia_d, "VN": 0.10 * asia_d, "PH": 0.06 * asia_d, "ID": 0.04 * asia_d,
+             "US": 0.10 * na_d, "UK": 0.05 * eu_d, "RU": 0.05 * eu_d, "OTHER": 0.10}
+    elif is_na:
         w = {"US": 1.6 * na_d * 0.85, "CA": 1.6 * na_d * 0.15, "UK": 0.9 * eu_d * 0.22, "DE": 0.9 * eu_d * 0.20,
              "FR": 0.9 * eu_d * 0.18, "ES": 0.9 * eu_d * 0.15, "RU": 0.9 * eu_d * 0.15, "PL": 0.9 * eu_d * 0.10,
              "VN": 0.7 * asia_d * 0.22, "PH": 0.7 * asia_d * 0.22, "JP": 0.7 * asia_d * 0.16, "CN": 0.7 * asia_d * 0.14,

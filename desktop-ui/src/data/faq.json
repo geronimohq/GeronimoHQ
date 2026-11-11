@@ -116,6 +116,14 @@
    {
     "q": "Will applying autoexec overwrite my custom bindings or crosshair?",
     "a": "No! If an existing autoexec.cfg is present, the app backs it up and non-destructively appends or updates only the competitive performance blocks, keeping your personal binds, crosshair, sensitivity, and custom aliases in place (only the app's own marked block is added or replaced)."
+   },
+   {
+    "q": "What does the app say when I press Save, Apply, Set or Restore and nothing would change?",
+    "a": "It tells you so instead of reporting a change. In Autoexec: Save changes with text identical to the file shows 'No changes were made' and writes nothing (your safety backup is kept as it was, not overwritten with the same text); Apply engine autoexec tweaks shows 'Already applied' when the block is already there exactly as it would be written; Revert shows 'Nothing to restore' when the file already matches the original backup; the FPS limit shows 'Already set'; and Inject ZE binds shows 'Already in your autoexec.cfg' when the same block is there. One-click optimize, Restore defaults and the PC clean-up say 'Nothing to change' when every step found nothing to do (for example Game DVR already off, the power plan already active, no files found), and when only some steps were already set they say how many were left as they were. The CPU priority boost says 'Already boosted', the power plan Apply says in the log that the plan is already active, and Launch options and DNS already say when they match what is set."
+   },
+   {
+    "q": "Why can I not press Edit config on a very large autoexec.cfg?",
+    "a": "The in-app preview and editor show the first 60,000 characters. If your autoexec.cfg is longer, Edit config is switched off, because saving the shortened text would cut the end of your file. Edit such a file in a text editor instead."
    }
   ]
  },
@@ -173,7 +181,11 @@
    },
    {
     "q": "What does 'Map not installed. Get it' mean?",
-    "a": "The server is playing a Zombie Escape map that is not on your PC. The amber link (on the server's row, or next to Copy IP on the GFL card) opens a small window with your options (RSS has no map collection, so there the link goes straight to the map's own workshop page, from the item its author or mapper published). 'This map only' opens that map's Steam page: press Subscribe and Steam downloads just that map (if the page is not known it opens a workshop search). 'Whole server collection' opens the server's Steam collection and shows how many of its items you already have and roughly how many GB subscribing would download. You can also simply join: CS2 then asks 'Confirm Workshop Download' and fetches that one map after you accept. The warning disappears about 20 seconds after the map is in your folders. The check covers the global servers only; Planet China servers are not checked. Downloading maps through another tool does not work, because CS2 only uses workshop content that Steam itself downloaded."
+    "a": "The server is playing a Zombie Escape map that is not on your PC. The amber link (on the server's row, or next to Copy IP on the GFL card) opens a small window with your options (RSS and the Planet China servers have no map collection, so there the link goes straight to the map's own workshop page, from the item its author or mapper published; if that page is not known it opens a workshop search). 'This map only' opens that map's Steam page: press Subscribe and Steam downloads just that map (if the page is not known it opens a workshop search). 'Whole server collection' opens the server's Steam collection and shows how many of its items you already have and roughly how many GB subscribing would download. You can also simply join: CS2 then asks 'Confirm Workshop Download' and fetches that one map after you accept. The warning disappears about 20 seconds after the map is in your folders. The check covers the global servers and Planet China. On Planet China it can only go by the map's name and the workshop item listed for it, so a map the community delivers by its own download (not the workshop) may be flagged although you can join it; if you can join, ignore the link. Downloading maps through another tool does not work, because CS2 only uses workshop content that Steam itself downloaded."
+   },
+   {
+    "q": "Why does GFL work differently from the other servers?",
+    "a": "GFL uploads its own copy of every map it puts in rotation, so GFL's copy is a different Steam workshop item from the mapper's original. The other servers just collect the maps that mappers published. So for GFL the app uses GFL's own map collection as the truth: a GFL map counts as installed only when an item from that collection with that map name is on your PC (a same-named map from the mapper or another server does not count), and the 'Map not installed' window offers GFL's collection instead of the mapper's page. The Map Cleaner also recognises GFL maps by the ids in that collection. GFL hides its items' names from Steam's public list, so the app cannot show the new map's name before you subscribe. When GFL adds maps to its collection, the Map Cleaner shows a notice with how many new maps you do not have and tells you to open ZE Game Servers, click Map pack on the GFL server and press Subscribe. The first time the app looks it only records what is already there, so you are told about new maps only, never about older ones you chose to skip, and only if you already have some GFL maps. If you have every map in the collection and the current map is still flagged, GFL has not added it to the collection yet: join anyway and accept CS2's download."
    },
    {
     "q": "What is the 'Launch Delay' setting for?",
@@ -193,7 +205,7 @@
    },
    {
     "q": "How does Planet China work, and why is there no Players button there?",
-    "a": "Planet China lists the Chinese communities in clusters (EXG, FyS, MoeUB, ZL, 93X). Pick a cluster in 'Select community cluster' and only its servers are listed and queried. Chinese servers block the live player list (A2S_PLAYER), so the Players dialog and name-based features are not offered there. Player counts, ping and map still work."
+    "a": "Planet China lists the Chinese communities in clusters (EXG, FyS, MoeUB, ZL, 93X). Pick a cluster in 'Select community cluster' and only its servers are listed and queried. Chinese servers block the live player list (A2S_PLAYER), so the Players dialog and name-based features are not offered there. Player counts, ping, map and the 'Map not installed' link still work. The GEO RADAR on Planet China is an estimate, not a measurement: Chinese servers do not publish where players come from, so the app assumes the mostly-Chinese community these clusters serve (China first, a small share for neighbouring countries and the rest of the world, moving a little with the time of day). It is the same estimate the website shows, and it is only drawn for servers that answer and have players."
    },
    {
     "q": "What is the 'Map pack' link, and should I subscribe to the whole collection?",
@@ -282,7 +294,15 @@
    },
    {
     "q": "SFC, DISM and TRIM take a long time. Do they block the rest of the app?",
-    "a": "No. They run in their own slot, so Optimize, Restore, the Map Cleaner and updates still work. Only one of these long tools runs at a time. The app stops waiting after 30 minutes (TRIM), 60 minutes (SFC) or 90 minutes (DISM) and tells you. The result is reported from Windows' own exit codes and also works on non-English Windows."
+    "a": "No. They run in their own slot, so Optimize, Restore, the Map Cleaner and updates still work. Only one of these long tools runs at a time, and the other three buttons are locked while one runs. The app stops waiting after 30 minutes (TRIM), 60 minutes (SFC) or 90 minutes (DISM) and tells you. Please keep the app open and do not shut down or sleep the PC until it finishes."
+   },
+   {
+    "q": "What happens when I start SFC, DISM or TRIM, and how do I know it is really working?",
+    "a": "The app first explains what the tool does and how long it usually takes, and only starts when you press Start. While it runs, a panel at the top of the tools box shows the tool, the elapsed time and, when Windows reports one, the percentage (SFC and DISM can sit at the same percentage, for example 20% or 62.3%, for many minutes; that is normal). The panel comes back if you leave the tab and return. If Windows gives no percentage the bar just moves to show it is still working. The other tools are locked until it ends."
+   },
+   {
+    "q": "How do I know SFC, DISM or TRIM actually worked?",
+    "a": "When a tool ends, a result window gives one plain verdict: No problems found, Problems found and repaired (restart the PC), Problems found, not all fixed (it says what to do next, usually run DISM health restore, restart, then SFC again), Completed, or Did not complete with the reason. Under it, 'How the app knows' lists the evidence: the tool's own last message, its exit code, how long it took and, for SFC, what Windows wrote to CBS.log during that run (the scan reached its end, how many components were repaired, how many files could not be repaired). Those CBS.log lines are not translated, so the verdict is also reliable on non-English Windows. If the app cannot confirm the outcome it says 'Finished, result unclear' instead of claiming success, and names the Windows log to open (CBS.log for SFC, dism.log for DISM). DISM WinSxS clean-up does not report how much it freed, so the app shows your free space on C: before and after instead. SSD TRIM shows the amount Windows reports trimming, or says that Windows did not report one. The last result of each tool stays under the buttons with its date and duration."
    },
    {
     "q": "Why does the Log Analyzer show 'N/A' instead of a grade?",

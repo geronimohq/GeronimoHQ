@@ -218,6 +218,72 @@ def exact_map_id(server_id: str, map_name: str) -> str:
     return str(names.get((map_name or "").strip().lower(), ""))
 
 
+# Servers that upload their OWN copy of every map in their rotation (owner, 2026-11-11: only GFL does this). For them the server's collection is the
+# only truth: the original mapper's workshop item is a different item and does not satisfy the server, so names and mapper pages are not used.
+REUPLOADERS = ("gfl",)
+_MAP_IDS_MEMO: Dict[str, Any] = {}
+
+
+def reuploads(server_id: str) -> bool:
+    return server_id in REUPLOADERS
+
+
+def map_ids(server_id: str, timeout: float = 3.0) -> Set[str]:
+    """Workshop ids in this server's map collections (fresh from Steam at most once a day, else cache or snapshot). Kept 5 minutes in memory
+    because the page asks on every refresh."""
+    hit = _MAP_IDS_MEMO.get(server_id)
+    if hit and time.time() - hit[0] < 300:
+        return hit[1]
+    ids: Set[str] = set()
+    for e in entries_for(server_id):
+        if e["kind"] == "maps":
+            ids.update(children(e["id"], timeout) or [])
+    if ids:
+        _MAP_IDS_MEMO[server_id] = (time.time(), ids)
+    return ids
+
+
+def _base(name: str) -> str:
+    n = (name or "").strip().lower()
+    if n.endswith(".vpk"):
+        n = n[:-4]
+    return n[:-2] if n.endswith("_p") else n
+
+
+def reupload_has_map(server_id: str, map_name: str, installed: Dict[str, Any]) -> Optional[bool]:
+    """True/False: is this server's OWN copy of the map installed (an installed item of its collection carrying that map name)?
+    None when the collection is unknown. installed = Core.installed_maps(): {'ids': set, 'id_names': {id: {names}}}."""
+    ids = map_ids(server_id)
+    if not ids:
+        return None
+    want = _base(map_name)
+    names = installed.get("id_names") or {}
+    return any(want == _base(n) for wid in ids if wid in installed.get("ids", ()) for n in names.get(wid, ()))
+
+
+def news(server_id: str, installed_ids: Set[str], state: Optional[Dict[str, Any]], timeout: float = 6.0) -> Dict[str, Any]:
+    """New maps in a server's collection since the app last looked, that the player does not have yet.
+    state = {'seen': [...ids...], 'new': [...ids...]} (the caller stores it). The first look only records a baseline, so nobody is nagged about
+    maps that were already there. A player with none of the server's maps is not told anything (they do not play it)."""
+    ids: Set[str] = set()
+    for e in entries_for(server_id):
+        if e["kind"] == "maps":
+            ids.update(children(e["id"], timeout) or [])
+    if not ids:
+        return {"known": False, "new": 0, "missing": 0, "total": 0, "state": state or {"seen": [], "new": []}}
+    state = state or {}
+    seen, new = set(state.get("seen") or []), set(state.get("new") or [])
+    if not seen:
+        seen = set(ids)
+    else:
+        new |= ids - seen
+        seen |= ids
+    new = (new & ids) - installed_ids                         # subscribed since, or removed from the collection: no longer news
+    follows = bool(ids & installed_ids)
+    return {"known": True, "follows": follows, "new": len(new) if follows else 0, "missing": len(ids - installed_ids), "total": len(ids),
+            "state": {"seen": sorted(seen), "new": sorted(new)}}
+
+
 def asset_ids() -> Set[str]:
     """Every workshop id that belongs to a server asset collection (models, sounds, skins the servers need)."""
     found: Set[str] = set()

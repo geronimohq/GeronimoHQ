@@ -1,9 +1,9 @@
 {
-  "version": "2.0.6",
+  "version": "2.0.7",
   "build_date": "2026-11-11",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "20660B974EF4EAF61A18D0184F13528D6ED0192BDC1684B52194E2A01B597723",
-  "size": 27429589,
-  "notes": "Server map collections and asset packs (Map pack / Server assets links), exact map checks (RSS fixed), Copy IP copies the connect command, Check now shows the update banner, Map Cleaner marked Beta and can remove asset packs on request.",
-  "signature": "299288351005bf54a795a52ca569086381b451877f0fcd7de54e2121ba7cb1c705ffc8af2f1e87071c96854df22189fc86dee44daee81578305fc19b8d23cb05"
+  "sha256": "BA7F52ECB87B900C8AE8A0E29C837A6BD95CB5BBAAE017C3FC6016AA69265B8B",
+  "size": 27454489,
+  "notes": "SFC, DISM and TRIM show live progress and a clear result. Laptop specs no longer show sample data. GFL maps are checked against GFL's own collection, with a new-maps notice. Planet China map link and geo estimate fixed. Save/Apply say when nothing changed.",
+  "signature": "c3ed5e9f6eb28754d80d26e64f27b21de59bfa4cfc1e50fc4119fac8a5651243d8ca8a4cd016cfabbafd5124b39320acef3a1165801ba00d6d6a355601830c0b"
 }

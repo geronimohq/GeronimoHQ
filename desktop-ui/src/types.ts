@@ -3,7 +3,9 @@ export interface Pack { id: string; label: string; kind: 'maps' | 'assets' | 'de
 export interface MapHelp {
   map: { name: string; wid: string } | null;
   collections: { id: string; label: string; kind: string; total: number; installed: number; known: boolean; match: boolean }[];
+  reupload?: boolean; pending?: number; map_name?: string;     // reupload: the server uploads its own copy of each map (GFL); pending: collection maps not installed
 }
+export interface MapsNews { known: boolean; new: number; missing: number; total: number }
 export interface PackSize { ok: boolean; missing: number; known: number; unknown: number; bytes: number }
 export interface Srv {
   id: string; name: string; host: string; port: number; region: string; flag: string; discord: string; website?: string;
@@ -11,7 +13,7 @@ export interface Srv {
 }
 export interface Status {
   id: string; online: boolean; map?: string | null; players?: number; bots?: number; humans?: number; max?: number;
-  ping?: number | null; geo?: { countries: GeoRow[]; regions: GeoRow[] }; at?: number; error?: string; map_since?: number; map_exact?: boolean; map_missing?: boolean; map_wid?: string;
+  ping?: number | null; geo?: { countries: GeoRow[]; regions: GeoRow[] }; at?: number; error?: string; map_since?: number; map_exact?: boolean; map_missing?: boolean; map_wid?: string; map_reupload?: boolean; map_pending?: number;
 }
 export interface AppInfo {
   version: string; build_date: string; admin: boolean; cs2_found: boolean; cfg_dir: string | null; persona: string | null;
@@ -25,7 +27,10 @@ export interface DashboardData {
   cs2_dir: string | null; cfg_dir: string | null; autoexec: { state: string; text: string } | null; drive: Drive | null;
   days_opt: number | null; days_maint: number | null;
 }
-export interface MaintState { drives: Drive[]; admin: boolean; days_maint: number | null }
+export interface ToolRun { name: string; started: number; pct: number | null }
+export interface ToolLast { at: string; status: string; ok: boolean; headline: string; seconds: number }
+export interface ToolResult { tool: string; title: string; status: string; ok: boolean; headline: string; detail: string; next: string; evidence: string[]; seconds: number; log_file: string }
+export interface MaintState { drives: Drive[]; admin: boolean; days_maint: number | null; tool_run: ToolRun | null; tool_last: Record<string, ToolLast> }
 export interface SniperStatus { text: string; state: 'idle' | 'armed' | 'triggered' | 'cooldown'; target: string; active: boolean }
 export interface PlayerRow { name: string; score: number; time: string; seconds?: number; index?: number }
 export interface Track { name: string; duration: string; tags: string[]; url: string | null }
@@ -33,7 +38,7 @@ export interface LaunchState { current: string; vdf_found: boolean; warnings: st
 export interface DnsProvider { id: string; name: string; primary: string; secondary: string; desc: string }
 export interface DnsState { interface: string; current: string; found: boolean; providers: DnsProvider[]; admin: boolean }
 export interface DnsResult { name: string; primary: string; secondary: string; avg_ms: number; jitter_ms: number; reachable: boolean; fastest: boolean; rank: number }
-export interface AutoexecState { state: string; status: string; path: string | null; text: string; cfg: boolean; cfg_dir: string | null; personal_vm: boolean; personal_lines: string[] }
+export interface AutoexecState { state: string; status: string; path: string | null; text: string; cfg: boolean; cfg_dir: string | null; personal_vm: boolean; personal_lines: string[]; truncated?: boolean }
 export interface MpoState { gpu: string; vendor: string; disabled: boolean; badge: string; detail: string; reg_path: string }
 export interface SettingsValues {
   start_with_windows: boolean; start_minimized: boolean; minimize_to_tray_on_close: boolean; open_on_page: string; sniper_sound_enabled: boolean;

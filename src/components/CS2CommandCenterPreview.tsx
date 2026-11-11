@@ -33,7 +33,7 @@ declare const __APP_EXE_SHA256__: string;
 declare const __APP_EXE_SIZE_MB__: number;
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=2.0.6';
+  const downloadUrl = '/CS2_Command_Center.exe?v=2.0.7';
   const exeSha256 = typeof __APP_EXE_SHA256__ !== 'undefined' ? __APP_EXE_SHA256__ : '66B78485C7C1F5622C12B702D07C83B7CEC781E344DC7AFE35B0272B494E7A01';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -75,7 +75,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
         'Geo radar (estimate): Country or Region view per server, filling the card width up to two lines. It is an estimate from name signals and time of day; no player is identified.',
         'Missing-map warning: when a server plays a map that is not on your PC, an amber "Map not installed. Get it" link offers the single map (small) or the server\'s whole Steam collection, with how many items you have and roughly how many GB it would download. RSS has no collection, so its link opens the map\'s own workshop page.',
         'Map pack and Server assets links on each server: the Map pack opens that server\'s Steam map collections (GFL, Possession, Mapeadores, cOLa-TeaM, Net4All); Server assets opens its asset packs (GFL, Possession, Mapeadores, cOLa-TeaM, Net4All, RSS).',
-        'Planet China: pick a community cluster (EXG, FyS, MoeUB, ZL, 93X). Those servers block the live player list, so the Players dialog is not offered there.',
+        'Planet China: pick a community cluster (EXG, FyS, MoeUB, ZL, 93X). Those servers block the live player list, so the Players dialog is not offered there. The Map not installed link works there too (it opens the map\'s own workshop page), and the GEO RADAR is an estimate that assumes the mostly-Chinese community of these clusters.',
         'Connect, Copy IP (copies the ready-to-paste "connect ip:port" console command), Players list, 3D map, soundtrack, community Discord and portal links on every row, plus the GFL slot priority and a Refresh all button.'
       ],
       parameters: [
@@ -94,7 +94,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
       icon: <Sliders className="w-5 h-5 text-fuchsia-400" />,
       summary: 'Comprehensive autoexec studio: (1) Core Engine Tweaks, (2) ZE Visual & Audio Binds, and (3) Manual In-App CFG Editor with direct save capabilities.',
       details: [
-        'NEW: In-App Manual CFG Editor — read-only preview by default; Edit config unlocks the text box and Save writes autoexec.cfg after making a backup.',
+        'NEW: In-App Manual CFG Editor — read-only preview by default; Edit config unlocks the text box and Save writes autoexec.cfg after making a backup. If nothing changed it says "No changes were made" and writes nothing; Apply, Revert, the FPS limit and the ZE binds say "already applied" in the same way.',
         'Block 1 — Engine Tweaks: Appends [CS2 FPS OPTIMIZER - PERFORMANCE TWEAKS] (fps_max 0, rate 1000000, low-latency sleep) without touching personal binds.',
         'Block 2 — ZE Visual & Audio Binds: Appends [CS2 COMMAND CENTER - ZE VISUAL & AUDIO CUSTOMIZER] independently.',
         'Real-Time Live Preview: Automatically refreshes and scrolls to the bottom of autoexec.cfg with timestamp banner & confirmation.',
@@ -183,10 +183,12 @@ export const CS2CommandCenterPreview: React.FC = () => {
       summary: 'Scans your CS2 workshop maps to free SSD space, protects subscribed server packs, and checks every workshop pack for damaged or unfinished downloads.',
       details: [
         'Protected packs: maps are protected by exact membership in each server\'s Steam collection (GFL, Possession, Mapeadores / cOLa, Net4All; RSS by the map list it publishes), and server asset packs cannot be ticked unless you switch on an advanced option. The cleaner is marked Beta: check carefully before deleting anything. An option also protects maps played in the last 14 days.',
+        'GFL maps are recognised by GFL\'s own Steam collection, because GFL uploads its own copy of every map it runs (the other servers just collect mappers\' maps). When GFL adds new maps to it, the cleaner tells you how many you do not have and where to subscribe: ZE Game Servers, Map pack on the GFL server. The same collection decides whether the current GFL map shows Map not installed.',
         '1-click "Select all temp downloads (safe)" ticks only maps you are not subscribed to. Deleting asks for confirmation and cannot be undone.',
         'Verify Workshop VPK health: reads each pack\'s index and confirms that every data part is on disk and complete, so a download that stopped half way is found, not just a bad file header.',
         'Repair corrupted VPKs removes only the damaged workshop folders. It never follows links and skips anything changed in the last 15 minutes. Steam can download the map again afterwards.',
-        'Filter tabs (All, Temp downloads, Subscribed packs, Server assets, Duplicates), search, and sort by size or date.'
+        'Filter tabs (All, Temp downloads, Subscribed packs, Server assets, Duplicates), search, and sort by size or date.',
+        'PC Maintenance also has the Windows tools SFC, DISM and SSD TRIM (Administrator). Each one asks first and says how long it takes, shows live progress and elapsed time while it runs, and ends with a plain result (no problems found, repaired, or could not fix) plus how the app knows: Windows\' own message, its exit code and, for SFC, the CBS.log lines of that run. If the result cannot be confirmed it says so instead of reporting success. The last result of each tool stays on screen.'
       ],
       parameters: [
         { name: 'VPK check', value: 'Index + data parts', desc: 'Finds truncated files and missing or short archive parts' },
@@ -285,7 +287,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v2.0.6
+              v2.0.7
             </span>
             <span className="text-xs font-code px-2 py-0.5 bg-amber-950 text-amber-300 border border-amber-500/50 rounded uppercase">
               Experimental

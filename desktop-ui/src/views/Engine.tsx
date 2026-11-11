@@ -82,7 +82,7 @@ export default function Engine({ opts, setOpts, onApplied, log, power, setPower,
               ))}
             </ul>
           </div>
-          <button className="btn cut sm ghost" onClick={async () => { const r = await api.powerSet(plan); if (r.ok) { setApplied(true); sfx.toggle(); log('ENGINE', `CPU power scheme set to ${planName}`); void api.engineState().then(setState); } }}>Apply</button>
+          <button className="btn cut sm ghost" onClick={async () => { const r = await api.powerSet(plan); if (r.ok) { setApplied(true); sfx.toggle(); log('ENGINE', r.changed === false ? `CPU power scheme is already ${planName}; nothing was changed` : `CPU power scheme set to ${planName}`); void api.engineState().then(setState); } }}>Apply</button>
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>

@@ -434,6 +434,8 @@ class Bug5Geo(unittest.TestCase):
         ["Europe (France / Spain)", 39, ["[FR] Jean", "[DE] Max", "x"], None],
         ["Eastern Europe (Moscow, RU)", 15, [], None],
         ["Hong Kong / BGP Multi-Line", 30, ["张三"], None],
+        ["Hong Kong / BGP Multi-Line", 64, [], None],
+        ["Mainland China / BGP Multi-Line", 40, ["[Connecting...]", "Alex"], None],
     ]
 
     def test_same_numbers_as_the_website(self):
@@ -465,6 +467,17 @@ class Bug5Geo(unittest.TestCase):
         codes = {x["code"] for x in geo_estimate.estimate_countries("Hong Kong / BGP Multi-Line", 30, [], None)}
         self.assertIn("CN", codes)
         self.assertNotIn("PL", codes)
+
+    def test_chinese_clusters_are_mostly_china_not_japan_first(self):
+        import geo_estimate
+        from datetime import datetime, timezone
+        for region in ("Hong Kong / BGP Multi-Line", "Mainland China / BGP Multi-Line"):
+            for hour in (0, 6, 12, 18):                                     # any time of day
+                items = geo_estimate.estimate_countries(region, 64, [], None, now=datetime(2026, 11, 11, hour, 0, tzinfo=timezone.utc))
+                self.assertEqual(items[0]["code"], "CN", (region, hour, items))
+                self.assertGreaterEqual(items[0]["percentage"], 60, (region, hour, items))
+        jp = geo_estimate.estimate_countries("East Asia (Tokyo, JP)", 64, [], None)
+        self.assertEqual(jp[0]["code"], "JP")                                # the other Asian servers keep their own split
 
     def test_no_invented_fixed_percentages_left(self):
         with open(os.path.join(HERE, "server_browser.py"), encoding="utf-8") as fh:

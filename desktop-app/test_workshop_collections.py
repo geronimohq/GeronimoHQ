@@ -151,12 +151,80 @@ class CoreDialog(Base):
         self.assertEqual(ou.call_count, 1)
 
 
-class ChinaExcluded(Base):
-    def test_planet_china_servers_never_get_the_missing_map_warning(self):
+class GflReuploads(Base):
+    """Owner 2026-11-11: GFL uploads its own copy of every map it runs, so GFL's collection is the basis: only an installed item of that
+    collection counts, a same-named map from the mapper or another server does not."""
+    GFL = {"100", "200", "300"}
+
+    def installed(self, ids, id_names):
+        return {"ids": set(ids), "names": {n for v in id_names.values() for n in v}, "id_names": id_names, "known": True}
+
+    def status(self, installed, map_name="ze_foo_p"):
+        core = core_service.Core()
+        info = {"online": True, "map": map_name, "curr_players": 5, "bots": 0, "max_players": 64, "rtt": 40, "server_name": "GFL"}
+        with mock.patch.object(core_service.server_browser, "query_server_info", return_value=info),                 mock.patch.object(core, "installed_maps", return_value=installed), mock.patch.object(wc, "map_ids", return_value=self.GFL),                 mock.patch.object(core_service.server_browser, "_get_s2ze_map_meta", return_value={"addon": "999"}),                 mock.patch.dict(core.paths, {"cs2_dir": "C:/cs2"}):
+            return core.server_status("gfl")
+
+    def test_only_gfls_own_item_counts_as_installed(self):
+        ok = self.status(self.installed({"100", "7"}, {"100": {"ze_foo_p"}, "7": {"ze_bar"}}))
+        self.assertFalse(ok["map_missing"])
+        # the same map name is installed, but from another workshop item (the mapper's): GFL's copy is still missing
+        other = self.status(self.installed({"7", "100"}, {"7": {"ze_foo_p"}, "100": {"ze_bar_p"}}))
+        self.assertTrue(other["map_missing"] and other["map_reupload"])
+        self.assertEqual(other["map_wid"], "")                                               # GFL's item id is hidden: no mapper page is offered
+        self.assertEqual(other["map_pending"], 2)                                            # 200 and 300 of the collection are not installed
+
+    def test_name_match_ignores_the_trailing_p_and_case(self):
+        self.assertFalse(self.status(self.installed({"100"}, {"100": {"ze_foo_p"}}), "ZE_Foo")["map_missing"])
+
+    def test_other_servers_are_unchanged(self):
+        self.assertFalse(wc.reuploads("rss"))
+        self.assertTrue(wc.reuploads("gfl"))
+
+    def test_the_dialog_has_no_single_map_page_for_gfl_and_counts_what_is_missing(self):
+        core = core_service.Core()
+        with mock.patch.object(core, "installed_maps", return_value=self.installed({"100"}, {"100": {"ze_x"}})),                 mock.patch.object(wc, "map_ids", return_value=self.GFL), mock.patch.object(wc, "children", return_value=list(self.GFL)):
+            h = core.map_help("gfl", "ze_foo_p", "999", "maps")
+            self.assertIsNone(h["map"])
+            self.assertTrue(h["reupload"])
+            self.assertEqual(h["pending"], 2)
+            self.assertFalse(core.map_help("gfl", "", "", "maps")["reupload"] and core.map_help("gfl", "", "", "maps")["map"])
+
+    def test_new_maps_are_reported_after_a_baseline_and_clear_when_subscribed(self):
+        ids = lambda *a: list(a)
+        with mock.patch.object(wc, "children", return_value=ids("1", "2", "3")):
+            first = wc.news("gfl", {"1", "2"}, None)                                          # first look: baseline only, "3" is not news
+            self.assertEqual(first["new"], 0)
+        with mock.patch.object(wc, "children", return_value=ids("1", "2", "3", "4", "5")):
+            second = wc.news("gfl", {"1", "2"}, first["state"])
+            self.assertEqual(second["new"], 2)                                                # 4 and 5 appeared after the baseline
+            again = wc.news("gfl", {"1", "2"}, second["state"])
+            self.assertEqual(again["new"], 2)                                                 # and stay news until subscribed
+            done = wc.news("gfl", {"1", "2", "4"}, again["state"])
+            self.assertEqual(done["new"], 1)
+            self.assertEqual(done["missing"], 2)
+            stranger = wc.news("gfl", set(), None)                                            # nobody who has no GFL map is told anything
+            self.assertEqual(stranger["new"], 0)
+        with mock.patch.object(wc, "children", return_value=None):
+            self.assertFalse(wc.news("gfl", {"1"}, None)["known"])
+
+    def test_the_cleaner_no_longer_calls_a_map_gfl_by_its_name(self):
+        sig = next(iter(custom_map_cleaner.COMMUNITY_SERVER_ROSTERS["gfl"]["signature_maps"]), None)
+        if sig:
+            self.assertNotEqual(custom_map_cleaner.identify_community_for_map(sig, "42", sig)[0], "gfl")
+        self.assertEqual(custom_map_cleaner.identify_community_for_map("x", "3160448201", "x")[0], "gfl")   # its asset pack still is
+
+
+class ChinaChecked(Base):
+    """Owner request 2026-11-11: Planet China gets the missing-map warning back (no map pack there: it links straight to the map's own page)."""
+
+    def test_planet_china_servers_get_the_missing_map_warning_with_the_direct_map_id(self):
         core = core_service.Core()
         info = {"online": True, "map": "ze_not_on_this_pc", "curr_players": 5, "bots": 0, "max_players": 64, "rtt": 40, "server_name": "x"}
         with mock.patch.object(core_service.server_browser, "query_server_info", return_value=info),                 mock.patch.object(core, "installed_maps", return_value={"ids": set(), "names": set(), "known": True}),                 mock.patch.object(core_service.server_browser, "_get_s2ze_map_meta", return_value={"addon": "123456789"}),                 mock.patch.object(core, "_china_servers", return_value=[{"id": "exg_1", "name": "EXG", "host": "1.2.3.4", "port": 27015, "region": "x", "cluster": "c", "group": "china"}]),                 mock.patch.dict(core.paths, {"cs2_dir": "C:/cs2"}):
-            self.assertFalse(core.server_status("exg_1")["map_missing"])
+            china = core.server_status("exg_1")
+            self.assertTrue(china["map_missing"])
+            self.assertEqual(china["map_wid"], "123456789")                                   # the link opens the map's own workshop page
             gfl = core.server_status("gfl")
         self.assertTrue(gfl["map_missing"])                                                  # a global server with the same map still warns
 

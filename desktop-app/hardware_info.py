@@ -13,6 +13,22 @@ import subprocess
 import theme
 from typing import Dict, Any, Optional, Tuple
 
+def has_battery() -> bool:
+    """True on a laptop or tablet (Windows reports a system battery). Read-only; any failure means 'unknown', so False."""
+    try:
+        import ctypes
+
+        class _PowerStatus(ctypes.Structure):
+            _fields_ = [("ACLineStatus", ctypes.c_ubyte), ("BatteryFlag", ctypes.c_ubyte), ("BatteryLifePercent", ctypes.c_ubyte),
+                        ("SystemStatusFlag", ctypes.c_ubyte), ("BatteryLifeTime", ctypes.c_ulong), ("BatteryFullLifeTime", ctypes.c_ulong)]
+        st = _PowerStatus()
+        if not ctypes.windll.kernel32.GetSystemPowerStatus(ctypes.byref(st)):
+            return False
+        return st.BatteryFlag not in (128, 255)              # 128 = no system battery, 255 = unknown
+    except Exception:
+        return False
+
+
 def get_cpu_info() -> Dict[str, Any]:
     cpu_name = ""
     try:
@@ -23,7 +39,8 @@ def get_cpu_info() -> Dict[str, Any]:
 
     cores = os.cpu_count() or 0
     is_x3d = bool(re.search(r"x3d\b", cpu_name, re.IGNORECASE))
-    is_laptop = bool(re.search(r"\b(mobile|[0-9]{4,5}[UHYHS])\b", cpu_name, re.IGNORECASE))
+    # A name pattern is not enough (an "Intel N100" mini laptop has no U/H in its name), so a battery also means laptop.
+    is_laptop = bool(re.search(r"\b(mobile|[0-9]{4,5}[UHYHS])\b", cpu_name, re.IGNORECASE)) or has_battery()
     is_intel = "intel" in cpu_name.lower()
     is_amd = "amd" in cpu_name.lower() or "ryzen" in cpu_name.lower()
 

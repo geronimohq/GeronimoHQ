@@ -283,8 +283,25 @@ export function getServerDemographics(
   const isEU = reg.includes('france') || reg.includes('fr') || reg.includes('spain') || reg.includes('es') || reg.includes('eu');
   const isAsia = reg.includes('japan') || reg.includes('tokyo') || reg.includes('jp') || reg.includes('korea') || reg.includes('kr') || reg.includes('china') || reg.includes('cn') || reg.includes('hong kong'); // AUDIT: Chinese clusters are 'Hong Kong / BGP Multi-Line' (were estimated as RU/PL/DE)
 
+  // Chinese community clusters (EXG, FyS ...) are 'Hong Kong / BGP Multi-Line' or 'Mainland China / BGP Multi-Line': Chinese-language communities,
+  // so the estimate is mostly China (they used to get the generic Asia split, which put Japan first on every Chinese server).
+  const isChina = reg.includes('bgp') || reg.includes('mainland') || reg.includes('hong kong');
+
   let diurnalWeights: Record<string, number>;
-  if (isNA) {
+  if (isChina) {
+    diurnalWeights = {
+      CN: 3.4 * asiaDiurnal,
+      KR: 0.12 * asiaDiurnal,
+      JP: 0.10 * asiaDiurnal,
+      VN: 0.10 * asiaDiurnal,
+      PH: 0.06 * asiaDiurnal,
+      ID: 0.04 * asiaDiurnal,
+      US: 0.10 * naDiurnal,
+      UK: 0.05 * euDiurnal,
+      RU: 0.05 * euDiurnal,
+      OTHER: 0.10,
+    };
+  } else if (isNA) {
     diurnalWeights = {
       US: 1.6 * naDiurnal * 0.85,
       CA: 1.6 * naDiurnal * 0.15,

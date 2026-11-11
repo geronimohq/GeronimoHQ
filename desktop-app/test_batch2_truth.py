@@ -51,7 +51,7 @@ class Jobs(unittest.TestCase):
     def test_long_repair_tools_do_not_block_other_jobs_and_only_one_runs_at_a_time(self):
         gate = threading.Event()
         self.core._busy = "engine_apply"                                              # a normal job is running
-        with mock.patch.object(core_logic, "is_admin", return_value=True), mock.patch.object(core_logic, "run_sfc_scan", side_effect=lambda: (gate.wait(5), (True, ["[SFC] x"]))[1]):
+        with mock.patch.object(core_logic, "is_admin", return_value=True), mock.patch.object(core_logic, "run_repair", side_effect=lambda name, cb=None: (gate.wait(5), core_logic._result("sfc", "clean", True, "x"))[1]):
             self.assertTrue(self.core.maint_tool("sfc")["ok"])                         # not refused although another job runs
             self.assertFalse(self.core.maint_tool("dism")["ok"])                       # but two long tools never run together
             self.assertIsNone(self.core._busy_long and None)
@@ -105,6 +105,9 @@ class ToolResults(unittest.TestCase):
     def test_power_plan_failures_are_errors_and_a_hidden_plan_is_recreated(self):
         new_guid = "aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb"
         calls = []
+        patcher = mock.patch.object(core_logic, "get_active_power_plan", return_value=("Some other plan", "ffffffff-0000-0000-0000-000000000000"))
+        patcher.start()                                                                   # not this PC's real plan: an already-active plan is reported as "nothing changed"
+        self.addCleanup(patcher.stop)
 
         def run(args, timeout):
             calls.append(args)

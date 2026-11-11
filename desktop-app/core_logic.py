@@ -17,6 +17,7 @@ import glob
 import socket
 import struct
 import time
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Optional, Tuple, List, Dict, Any
@@ -232,11 +233,36 @@ def clean_cs2_temp_dumps(cs2_dir: Optional[str]) -> Tuple[int, int, List[str]]:
                         pass
 
     mb = freed / (1024 * 1024)
-    logs.append(f"[SUCCESS] Cleaned {deleted} CS2 crash dumps & temporary files ({mb:.1f} MB freed).")
+    if deleted == 0:
+        logs.append("[ALREADY] No CS2 crash dumps or temporary files were found; nothing to clean.")
+    else:
+        logs.append(f"[SUCCESS] Cleaned {deleted} CS2 crash dumps & temporary files ({mb:.1f} MB freed).")
     return deleted, freed, logs
+
+def _reg_value(root, path: str, name: str):
+    """Current registry value, or None when it is missing or cannot be read (then the caller simply writes it)."""
+    try:
+        with winreg.OpenKey(root, path) as k:
+            return winreg.QueryValueEx(k, name)[0]
+    except Exception:
+        return None
+
+
+_DVR_KEY = r"System\GameConfigStore"
+_DVR_KEY2 = r"Software\Microsoft\Windows\CurrentVersion\GameDVR"
+_DVR_ON_VALUES = (("GameDVR_Enabled", 0), ("GameDVR_FSEBehaviorMode", 2), ("GameDVR_HonorUserFSEBehaviorMode", 1), ("GameDVR_DXGIHonorFSEWindowsCompatible", 1))
+_DVR_OFF_VALUES = (("GameDVR_Enabled", 1), ("GameDVR_FSEBehaviorMode", 0), ("GameDVR_HonorUserFSEBehaviorMode", 0), ("GameDVR_DXGIHonorFSEWindowsCompatible", 0))
+
+
+def _dvr_is(values, capture: int) -> bool:
+    return all(_reg_value(winreg.HKEY_CURRENT_USER, _DVR_KEY, n) == v for n, v in values) and \
+        _reg_value(winreg.HKEY_CURRENT_USER, _DVR_KEY2, "AppCaptureEnabled") == capture
+
 
 def optimize_windows_game_dvr() -> List[str]:
     logs = []
+    if _dvr_is(_DVR_ON_VALUES, 0):
+        return ["[ALREADY] Game DVR background recording is already off in Windows; nothing was changed."]
     try:
         key_path = r"System\GameConfigStore"
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path) as k:
@@ -260,6 +286,8 @@ def optimize_windows_game_dvr() -> List[str]:
 
 def revert_windows_game_dvr() -> List[str]:
     logs = []
+    if _dvr_is(_DVR_OFF_VALUES, 1):
+        return ["[ALREADY] Game DVR settings are already at the Windows defaults; nothing was changed."]
     try:
         key_path = r"System\GameConfigStore"
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path) as k:
@@ -288,8 +316,10 @@ def disable_fullscreen_optimizations(cs2_exe_path: str) -> List[str]:
 
     try:
         key_path = r"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"
+        val = "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE"
+        if _reg_value(winreg.HKEY_CURRENT_USER, key_path, cs2_exe_path) == val:
+            return [f"[ALREADY] Fullscreen Optimizations are already disabled for {os.path.basename(cs2_exe_path)}; nothing was changed."]
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path) as k:
-            val = "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE"
             winreg.SetValueEx(k, cs2_exe_path, 0, winreg.REG_SZ, val)
         logs.append(f"[SUCCESS] Disabled Fullscreen Optimizations for {os.path.basename(cs2_exe_path)}")
     except Exception as e:
@@ -306,7 +336,7 @@ def revert_fullscreen_optimizations(cs2_exe_path: str) -> List[str]:
             winreg.DeleteValue(k, cs2_exe_path)
         logs.append(f"[REVERTED] Restored default fullscreen settings for {os.path.basename(cs2_exe_path)}")
     except FileNotFoundError:
-        logs.append(f"[INFO] No custom fullscreen flag was set for {os.path.basename(cs2_exe_path)}.")
+        logs.append(f"[ALREADY] No custom fullscreen flag was set for {os.path.basename(cs2_exe_path)}; nothing to restore.")
     except Exception as e:
         logs.append(f"[ERROR] Failed reverting fullscreen flag: {e}")
     return logs
@@ -342,6 +372,8 @@ def install_autoexec(cfg_dir: str) -> Tuple[bool, List[str]]:
     else:
         new_content = PERF_BLOCK
 
+    if os.path.exists(autoexec_file) and new_content.replace("\r\n", "\n") == existing_content.replace("\r\n", "\n"):
+        return True, ["[ALREADY] autoexec.cfg already has the app's performance block exactly as it would be written; nothing was changed."]
     try:
         with open(autoexec_file, "w", encoding="utf-8") as f:
             f.write(new_content)
@@ -412,6 +444,8 @@ def restore_autoexec_backup(cfg_dir: str) -> Tuple[bool, List[str]]:
 
     if os.path.exists(backup_file):
         try:
+            if os.path.exists(autoexec_file) and file_sha256(autoexec_file) == file_sha256(backup_file):
+                return True, ["[ALREADY] autoexec.cfg already matches your original backup; nothing was changed."]
             shutil.copyfile(backup_file, autoexec_file)
             logs.append("[REVERTED] Successfully restored your exact original autoexec.cfg from backup!")
             return True, logs
@@ -433,7 +467,7 @@ def restore_autoexec_backup(cfg_dir: str) -> Tuple[bool, List[str]]:
             except Exception as e:
                 logs.append(f"[ERROR] Could not clean autoexec: {e}")
                 return False, logs
-        logs.append("[INFO] Original autoexec was already clean.")
+        logs.append("[ALREADY] autoexec.cfg has no block from this app and there is no backup to restore; nothing was changed.")
         return True, logs
 
 def set_framerate_limit(cfg_dir: str, fps: int) -> Tuple[bool, List[str]]:
@@ -451,6 +485,9 @@ def set_framerate_limit(cfg_dir: str, fps: int) -> Tuple[bool, List[str]]:
             pass
 
     val_str = str(fps) if fps > 0 else "0"
+    current = re.findall(r'^\s*fps_max\s+"?(\d+)"?', content, re.MULTILINE)
+    if current and all(c == val_str for c in current):
+        return True, [f"[ALREADY] autoexec.cfg already sets fps_max {val_str}; nothing was changed."]
     if re.search(r'^\s*fps_max\s+"?\d+"?', content, re.MULTILINE):
         content = re.sub(r'^\s*fps_max\s+"?\d+"?.*$', f"fps_max {val_str}                                   // Framerate limit", content, flags=re.MULTILINE)
     else:
@@ -519,6 +556,9 @@ def restore_previous_power_plan(cfg: Dict[str, Any]) -> List[str]:
         logs.append("[INFO] No earlier power plan was recorded, so Balanced was set.")
         return logs
     try:
+        if get_active_power_plan()[1].lower() == guid.lower():
+            cfg.pop("power_plan_before_app", None)
+            return [f"[ALREADY] Your power plan is already your previous plan ({rec.get('name') or guid}); nothing was changed."]
         res = subprocess.run(["powercfg", "/setactive", guid], capture_output=True, text=True,
                              creationflags=0x08000000)
         if res.returncode == 0:
@@ -549,19 +589,6 @@ def decode_console(data: bytes) -> str:
         return data.decode("utf-8", errors="replace")
 
 
-def run_tool(args: List[str], timeout: int) -> Tuple[Optional[int], str, bool]:
-    """Runs a console tool WITHOUT a shell (so a timeout really stops it). Returns (exit code, output text, timed_out)."""
-    try:
-        res = subprocess.run(args, capture_output=True, timeout=timeout, creationflags=CREATE_NO_WINDOW)
-        return res.returncode, decode_console(res.stdout or b"") + decode_console(res.stderr or b""), False
-    except subprocess.TimeoutExpired:
-        return None, "", True
-    except FileNotFoundError:
-        return None, f"{args[0]} was not found on this PC", False
-    except Exception as e:
-        return None, str(e), False
-
-
 def _power_plan_guids() -> List[str]:
     rc, out, _ = run_tool(["powercfg", "/list"], 15)
     return [g.lower() for g in re.findall(r"[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}", out)] if rc == 0 else []
@@ -573,6 +600,8 @@ def set_power_plan(plan_mode: str) -> List[str]:
     guid = GUID_BALANCED if want_balanced else GUID_HIGH_PERF
     target_name = "Balanced" if want_balanced else "High Performance"
     try:
+        if get_active_power_plan()[1].lower() == guid.lower():
+            return [f"[ALREADY] The power plan is already {target_name}; nothing was changed."]
         if guid.lower() not in _power_plan_guids() and not want_balanced:
             # Many laptops (Modern Standby) hide the High Performance plan. Windows can usually create it again from its built-in id.
             rc, out, _ = run_tool(["powercfg", "/duplicatescheme", GUID_HIGH_PERF], 15)
@@ -728,6 +757,7 @@ def boost_cs2_process() -> Tuple[bool, str]:
             return False, "CS2 is not running yet. Launch CS2 first, then click Boost!"
 
         boosted_count = 0
+        already_high = 0
         access_flags = PROCESS_SET_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION
         for pid in cs2_pids:
             try:
@@ -735,12 +765,16 @@ def boost_cs2_process() -> Tuple[bool, str]:
                 if not handle:
                     handle = ctypes.windll.kernel32.OpenProcess(PROCESS_SET_INFORMATION, False, pid)
                 if handle:
-                    if ctypes.windll.kernel32.SetPriorityClass(handle, HIGH_PRIORITY_CLASS):
+                    if ctypes.windll.kernel32.GetPriorityClass(handle) == HIGH_PRIORITY_CLASS:
+                        already_high += 1
+                    elif ctypes.windll.kernel32.SetPriorityClass(handle, HIGH_PRIORITY_CLASS):
                         boosted_count += 1
                     ctypes.windll.kernel32.CloseHandle(handle)
             except Exception:
                 pass
 
+        if boosted_count == 0 and already_high > 0:
+            return True, "cs2.exe is already at HIGH CPU priority; nothing was changed (it resets when CS2 closes)."
         if boosted_count > 0:
             return True, f"Successfully elevated cs2.exe (PIDs: {boosted_count}) to HIGH CPU priority (resets when CS2 closes)."
         else:
@@ -984,83 +1018,331 @@ def get_drives_info() -> List[Dict[str, Any]]:
                 continue
     return drives
 
-def run_ssd_trim() -> Tuple[bool, List[str]]:
-    """Runs defrag /C /O (sends TRIM signal to all SSDs). Requires Admin."""
-    logs = []
-    if not is_admin():
-        logs.append("[ADMIN REQUIRED] SSD TRIM optimization requires Administrator privileges.")
-        return False, logs
-    logs.append("[TRIM] Running media-specific TRIM optimization (defrag /C /O)...")
-    rc, out, timed_out = run_tool(["defrag", "/C", "/O"], 30 * 60)
-    if timed_out:
-        logs.append("[TRIM ERROR] Windows did not finish TRIM within 30 minutes, so the app stopped waiting.")
-        return False, logs
+REPAIR_TITLES = {"trim": "SSD TRIM", "sfc": "System File Checker (SFC)", "dism": "DISM health restore", "winsxs": "DISM WinSxS clean-up"}
+REPAIR_TAGS = {"trim": "TRIM", "sfc": "SFC", "dism": "DISM", "winsxs": "DISM"}
+REPAIR_LIMIT_MIN = {"trim": 30, "sfc": 60, "dism": 90, "winsxs": 90}
+CBS_LOG = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "Logs", "CBS", "CBS.log")
+DISM_LOG = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "Logs", "DISM", "dism.log")
+
+
+def _minutes(seconds: int) -> str:
+    return f"{seconds // 60} min {seconds % 60} s" if seconds >= 60 else f"{seconds} s"
+
+
+def _verdict_sentence(text: str) -> str:
+    """The tool's own last sentence, without the 'Verification 45% complete.' progress noise."""
+    tail = re.split(r"\d{1,3}(?:[.,]\d)?\s*%\s*complete\.?", text)[-1].strip()
+    tail = re.sub(r"[\[\]=\s]*\d{1,3}(?:[.,]\d)?\s*%[\[\]=\s]*", " ", tail).strip()
+    return tail[-220:]
+
+
+def _cbs_size() -> Optional[int]:
+    try:
+        return os.path.getsize(CBS_LOG)
+    except OSError:
+        return None
+
+
+def parse_sr_lines(lines: List[str]) -> Dict[str, Any]:
+    """What SFC wrote to CBS.log ([SR] lines) during one run. These lines are not translated, so they work on any Windows language."""
+    repairing = 0
+    for l in lines:
+        m = re.search(r"Repairing (\d+) components", l)
+        if m:
+            repairing = max(repairing, int(m.group(1)))
+    return {"verify_complete": any("Verify complete" in l for l in lines),
+            "repair_complete": any("Repair complete" in l for l in lines),
+            "cannot_repair": sum(1 for l in lines if "Cannot repair member file" in l),
+            "repairing": repairing, "lines": len(lines)}
+
+
+def cbs_evidence_since(offset: Optional[int]) -> Optional[Dict[str, Any]]:
+    """Reads only what was added to CBS.log after offset (a size taken before the scan). None when the log cannot be read."""
+    try:
+        size = os.path.getsize(CBS_LOG)
+        start = offset if (offset is not None and size >= offset) else 0       # smaller than before = Windows rotated the log
+        start = max(start, size - 30 * 1024 * 1024)
+        with open(CBS_LOG, "rb") as f:
+            f.seek(start)
+            data = f.read()
+    except OSError:
+        return None
+    return parse_sr_lines([l for l in data.decode("utf-8", errors="replace").splitlines() if "[SR]" in l])
+
+
+def _pct_in(text: str) -> Optional[float]:
+    found = re.findall(r"(\d{1,3}(?:[.,]\d)?)\s*%", text)
+    for raw in reversed(found):
+        try:
+            v = float(raw.replace(",", "."))
+        except ValueError:
+            continue
+        if 0 <= v <= 100:
+            return v
+    return None
+
+
+def run_tool(args: List[str], timeout: int, on_progress=None) -> Tuple[Optional[int], str, bool]:
+    """Runs a console tool WITHOUT a shell (so a timeout really stops it). Returns (exit code, output text, timed_out).
+    With on_progress(percent) the output is read while the tool runs, so the app can show the tool's own 'Verification 45% complete'."""
+    if on_progress is None:
+        try:
+            res = subprocess.run(args, capture_output=True, timeout=timeout, creationflags=CREATE_NO_WINDOW)
+            return res.returncode, decode_console(res.stdout or b"") + decode_console(res.stderr or b""), False
+        except subprocess.TimeoutExpired:
+            return None, "", True
+        except FileNotFoundError:
+            return None, f"{args[0]} was not found on this PC", False
+        except Exception as e:
+            return None, str(e), False
+    try:
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, creationflags=CREATE_NO_WINDOW)
+    except FileNotFoundError:
+        return None, f"{args[0]} was not found on this PC", False
+    except Exception as e:
+        return None, str(e), False
+    buf = bytearray()
+
+    def reader() -> None:
+        last = None
+        try:
+            while True:
+                chunk = proc.stdout.read1(4096)
+                if not chunk:
+                    break
+                buf.extend(chunk)
+                start = max(0, len(buf) - 1200)
+                if b"\x00" in buf[:200] and start % 2:
+                    start += 1                                                  # keep UTF-16 text on a 2-byte boundary
+                pct = _pct_in(decode_console(bytes(buf[start:])))
+                if pct is not None and pct != last:
+                    last = pct
+                    try:
+                        on_progress(pct)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    t = threading.Thread(target=reader, daemon=True, name="tool-output")
+    t.start()
+    try:
+        rc = proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        try:
+            proc.kill()
+            proc.wait(10)
+        except Exception:
+            pass
+        t.join(5)
+        return None, "", True
+    finally:
+        try:
+            if proc.poll() is not None:
+                t.join(10)
+            proc.stdout.close()
+        except Exception:
+            pass
+    return rc, decode_console(bytes(buf)), False
+
+
+_DISM_HELP = {
+    0x800F081F: ("Windows could not find the files it needs to repair itself.", "Connect to the internet, run Windows Update, restart, then try again."),
+    0x800F0906: ("Windows could not download the repair files.", "Check your internet connection and try again."),
+    0x800F0907: ("A policy on this PC blocks Windows from downloading the repair files.", "On a work or school PC, ask your administrator."),
+    0x800F0922: ("Windows could not finish because the system reserved space or a pending update is blocking it.", "Restart the PC, let updates finish, then try again."),
+    0x800F0915: ("The repair source Windows needs is not available.", "Run Windows Update, restart, then try again."),
+    0x800F0831: ("A Windows update package needed for the repair is missing.", "Run Windows Update, restart, then try again."),
+    0x800706BE: ("The Windows servicing service stopped responding.", "Restart the PC and try again."),
+    0x800706BA: ("The Windows servicing service stopped responding.", "Restart the PC and try again."),
+    0x80070005: ("Windows refused access.", "Close the app, start it with 'Relaunch as Administrator' and try again."),
+    740: ("The tool needs Administrator rights.", "Use 'Relaunch as Administrator' and try again."),
+    1726: ("The Windows servicing service stopped responding.", "Restart the PC and try again."),
+    87: ("Windows did not accept the request.", "Restart the PC and try again."),
+}
+
+
+def _result(tool: str, status: str, ok: bool, headline: str, detail: str = "", nxt: str = "", evidence: Optional[List[str]] = None,
+            seconds: int = 0, log_file: str = "") -> Dict[str, Any]:
+    tag = REPAIR_TAGS[tool]
+    ev = list(evidence or [])
+    logs = [f"[INFO] {e}" for e in ev]
+    if status in ("unverified",):
+        logs.append(f"[{tag}] {headline}")
+    elif ok:
+        logs.append(f"[SUCCESS] {headline}")
+    elif status == "admin":
+        logs.append(f"[ADMIN REQUIRED] {headline}")
+    else:
+        logs.append(f"[{tag} ERROR] {headline}")
+    return {"tool": tool, "title": REPAIR_TITLES[tool], "status": status, "ok": ok, "headline": headline, "detail": detail, "next": nxt,
+            "evidence": ev, "seconds": seconds, "log_file": log_file, "logs": logs}
+
+
+def _classify_sfc(rc: Optional[int], out: str, sr: Optional[Dict[str, Any]], seconds: int) -> Dict[str, Any]:
+    text = " ".join(out.split())
+    low = text.lower()
+    ev = []
+    said = _verdict_sentence(text)
+    if said:
+        ev.append(f"Windows said: {said}")
+    ev.append(f"Exit code: {rc}")
+    if sr and sr["verify_complete"]:
+        ev.append(f"CBS.log shows the scan reached its end; {sr['repairing']} component(s) needed repair, {sr['cannot_repair']} file(s) could not be repaired.")
+    elif sr is not None:
+        ev.append("CBS.log has no 'scan finished' line for this run.")
+    ev.append(f"Took {_minutes(seconds)}.")
+    f = dict(seconds=seconds, log_file=CBS_LOG)
+    if rc is None:
+        return _result("sfc", "failed", False, f"Failed running SFC scan: {text}", "Windows did not start the scan.", "Restart the PC and try again.", ev, **f)
+    unfixable_text = "unable to fix" in low or "could not perform the requested operation" in low
+    if "did not find any integrity violations" in low:
+        return _result("sfc", "clean", True, "SFC check complete: Zero system file corruptions detected.",
+                       "Windows checked every protected system file and found nothing wrong. No changes were made.", "", ev, **f)
+    if "successfully repaired them" in low:
+        return _result("sfc", "repaired", True, "SFC check complete: Found and repaired corrupted system files!",
+                       "Windows found damaged system files and replaced them with good copies.",
+                       "Restart the PC so the repaired files are used.", ev, **f)
+    if "pending which requires reboot" in low or "repair pending" in low:
+        return _result("sfc", "reboot", False, "SFC could not run because Windows is waiting for a restart.", "An earlier update or repair has to finish first.",
+                       "Restart the PC, then run SFC again.", ev, **f)
+    if "could not start the repair service" in low:
+        return _result("sfc", "failed", False, "SFC could not start Windows' repair service.", "The scan did not run.",
+                       "Restart the PC and try again.", ev, **f)
+    if unfixable_text:
+        return _result("sfc", "unfixable", False, f"SFC found a problem it could not fix: {said or text[-220:]}",
+                       "Windows found damaged system files but could not replace some of them.",
+                       "Run 'DISM health restore' first, restart, then run SFC again. Details are in the lines marked [SR] in " + CBS_LOG, ev, **f)
+    if rc != 0:
+        return _result("sfc", "failed", False, f"SFC stopped with code {rc}: {text[-220:]}", "The scan did not finish.", "Restart the PC and try again.", ev, **f)
+    if sr and sr["verify_complete"]:                                              # another Windows language: use the untranslated CBS.log lines instead
+        if sr["cannot_repair"] > 0:
+            return _result("sfc", "unfixable", False, f"SFC found a problem it could not fix ({sr['cannot_repair']} file(s)).",
+                           "Windows found damaged system files but could not replace some of them.",
+                           "Run 'DISM health restore' first, restart, then run SFC again. Details are in the lines marked [SR] in " + CBS_LOG, ev, **f)
+        if sr["repairing"] > 0:
+            return _result("sfc", "repaired", True, "SFC check complete: Found and repaired corrupted system files!",
+                           "Windows replaced damaged system files (confirmed from CBS.log).", "Restart the PC so the repaired files are used.", ev, **f)
+        return _result("sfc", "clean", True, "SFC check complete: Zero system file corruptions detected.",
+                       "Confirmed from CBS.log: the scan finished and nothing needed repair.", "", ev, **f)
+    return _result("sfc", "unverified", True, f"SFC finished, but the app could not confirm the result. Windows reported: {said or text[-220:] or 'nothing'}",
+                   "The scan ended without an error code, but its message is in a language the app does not know and CBS.log could not confirm it.",
+                   "To see what SFC found, open " + CBS_LOG + " and look at the lines marked [SR].", ev, **f)
+
+
+def _classify_dism(tool: str, rc: Optional[int], out: str, seconds: int, free_before: Optional[int], free_after: Optional[int]) -> Dict[str, Any]:
+    text = " ".join(out.split())
+    low = text.lower()
+    label = {"dism": "Windows Component Store check and repair", "winsxs": "WinSxS component clean-up"}[tool]
+    ev = []
+    said = _verdict_sentence(text)
+    if said:
+        ev.append(f"Windows said: {said}")
+    code = "none" if rc is None else (f"{rc} (0x{rc & 0xFFFFFFFF:08X})" if rc else "0")
+    ev.append(f"Exit code: {code}")
+    if tool == "winsxs" and free_before is not None and free_after is not None:
+        d = (free_after - free_before) / (1024 ** 3)
+        ev.append(f"Free space on C: before {free_before / (1024 ** 3):.2f} GB, after {free_after / (1024 ** 3):.2f} GB ({'+' if d >= 0 else ''}{d:.2f} GB). DISM does not report how much it freed.")
+    ev.append(f"Took {_minutes(seconds)}.")
+    f = dict(seconds=seconds, log_file=DISM_LOG)
+    if rc is None:
+        return _result(tool, "failed", False, f"{label} failed to start: {text}", "", "Restart the PC and try again.", ev, **f)
+    if rc in (0, 3010):
+        restart = "Restart the PC to finish the changes." if rc == 3010 else ""
+        if tool == "dism":
+            if "was repaired" in low:
+                return _result(tool, "repaired", True, "DISM restore completed: Windows found damage in the Component Store and repaired it.",
+                               "Windows fixed the files that Windows Update and SFC rely on.", (restart + " Run SFC once more to double-check.").strip(), ev, **f)
+            return _result(tool, "clean", True, "DISM restore completed: Windows Component Store is healthy.",
+                           "Windows finished the check with no error. Nothing it could not fix.", restart or "If SFC could not fix files before, run SFC again now.", ev, **f)
+        return _result(tool, "done", True, "DISM WinSxS component cleanup completed successfully.",
+                       "Windows removed older, superseded copies of update files. Nothing it is using was removed.", restart, ev, **f)
+    why, fix = _DISM_HELP.get(rc & 0xFFFFFFFF, _DISM_HELP.get(rc, ("", "")))
+    ev_code = f"0x{rc & 0xFFFFFFFF:08X}"
+    return _result(tool, "failed", False, f"{label} returned code {rc}: {text[-250:]}",
+                   why or f"Windows stopped with error {ev_code}.", fix or f"Restart the PC and try again. Details are in {DISM_LOG}.", ev, **f)
+
+
+def _classify_trim(rc: Optional[int], out: str, seconds: int) -> Dict[str, Any]:
+    text = " ".join(out.split())
+    ev = []
+    trimmed = re.findall(r"(?i)total space trimmed\s*=?\s*([\d.,]+\s*[KMGT]?B)", text)
+    ev.append(f"Windows reported trimming: {', '.join(trimmed)}" if trimmed else "Windows did not state how much was trimmed (normal when the drive was already trimmed).")
+    ev.append(f"Exit code: {rc}")
+    ev.append(f"Took {_minutes(seconds)}.")
+    f = dict(seconds=seconds)
     if rc == 0:
-        logs.append("[SUCCESS] Completed SSD TRIM optimization for all connected volumes.")
-        return True, logs
-    logs.append(f"[TRIM ERROR] defrag returned code {rc}: {out.strip()[-250:]}")
-    return False, logs
+        return _result("trim", "done", True, "Completed SSD TRIM optimization for all connected volumes.",
+                       "Windows optimized each drive in the way that suits it (SSD: TRIM, hard disk: defragment).", "", ev, **f)
+    return _result("trim", "failed", False, f"defrag returned code {rc}: {text[-250:]}", "Windows stopped before finishing.", "Close other disk tools and try again.", ev, **f)
+
+
+def run_repair(tool: str, on_progress=None) -> Dict[str, Any]:
+    """Runs one of the long Windows tools (sfc, dism, winsxs, trim) and returns a plain-language verdict with the evidence behind it.
+    The verdict comes from the tool's own output, its exit code and (for SFC) the untranslated CBS.log lines of this run."""
+    title = REPAIR_TITLES[tool]
+    if not is_admin():
+        return _result(tool, "admin", False, f"{title} requires Administrator privileges.", "", "Use 'Relaunch as Administrator' and try again.")
+    limit = REPAIR_LIMIT_MIN[tool]
+    started = time.time()
+    if tool == "sfc":
+        cbs_before = _cbs_size()
+        args = ["sfc", "/scannow"]
+        note = "[SFC] Scanning Windows protected system files (sfc /scannow). This takes several minutes and can pause for a long time; that is normal."
+    elif tool == "dism":
+        args = ["dism", "/online", "/cleanup-image", "/restorehealth"]
+        note = "[DISM] Checking and repairing the Windows Component Store (dism /restorehealth). This can take 10-30 minutes and often sits at 20% or 62.3%; that is normal."
+    elif tool == "winsxs":
+        args = ["dism", "/online", "/cleanup-image", "/startcomponentcleanup"]
+        note = "[DISM] Purging superseded Windows update components from WinSxS. This can take several minutes."
+    else:
+        args = ["defrag", "/C", "/O"]
+        note = "[TRIM] Running media-specific TRIM optimization (defrag /C /O)..."
+    free_before = None
+    if tool == "winsxs":
+        try:
+            free_before = shutil.disk_usage(os.environ.get("SystemDrive", "C:") + "\\").free
+        except OSError:
+            pass
+    rc, out, timed_out = run_tool(args, limit * 60, on_progress)
+    seconds = int(time.time() - started)
+    if timed_out:
+        r = _result(tool, "timeout", False, f"{title} did not finish within {limit} minutes, so the app stopped waiting.",
+                    "The scan was stopped by the app.", "Restart the PC and try again.", seconds=seconds)
+    elif tool == "sfc":
+        r = _classify_sfc(rc, out, cbs_evidence_since(cbs_before), seconds)
+    elif tool in ("dism", "winsxs"):
+        free_after = None
+        if tool == "winsxs":
+            try:
+                free_after = shutil.disk_usage(os.environ.get("SystemDrive", "C:") + "\\").free
+            except OSError:
+                pass
+        r = _classify_dism(tool, rc, out, seconds, free_before, free_after)
+    else:
+        r = _classify_trim(rc, out, seconds)
+    r["logs"].insert(0, note)
+    return r
+
+
+def run_ssd_trim() -> Tuple[bool, List[str]]:
+    r = run_repair("trim")
+    return r["ok"], r["logs"]
 
 
 def run_sfc_scan() -> Tuple[bool, List[str]]:
-    """Runs System File Checker (sfc /scannow). Requires Admin."""
-    logs = []
-    if not is_admin():
-        logs.append("[ADMIN REQUIRED] System File Checker (SFC) requires Administrator privileges.")
-        return False, logs
-    logs.append("[SFC] Scanning Windows protected system DLLs (sfc /scannow). Please wait a few minutes...")
-    rc, out, timed_out = run_tool(["sfc", "/scannow"], 60 * 60)
-    if timed_out:
-        logs.append("[SFC ERROR] System File Checker did not finish within 60 minutes, so the app stopped waiting.")
-        return False, logs
-    text = " ".join(out.split())
-    low = text.lower()
-    if rc is None:
-        logs.append(f"[SFC ERROR] Failed running SFC scan: {text}")
-        return False, logs
-    if "did not find any integrity violations" in low:
-        logs.append("[SUCCESS] SFC check complete: Zero system file corruptions detected.")
-        return True, logs
-    if "successfully repaired them" in low:
-        logs.append("[SUCCESS] SFC check complete: Found and repaired corrupted system DLLs!")
-        return True, logs
-    if "unable to fix" in low or "could not perform the requested operation" in low:
-        logs.append(f"[SFC ERROR] SFC found a problem it could not fix: {text[-220:]}")
-        return False, logs
-    if rc != 0:
-        logs.append(f"[SFC ERROR] SFC stopped with code {rc}: {text[-220:]}")
-        return False, logs
-    logs.append(f"[SFC] Finished. Windows reported (message not in a language the app knows): {text[-220:]}")
-    return True, logs
-
-
-def _run_dism(args: List[str], label: str, ok_text: str) -> Tuple[bool, List[str]]:
-    logs: List[str] = []
-    if not is_admin():
-        logs.append(f"[ADMIN REQUIRED] {label} requires Administrator privileges.")
-        return False, logs
-    logs.append(f"[DISM] {label}... Please wait a few minutes.")
-    rc, out, timed_out = run_tool(["dism"] + args, 90 * 60)
-    if timed_out:
-        logs.append(f"[DISM ERROR] {label} did not finish within 90 minutes, so the app stopped waiting.")
-        return False, logs
-    if rc == 0:
-        logs.append(f"[SUCCESS] {ok_text}")
-        return True, logs
-    logs.append(f"[DISM ERROR] {label} returned code {rc}: {' '.join(out.split())[-250:]}")
-    return False, logs
+    r = run_repair("sfc")
+    return r["ok"], r["logs"]
 
 
 def run_dism_restore() -> Tuple[bool, List[str]]:
-    """Runs dism /online /cleanup-image /restorehealth. Requires Admin."""
-    return _run_dism(["/online", "/cleanup-image", "/restorehealth"], "Checking and repairing the Windows Component Store (dism /restorehealth)",
-                     "DISM restore completed: Windows Component Store is healthy.")
+    r = run_repair("dism")
+    return r["ok"], r["logs"]
 
 
 def run_dism_component_cleanup() -> Tuple[bool, List[str]]:
-    """Runs dism /online /cleanup-image /startcomponentcleanup. Requires Admin."""
-    return _run_dism(["/online", "/cleanup-image", "/startcomponentcleanup"], "Purging superseded Windows update components from WinSxS",
-                     "DISM WinSxS component cleanup completed successfully.")
+    r = run_repair("winsxs")
+    return r["ok"], r["logs"]
 
 
 def open_startup_apps() -> Tuple[bool, str]:
@@ -1773,10 +2055,14 @@ def apply_ze_visual_and_hud_customizer(cfg_dir: str, opts: Dict[str, Any]) -> Di
         if start_marker in existing and end_marker in existing:
             s_idx = existing.index(start_marker)
             e_idx = existing.index(end_marker) + len(end_marker)
-            updated = existing[:s_idx].rstrip() + "\n\n" + block_text + existing[e_idx:].lstrip()
+            before = existing[:s_idx].rstrip()
+            updated = (before + "\n\n" if before else "") + block_text + existing[e_idx:].lstrip()      # no blank lines piling up at the top on every re-apply
         else:
             updated = existing.rstrip() + ("\n\n" if existing.strip() else "") + block_text
 
+        if os.path.exists(autoexec_path) and updated.replace("\r\n", "\n") == existing.replace("\r\n", "\n"):
+            msg = "autoexec.cfg already contains this exact ZE block (same viewmodel, HUD color, keys and telemetry); nothing was changed."
+            return {"success": True, "unchanged": True, "message": msg, "logs": [f"[ALREADY] {msg}"]}
         with open(autoexec_path, "w", encoding="utf-8") as f:
             f.write(updated)
 

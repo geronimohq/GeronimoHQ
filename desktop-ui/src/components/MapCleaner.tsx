@@ -5,7 +5,7 @@ import { Search } from 'lucide-react';
 import { api, on } from '../api';
 import { sfx } from '../sound';
 import { useModal } from './Modal';
-import type { MapRow } from '../types';
+import type { MapRow, MapsNews } from '../types';
 
 type Filter = 'all' | 'temp' | 'sub' | 'assets' | 'dupes';
 const COMMS: [string, string][] = [['gfl', 'GFL'], ['possession', 'Possession (PSE)'], ['rss', 'RSS Revenant'], ['mapeadores_cola', 'Mapeadores / cOLa'], ['net4all', 'Net4All']];
@@ -27,6 +27,8 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(true);
   const openModal = useModal();
   const first = useRef(true);
+  const [news, setNews] = useState<MapsNews | null>(null);
+  useEffect(() => { void api.mapsNews().then(setNews); }, [rows.length]);       // after each scan, so a map subscribed in the meantime stops being "new"
 
   const scan = useCallback((c: string[], r: boolean) => { setBusy(true); void api.mapsScan(c, r).then((x) => { if (!x.ok) setBusy(false); }); }, []);
   useEffect(() => {
@@ -76,7 +78,13 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
       <motion.div className="cut modal brk mc" initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.97, opacity: 0 }}>
         <div className="decal">// maintenance</div><h3 id="mcTitle">CS2 &amp; Zombie Escape custom map cleaner <span className="mono" style={{ fontSize: 11, color: 'var(--amber)', border: '1px solid var(--amber)', padding: '1px 7px', marginLeft: 8, verticalAlign: 'middle' }}>BETA</span></h3>
         <div style={{ color: 'var(--amber)', marginTop: 4, fontWeight: 600 }}>Beta: check carefully before deleting anything. Deleted files cannot be restored by this app.</div>
-        <div style={{ color: 'var(--tx2)', marginTop: 4 }}>Free up space by removing unneeded custom workshop maps. Subscribed server map packs and official Valve maps are detected and protected.</div>
+        <div style={{ color: 'var(--tx2)', marginTop: 4 }}>Free up space by removing unneeded custom workshop maps. Subscribed server map packs and official Valve maps are detected and protected. GFL maps are recognised by GFL&apos;s own Steam collection (GFL uploads its own copy of every map it runs).</div>
+        {news && news.new > 0 && (
+          <div role="status" style={{ border: '1px solid var(--cyan)', background: 'var(--cyan-dim)', borderRadius: 8, padding: '8px 12px', marginTop: 8 }}>
+            <b>GFL added {news.new} new map{news.new === 1 ? '' : 's'} to its collection that you do not have.</b>{' '}
+            To get {news.new === 1 ? 'it' : 'them'}: close this window, open <b>ZE Game Servers</b>, and click <b>Map pack</b> on the GFL server. Press Subscribe on GFL&apos;s collection page and Steam downloads what is missing.
+          </div>
+        )}
         <div className="mcprot"><span className="sect">Protect packs</span>
           {COMMS.map(([id, label]) => <label key={id} className="chk"><input type="checkbox" checked={comms.includes(id)} onChange={() => toggleComm(id)} />{label}</label>)}
           <label className="chk"><input type="checkbox" checked={recent} onChange={toggleRecent} />Active (last 14 days)</label>

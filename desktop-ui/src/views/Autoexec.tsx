@@ -42,15 +42,19 @@ export default function Autoexec() {
   useEffect(load, []);
   const lines = useMemo(() => (st?.text ?? '').split(/\r?\n/), [st]);
 
-  const run = (title: string, fn: () => Promise<{ ok: boolean; error?: string }>) => async () => {
+  /** Success window, or an honest "nothing changed" one when the action found the file already in the wanted state. */
+  const run = (title: string, fn: () => Promise<{ ok: boolean; error?: string; changed?: boolean }>, same?: { title: string; body: string }) => async () => {
     const r = await fn();
-    openModal(r.ok ? { kind: 'ok', label: 'Notification', title } : { kind: 'warn', label: 'Problem', title: 'Not done', body: r.error ?? 'See the log for details.' });
+    openModal(!r.ok ? { kind: 'warn', label: 'Problem', title: 'Not done', body: r.error ?? 'See the log for details.' }
+      : r.changed === false ? { kind: 'ok', label: 'No changes', title: same?.title ?? 'Nothing to change', body: same?.body ?? 'The file already had these settings, so nothing was written.' }
+      : { kind: 'ok', label: 'Notification', title });
     load();
   };
   const confirm = (title: string, body: string, text: string, fn: () => Promise<void>) => { sfx.click(); openModal({ kind: 'q', label: 'Confirm', title, body, confirm: { text, run: fn } }); };
 
   const inject = async () => {
     const r = await api.zeCustomizer({ ze_laser_viewmodel: vm, clean_telemetry_hud: tel, hud_color: hud, duck_key: duck, voice_mute_key: mute });
+    if (r.ok && r.changed === false) { openModal({ kind: 'ok', label: 'No changes', title: 'Already in your autoexec.cfg', body: 'The ZE block with these exact options is already in your autoexec.cfg, so nothing was written. Change an option above if you want a different block.' }); return; }
     setFlash(`Updated at ${new Date().toLocaleTimeString()}: live preview shows the injected block at the bottom.`);
     load();
     setTimeout(() => { if (edRef.current) edRef.current.scrollTop = edRef.current.scrollHeight; }, 500);
@@ -61,6 +65,7 @@ export default function Autoexec() {
   };
   const save = async () => {
     const r = await api.autoexecSave(draft);
+    if (r.ok && r.changed === false) { setEditing(false); setFlash('No changes were made (nothing to save)'); openModal({ kind: 'ok', label: 'No changes', title: 'No changes were made', body: 'The text is identical to your autoexec.cfg, so nothing was saved and your safety backup was left as it is.' }); return; }
     if (r.ok) { setEditing(false); setFlash(`Saved manually at ${new Date().toLocaleTimeString()} (backup created)`); load(); openModal({ kind: 'ok', label: 'Autoexec saved', title: 'Your edits were saved', body: `File: ${r.path}\n\nA safety backup was created as autoexec.cfg.manual_bak.` }); }
     else openModal({ kind: 'warn', label: 'Save error', title: 'Not saved', body: r.error });
   };
@@ -76,11 +81,11 @@ export default function Autoexec() {
         <div className="ptext" style={{ marginBottom: 6 }}>{A.sub}</div>
         <div className="mono" style={{ fontSize: 12, color: 'var(--cyan)', marginBottom: 10 }}>{st?.status ?? ''}</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <button className="btn cut amber pri" disabled={!st?.cfg} title={A.apply_tip} onClick={() => confirm('Apply the low-latency autoexec block?', 'Adds or replaces the app\'s marked performance block in autoexec.cfg. Your other lines are kept, and a backup is made the first time.', 'Apply', run('Autoexec updated', api.autoexecInstall))}>Apply engine autoexec tweaks</button>
-          <button className="btn cut ghost" disabled={!st?.cfg} title={A.revert_tip} onClick={() => confirm('Revert autoexec to the original?', 'Puts back autoexec_backup.cfg (your file from before the app\'s first change). Later edits are lost.', 'Revert', run('Autoexec restored', api.autoexecRestore))}>Revert autoexec to original</button>
+          <button className="btn cut amber pri" disabled={!st?.cfg} title={A.apply_tip} onClick={() => confirm('Apply the low-latency autoexec block?', 'Adds or replaces the app\'s marked performance block in autoexec.cfg. Your other lines are kept, and a backup is made the first time.', 'Apply', run('Autoexec updated', api.autoexecInstall, { title: 'Already applied', body: 'Your autoexec.cfg already has the app\'s performance block exactly as it would be written, so nothing was changed.' }))}>Apply engine autoexec tweaks</button>
+          <button className="btn cut ghost" disabled={!st?.cfg} title={A.revert_tip} onClick={() => confirm('Revert autoexec to the original?', 'Puts back autoexec_backup.cfg (your file from before the app\'s first change). Later edits are lost.', 'Revert', run('Autoexec restored', api.autoexecRestore, { title: 'Nothing to restore', body: 'Your autoexec.cfg already matches the original backup (or has no block from this app and no backup exists), so nothing was changed.' }))}>Revert autoexec to original</button>
           <span style={{ flex: 1 }} />
           <div className="field" style={{ margin: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}><label htmlFor="fps" style={{ margin: 0 }}>FPS limit</label><input id="fps" style={{ width: 80 }} value={fps} onChange={(e) => setFps(e.target.value.replace(/\D/g, ''))} /></div>
-          <button className="btn cut ghost" disabled={!st?.cfg} onClick={() => void run('FPS limit saved', () => api.autoexecFps(Number(fps) || 0))()}>Set</button>
+          <button className="btn cut ghost" disabled={!st?.cfg} onClick={() => void run('FPS limit saved', () => api.autoexecFps(Number(fps) || 0), { title: 'Already set', body: `Your autoexec.cfg already sets fps_max ${Number(fps) || 0}, so nothing was changed.` })()}>Set</button>
         </div>
         <div className="decal" style={{ marginTop: 10, textTransform: 'none', letterSpacing: 0 }}>{A.hint}</div>
       </div>
@@ -104,7 +109,7 @@ export default function Autoexec() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
           <span className="sect">autoexec.cfg</span><span className="decal" style={{ textTransform: 'none', letterSpacing: 0 }}>{editing ? 'Editing active: modify your cfg and click Save changes' : flash}</span>
           <span style={{ flex: 1 }} />
-          <button className="btn cut ghost sm" title={A.edit_tip} onClick={() => { sfx.click(); if (!editing) setDraft(st?.text ?? ''); setEditing(!editing); }}>{editing ? 'Cancel edit' : 'Edit config'}</button>
+          <button className="btn cut ghost sm" title={A.edit_tip} disabled={!!st?.truncated && !editing} onClick={() => { sfx.click(); if (!editing) setDraft(st?.text ?? ''); setEditing(!editing); }}>{editing ? 'Cancel edit' : 'Edit config'}</button>
           {editing && <button className="btn cut ghost sm" title={A.save_tip} onClick={() => void save()}>Save changes</button>}
           <button className="btn cut ghost sm" onClick={() => { sfx.click(); load(); }}>Reload</button>
         </div>

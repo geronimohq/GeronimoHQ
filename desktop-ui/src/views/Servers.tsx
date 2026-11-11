@@ -12,7 +12,7 @@ import MapHelpDialog from '../components/MapHelpDialog';
 import type { AppInfo, Match, SniperStatus, Srv, Status } from '../types';
 
 type GeoMode = 'country' | 'region';
-const mapWarnTip = (s?: Status) => s?.map_wid ? `${s.map} is not on this PC. Click to open its Steam workshop page, press Subscribe, and Steam downloads it. Joining without it fails with "Required map is missing on your client".` : `${s?.map} was not found on this PC and its workshop page is not known. Click to search the workshop for it.`;
+const mapWarnTip = (s?: Status) => s?.map_reupload ? `${s.map} is not among the GFL maps on this PC. GFL uploads its own copy of every map it runs, so it comes from GFL's map collection, not from the mapper's page. Click for how to get it.` : s?.map_wid ? `${s.map} is not on this PC. Click to open its Steam workshop page, press Subscribe, and Steam downloads it. Joining without it fails with "Required map is missing on your client".` : `${s?.map} was not found on this PC and its workshop page is not known. Click to search the workshop for it.`;
 const hasMaps = (s?: Srv) => !!s?.packs?.some((p) => p.kind === 'maps' || p.kind === 'default');
 const hasAssets = (s?: Srv) => !!s?.packs?.some((p) => p.kind === 'assets' || p.kind === 'item');
 const botsMostly = (s?: Status) => !!s && (s.bots ?? 0) >= 3 && (s.bots ?? 0) * 2 >= (s.players ?? 0);
