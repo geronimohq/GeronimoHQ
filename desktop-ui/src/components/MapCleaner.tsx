@@ -8,7 +8,8 @@ import { useModal } from './Modal';
 import type { MapRow, MapsNews } from '../types';
 
 type Filter = 'all' | 'temp' | 'sub' | 'assets' | 'dupes';
-const COMMS: [string, string][] = [['gfl', 'GFL'], ['possession', 'Possession (PSE)'], ['rss', 'RSS Revenant'], ['mapeadores_cola', 'Mapeadores / cOLa'], ['net4all', 'Net4All']];
+const COMMS: [string, string][] = [['gfl', 'GFL']];     // only GFL re-uploads the maps it runs, so only GFL's collection protects maps; 'Active' covers the rest
+const RECENT_DAYS = 30;                                  // keep in step with RECENT_DAYS in custom_map_cleaner.py
 const GB = 1024 ** 3;
 const isTemp = (m: MapRow) => !m.sub && !m.asset && m.workshop;
 const selectable = (m: MapRow) => !m.protected && !m.asset;          // bulk buttons never pick asset packs
@@ -17,7 +18,7 @@ const fmt = (b: number) => (b >= GB ? `${(b / GB).toFixed(2)} GB` : `${(b / 1048
 
 export default function MapCleaner({ onClose }: { onClose: () => void }) {
   const [rows, setRows] = useState<MapRow[]>([]);
-  const [comms, setComms] = useState<string[]>(['gfl', 'possession', 'rss', 'mapeadores_cola', 'net4all']);
+  const [comms, setComms] = useState<string[]>(['gfl']);
   const [recent, setRecent] = useState(true);
   const [allowAssets, setAllowAssets] = useState(false);     // advanced, never remembered: asset packs can only be ticked one by one
   const [filter, setFilter] = useState<Filter>('all');
@@ -78,16 +79,16 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
       <motion.div className="cut modal brk mc" initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.97, opacity: 0 }}>
         <div className="decal">// maintenance</div><h3 id="mcTitle">CS2 &amp; Zombie Escape custom map cleaner <span className="mono" style={{ fontSize: 11, color: 'var(--amber)', border: '1px solid var(--amber)', padding: '1px 7px', marginLeft: 8, verticalAlign: 'middle' }}>BETA</span></h3>
         <div style={{ color: 'var(--amber)', marginTop: 4, fontWeight: 600 }}>Beta: check carefully before deleting anything. Deleted files cannot be restored by this app.</div>
-        <div style={{ color: 'var(--tx2)', marginTop: 4 }}>Free up space by removing unneeded custom workshop maps. Subscribed server map packs and official Valve maps are detected and protected. GFL maps are recognised by GFL&apos;s own Steam collection (GFL uploads its own copy of every map it runs).</div>
+        <div style={{ color: 'var(--tx2)', marginTop: 4 }}>Free up space by removing unneeded custom workshop maps. Official Valve maps, server asset packs, GFL&apos;s maps and maps you played in the last {RECENT_DAYS} days are protected. GFL maps are recognised by GFL&apos;s own Steam collection (GFL uploads its own copy of every map it runs).</div>
         {news && news.new > 0 && (
           <div role="status" style={{ border: '1px solid var(--cyan)', background: 'var(--cyan-dim)', borderRadius: 8, padding: '8px 12px', marginTop: 8 }}>
             <b>GFL added {news.new} new map{news.new === 1 ? '' : 's'} to its collection that you do not have.</b>{' '}
             To get {news.new === 1 ? 'it' : 'them'}: close this window, open <b>ZE Game Servers</b>, and click <b>Map pack</b> on the GFL server. Press Subscribe on GFL&apos;s collection page and Steam downloads what is missing.
           </div>
         )}
-        <div className="mcprot"><span className="sect">Protect packs</span>
+        <div className="mcprot"><span className="sect">Protected Maps</span>
           {COMMS.map(([id, label]) => <label key={id} className="chk"><input type="checkbox" checked={comms.includes(id)} onChange={() => toggleComm(id)} />{label}</label>)}
-          <label className="chk"><input type="checkbox" checked={recent} onChange={toggleRecent} />Active (last 14 days)</label>
+          <label className="chk"><input type="checkbox" checked={recent} onChange={toggleRecent} />Active (last {RECENT_DAYS} days)</label>
           <label className="chk" title="Advanced. Lets you tick server asset packs (models, sounds) to delete them. Servers need these to join."><input type="checkbox" checked={allowAssets} onChange={toggleAssets} />Allow deleting server asset packs (advanced)</label></div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', margin: '10px 0' }}>
           <div className="seg" role="group" aria-label="Filter">

@@ -12,7 +12,8 @@ import {
   type PlayerEntry 
 } from '../utils/serverQuery';
 import { ServerGeoDemographics } from './ServerGeoDemographics';
-import { getMapTierAndMapper } from '../data/zeMapTiers';
+import { applyResolvedMapper, getMapTierAndMapper } from '../data/zeMapTiers';
+import { collectionUrl, mapWorkshopUrl, resolvedMapper, useMapWorkshop } from '../utils/mapWorkshop';
 import { getDisplayTotals } from '../utils/playerTotals';
 import { 
   Play, 
@@ -64,6 +65,8 @@ const dispatchSteamProtocol = (url: string) => {
 };
 
 export const ServerRadarPreview: React.FC = () => {
+  // Workshop page + creator of the maps in play (found at build time) and each server's Steam map collections
+  const workshop = useMapWorkshop();
   const [selectedTab, setSelectedTab] = useState<PrimaryTab>('global');
   const [selectedChinaFilter, setSelectedChinaFilter] = useState<ChinaSubFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -319,7 +322,8 @@ export const ServerRadarPreview: React.FC = () => {
   const gflMapStart = getMapStartTime('gfl', gflMap, gflLive?.map_start_time);
   const gflMapElapsed = Math.max(0, nowSec - gflMapStart);
   const gflRegionalPing = getEstimatedRegionalPing(gflServer.region);
-  const gflMapTier = useMemo(() => getMapTierAndMapper(gflMap), [gflMap]);
+  const gflMapTier = useMemo(() => applyResolvedMapper(getMapTierAndMapper(gflMap), resolvedMapper(gflMap, workshop)), [gflMap, workshop]);
+  const gflCollection = workshop.collections['gfl']?.[0];
 
   const gflTotalPlayers = useMemo(() => {
     if (!gflLive?.players) return 62;
@@ -498,6 +502,18 @@ export const ServerRadarPreview: React.FC = () => {
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
+          {gflCollection && (
+            <a
+              href={collectionUrl(gflCollection.id)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-code text-slate-400 hover:text-cyan-300 flex items-center gap-1.5 transition-colors px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 shadow-sm"
+              title="GFL uploads its own copy of every map it runs: subscribe to GFL's Steam map pack"
+            >
+              <span>Map pack</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
           {gflServer.discord && (
             <a
               href={gflServer.discord}
@@ -514,7 +530,7 @@ export const ServerRadarPreview: React.FC = () => {
 
         {/* Server Header: Badges & Title (Positioned cleanly above columns so columns start flush beneath it) */}
         <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2 flex-wrap sm:pr-48">
+          <div className="flex items-center gap-2 mb-2 flex-wrap sm:pr-72">
             <span className="px-2 py-0.5 text-[10px] font-code rounded bg-amber-950/90 text-amber-300 border border-amber-500/60 font-bold flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-amber-400" />
               PREMIER FEATURED SERVER
@@ -563,9 +579,15 @@ export const ServerRadarPreview: React.FC = () => {
                   <div className="flex items-center gap-1.5 text-slate-300 flex-wrap">
                     <MapPin className="w-3.5 h-3.5 text-fuchsia-400 flex-shrink-0" />
                     <span className="text-slate-400">Map:</span>
-                    <strong className="text-sm font-bold text-fuchsia-300 truncate max-w-[200px]">
+                    <a
+                      href={mapWorkshopUrl(gflMap, workshop)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-bold text-fuchsia-300 hover:text-fuchsia-200 hover:underline truncate max-w-[200px]"
+                      title={`Open ${gflMap} on the Steam Workshop ↗`}
+                    >
                       {gflMap}
-                    </strong>
+                    </a>
                     {/* Map Difficulty Tier Badge */}
                     <span className={`px-2 py-0.5 rounded text-[10px] font-code font-bold border ${gflMapTier.colorClass}`} title={`Difficulty: ${gflMapTier.tierLabel}`}>
                       {gflMapTier.badge}
@@ -583,11 +605,11 @@ export const ServerRadarPreview: React.FC = () => {
                         </span>
                       )}
                       <a
-                        href={`https://steamcommunity.com/workshop/browse/?appid=730&searchtext=${encodeURIComponent((gflMap || 'ze_escape').replace(/(_p|_v\d+.*)/, ''))}`}
+                        href={mapWorkshopUrl(gflMap, workshop)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-slate-400 hover:text-amber-300 ml-0.5 transition-colors"
-                        title={`Search ${gflMapTier.mapper}'s map on Steam Workshop ↗`}
+                        title={`Open ${gflMap} (by ${gflMapTier.mapper}) on the Steam Workshop ↗`}
                       >
                         <ExternalLink className="w-2.5 h-2.5" />
                       </a>
@@ -965,7 +987,8 @@ export const ServerRadarPreview: React.FC = () => {
           const currPlayersNum = Math.max(0, currPlayersRaw - botsNum);
           const mostlyBots = botsNum >= 3 && botsNum * 2 >= currPlayersRaw;
           const serverPlayerNames = liveInfo?.players_list?.map((p) => p.name) || [];
-          const commMapTier = getMapTierAndMapper(currentMap);
+          const commMapTier = applyResolvedMapper(getMapTierAndMapper(currentMap), resolvedMapper(currentMap, workshop));
+          const mapCollections = workshop.collections[server.id] ?? [];
 
           return (
             <div
@@ -996,16 +1019,6 @@ export const ServerRadarPreview: React.FC = () => {
 
                   {/* External Community Links */}
                   <div className="flex items-center gap-2">
-                    {server.discord && (
-                      <a
-                        href={server.discord}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-code text-[#94A39E] hover:text-[#00F0FF] flex items-center gap-1 transition-colors"
-                      >
-                        Discord <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
                     {server.website && (
                       <a
                         href={server.website}
@@ -1051,11 +1064,24 @@ export const ServerRadarPreview: React.FC = () => {
                     <span className={`px-2 py-0.5 rounded text-[10px] font-code font-bold border backdrop-blur-md ${commMapTier.colorClass}`} title={`Difficulty: ${commMapTier.tierLabel}`}>
                       {commMapTier.badge}
                     </span>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center justify-end flex-wrap gap-1.5">
                       <span className="text-[#00F0FF] text-[10px] font-code font-bold bg-[#070B09]/80 backdrop-blur-md px-2 py-0.5 rounded border border-[#00F0FF]/40 flex items-center gap-1">
                         <Clock className="w-2.5 h-2.5 text-[#00F0FF]" />
                         {formatMapElapsed(mapDuration)}
                       </span>
+                      {mapCollections.map((c, i) => (
+                        <a
+                          key={c.id}
+                          href={collectionUrl(c.id)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] font-code px-2 py-0.5 rounded bg-[#070B09]/80 text-[#00F0FF] hover:text-white border border-[#00F0FF]/40 hover:border-[#00F0FF] flex items-center gap-1 backdrop-blur-md transition-colors"
+                          title={`${c.label}: the server's Steam map collection`}
+                        >
+                          <span>{mapCollections.length > 1 ? `Map collection ${i + 1}` : 'Map collection'}</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      ))}
                       <a
                         href={getMap3DViewerUrl(currentMap)}
                         target="_blank"
@@ -1066,15 +1092,33 @@ export const ServerRadarPreview: React.FC = () => {
                         <span>3D</span>
                         <ExternalLink className="w-2.5 h-2.5" />
                       </a>
+                      {server.discord && (
+                        <a
+                          href={server.discord}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] font-code px-2 py-0.5 rounded bg-[#070B09]/80 text-indigo-300 hover:text-white border border-indigo-400/40 hover:border-indigo-300 flex items-center gap-1 backdrop-blur-md transition-colors"
+                          title={`Join the ${server.clusterName} Discord`}
+                        >
+                          <span>Discord</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      )}
                     </div>
                   </div>
 
                   {/* Bottom Overlay: Active Map Name */}
                   <div className="absolute bottom-2 left-2.5 right-2 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-[#FF2A85] flex-shrink-0" />
-                    <span className="font-cyber font-bold text-sm text-white drop-shadow truncate">
+                    <a
+                      href={mapWorkshopUrl(currentMap, workshop)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-cyber font-bold text-sm text-white hover:text-[#FFE135] hover:underline drop-shadow truncate"
+                      title={`Open ${currentMap || 'ze_escape'} on the Steam Workshop ↗`}
+                    >
                       {currentMap || 'ze_escape'}
-                    </span>
+                    </a>
                   </div>
                 </div>
 
@@ -1090,11 +1134,11 @@ export const ServerRadarPreview: React.FC = () => {
                       </span>
                     )}
                     <a
-                      href={`https://steamcommunity.com/workshop/browse/?appid=730&searchtext=${encodeURIComponent((currentMap || 'ze_escape').replace(/(_p|_v\d+.*)/, ''))}`}
+                      href={mapWorkshopUrl(currentMap, workshop)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[#94A39E] hover:text-[#FFE135] transition-colors ml-0.5"
-                      title={`Search ${commMapTier.mapper}'s map on Steam Workshop ↗`}
+                      title={`Open ${currentMap || 'ze_escape'} (by ${commMapTier.mapper}) on the Steam Workshop ↗`}
                     >
                       <ExternalLink className="w-2.5 h-2.5" />
                     </a>
@@ -1644,7 +1688,7 @@ export const ServerRadarPreview: React.FC = () => {
           >
             <div>
               <div className="flex items-center justify-between text-[11px] font-code text-rose-300 mb-1.5 font-bold">
-                <span>⚡ LASER JUMP TRAINER</span>
+                <span>⚡ LASER TRAINER</span>
                 <ExternalLink className="w-3.5 h-3.5 text-rose-400 group-hover:translate-x-0.5 transition-transform" />
               </div>
               <h4 className="text-sm font-cyber font-bold text-white group-hover:text-rose-300 transition-colors mb-1">

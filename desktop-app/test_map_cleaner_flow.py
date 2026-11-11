@@ -58,12 +58,12 @@ class ScanAndDeleteFlow(unittest.TestCase):
             return []
         with mock.patch.object(custom_map_cleaner, "scan_custom_maps", side_effect=fake_scan):
             self.assertTrue(self.core.maps_scan(["gfl"], True)["ok"])
-            self.assertTrue(self.core.maps_scan(["gfl", "rss"], False)["ok"])          # arrives mid-scan
-            self.assertTrue(self.core.maps_scan(["possession"], True)["ok"])           # arrives mid-scan, replaces the one before
+            self.assertTrue(self.core.maps_scan(["gfl"], False)["ok"])                 # arrives mid-scan
+            self.assertTrue(self.core.maps_scan([], True)["ok"])                        # arrives mid-scan (GFL tick switched off), replaces the one before
             wait_for(self.events, "job")
             time.sleep(0.5)
         self.assertEqual(seen[0], ({"gfl"}, True))
-        self.assertEqual(seen[-1], ({"possession"}, True))                            # the newest choices were the last scan
+        self.assertEqual(seen[-1], (set(), True))                                    # the newest choices were the last scan
         self.assertLessEqual(len(seen), 2)                                            # the middle request was skipped
 
     def test_delete_rescans_with_current_protection_and_skips_what_is_now_protected(self):
@@ -83,7 +83,7 @@ class ScanAndDeleteFlow(unittest.TestCase):
             done = wait_for(self.events, "maps_deleted")
         self.assertEqual(deleted, ["1"])
         self.assertEqual(done["skipped"], 2)                                           # 2 and 3; id 4 was never listed so it never got this far
-        self.assertEqual(scan.call_args[0][2], {"gfl", "rss"})                        # the choices from the page, not stale ones
+        self.assertEqual(scan.call_args[0][2], {"gfl"})                               # the choices from the page; only GFL is a protection group now, "rss" is ignored
         self.assertTrue(scan.call_args[0][3])
 
 

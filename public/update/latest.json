@@ -1,9 +1,9 @@
 {
-  "version": "2.0.7",
-  "build_date": "2026-11-11",
+  "version": "2.0.8",
+  "build_date": "2026-11-12",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "BA7F52ECB87B900C8AE8A0E29C837A6BD95CB5BBAAE017C3FC6016AA69265B8B",
-  "size": 27454489,
-  "notes": "SFC, DISM and TRIM show live progress and a clear result. Laptop specs no longer show sample data. GFL maps are checked against GFL's own collection, with a new-maps notice. Planet China map link and geo estimate fixed. Save/Apply say when nothing changed.",
-  "signature": "c3ed5e9f6eb28754d80d26e64f27b21de59bfa4cfc1e50fc4119fac8a5651243d8ca8a4cd016cfabbafd5124b39320acef3a1165801ba00d6d6a355601830c0b"
+  "sha256": "94C8C90E131FD157C0C0306BA09407B1A1BE385A68787A1D925A1C7FD5FD4FC3",
+  "size": 27454809,
+  "notes": "Map Cleaner: only GFL protects maps, Active now covers 30 days, server asset lists updated. 'Map collection' wording for non-GFL servers. Wrong mapper credit on ze_atix maps fixed. Website: workshop links and creators for every map.",
+  "signature": "7b7b27592e26cf1d786dea6d2a66838a8f90c4550e15bf988b44f0a16b25f7c1d4a4d397ca1e1a85a8a68a06068beb233f1546a0f57bb29624f372b8c5bf3c0d"
 }

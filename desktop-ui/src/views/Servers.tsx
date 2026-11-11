@@ -14,6 +14,7 @@ import type { AppInfo, Match, SniperStatus, Srv, Status } from '../types';
 type GeoMode = 'country' | 'region';
 const mapWarnTip = (s?: Status) => s?.map_reupload ? `${s.map} is not among the GFL maps on this PC. GFL uploads its own copy of every map it runs, so it comes from GFL's map collection, not from the mapper's page. Click for how to get it.` : s?.map_wid ? `${s.map} is not on this PC. Click to open its Steam workshop page, press Subscribe, and Steam downloads it. Joining without it fails with "Required map is missing on your client".` : `${s?.map} was not found on this PC and its workshop page is not known. Click to search the workshop for it.`;
 const hasMaps = (s?: Srv) => !!s?.packs?.some((p) => p.kind === 'maps' || p.kind === 'default');
+const packName = (id: string) => (id === 'gfl' ? 'Map pack' : 'Map collection');       // GFL re-uploads its maps (a 'pack'); the others only collect the mappers' own items
 const hasAssets = (s?: Srv) => !!s?.packs?.some((p) => p.kind === 'assets' || p.kind === 'item');
 const botsMostly = (s?: Status) => !!s && (s.bots ?? 0) >= 3 && (s.bots ?? 0) * 2 >= (s.players ?? 0);
 
@@ -58,7 +59,7 @@ const Row = memo(function Row({ srv, st, mode, onMode, since, exact, armed, onCo
             : <span className="cell">{st ? '● Offline / not answering' : 'Querying…'}</span>}
         </div>
         <div className="decal" style={{ marginTop: 7 }}>{[srv.cluster || (srv.custom ? 'Custom' : ''), st?.map].filter(Boolean).join(' \u00B7 ')}</div>
-        <div className="links">{st?.map && <button className="lnk" onClick={() => onLink('3d')}>3D map</button>}{st?.map && <button className="lnk" onClick={() => onLink('sound')}>Soundtrack</button>}{srv.discord && <button className="lnk" onClick={() => onLink('discord')}>Discord</button>}{srv.website && <button className="lnk" onClick={() => onLink('portal')}>Portal</button>}{st?.map_missing && <button className="lnk warn" title={mapWarnTip(st)} onClick={() => onGetMap(st)}>&#9888; Map not installed. Get it</button>}{hasMaps(srv) && <button className="lnk" onClick={() => onPack('maps')}>Map pack</button>}{hasAssets(srv) && <button className="lnk" onClick={() => onPack('assets')}>Server assets</button>}{onRemove && <button className="lnk bad" onClick={onRemove}>Remove server</button>}</div>
+        <div className="links">{st?.map && <button className="lnk" onClick={() => onLink('3d')}>3D map</button>}{st?.map && <button className="lnk" onClick={() => onLink('sound')}>Soundtrack</button>}{srv.discord && <button className="lnk" onClick={() => onLink('discord')}>Discord</button>}{srv.website && <button className="lnk" onClick={() => onLink('portal')}>Portal</button>}{st?.map_missing && <button className="lnk warn" title={mapWarnTip(st)} onClick={() => onGetMap(st)}>&#9888; Map not installed. Get it</button>}{hasMaps(srv) && <button className="lnk" onClick={() => onPack('maps')}>{packName(srv.id)}</button>}{hasAssets(srv) && <button className="lnk" onClick={() => onPack('assets')}>Server assets</button>}{onRemove && <button className="lnk bad" onClick={onRemove}>Remove server</button>}</div>
       </div></div>
       <Geo countries={st?.geo?.countries ?? []} regions={st?.geo?.regions ?? []} mode={mode} onMode={onMode} humans={humans} />
       <div className="dock">
@@ -257,7 +258,7 @@ export default function Servers({ info, log, sniper }: { info: AppInfo | null; l
                     <div className="links" style={{ marginTop: 0 }}>
                       <button className="lnk" onClick={() => link(featured, '3d')}>3D map</button>
                       <button className="lnk" onClick={() => link(featured, 'sound')}>Soundtrack</button>
-                      {hasMaps(featured) && <button className="lnk" onClick={() => openPack(featured, 'maps')}>Map pack</button>}
+                      {hasMaps(featured) && <button className="lnk" onClick={() => openPack(featured, 'maps')}>{packName(featured.id)}</button>}
                       {hasAssets(featured) && <button className="lnk" onClick={() => openPack(featured, 'assets')}>Server assets</button>}
                       {featured.discord && <button className="lnk" onClick={() => link(featured, 'discord')}>Discord</button>}
                       {featured.website && <button className="lnk" onClick={() => link(featured, 'portal')}>Portal</button>}

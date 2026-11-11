@@ -212,7 +212,7 @@ class GflReuploads(Base):
         sig = next(iter(custom_map_cleaner.COMMUNITY_SERVER_ROSTERS["gfl"]["signature_maps"]), None)
         if sig:
             self.assertNotEqual(custom_map_cleaner.identify_community_for_map(sig, "42", sig)[0], "gfl")
-        self.assertEqual(custom_map_cleaner.identify_community_for_map("x", "3160448201", "x")[0], "gfl")   # its asset pack still is
+        self.assertEqual(custom_map_cleaner.identify_community_for_map("x", "3793587501", "x")[0], "gfl")   # its asset pack still is
 
 
 class ChinaChecked(Base):
@@ -261,20 +261,20 @@ class ExactIds(Base):
 
 class AssetItems(Base):
     def test_single_asset_items_are_listed_protected_and_openable(self):
-        for sid, wid in (("gfl", "3160448201"), ("mapeadores", "3157469866"), ("net4all", "3161970271"), ("cola", "3304608958")):
+        for sid, wid in (("gfl", "3793587501"), ("mapeadores", "3157469866"), ("net4all", "3161970271"), ("cola", "3304608958")):
             self.assertIn(wid, [e["id"] for e in wc.entries_for(sid) if e["kind"] == "item"])
-        self.assertTrue({"3160448201", "3157469866", "3161970271", "3304608958", "3535955403", "3698341219", "3333820862"} <= wc.asset_ids())
+        self.assertTrue({"3793587501", "3157469866", "3161970271", "3304608958", "3535955403", "3698341219", "3333820862"} <= wc.asset_ids())
         core = core_service.Core()
         with mock.patch.object(core, "open_url", return_value=True) as ou, mock.patch.object(core, "installed_maps", return_value={"ids": set()}):
-            self.assertTrue(core.collection_open("3160448201")["ok"])
-            ou.assert_called_once_with("steam://url/CommunityFilePage/3160448201")
+            self.assertTrue(core.collection_open("3793587501")["ok"])
+            ou.assert_called_once_with("steam://url/CommunityFilePage/3793587501")
 
     def test_size_of_a_single_asset_item_is_its_own_size(self):
-        details = {"response": {"publishedfiledetails": [{"publishedfileid": "3160448201", "result": 1, "file_size": "1000"}]}}
+        details = {"response": {"publishedfiledetails": [{"publishedfileid": "3793587501", "result": 1, "file_size": "1000"}]}}
         with mock.patch.object(wc.urllib.request, "urlopen", return_value=reply(details)):
-            r = wc.size_of_missing("3160448201", set())
+            r = wc.size_of_missing("3793587501", set())
         self.assertEqual((r["missing"], r["bytes"]), (1, 1000))
-        self.assertEqual(wc.size_of_missing("3160448201", {"3160448201"})["missing"], 0)
+        self.assertEqual(wc.size_of_missing("3793587501", {"3793587501"})["missing"], 0)
 
     def test_an_asset_pack_is_deleted_only_when_the_user_allowed_it(self):
         with tempfile.TemporaryDirectory() as steam:
@@ -319,6 +319,51 @@ class CleanerProtection(Base):
         for scan in (only_cola, only_net, nothing):
             self.assertTrue(scan["1000004"]["is_server_asset"] and scan["1000004"]["is_protected"])
         self.assertEqual(nothing["1000004"]["name"], "Some server assets")
+
+
+class CleanerGflOnlyAndAssetLists(Base):
+    """Only GFL's own collection protects maps now; 'Active' covers the last 30 days; the owner's server asset lists are always protected."""
+
+    ASSETS = {
+        "gfl": {"3793587501"}, "possession": {"3535955403", "3698341219", "3333820862"},
+        "rss": {"3782730321", "3782731016", "3782731693", "3782732358"}, "net4all": {"3161970271"},
+        "mapeadores": {"3157469866"}, "cola": {"3304608958"},
+    }
+    RETIRED = {"3160448201", "3075687337", "3076940469", "3103181471"}
+
+    def test_settings_only_know_gfl_whatever_an_old_config_holds(self):
+        core = core_service.Core()
+        core.config["cleaner_protected_comms"] = ["gfl", "possession", "rss", "mapeadores_cola", "net4all"]
+        self.assertEqual(core.maps_settings()["communities"], ["gfl"])
+        core.config["cleaner_protected_comms"] = ["possession", "rss"]
+        self.assertEqual(core.maps_settings()["communities"], [])
+
+    def test_every_listed_asset_pack_is_an_asset_and_retired_ones_are_not(self):
+        for sid, ids in self.ASSETS.items():
+            for wid in ids:
+                self.assertTrue(custom_map_cleaner.is_asset_pack_or_custom("x", wid, "")[0], (sid, wid))
+        for wid in self.RETIRED:
+            self.assertNotIn(wid, custom_map_cleaner.KNOWN_SERVER_ASSETS)
+            self.assertFalse(custom_map_cleaner.is_asset_pack_or_custom("x", wid, "ze_some_map")[0], wid)
+
+    def test_recent_window_is_30_days_and_other_servers_do_not_protect(self):
+        import time
+        self.assertEqual(custom_map_cleaner.RECENT_DAYS, 30)
+        with tempfile.TemporaryDirectory() as steam:
+            ws = os.path.join(steam, "steamapps", "workshop", "content", "730")
+            for wid, days in (("2000001", 29), ("2000002", 31), ("2000003", 100)):
+                os.makedirs(os.path.join(ws, wid))
+                f = os.path.join(ws, wid, wid + ".vpk")
+                open(f, "wb").write(b"x" * 4000)
+                open(os.path.join(ws, wid, "publish_data.txt"), "w").write('"publish_data"\n{\n\t"title"\t\t"ze_map_%s"\n}\n' % wid)
+                t = time.time() - days * 86400
+                os.utime(f, (t, t)); os.utime(os.path.join(ws, wid), (t, t)); os.utime(os.path.join(ws, wid, "publish_data.txt"), (t, t))
+            member = {"2000003": ["possession"]}                      # in the PSE collection, but PSE no longer protects
+            with mock.patch.object(steam_paths, "steam_libraries", return_value=[steam]),                     mock.patch.object(wc, "communities_of", side_effect=lambda w: member.get(w, [])),                     mock.patch.object(wc, "asset_ids", return_value=set()):
+                rows = {i["id"]: i for i in custom_map_cleaner.scan_custom_maps(steam, None, None, True)}
+        self.assertTrue(rows["2000001"]["is_protected"])               # played 29 days ago: Active
+        self.assertFalse(rows["2000002"]["is_protected"])              # 31 days: not active
+        self.assertFalse(rows["2000003"]["is_protected"])              # PSE collection member, old: deletable
 
 
 if __name__ == "__main__":

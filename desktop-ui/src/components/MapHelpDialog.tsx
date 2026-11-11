@@ -8,7 +8,7 @@ import type { MapHelp, PackSize } from '../types';
 const fmtGb = (b: number) => (b >= 1e9 ? `${(b / 1e9).toFixed(b >= 1e10 ? 0 : 1)} GB` : `${Math.max(1, Math.round(b / 1e6))} MB`);
 const KIND: Record<string, string> = { maps: 'Map list', default: 'Default map', assets: 'Server assets (collection)', item: 'Server asset pack' };
 
-/** What to do about a map you do not have, or how to get a server's whole map pack: the one map (small), or the server's Steam collections. */
+/** What to do about a map you do not have, or how to get a server's whole map pack (GFL) or map collection (the others): the one map (small), or the server's Steam collections. */
 export default function MapHelpDialog({ sid, name, map, wid, mode, onClose, log }: { sid: string; name: string; map: string; wid: string; mode: 'maps' | 'assets'; onClose: () => void; log: (tag: string, msg: string) => void }) {
   const [help, setHelp] = useState<MapHelp | null>(null);
   const [sizes, setSizes] = useState<Record<string, PackSize>>({});
@@ -35,7 +35,7 @@ export default function MapHelpDialog({ sid, name, map, wid, mode, onClose, log 
   return createPortal(
     <motion.div className="scrim on" role="dialog" aria-modal="true" aria-labelledby="mhTitle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div className="cut modal brk mc" style={{ width: 'min(680px,100%)' }} initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }}>
-        <div className="decal">{map ? 'Map not installed' : mode === 'assets' ? 'Server assets' : 'Map pack'}</div>
+        <div className="decal">{map ? 'Map not installed' : mode === 'assets' ? 'Server assets' : sid === 'gfl' ? 'Map pack' : 'Map collection'}</div>
         <h3 id="mhTitle">{map ? map : name}</h3>
         {map && <div className="decal" style={{ margin: '4px 0 10px', textTransform: 'none', letterSpacing: 0, lineHeight: 1.5 }}>
           {name} is playing <b>{map}</b> and it is not on this PC. You can still join: CS2 then asks to download just this map. Or get it first, in one of these ways.

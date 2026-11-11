@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getLastTelemetry, TELEMETRY_EVENT, type LiveTelemetryPayload } from '../utils/serverQuery';
-import { getDisplayTotals, type DisplayTotals } from '../utils/playerTotals';
 import { 
   Radio, 
   Cpu, 
@@ -12,6 +10,7 @@ import {
   Sparkles,
   PhoneCall,
   Activity,
+  Smile,
   Menu,
   X
 } from 'lucide-react';
@@ -45,14 +44,6 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
   const isBanana = theme === 'banana';
   const [timeStr, setTimeStr] = useState<string>('');
   const [activeSection, setActiveSection] = useState<string>('hero-stage');
-  // AUDIT: real server count (was the fixed text "6 CLUSTERS ... ONLINE"). Uses the data the
-  // server radar already loads; no extra backend requests.
-  const [serverTotals, setServerTotals] = useState<DisplayTotals | null>(() => getDisplayTotals(getLastTelemetry(), Date.now()));
-  useEffect(() => {
-    const onData = (e: Event) => setServerTotals(getDisplayTotals((e as CustomEvent<LiveTelemetryPayload>).detail, Date.now()));
-    window.addEventListener(TELEMETRY_EVENT, onData);
-    return () => window.removeEventListener(TELEMETRY_EVENT, onData);
-  }, []);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -330,19 +321,21 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             </span>
           </button>
 
-          {/* Pill 3: Live ZE Cluster Status */}
+          {/* Pill 3: Vibes. Deliberately useless and not a number that is shown elsewhere on the page
+              (the server counts live in the ZE servers section). Same pill size as the others, so it cannot
+              push ROAMER or LOCAL around; text and colours follow the active theme. */}
           <div
             className="hidden sm:flex hud-data-pill justify-between text-[#94A39E]"
-            title="Zombie Escape servers in the GeronimoHQ list that answered in the last 90 seconds"
+            title="Completely scientific, completely useless"
           >
             <span className="flex items-center gap-1.5 truncate">
-              <Wifi className="w-3.5 h-3.5 text-[#00F0FF] flex-shrink-0" />
+              <Smile className={`w-3.5 h-3.5 flex-shrink-0 ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`} />
               <span className="truncate">
-                SERVERS: <strong className="text-white">{serverTotals ? `${serverTotals.online_servers} / ${serverTotals.total_servers}` : '–'}</strong>
+                VIBES: <strong className="text-white">GOOD</strong>
               </span>
             </span>
-            <span className={`font-bold ${serverTotals && !serverTotals.isSnapshot ? (isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]') : 'text-[#94A39E]'}`}>
-              {serverTotals ? (serverTotals.isSnapshot ? 'SNAPSHOT' : 'ONLINE') : 'LOADING'}
+            <span className={`font-bold flex-shrink-0 ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`}>
+              {isBanana ? 'PEEL-OK' : 'RIBBIT'}
             </span>
           </div>
 

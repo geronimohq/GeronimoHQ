@@ -736,8 +736,8 @@ export const ZE_MAP_TIERS_REGISTRY: Record<
     tierLabel: 'Warmup',
     badge: '🟢 T1 Warmup',
     colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
-    mapper: 'Nipper',
-    isHallOfFame: true,
+    mapper: 'Source 2 Zombie Escape',
+    isHallOfFame: false,
   },
   'zm_dust_v3': {
     tier: 1,
@@ -784,8 +784,8 @@ export const ZE_MAP_TIERS_REGISTRY: Record<
     tierLabel: 'Warmup',
     badge: '🟢 T1 Warmup',
     colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]',
-    mapper: 'Nipper',
-    isHallOfFame: true,
+    mapper: 'Source 2 Zombie Escape',
+    isHallOfFame: false,
   },
   'ze_jurassicpark': {
     tier: 1,
@@ -905,9 +905,6 @@ function getMapTierAndMapperRaw(mapName?: string): MapTierData {
     if (c.includes('deadcore')) {
       return { mapper: 'Airvulpes', isHoF: true, tier: 5, tierLabel: 'Nightmare', badge: '🔥 T5 Nightmare', colorClass: 'bg-orange-950/90 text-orange-300 border-orange-500/60 shadow-[0_0_10px_rgba(249,115,22,0.3)]' };
     }
-    if (c.includes('atix')) {
-      return { mapper: 'Nipper', isHoF: true, tier: 1, tierLabel: 'Warmup', badge: '🟢 T1 Warmup', colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]' };
-    }
     if (c.startsWith('zm_') || c.includes('warmup') || c.includes('infection')) {
       return { mapper: 'Nipper / Dave J.', isHoF: false, tier: 1, tierLabel: 'Warmup', badge: '🟢 T1 Warmup', colorClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.25)]' };
     }
@@ -1012,6 +1009,7 @@ const HOF_MAPPERS = /Kuroki|ViSral|Hannibal|Luffaren|Airvulpes|Clown|Kaemon|Nipp
  * comes first from the S2ZE / Steam Workshop catalog (the workshop author of that exact map), because the
  * hand-typed registry and the keyword guesses were often wrong or only a generic label.
  * Order: catalog person -> curated registry name -> catalog generic label -> "Mapper not listed" (never a made-up name).
+ * The page then replaces "Mapper not listed" with the map's workshop creator when the build found one (applyResolvedMapper).
  */
 export function getMapTierAndMapper(mapName?: string): MapTierData {
   const base = getMapTierAndMapperRaw(mapName);
@@ -1019,8 +1017,27 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
   if (exact && exact !== S2ZE_GENERIC) {
     return { ...base, mapper: exact, isHallOfFameMapper: HOF_MAPPERS.test(exact) };
   }
-  if (PLACEHOLDER_MAPPERS.has(base.mapper)) {
-    return { ...base, mapper: exact === S2ZE_GENERIC ? S2ZE_GENERIC : 'Mapper not listed', isHallOfFameMapper: false };
+  if (exact === S2ZE_GENERIC) {
+    // The catalog only says the CS2 port is by the Source 2 Zombie Escape team. A hand-typed registry entry for this exact
+    // map may name the original author, but a keyword/substring guess (e.g. "atix" -> Nipper) is not evidence.
+    const c = (mapName || '').trim().toLowerCase();
+    const st = c.replace(/_(?:p|v\d+[\w]*|[a-z]\d+[\w]*|rc\d+|beta\d*|final|test)$/i, '');
+    const curated = ZE_MAP_TIERS_REGISTRY[c] || ZE_MAP_TIERS_REGISTRY[st];
+    if (!curated) return { ...base, mapper: S2ZE_GENERIC, isHallOfFameMapper: false };
   }
-  return base;
+  if (PLACEHOLDER_MAPPERS.has(base.mapper)) {
+    return { ...base, mapper: exact === S2ZE_GENERIC ? S2ZE_GENERIC : MAPPER_NOT_LISTED, isHallOfFameMapper: false };
+  }
+  return base.mapper ? base : { ...base, mapper: MAPPER_NOT_LISTED };       // never an empty "by:" pill
+}
+
+export const MAPPER_NOT_LISTED = 'Mapper not listed';
+
+/**
+ * Fills "Mapper not listed" from the workshop creator that scripts/resolve_workshop_maps.py found for this exact map
+ * (see src/utils/mapWorkshop.ts). A mapper the catalog or the curated registry already names is never replaced.
+ */
+export function applyResolvedMapper(tier: MapTierData, resolved?: string): MapTierData {
+  if (!resolved || (tier.mapper && tier.mapper !== MAPPER_NOT_LISTED)) return tier;
+  return { ...tier, mapper: resolved, isHallOfFameMapper: HOF_MAPPERS.test(resolved) };
 }

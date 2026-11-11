@@ -133,7 +133,7 @@ class Core:
 
     @staticmethod
     def _packs(sid: str) -> List[Dict[str, str]]:
-        """This server's own workshop collections (map list, default map, assets); the page shows a Map pack link when there are any."""
+        """This server's own workshop collections (map list, default map, assets); the page shows a Map pack (GFL) or Map collection (other servers) link when there are any."""
         import workshop_collections
         own = workshop_collections.load_config()["servers"].get(sid, [])
         return [{"id": e["id"], "label": e["label"], "kind": e["kind"]} for e in own]
@@ -271,7 +271,7 @@ class Core:
             return None
 
     def map_help(self, sid: str, map_name: str = "", wid: str = "", mode: str = "") -> Dict[str, Any]:
-        """Everything the 'Map not installed' / 'Map pack' dialog shows: the single map (small) and this server's collections with how many
+        """Everything the 'Map not installed' / 'Map pack' / 'Map collection' dialog shows: the single map (small) and this server's collections with how many
         of their items are already installed. Network failures fall back to the snapshot shipped with the app."""
         import workshop_collections
         installed = self.installed_maps()["ids"]
@@ -940,7 +940,7 @@ class Core:
                 pass
 
     # ---------- custom map cleaner ----------
-    COMMUNITIES = ("gfl", "possession", "rss", "mapeadores_cola", "net4all")
+    COMMUNITIES = ("gfl",)          # only GFL (it re-uploads every map it runs) is protected by its collection; "Active" covers the maps you play elsewhere
 
     def maps_settings(self) -> Dict[str, Any]:
         comms = self.config.get("cleaner_protected_comms", list(self.COMMUNITIES))
