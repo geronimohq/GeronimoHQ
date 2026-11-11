@@ -10,7 +10,7 @@ import glob
 import re
 import shutil
 import datetime
-from typing import List, Dict, Any, Tuple, Set
+from typing import List, Dict, Any, Optional, Tuple, Set
 from collections import Counter
 
 # Official Valve CS2 maps that must NEVER be deleted
@@ -139,6 +139,71 @@ def identify_community_for_map(clean_name: str, workshop_id: str, title: str = "
 
 MAP_PREFIXES = ("ze_", "zm_", "de_", "cs_", "ar_", "surf_", "bhop_", "mg_", "jb_")
 
+_VPK_SIGNATURE = 0x55AA1234
+
+
+def vpk_top_dirs(vpk_path: str, max_tree: int = 32 * 1024 * 1024) -> Optional[Set[str]]:
+    """The top-level folders listed in a VPK's directory tree (e.g. {"maps", "materials", "models"}), read from the tree alone: a few
+    hundred KB, never the 100 MB data chunks. None when the file is not a readable VPK (still downloading, damaged, other format)."""
+    import struct
+    try:
+        with open(vpk_path, "rb") as f:
+            head = f.read(12)
+            if len(head) < 12:
+                return None
+            sig, ver, tree_size = struct.unpack("<III", head)
+            if sig != _VPK_SIGNATURE or ver not in (1, 2) or tree_size <= 0 or tree_size > max_tree:
+                return None
+            if ver == 2:
+                f.read(16)                                   # the rest of the v2 header
+            data = f.read(tree_size)
+        if len(data) < tree_size:
+            return None
+        tops: Set[str] = set()
+        pos = 0
+
+        def cstr() -> bytes:
+            nonlocal pos
+            end = data.index(b"\0", pos)
+            out = data[pos:end]
+            pos = end + 1
+            return out
+
+        while True:
+            ext = cstr()
+            if not ext:
+                break
+            while True:
+                folder = cstr()
+                if not folder:
+                    break
+                tops.add(folder.split(b"/")[0].strip().lower().decode("latin-1") or "(root)")
+                while True:
+                    if not cstr():
+                        break
+                    preload = struct.unpack_from("<IH", data, pos)[1]
+                    pos += 4 + 2 + 2 + 4 + 4 + 2 + preload  # crc, preload size, archive index, offset, length, terminator, preload bytes
+        return tops
+    except Exception:
+        return None
+
+
+def workshop_item_kind(folder: str) -> str:
+    """"map" when the item's VPK has a top-level maps/ folder, "assets" when it has content but no maps/ (models, materials, sounds,
+    characters...: a server's asset pack), "unknown" when the VPK cannot be read. Works for any server's pack, listed or not."""
+    try:
+        vpks = sorted(f for f in os.listdir(folder) if f.lower().endswith(".vpk"))
+    except OSError:
+        return "unknown"
+    pick = next((f for f in vpks if f.lower().endswith("_dir.vpk")), vpks[0] if vpks else None)
+    if not pick:
+        return "unknown"
+    tops = vpk_top_dirs(os.path.join(folder, pick))
+    if not tops:
+        return "unknown"
+    return "map" if "maps" in tops else "assets"
+
+
 def is_asset_pack_or_custom(folder: str, workshop_id: str, title: str = "") -> Tuple[bool, str, bool]:
     """
     Checks if a workshop directory contains a Server Asset Pack (models, skins, sounds).
@@ -181,7 +246,12 @@ def is_asset_pack_or_custom(folder: str, workshop_id: str, title: str = "") -> T
             name = f"Server Asset Pack ({title})"
         return True, name, False
 
-    # 3. Binary inspection of VPKs: contains models/materials/sounds, but NO maps or world geometry
+    # 3. Look inside the item itself. This is what makes asset detection dynamic: a pack that is in no list (for example the asset
+    #    packs of Chinese servers a player picked up by joining them) is still recognised, because its VPK has content but no maps/ folder.
+    if workshop_item_kind(folder) == "assets":
+        return True, (f"Server Asset Pack: {title}" if title else f"Server Asset Pack (#{workshop_id})"), False
+
+    # 4. Fallback when the VPK tree cannot be read: scan the first bytes for models/materials/sounds without any maps
     try:
         vpks = [f for f in os.listdir(folder) if f.endswith(".vpk")]
         has_models_or_materials = False
@@ -200,20 +270,7 @@ def is_asset_pack_or_custom(folder: str, workshop_id: str, title: str = "") -> T
                     has_maps = True
         
         if has_models_or_materials and not has_maps:
-            chunk_l = sample_chunk.lower()
-            if b"possession" in chunk_l or b"pse" in chunk_l:
-                name = "Possession ZE (PSE) - Content Pack (Tokyo)"
-            elif b"cola" in chunk_l:
-                name = "cOLa-TeaM ZE - Asset Pack (EU)"
-            elif b"mapeadores" in chunk_l:
-                name = "Mapeadores ZE - Asset Pack (EU)"
-            elif b"rss" in chunk_l:
-                name = "RSS Zombie Escape - Content Pack"
-            elif b"gfl" in chunk_l:
-                name = "GFL Clan ZE - Content Pack"
-            else:
-                name = f"Server Asset Pack (#{workshop_id})"
-            return True, name, False
+            return True, (f"Server Asset Pack: {title}" if title else f"Server Asset Pack (#{workshop_id})"), False
     except Exception:
         pass
 
@@ -358,7 +415,7 @@ def scan_custom_maps(steam_path: str, cs2_dir: str = None, protected_communities
                     pretty = COMMUNITY_SERVER_ROSTERS.get(owner, {}).get("name", "GFL Server Pack")
                     comm_key = owner
                     is_sub = (owner in protected_communities)
-                    status_label = f"⭐ Subscribed ({pretty})" if is_sub else (f"📁 {pretty} (Protection Disabled)" if owner == "gfl" else f"📁 Subscribed ({pretty}), not protected")
+                    status_label = f"⭐ Subscribed ({pretty})" if is_sub else (f"📁 {pretty} (Protection Disabled)" if owner == "gfl" else "📁 Subscribed")
                     status_type = "subscribed" if is_sub else "temp"
                     is_protected = is_sub
                 elif comm_key and comm_key in protected_communities:
@@ -373,7 +430,7 @@ def scan_custom_maps(steam_path: str, cs2_dir: str = None, protected_communities
                     is_protected = True
                 else:
                     is_sub = False
-                    status_label = "📁 Temp Download (Safe Clean)"
+                    status_label = f"📁 Not played in {RECENT_DAYS}+ days" if protect_recent else "📁 Not protected"
                     status_type = "temp"
                     is_protected = False
 

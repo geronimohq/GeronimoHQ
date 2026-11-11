@@ -999,7 +999,7 @@ export const ServerRadarPreview: React.FC = () => {
             >
               <div>
                 {/* 1. Top Badges & External Links Header */}
-                <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="tier-5-badge bg-[#121C18] border border-[#1E2E26] text-[#FFFFFF]">
                       {server.countryCode}
@@ -1017,16 +1017,55 @@ export const ServerRadarPreview: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* External Community Links */}
-                  <div className="flex items-center gap-2">
+                  {/* Time on map + links: Map collection(s) (Steam), 3D map, Discord, Portal. Wraps to a second line instead of overflowing. */}
+                  <div className="flex items-center justify-end flex-wrap gap-1.5 min-w-0">
+                    <span className="text-[#00F0FF] text-[10px] font-code font-bold bg-[#121C18] px-2 py-0.5 rounded border border-[#00F0FF]/40 flex items-center gap-1">
+                      <Clock className="w-2.5 h-2.5 text-[#00F0FF]" />
+                      {formatMapElapsed(mapDuration)}
+                    </span>
+                    {mapCollections.map((c) => (
+                      <a
+                        key={c.id}
+                        href={collectionUrl(c.id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] font-code px-2 py-0.5 rounded bg-[#121C18] text-[#00F0FF] hover:text-white border border-[#00F0FF]/40 hover:border-[#00F0FF] flex items-center gap-1 transition-colors"
+                        title={`${c.label}: the server's Steam map collection`}
+                      >
+                        <span>{c.text}</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    ))}
+                    <a
+                      href={getMap3DViewerUrl(currentMap)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-code px-2 py-0.5 rounded bg-[#121C18] text-[#FFE135] hover:text-white border border-[#FFE135]/40 hover:border-[#FFE135] flex items-center gap-1 transition-colors"
+                      title="Explore 3D Map model on maps.cybo.dev (Powered by cybo)"
+                    >
+                      <span>3D</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                    {server.discord && (
+                      <a
+                        href={server.discord}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] font-code px-2 py-0.5 rounded bg-[#121C18] text-indigo-300 hover:text-white border border-indigo-400/40 hover:border-indigo-300 flex items-center gap-1 transition-colors"
+                        title={`Join the ${server.clusterName} Discord`}
+                      >
+                        <span>Discord</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    )}
                     {server.website && (
                       <a
                         href={server.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[11px] font-code text-[#94A39E] hover:text-[#FFE135] flex items-center gap-1 transition-colors"
+                        className="text-[10px] font-code px-2 py-0.5 rounded bg-[#121C18] text-[#94A39E] hover:text-[#FFE135] border border-[#1E2E26] hover:border-[#FFE135]/50 flex items-center gap-1 transition-colors"
                       >
-                        Portal <ExternalLink className="w-3 h-3" />
+                        Portal <ExternalLink className="w-2.5 h-2.5" />
                       </a>
                     )}
                   </div>
@@ -1059,52 +1098,11 @@ export const ServerRadarPreview: React.FC = () => {
                   {/* Subtle Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#070B09]/95 via-transparent to-[#070B09]/40 pointer-events-none" />
 
-                  {/* Top Overlay: Difficulty & Live Timer */}
+                  {/* Top Overlay: Difficulty */}
                   <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 pointer-events-auto">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-code font-bold border backdrop-blur-md ${commMapTier.colorClass}`} title={`Difficulty: ${commMapTier.tierLabel}`}>
                       {commMapTier.badge}
                     </span>
-                    <div className="flex items-center justify-end flex-wrap gap-1.5">
-                      <span className="text-[#00F0FF] text-[10px] font-code font-bold bg-[#070B09]/80 backdrop-blur-md px-2 py-0.5 rounded border border-[#00F0FF]/40 flex items-center gap-1">
-                        <Clock className="w-2.5 h-2.5 text-[#00F0FF]" />
-                        {formatMapElapsed(mapDuration)}
-                      </span>
-                      {mapCollections.map((c, i) => (
-                        <a
-                          key={c.id}
-                          href={collectionUrl(c.id)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[10px] font-code px-2 py-0.5 rounded bg-[#070B09]/80 text-[#00F0FF] hover:text-white border border-[#00F0FF]/40 hover:border-[#00F0FF] flex items-center gap-1 backdrop-blur-md transition-colors"
-                          title={`${c.label}: the server's Steam map collection`}
-                        >
-                          <span>{mapCollections.length > 1 ? `Map collection ${i + 1}` : 'Map collection'}</span>
-                          <ExternalLink className="w-2.5 h-2.5" />
-                        </a>
-                      ))}
-                      <a
-                        href={getMap3DViewerUrl(currentMap)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[10px] font-code px-2 py-0.5 rounded bg-[#070B09]/80 text-[#FFE135] hover:text-white border border-[#FFE135]/40 hover:border-[#FFE135] flex items-center gap-1 backdrop-blur-md transition-colors"
-                        title="Explore 3D Map model on maps.cybo.dev (Powered by cybo)"
-                      >
-                        <span>3D</span>
-                        <ExternalLink className="w-2.5 h-2.5" />
-                      </a>
-                      {server.discord && (
-                        <a
-                          href={server.discord}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[10px] font-code px-2 py-0.5 rounded bg-[#070B09]/80 text-indigo-300 hover:text-white border border-indigo-400/40 hover:border-indigo-300 flex items-center gap-1 backdrop-blur-md transition-colors"
-                          title={`Join the ${server.clusterName} Discord`}
-                        >
-                          <span>Discord</span>
-                          <ExternalLink className="w-2.5 h-2.5" />
-                        </a>
-                      )}
-                    </div>
                   </div>
 
                   {/* Bottom Overlay: Active Map Name */}
