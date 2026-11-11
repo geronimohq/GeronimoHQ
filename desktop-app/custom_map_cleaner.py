@@ -490,7 +490,7 @@ def is_deletable_map_path(p: str) -> bool:
     return False
 
 
-def delete_custom_maps(map_items: List[Dict[str, Any]]) -> Tuple[int, int, List[str]]:
+def delete_custom_maps(map_items: List[Dict[str, Any]], allow_assets: bool = False) -> Tuple[int, int, List[str]]:
     """
     Safely deletes selected custom map folders or .vpk files.
     Returns (deleted_count, freed_bytes, logs).
@@ -513,7 +513,8 @@ def delete_custom_maps(map_items: List[Dict[str, Any]]) -> Tuple[int, int, List[
         wid = item.get("id", "")
         name = item.get("name", os.path.basename(p))
 
-        if item.get("is_server_asset") or item.get("is_protected") or wid in KNOWN_SERVER_ASSETS:
+        asset_ok = allow_assets and item.get("is_server_asset")          # the user explicitly chose to delete this server asset pack
+        if not asset_ok and (item.get("is_server_asset") or item.get("is_protected") or wid in KNOWN_SERVER_ASSETS):
             logs.append(f"[BLOCKED] Refused deletion of protected Server Asset Pack / Community Map: {name} (#{wid})")
             continue
 
@@ -525,7 +526,7 @@ def delete_custom_maps(map_items: List[Dict[str, Any]]) -> Tuple[int, int, List[
         name = item.get("name", os.path.basename(p))
         wid = item.get("id", "")
         is_sub = item.get("is_subscribed", False)
-        sub_tag = " [SUBSCRIBED SERVER PACK]" if is_sub else " [TEMP]"
+        sub_tag = " [SERVER ASSET PACK]" if asset_ok else " [SUBSCRIBED SERVER PACK]" if is_sub else " [TEMP]"
 
         try:
             if os.path.isdir(p):

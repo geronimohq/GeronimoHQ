@@ -60,6 +60,8 @@ def main():
     cfg = app_collections.validate(json.load(open(os.path.join(ROOT, "desktop-app", "server_collections.json"), encoding="utf-8")))
     children, titles = {}, {}
     for e in app_collections.all_entries(cfg):
+        if e["kind"] == "item":                  # a single asset pack: no children to list
+            continue
         det = post("GetCollectionDetails/v1/", {"collectioncount": 1, "publishedfileids[0]": e["id"]})["collectiondetails"][0]
         ids = [str(c["publishedfileid"]) for c in det.get("children", [])]
         children[e["id"]] = ids

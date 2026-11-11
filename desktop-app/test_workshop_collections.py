@@ -92,7 +92,19 @@ class Counts(Base):
         self.assertEqual([r["id"] for r in rows][:2], ["3688322493", "3667545564"])        # zm map -> the zm collection first
         self.assertEqual((rows[0]["installed"], rows[0]["total"]), (1, 2))
         self.assertEqual((rows[1]["installed"], rows[1]["total"]), (2, 4))
-        self.assertEqual(rows[-1]["kind"], "assets")                                        # the shared asset collection comes last
+        self.assertNotIn("3252070217", [r["id"] for r in rows])                              # the shared asset collection is no longer offered to users
+        self.assertEqual([r["kind"] for r in rows if r["kind"] == "item"], ["item"] * 3)     # Possession's three asset packs are listed, after the maps
+
+    def test_mode_shows_only_maps_or_only_asset_packs(self):
+        with mock.patch.object(wc, "children", return_value=["1", "2"]):
+            maps = wc.state("possession", {"3535955403"}, "", "maps")
+            assets = wc.state("possession", {"3535955403"}, "", "assets")
+        self.assertTrue(maps and all(r["kind"] in ("maps", "default") for r in maps))
+        self.assertTrue(assets and all(r["kind"] == "item" for r in assets))
+        by_id = {r["id"]: r for r in assets}
+        self.assertEqual(by_id["3535955403"]["installed"], 1)                                # a single asset pack: installed or not
+        self.assertEqual(by_id["3698341219"]["installed"], 0)
+        self.assertEqual(by_id["3698341219"]["total"], 1)
 
     def test_size_counts_known_sizes_and_reports_hidden_items(self):
         details = {"response": {"publishedfiledetails": [
@@ -112,9 +124,11 @@ class CoreDialog(Base):
 
     def test_catalog_marks_servers_that_have_collections(self):
         packs = {s["id"]: [p["kind"] for p in s["packs"]] for s in self.core.servers_catalog() if s["group"] == "global"}
-        self.assertEqual(packs["gfl"], ["maps"])
-        self.assertEqual(packs["rss"], ["assets"])
-        self.assertEqual(packs["mapeadores"], ["maps", "default"])
+        self.assertEqual(packs["gfl"], ["maps", "item"])                                    # map pack + its server asset pack
+        self.assertEqual(packs["rss"], ["assets"])                                          # RSS has no map collection, only assets
+        self.assertEqual(packs["mapeadores"], ["maps", "default", "item"])
+        self.assertEqual(packs["possession"].count("item"), 3)
+        self.assertNotIn("maps", packs["rss"])
 
     def test_map_help_returns_the_single_map_and_the_collections(self):
         with mock.patch.object(self.core, "installed_maps", return_value={"ids": {"1"}, "names": set(), "known": True}), \
@@ -174,6 +188,42 @@ class ExactIds(Base):
         with mock.patch.object(core, "installed_maps", return_value={"ids": {wid}, "names": set(), "known": True}), \
                 mock.patch.dict(core.paths, {"cs2_dir": "C:/cs2"}):
             self.assertFalse(core.map_check("ze_surf_facility_p", "rss")["missing"])
+
+
+class AssetItems(Base):
+    def test_single_asset_items_are_listed_protected_and_openable(self):
+        for sid, wid in (("gfl", "3160448201"), ("mapeadores", "3157469866"), ("net4all", "3161970271")):
+            self.assertIn(wid, [e["id"] for e in wc.entries_for(sid) if e["kind"] == "item"])
+        self.assertTrue({"3160448201", "3157469866", "3161970271", "3535955403", "3698341219", "3333820862"} <= wc.asset_ids())
+        core = core_service.Core()
+        with mock.patch.object(core, "open_url", return_value=True) as ou, mock.patch.object(core, "installed_maps", return_value={"ids": set()}):
+            self.assertTrue(core.collection_open("3160448201")["ok"])
+            ou.assert_called_once_with("steam://url/CommunityFilePage/3160448201")
+
+    def test_size_of_a_single_asset_item_is_its_own_size(self):
+        details = {"response": {"publishedfiledetails": [{"publishedfileid": "3160448201", "result": 1, "file_size": "1000"}]}}
+        with mock.patch.object(wc.urllib.request, "urlopen", return_value=reply(details)):
+            r = wc.size_of_missing("3160448201", set())
+        self.assertEqual((r["missing"], r["bytes"]), (1, 1000))
+        self.assertEqual(wc.size_of_missing("3160448201", {"3160448201"})["missing"], 0)
+
+    def test_an_asset_pack_is_deleted_only_when_the_user_allowed_it(self):
+        with tempfile.TemporaryDirectory() as steam:
+            ws = os.path.join(steam, "steamapps", "workshop", "content", "730")
+            os.makedirs(os.path.join(ws, "1000004"))
+            open(os.path.join(ws, "1000004", "1000004.vpk"), "wb").write(b"x" * 4000)
+            core = core_service.Core()
+            core.paths["steam_path"], core.paths["cs2_dir"] = steam, None
+            for allow, gone in ((False, False), (True, True)):
+                with mock.patch.object(steam_paths, "steam_libraries", return_value=[steam]), \
+                        mock.patch.object(wc, "asset_ids", return_value={"1000004"}), mock.patch.object(wc, "communities_of", return_value=[]), \
+                        mock.patch.object(custom_map_cleaner, "is_deletable_map_path", return_value=True):
+                    items = custom_map_cleaner.scan_custom_maps(steam, None, set(), False)
+                    pack = [i for i in items if i["id"] == "1000004"]
+                    self.assertTrue(pack and pack[0]["is_server_asset"])
+                    count, _, logs = custom_map_cleaner.delete_custom_maps(pack, allow_assets=allow)
+                self.assertEqual(count, 1 if gone else 0, logs)
+                self.assertEqual(os.path.exists(os.path.join(ws, "1000004")), not gone)
 
 
 class CleanerProtection(Base):

@@ -252,14 +252,15 @@ class Core:
         except Exception:
             return None
 
-    def map_help(self, sid: str, map_name: str = "", wid: str = "") -> Dict[str, Any]:
+    def map_help(self, sid: str, map_name: str = "", wid: str = "", mode: str = "") -> Dict[str, Any]:
         """Everything the 'Map not installed' / 'Map pack' dialog shows: the single map (small) and this server's collections with how many
         of their items are already installed. Network failures fall back to the snapshot shipped with the app."""
         import workshop_collections
         installed = self.installed_maps()["ids"]
         name = (map_name or "").replace("\\", "/").split("/")[-1].strip().lower()
         prefix = name[:3] if name[:3] in ("ze_", "zm_") else ""
-        cols = workshop_collections.state(sid, installed, prefix)
+        mode = mode if mode in ("maps", "assets") else ("maps" if name else "")      # a missing-map warning only offers map lists; the two links offer one kind each
+        cols = workshop_collections.state(sid, installed, prefix, mode)
         return {"map": ({"name": name, "wid": str(wid) if str(wid).isdigit() else ""} if name else None), "collections": cols}
 
     def collection_size(self, cid: str) -> Dict[str, Any]:
@@ -919,7 +920,7 @@ class Core:
                  "workshop": bool(m.get("is_workshop")), "dupe": bool(m.get("has_duplicate")), "size": int(m.get("size_bytes") or 0),
                  "size_str": m.get("size_str"), "mtime": m.get("mtime_str")} for m in items]
 
-    def maps_delete(self, ids: List[str], communities: Optional[List[str]] = None, protect_recent: Optional[bool] = None) -> Dict[str, Any]:
+    def maps_delete(self, ids: List[str], communities: Optional[List[str]] = None, protect_recent: Optional[bool] = None, allow_assets: bool = False) -> Dict[str, Any]:
         import custom_map_cleaner
         with self._lock:
             wanted = {str(i) for i in (ids or []) if str(i) in getattr(self, "_maps", {})}     # ids the last scan really listed; anything else is refused
@@ -935,11 +936,12 @@ class Core:
             # Re-scan right now with the protection choices the page shows, so what is deleted can never be older or less protected
             # than what the user sees. Protected packs, server assets and anything no longer on disk are skipped.
             fresh = custom_map_cleaner.scan_custom_maps(self.paths.get("steam_path"), self.paths.get("cs2_dir"), comms, bool(protect_recent))
-            items = [m for m in fresh if str(m.get("id")) in wanted and not m.get("is_protected") and not m.get("is_server_asset")]
+            # Server asset packs are only deleted when the user explicitly allowed it for this delete; protected maps never are.
+            items = [m for m in fresh if str(m.get("id")) in wanted and ((m.get("is_server_asset") and allow_assets) or (not m.get("is_protected") and not m.get("is_server_asset")))]
             skipped = len(wanted) - len(items)
             if skipped:
                 self.log(f"[MAP CLEANER] Skipped {skipped} selected item(s): now protected, a server asset pack, or no longer on disk.")
-            count, freed, logs = custom_map_cleaner.delete_custom_maps(items)
+            count, freed, logs = custom_map_cleaner.delete_custom_maps(items, allow_assets=bool(allow_assets))
             for l in logs:
                 self.log(l)
             self.log(f"[MAP CLEANER] Deleted {count} custom maps. Freed {freed / (1024 ** 3):.2f} GB.")

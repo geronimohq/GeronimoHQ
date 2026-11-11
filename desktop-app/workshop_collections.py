@@ -22,7 +22,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REMOTE_URL = "https://geronimohq.com/data/server_collections.json"
 API = "https://api.steampowered.com/ISteamRemoteStorage/"
 MAX_AGE = 24 * 3600
-KINDS = ("maps", "assets", "default")
+KINDS = ("maps", "assets", "default", "item")         # item = one workshop item (a server asset pack), not a collection
+ASSET_KINDS = ("assets", "item")
 _LOCK = threading.Lock()
 
 
@@ -109,11 +110,9 @@ def all_entries(cfg: Optional[Dict[str, Any]] = None) -> List[Dict[str, str]]:
 
 
 def entries_for(server_id: str, cfg: Optional[Dict[str, Any]] = None) -> List[Dict[str, str]]:
-    """This server's own collections, then the shared asset collection."""
+    """This server's own collections and asset packs. (The shared asset collection is not offered to users; it only protects its items in the Map Cleaner.)"""
     cfg = cfg or load_config()
-    own = list(cfg["servers"].get(server_id, []))
-    ids = {e["id"] for e in own}
-    return own + [e for e in cfg.get("assets", []) if e["id"] not in ids]
+    return list(cfg["servers"].get(server_id, []))
 
 
 # ---------------------------------------------------------------- cache
@@ -187,6 +186,8 @@ def refresh_all_async() -> None:
     def run():
         refresh_config()
         for e in all_entries():
+            if e["kind"] == "item":
+                continue
             with _LOCK:
                 hit = _cache()["children"].get(e["id"])
             if not hit or time.time() - float(hit.get("at", 0)) >= MAX_AGE:
@@ -199,7 +200,7 @@ def communities_of(wid: str) -> List[str]:
     """Map Cleaner protection groups whose map collection contains this workshop id (cache or snapshot only, never the network)."""
     out: List[str] = []
     for e in all_entries():
-        if e["kind"] == "assets" or not e["community"] or e["community"] in out:
+        if e["kind"] in ASSET_KINDS or not e["community"] or e["community"] in out:
             continue
         ids = cached_children(e["id"])
         if ids and wid in set(ids):
@@ -223,6 +224,8 @@ def asset_ids() -> Set[str]:
     for e in all_entries():
         if e["kind"] == "assets":
             found.update(cached_children(e["id"]) or [])
+        elif e["kind"] == "item":
+            found.add(e["id"])
     return found
 
 
@@ -230,24 +233,35 @@ def asset_title(wid: str) -> str:
     return str(_snapshot().get("titles", {}).get(wid, ""))
 
 
-def state(server_id: str, installed_ids: Set[str], map_prefix: str = "") -> List[Dict[str, Any]]:
-    """For the dialog: each collection of this server with how many of its items are installed. Matching map prefix first."""
+def _ids_of(entry_id: str) -> Optional[List[str]]:
+    """The workshop ids behind an entry: the item itself for a single asset pack, else the collection's children."""
+    if any(e["id"] == entry_id and e["kind"] == "item" for e in all_entries()):
+        return [entry_id]
+    return children(entry_id, 6.0)
+
+
+def state(server_id: str, installed_ids: Set[str], map_prefix: str = "", mode: str = "") -> List[Dict[str, Any]]:
+    """For the dialog: each collection or asset pack of this server with how many of its items are installed. Matching map prefix first.
+    mode 'maps' = map lists only, 'assets' = asset packs only, '' = everything."""
     out = []
     for e in entries_for(server_id):
-        ids = children(e["id"], 6.0)
+        is_asset = e["kind"] in ASSET_KINDS
+        if (mode == "maps" and is_asset) or (mode == "assets" and not is_asset):
+            continue
+        ids = _ids_of(e["id"])
         row = dict(e)
         row["total"] = len(ids) if ids else 0
         row["installed"] = sum(1 for x in ids if x in installed_ids) if ids else 0
         row["known"] = bool(ids)
         row["match"] = bool(map_prefix and e.get("prefix") and map_prefix.startswith(e["prefix"]))
         out.append(row)
-    out.sort(key=lambda r: (not r["match"], r["kind"] == "assets"))
+    out.sort(key=lambda r: (not r["match"], r["kind"] in ASSET_KINDS))
     return out
 
 
 def size_of_missing(cid: str, installed_ids: Set[str], timeout: float = 15.0) -> Dict[str, Any]:
     """Rough download size of what is not installed yet, from the item details Steam shows publicly. Hidden items count as 'unknown'."""
-    ids = [x for x in (children(cid, 6.0) or []) if x not in installed_ids]
+    ids = [x for x in (_ids_of(cid) or []) if x not in installed_ids]
     with _LOCK:
         sizes = dict(_cache()["sizes"])
     todo = [x for x in ids if x not in sizes]

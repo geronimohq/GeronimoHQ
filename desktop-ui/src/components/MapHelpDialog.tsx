@@ -6,27 +6,27 @@ import { sfx } from '../sound';
 import type { MapHelp, PackSize } from '../types';
 
 const fmtGb = (b: number) => (b >= 1e9 ? `${(b / 1e9).toFixed(b >= 1e10 ? 0 : 1)} GB` : `${Math.max(1, Math.round(b / 1e6))} MB`);
-const KIND: Record<string, string> = { maps: 'Map list', default: 'Default map', assets: 'Server assets (models, sounds)' };
+const KIND: Record<string, string> = { maps: 'Map list', default: 'Default map', assets: 'Server assets (collection)', item: 'Server asset pack' };
 
 /** What to do about a map you do not have, or how to get a server's whole map pack: the one map (small), or the server's Steam collections. */
-export default function MapHelpDialog({ sid, name, map, wid, onClose, log }: { sid: string; name: string; map: string; wid: string; onClose: () => void; log: (tag: string, msg: string) => void }) {
+export default function MapHelpDialog({ sid, name, map, wid, mode, onClose, log }: { sid: string; name: string; map: string; wid: string; mode: 'maps' | 'assets'; onClose: () => void; log: (tag: string, msg: string) => void }) {
   const [help, setHelp] = useState<MapHelp | null>(null);
   const [sizes, setSizes] = useState<Record<string, PackSize>>({});
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   useEffect(() => {
     let alive = true;
-    void api.mapHelp(sid, map, wid).then((h) => {
+    void api.mapHelp(sid, map, wid, mode).then((h) => {
       if (!alive) return;
       setHelp(h);
-      h.collections.filter((c) => c.kind !== 'assets' || h.collections.length < 3).forEach((c) => {
+      h.collections.forEach((c) => {
         void api.collectionSize(c.id).then((s) => { if (alive && s.ok) setSizes((p) => ({ ...p, [c.id]: s })); });
       });
     });
     const k = (e: KeyboardEvent) => { if (e.key === 'Escape') closeRef.current(); };
     window.addEventListener('keydown', k);
     return () => { alive = false; window.removeEventListener('keydown', k); };
-  }, [sid, map, wid]);
+  }, [sid, map, wid, mode]);
 
   const openMap = () => { sfx.click(); void api.mapGet(map, wid).then((r) => { if (!r.ok) log('SERVERS', 'Could not open Steam or the browser for this map.'); }); };
   const openCol = (id: string) => { sfx.click(); void api.collectionOpen(id).then((r) => { if (!r.ok) log('SERVERS', 'Could not open Steam for this collection.'); }); };
@@ -35,7 +35,7 @@ export default function MapHelpDialog({ sid, name, map, wid, onClose, log }: { s
   return createPortal(
     <motion.div className="scrim on" role="dialog" aria-modal="true" aria-labelledby="mhTitle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div className="cut modal brk mc" style={{ width: 'min(680px,100%)' }} initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }}>
-        <div className="decal">{map ? 'Map not installed' : 'Map packs'}</div>
+        <div className="decal">{map ? 'Map not installed' : mode === 'assets' ? 'Server assets' : 'Map pack'}</div>
         <h3 id="mhTitle">{map ? map : name}</h3>
         {map && <div className="decal" style={{ margin: '4px 0 10px', textTransform: 'none', letterSpacing: 0, lineHeight: 1.5 }}>
           {name} is playing <b>{map}</b> and it is not on this PC. You can still join: CS2 then asks to download just this map. Or get it first, in one of these ways.
@@ -49,7 +49,8 @@ export default function MapHelpDialog({ sid, name, map, wid, onClose, log }: { s
             <button className="btn cut amber sm" onClick={openMap}>{m.wid ? 'Open the map page' : 'Search the workshop'}</button>
           </div>
         )}
-        <div className="sect" style={{ margin: '12px 0 4px' }}>{m ? 'Or the whole server collection' : 'Steam collections of this server'}</div>
+        {mode === 'assets' && <div className="decal" style={{ margin: '4px 0 10px', textTransform: 'none', letterSpacing: 0, lineHeight: 1.5 }}>{name} uses these Steam workshop items for its models, sounds and skins. Subscribe so the server looks and sounds right; they are small next to a map collection.</div>}
+        <div className="sect" style={{ margin: '12px 0 4px' }}>{mode === 'assets' ? 'Server asset packs' : m ? 'Or the whole server collection' : 'Steam collections of this server'}</div>
         {!help && <div className="decal" style={{ padding: 10 }}>Checking the collections...</div>}
         {help && help.collections.length === 0 && <div className="decal" style={{ padding: 10 }}>No collection is known for this server yet.</div>}
         {help?.collections.map((c) => {
@@ -59,7 +60,7 @@ export default function MapHelpDialog({ sid, name, map, wid, onClose, log }: { s
               <div style={{ flex: 1, minWidth: 220 }}>
                 <b>{c.label}</b> <span className="decal">{KIND[c.kind] ?? c.kind}{c.match ? ' · matches this map' : ''}</span>
                 <div className="decal" style={{ textTransform: 'none', letterSpacing: 0, marginTop: 4, lineHeight: 1.5 }}>
-                  {c.known ? `You have ${c.installed} of ${c.total} items.` : 'Item list not available right now.'}
+                  {c.kind === 'item' ? (c.installed ? 'You have this pack.' : 'You do not have this pack yet.') : c.known ? `You have ${c.installed} of ${c.total} items.` : 'Item list not available right now.'}
                   {sz
                     ? sz.missing === 0 ? ' Nothing left to download.'
                       : sz.bytes ? ` Subscribing downloads about ${fmtGb(sz.bytes)}${sz.unknown ? ` (plus ${sz.unknown} items whose size Steam does not show)` : ''}.`
@@ -67,13 +68,13 @@ export default function MapHelpDialog({ sid, name, map, wid, onClose, log }: { s
                     : c.known ? ' Working out the download size...' : ''}
                 </div>
               </div>
-              <button className="btn cut ghost sm" onClick={() => openCol(c.id)}>Open collection page</button>
+              <button className="btn cut ghost sm" onClick={() => openCol(c.id)}>{c.kind === 'item' ? 'Open pack page' : 'Open collection page'}</button>
             </div>
           );
         })}
-        <div className="decal" style={{ margin: '10px 0 0', textTransform: 'none', letterSpacing: 0, lineHeight: 1.5 }}>
+        {mode === 'maps' && <div className="decal" style={{ margin: '10px 0 0', textTransform: 'none', letterSpacing: 0, lineHeight: 1.5 }}>
           A whole collection can be tens of GB, so only subscribe to what you play. Some current maps are not in the collection yet; for those use the single map above.
-        </div>
+        </div>}
         <div className="btns" style={{ justifyContent: 'flex-end' }}>
           <button className="btn cut ghost" onClick={() => { sfx.click(); onClose(); }}>Close</button>
         </div>

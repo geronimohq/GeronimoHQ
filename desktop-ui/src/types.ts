@@ -1,5 +1,5 @@
 export interface GeoRow { code: string; name: string; pct: number; count: number }
-export interface Pack { id: string; label: string; kind: 'maps' | 'assets' | 'default' }
+export interface Pack { id: string; label: string; kind: 'maps' | 'assets' | 'default' | 'item' }
 export interface MapHelp {
   map: { name: string; wid: string } | null;
   collections: { id: string; label: string; kind: string; total: number; installed: number; known: boolean; match: boolean }[];
