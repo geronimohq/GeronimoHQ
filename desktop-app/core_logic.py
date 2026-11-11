@@ -133,7 +133,7 @@ def find_cs2_paths() -> Dict[str, Optional[str]]:
     """Steam, the CS2 install, its cfg folder and autoexec.cfg. The library that Steam's own appmanifest_730.acf points to wins,
     and a custom install folder name is honoured. See steam_paths.py."""
     import steam_paths
-    steam_path = steam_paths.find_steam_path()
+    steam_path = find_steam_path()
     result: Dict[str, Optional[str]] = {"steam_path": steam_path, "cs2_dir": None, "cs2_exe": None, "cfg_dir": None, "autoexec_cfg": None}
     result.update(steam_paths.find_cs2(steam_paths.steam_libraries(steam_path)))
     return result

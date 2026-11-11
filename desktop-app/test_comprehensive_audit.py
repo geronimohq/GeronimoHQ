@@ -428,7 +428,8 @@ class ErrorStatesAudit(unittest.TestCase):
             with open(os.path.join(steam, "steamapps", "libraryfolders.vdf"), "w", encoding="utf-8") as f:
                 f.write('"libraryfolders"\n{\n "0"\n {\n  "path"  "%s"\n }\n "1"\n {\n  "path"  "%s"\n }\n}\n'
                         % (steam.replace("\\", "\\\\"), vdf_other))
-            with patch.object(core_logic, "find_steam_path", return_value=steam):
+            # Hermetic: only the fake folders count, never this PC's real libraries on its fixed drives.
+            with patch.object(core_logic, "find_steam_path", return_value=steam), patch("steam_paths.fixed_drives", return_value=[]):
                 res = core_logic.find_cs2_paths()
             self.assertEqual(os.path.normcase(res["cs2_dir"]), os.path.normcase(cs2))
             self.assertTrue(res["cfg_dir"].endswith(os.path.join("csgo", "cfg")))
