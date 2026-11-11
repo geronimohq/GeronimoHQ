@@ -1008,8 +1008,9 @@ const HOF_MAPPERS = /Kuroki|ViSral|Hannibal|Luffaren|Airvulpes|Clown|Kaemon|Nipp
  * Tier + mapper for a map. The tier/badge come from the curated registry and keyword rules; the MAPPER NAME
  * comes first from the S2ZE / Steam Workshop catalog (the workshop author of that exact map), because the
  * hand-typed registry and the keyword guesses were often wrong or only a generic label.
- * Order: catalog person -> curated registry name -> catalog generic label -> "Mapper not listed" (never a made-up name).
- * The page then replaces "Mapper not listed" with the map's workshop creator when the build found one (applyResolvedMapper).
+ * Order: catalog person -> curated registry name -> catalog generic label -> MAPPER_NOT_LISTED (never a made-up name).
+ * The page then replaces whatever this returns with the creators read from the map's own workshop page when the build found them
+ * (applyResolvedMapper), because those are what Steam shows today; the names here can be stale or wrong.
  */
 export function getMapTierAndMapper(mapName?: string): MapTierData {
   const base = getMapTierAndMapperRaw(mapName);
@@ -1031,13 +1032,15 @@ export function getMapTierAndMapper(mapName?: string): MapTierData {
   return base.mapper ? base : { ...base, mapper: MAPPER_NOT_LISTED };       // never an empty "by:" pill
 }
 
-export const MAPPER_NOT_LISTED = 'Mapper not listed';
+/** Shown only when the map could not be found on the workshop at all; the link next to it opens a workshop search. */
+export const MAPPER_NOT_LISTED = 'See Workshop page';
 
 /**
- * Fills "Mapper not listed" from the workshop creator that scripts/resolve_workshop_maps.py found for this exact map
- * (see src/utils/mapWorkshop.ts). A mapper the catalog or the curated registry already names is never replaced.
+ * The creators scripts/resolve_workshop_maps.py read from this exact map's workshop page ("Created by", see src/utils/mapWorkshop.ts)
+ * win over the catalog and the curated registry: they are what the player sees when following the link, and they follow profile renames.
+ * Without a resolved name the tier is returned unchanged.
  */
 export function applyResolvedMapper(tier: MapTierData, resolved?: string): MapTierData {
-  if (!resolved || (tier.mapper && tier.mapper !== MAPPER_NOT_LISTED)) return tier;
+  if (!resolved) return tier;
   return { ...tier, mapper: resolved, isHallOfFameMapper: HOF_MAPPERS.test(resolved) };
 }

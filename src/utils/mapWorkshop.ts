@@ -13,7 +13,10 @@ export interface MapWorkshopEntry {
 
 export interface MapCollectionLink {
   id: string;
+  /** the collection's own name from server_collections.json (used as the tooltip) */
   label: string;
+  /** what the link says: "Map collection", or "Map collection (ZE)" / "(ZM)" when a server has one list per map type */
+  text: string;
 }
 
 export interface MapWorkshopData {
@@ -42,13 +45,17 @@ export function parseMapWorkshop(mapsJson: unknown, collectionsJson: unknown): M
     }
   }
   const collections: Record<string, MapCollectionLink[]> = {};
-  const rawServers = (collectionsJson as { servers?: Record<string, { id?: unknown; label?: unknown; kind?: unknown }[]> } | null)?.servers;
+  const rawServers = (collectionsJson as { servers?: Record<string, { id?: unknown; label?: unknown; kind?: unknown; prefix?: unknown }[]> } | null)?.servers;
   if (rawServers && typeof rawServers === 'object') {
     for (const [sid, list] of Object.entries(rawServers)) {
       if (!Array.isArray(list)) continue;
-      const links = list
-        .filter((c) => c && c.kind === 'maps' && typeof c.id === 'string' && ID_RE.test(c.id))   // 'default' items and asset packs are not map lists
-        .map((c) => ({ id: c.id as string, label: typeof c.label === 'string' ? c.label : 'Map collection' }));
+      const lists = list.filter((c) => c && c.kind === 'maps' && typeof c.id === 'string' && ID_RE.test(c.id));   // 'default' items and asset packs are not map lists
+      const links = lists.map((c, i) => {
+        // Several lists on one server (Possession has one for ze_ and one for zm_ maps): name them by map type, not by a bare number
+        const type = typeof c.prefix === 'string' ? c.prefix.replace(/_+$/, '').toUpperCase() : '';
+        const text = lists.length === 1 ? 'Map collection' : type ? `Map collection (${type})` : `Map collection ${i + 1}`;
+        return { id: c.id as string, label: typeof c.label === 'string' ? c.label : 'Map collection', text };
+      });
       if (links.length) collections[sid] = links;
     }
   }

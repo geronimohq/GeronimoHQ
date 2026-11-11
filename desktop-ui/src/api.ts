@@ -170,7 +170,7 @@ async function mock(name: string, ...args: unknown[]): Promise<unknown> {
     case 'maps_settings': return { communities: ['gfl'], protect_recent: true };
     case 'maps_scan': setTimeout(() => { window.__emit?.('maps', [
       { id: '1', name: 'ze_sample_a', status: 'Subscribed (GFL ZE Collection)', type: 'subscribed', sub: true, asset: false, protected: true, workshop: true, dupe: false, size: 14000000, size_str: '13.4 MB', mtime: '2026-10-02 14:45' },
-      { id: '2', name: 'ze_temp_b', status: 'Temp download', type: 'temp', sub: false, asset: false, protected: false, workshop: true, dupe: true, size: 2400000000, size_str: '2.24 GB', mtime: '2026-09-13 11:53' }]); window.__emit?.('job', { name: 'maps_scan', ok: true }); }, 600); return { ok: true };
+      { id: '2', name: 'ze_temp_b', status: 'Not played in 30+ days', type: 'temp', sub: false, asset: false, protected: false, workshop: true, dupe: false, size: 2400000000, size_str: '2.24 GB', mtime: '2026-09-13 11:53' }]); window.__emit?.('job', { name: 'maps_scan', ok: true }); }, 600); return { ok: true };
     case 'maps_delete': setTimeout(() => window.__emit?.('maps_deleted', { count: 1, freed: 2400000000 }), 500); return { ok: true };
     case 'maps_backup': case 'maps_restore': return { ok: true, count: 0, dir: '' };
     case 'presence_state': case 'presence_toggle': case 'presence_clear': case 'presence_standby': return { enabled: true, connected: false, status: 'Standby (CS2 closed)', details: '', state: '', buttons: [], cs2_running: false, tracked: '' };

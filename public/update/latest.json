@@ -1,9 +1,9 @@
 {
-  "version": "2.0.8",
+  "version": "2.0.9",
   "build_date": "2026-11-12",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "94C8C90E131FD157C0C0306BA09407B1A1BE385A68787A1D925A1C7FD5FD4FC3",
-  "size": 27454809,
-  "notes": "Map Cleaner: only GFL protects maps, Active now covers 30 days, server asset lists updated. 'Map collection' wording for non-GFL servers. Wrong mapper credit on ze_atix maps fixed. Website: workshop links and creators for every map.",
-  "signature": "7b7b27592e26cf1d786dea6d2a66838a8f90c4550e15bf988b44f0a16b25f7c1d4a4d397ca1e1a85a8a68a06068beb233f1546a0f57bb29624f372b8c5bf3c0d"
+  "sha256": "3FBB7C05A0B433D6167098F304953117EDB4D47171FF64258A67AB6CBC8858FC",
+  "size": 27456870,
+  "notes": "Map Cleaner: Duplicates tab removed, Not played in 30+ days tab, protects any server asset pack found by looking inside it (also Chinese servers). Website: mapper names read from each map's workshop page.",
+  "signature": "b5fa87904f4ba1e8f3c194bfba9614646d9c6ab3d1f66465597808094ba5e090376a88b1d3632fc5dad86adde08cc6a5aedad28a10fa4b77027b29b7aad2de00"
 }

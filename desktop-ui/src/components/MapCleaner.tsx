@@ -7,7 +7,7 @@ import { sfx } from '../sound';
 import { useModal } from './Modal';
 import type { MapRow, MapsNews } from '../types';
 
-type Filter = 'all' | 'temp' | 'sub' | 'assets' | 'dupes';
+type Filter = 'all' | 'temp' | 'sub' | 'assets';
 const COMMS: [string, string][] = [['gfl', 'GFL']];     // only GFL re-uploads the maps it runs, so only GFL's collection protects maps; 'Active' covers the rest
 const RECENT_DAYS = 30;                                  // keep in step with RECENT_DAYS in custom_map_cleaner.py
 const GB = 1024 ** 3;
@@ -50,10 +50,11 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
   const toggleAssets = () => { sfx.toggle(); if (allowAssets) setSel(new Set([...sel].filter((id) => !rows.find((m) => m.id === id)?.asset))); setAllowAssets(!allowAssets); };
   const toggleRecent = () => { setRecent(!recent); sfx.toggle(); scan(comms, !recent); };
 
-  const counts = useMemo(() => ({ all: rows.length, temp: rows.filter(isTemp).length, sub: rows.filter((m) => m.sub && !m.asset).length, assets: rows.filter((m) => m.asset).length, dupes: rows.filter((m) => m.dupe).length }), [rows]);
+  const unusedLabel = recent ? `Not played in ${RECENT_DAYS}+ days` : 'Not protected';       // what the old 'Temp downloads' tab really is: everything that nothing protects
+  const counts = useMemo(() => ({ all: rows.length, temp: rows.filter(isTemp).length, sub: rows.filter((m) => m.sub && !m.asset).length, assets: rows.filter((m) => m.asset).length }), [rows]);
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase();
-    const f = rows.filter((m) => (filter === 'all' || (filter === 'temp' && isTemp(m)) || (filter === 'sub' && m.sub && !m.asset) || (filter === 'assets' && m.asset) || (filter === 'dupes' && m.dupe)) && (!t || `${m.name} ${m.id} ${m.status}`.toLowerCase().includes(t)));
+    const f = rows.filter((m) => (filter === 'all' || (filter === 'temp' && isTemp(m)) || (filter === 'sub' && m.sub && !m.asset) || (filter === 'assets' && m.asset)) && (!t || `${m.name} ${m.id} ${m.status}`.toLowerCase().includes(t)));
     return f.sort((a, b) => (a[sort.k] < b[sort.k] ? -1 : a[sort.k] > b[sort.k] ? 1 : 0) * sort.dir);
   }, [rows, filter, q, sort]);
   const selBytes = rows.filter((m) => sel.has(m.id)).reduce((n, m) => n + m.size, 0);
@@ -92,7 +93,7 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
           <label className="chk" title="Advanced. Lets you tick server asset packs (models, sounds) to delete them. Servers need these to join."><input type="checkbox" checked={allowAssets} onChange={toggleAssets} />Allow deleting server asset packs (advanced)</label></div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', margin: '10px 0' }}>
           <div className="seg" role="group" aria-label="Filter">
-            {([['all', 'All maps'], ['temp', 'Temp downloads'], ['sub', 'Subscribed packs'], ['assets', 'Server assets'], ['dupes', 'Duplicates']] as [Filter, string][]).map(([k, l]) => (
+            {([['all', 'All maps'], ['temp', unusedLabel], ['sub', 'Subscribed packs'], ['assets', 'Server assets']] as [Filter, string][]).map(([k, l]) => (
               <button key={k} aria-pressed={filter === k} onClick={() => { sfx.click(); setFilter(k); }}>{l} ({counts[k]})</button>))}
           </div>
           <div className="search"><Search size={14} style={{ color: 'var(--tx3)' }} /><label className="sr" htmlFor="mq">Search maps</label><input id="mq" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search maps" /></div>
@@ -103,15 +104,14 @@ export default function MapCleaner({ onClose }: { onClose: () => void }) {
             <tbody>
               {busy && !rows.length && <tr><td colSpan={6} className="decal" style={{ padding: 20 }}>Scanning maps\u2026</td></tr>}
               {shown.map((m) => (
-                <tr key={m.id} className={m.dupe ? 'dup' : isTemp(m) ? 'tmp' : ''}>
+                <tr key={m.id} className={isTemp(m) ? 'tmp' : ''}>
                   <td><input type="checkbox" aria-label={`Select ${m.name}`} disabled={!canTick(m, allowAssets)} checked={sel.has(m.id)} onChange={() => { const n = new Set(sel); if (n.has(m.id)) n.delete(m.id); else n.add(m.id); setSel(n); }} /></td>
                   <td>{m.name}</td><td className="mono">{m.id}</td><td>{m.status}</td><td className="mono">{m.size_str}</td><td className="mono">{m.mtime}</td>
                 </tr>))}
             </tbody></table>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-          <button className="btn cut ghost sm" onClick={() => pick(rows.filter((m) => isTemp(m) && selectable(m)).map((m) => m.id))}>Select all temp downloads (safe)</button>
-          <button className="btn cut ghost sm" onClick={() => pick(rows.filter((m) => isTemp(m) && m.dupe && selectable(m)).map((m) => m.id))}>Select temp dupes only (safe)</button>
+          <button className="btn cut ghost sm" onClick={() => pick(rows.filter((m) => isTemp(m) && selectable(m)).map((m) => m.id))}>Select all {unusedLabel.toLowerCase()} (safe)</button>
           <button className="btn cut ghost sm" onClick={() => pick(shown.filter(selectable).map((m) => m.id))}>Select all</button>
           <button className="btn cut ghost sm" onClick={() => pick([])}>Deselect all</button>
           <button className="btn cut ghost sm" onClick={() => pick(rows.filter((m) => selectable(m) && m.size > GB).map((m) => m.id))}>Select maps &gt; 1 GB</button>
