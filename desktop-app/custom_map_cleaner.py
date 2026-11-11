@@ -88,6 +88,14 @@ COMMUNITY_SERVER_ROSTERS = {
             "ze_castlevania_64", "ze_ancient_wrath_v2", "ze_voodoo_islands_p"
         }
     },
+    "net4all": {
+        "id": "net4all",
+        "name": "Net4All ZE (Russia)",
+        "badge": "🛡️ Net4All Rotation (PROTECTED)",
+        "keywords": ["net4all"],
+        "asset_ids": set(),
+        "signature_maps": set()
+    },
     "exg": {
         "id": "exg",
         "name": "EXG Community (China)",
@@ -135,6 +143,14 @@ def is_asset_pack_or_custom(folder: str, workshop_id: str, title: str = "") -> T
     if workshop_id in KNOWN_SERVER_ASSETS:
         name = KNOWN_SERVER_ASSETS[workshop_id]
         return True, name, False
+
+    # 1b. Anything in the servers' asset collections (models, sounds and skins the servers need), by exact id
+    try:
+        import workshop_collections
+        if workshop_id in workshop_collections.asset_ids():
+            return True, workshop_collections.asset_title(workshop_id) or f"Server Asset Pack (#{workshop_id})", False
+    except Exception:
+        pass
 
     # 2. Check title keywords to identify server communities
     if any(k in tl for k in ["server asset", "content pack", "server pack", "model pack", "asset pack", "general contents", "playermodels"]):
@@ -316,11 +332,22 @@ def scan_custom_maps(steam_path: str, cs2_dir: str = None, protected_communities
                     except Exception:
                         pass
 
+                member_keys: List[str] = []
+                try:
+                    import workshop_collections
+                    member_keys = workshop_collections.communities_of(workshop_id)
+                except Exception:
+                    pass
+                if member_keys:                                   # exact: this id is in the server's own collection
+                    comm_key = next((k for k in member_keys if k in protected_communities), member_keys[0])
+                    comm_badge = COMMUNITY_SERVER_ROSTERS.get(comm_key, {}).get("badge", comm_badge)
                 is_official_gfl = (workshop_id in subscribed_ids)
                 if is_official_gfl:
-                    comm_key = "gfl"
-                    is_sub = ("gfl" in protected_communities)
-                    status_label = "⭐ Subscribed (GFL Server Pack)" if is_sub else "📁 GFL Pack (Protection Disabled)"
+                    owner = comm_key if member_keys else "gfl"
+                    pretty = COMMUNITY_SERVER_ROSTERS.get(owner, {}).get("name", "GFL Server Pack")
+                    comm_key = owner
+                    is_sub = (owner in protected_communities)
+                    status_label = f"⭐ Subscribed ({pretty})" if is_sub else f"📁 {pretty} (Protection Disabled)"
                     status_type = "subscribed" if is_sub else "temp"
                     is_protected = is_sub
                 elif comm_key and comm_key in protected_communities:

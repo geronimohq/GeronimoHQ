@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "note": "Steam workshop collections per server. Numeric ids only. kind: maps = the server's map list, default = its default-map item, assets = models/sounds the server needs. community = the Map Cleaner protection group.",
+  "servers": {
+    "gfl": [
+      {"id": "3070555563", "label": "GFL Zombie Escape maps", "kind": "maps", "community": "gfl"}
+    ],
+    "possession": [
+      {"id": "3667545564", "label": "Possession ZE maps", "kind": "maps", "community": "possession", "prefix": "ze_"},
+      {"id": "3688322493", "label": "Possession ZM maps", "kind": "maps", "community": "possession", "prefix": "zm_"}
+    ],
+    "mapeadores": [
+      {"id": "3071145201", "label": "Mapeadores ZE maps", "kind": "maps", "community": "mapeadores_cola"},
+      {"id": "3226674026", "label": "Mapeadores default map", "kind": "default", "community": "mapeadores_cola"}
+    ],
+    "cola": [
+      {"id": "3164817189", "label": "cOLa-TeaM ZE maps", "kind": "maps", "community": "mapeadores_cola"}
+    ],
+    "net4all": [
+      {"id": "3163284516", "label": "Net4All ZE maps", "kind": "maps", "community": "net4all"}
+    ],
+    "rss": [
+      {"id": "3782813087", "label": "RSS server assets", "kind": "assets", "community": "rss"}
+    ]
+  },
+  "assets": [
+    {"id": "3252070217", "label": "Server assets for many ZE servers", "kind": "assets", "community": ""}
+  ]
+}

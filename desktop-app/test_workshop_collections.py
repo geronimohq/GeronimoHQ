@@ -1,0 +1,166 @@
+"""Server map collections: validation, cache and snapshot fallback, counts and sizes, the help dialog data, and Map Cleaner protection by
+collection membership. Fake Steam replies and fake folders only; LOCALAPPDATA is redirected so the real cache is never touched."""
+import io
+import json
+import os
+import tempfile
+import unittest
+from unittest import mock
+
+import _test_isolation  # noqa: F401  (temp config; must come first)
+import core_service
+import custom_map_cleaner
+import steam_paths
+import workshop_collections as wc
+
+
+class FakeResp(io.BytesIO):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+def reply(obj):
+    return FakeResp(json.dumps(obj).encode())
+
+
+class Base(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        patcher = mock.patch.dict(os.environ, {"LOCALAPPDATA": self.tmp.name})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(self.tmp.cleanup)
+
+
+class Validation(Base):
+    def test_bundled_file_is_valid_and_has_every_server(self):
+        cfg = wc.load_config()
+        for sid in ("gfl", "possession", "mapeadores", "cola", "net4all", "rss"):
+            self.assertIn(sid, cfg["servers"])
+        self.assertTrue(cfg["assets"])
+        self.assertTrue(all(e["id"].isdigit() for e in wc.all_entries(cfg)))
+
+    def test_anything_that_is_not_a_plain_id_is_dropped(self):
+        bad = {"servers": {"Evil Server!": [{"id": "123", "kind": "maps"}, {"id": "12345678; calc", "kind": "maps"}, {"id": "99999999", "kind": "exe"},
+                                              {"id": "99999999", "kind": "maps", "label": "x" * 500, "community": "GFL<script>", "prefix": "ze_"}]},
+               "assets": [{"id": "../../etc", "kind": "assets"}]}
+        clean = wc.validate(bad)
+        entries = clean["servers"]["evilserver"]
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]["id"], "99999999")
+        self.assertLessEqual(len(entries[0]["label"]), 80)
+        self.assertEqual(entries[0]["community"], "gflscript")
+        self.assertEqual(clean["assets"], [])
+        self.assertIsNone(wc.validate({"servers": {}}))
+        self.assertIsNone(wc.validate("nope"))
+
+    def test_downloaded_list_is_used_only_when_valid(self):
+        good = {"servers": {"gfl": [{"id": "111111111", "label": "New", "kind": "maps", "community": "gfl"}]}, "assets": []}
+        with mock.patch.object(wc.urllib.request, "urlopen", return_value=FakeResp(json.dumps(good).encode())):
+            self.assertTrue(wc.refresh_config())
+        self.assertEqual(wc.load_config()["servers"]["gfl"][0]["id"], "111111111")
+        with mock.patch.object(wc.urllib.request, "urlopen", return_value=FakeResp(b'{"servers": "broken"}')):
+            self.assertFalse(wc.refresh_config())
+        self.assertEqual(wc.load_config()["servers"]["gfl"][0]["id"], "111111111")          # the bad download did not replace the good copy
+
+
+class Children(Base):
+    def test_snapshot_is_the_offline_fallback_and_a_fetch_fills_the_cache(self):
+        gfl = wc.entries_for("gfl")[0]["id"]
+        self.assertGreater(len(wc.cached_children(gfl) or []), 300)                          # shipped snapshot, no network
+        body = {"response": {"collectiondetails": [{"children": [{"publishedfileid": "1000001"}, {"publishedfileid": "x"}, {"publishedfileid": "1000002"}]}]}}
+        with mock.patch.object(wc.urllib.request, "urlopen", return_value=reply(body)):
+            self.assertEqual(wc.fetch_children(gfl), ["1000001", "1000002"])                 # non-numeric ids are ignored
+        self.assertEqual(wc.cached_children(gfl), ["1000001", "1000002"])
+
+    def test_network_failure_falls_back_to_what_is_known(self):
+        gfl = wc.entries_for("gfl")[0]["id"]
+        with mock.patch.object(wc.urllib.request, "urlopen", side_effect=OSError("offline")):
+            self.assertIsNone(wc.fetch_children(gfl))
+            self.assertGreater(len(wc.children(gfl)), 300)                                   # snapshot
+        self.assertIsNone(wc.fetch_children("not-an-id"))
+
+
+class Counts(Base):
+    def test_state_counts_installed_items_and_puts_the_matching_collection_first(self):
+        by_id = {"3667545564": ["1", "2", "3", "4"], "3688322493": ["10", "11"]}
+        with mock.patch.object(wc, "children", side_effect=lambda cid, t=0: by_id.get(cid, ["500", "501"])):
+            rows = wc.state("possession", {"1", "2", "11", "500"}, "zm_")
+        self.assertEqual([r["id"] for r in rows][:2], ["3688322493", "3667545564"])        # zm map -> the zm collection first
+        self.assertEqual((rows[0]["installed"], rows[0]["total"]), (1, 2))
+        self.assertEqual((rows[1]["installed"], rows[1]["total"]), (2, 4))
+        self.assertEqual(rows[-1]["kind"], "assets")                                        # the shared asset collection comes last
+
+    def test_size_counts_known_sizes_and_reports_hidden_items(self):
+        details = {"response": {"publishedfiledetails": [
+            {"publishedfileid": "1", "result": 1, "file_size": "100"}, {"publishedfileid": "2", "result": 1, "file_size": "300"},
+            {"publishedfileid": "3", "result": 9}, {"publishedfileid": "4", "result": 1, "file_size": "5"}]}}
+        with mock.patch.object(wc, "children", return_value=["1", "2", "3", "4"]), mock.patch.object(wc.urllib.request, "urlopen", return_value=reply(details)):
+            r = wc.size_of_missing("123456", {"4"})
+        self.assertEqual(r, {"missing": 3, "known": 2, "unknown": 1, "bytes": 400})
+        with mock.patch.object(wc, "children", return_value=["1", "2", "3", "4"]), mock.patch.object(wc.urllib.request, "urlopen", side_effect=OSError("cached now")):
+            self.assertEqual(wc.size_of_missing("123456", {"4"})["bytes"], 400)             # answered from the cache, no second request
+
+
+class CoreDialog(Base):
+    def setUp(self):
+        super().setUp()
+        self.core = core_service.Core()
+
+    def test_catalog_marks_servers_that_have_collections(self):
+        packs = {s["id"]: [p["kind"] for p in s["packs"]] for s in self.core.servers_catalog() if s["group"] == "global"}
+        self.assertEqual(packs["gfl"], ["maps"])
+        self.assertEqual(packs["rss"], ["assets"])
+        self.assertEqual(packs["mapeadores"], ["maps", "default"])
+
+    def test_map_help_returns_the_single_map_and_the_collections(self):
+        with mock.patch.object(self.core, "installed_maps", return_value={"ids": {"1"}, "names": set(), "known": True}), \
+                mock.patch.object(wc, "children", side_effect=lambda cid, t=0: ["1", "2", "3"]):
+            h = self.core.map_help("possession", "workshop/5/ZM_Test_Map", "12345")
+        self.assertEqual(h["map"], {"name": "zm_test_map", "wid": "12345"})
+        self.assertTrue(h["collections"][0]["match"])
+        self.assertEqual(h["collections"][0]["installed"], 1)
+        self.assertIsNone(self.core.map_help("gfl")["map"])                                 # the Map pack link has no single map
+
+    def test_only_known_collections_can_be_opened_or_measured(self):
+        known = wc.entries_for("gfl")[0]["id"]
+        with mock.patch.object(self.core, "open_url", return_value=True) as ou, mock.patch.object(self.core, "installed_maps", return_value={"ids": set()}):
+            self.assertTrue(self.core.collection_open(known)["ok"])
+            ou.assert_called_once_with(f"steam://url/CommunityFilePage/{known}")
+            self.assertFalse(self.core.collection_open("999999999")["ok"])                   # an id that is not on the list is refused
+            self.assertFalse(self.core.collection_open("1; calc")["ok"])
+            self.assertFalse(self.core.collection_size("999999999")["ok"])
+        self.assertEqual(ou.call_count, 1)
+
+
+class CleanerProtection(Base):
+    def test_protection_follows_collection_membership_and_assets_are_protected(self):
+        with tempfile.TemporaryDirectory() as steam:
+            ws = os.path.join(steam, "steamapps", "workshop", "content", "730")
+            for wid, title in (("1000001", "ze_in_pse_and_cola"), ("1000002", "ze_in_net4all"), ("1000003", "ze_in_nothing"), ("1000004", "pack")):
+                os.makedirs(os.path.join(ws, wid))
+                open(os.path.join(ws, wid, wid + ".vpk"), "wb").write(b"x" * 4000)
+                open(os.path.join(ws, wid, "publish_data.txt"), "w").write('"publish_data"\n{\n\t"title"\t\t"%s"\n}\n' % title)
+            member = {"1000001": ["possession", "mapeadores_cola"], "1000002": ["net4all"]}
+            with mock.patch.object(steam_paths, "steam_libraries", return_value=[steam]), \
+                    mock.patch.object(wc, "communities_of", side_effect=lambda w: member.get(w, [])), \
+                    mock.patch.object(wc, "asset_ids", return_value={"1000004"}), \
+                    mock.patch.object(wc, "asset_title", return_value="Some server assets"):
+                only_cola = {i["id"]: i for i in custom_map_cleaner.scan_custom_maps(steam, None, {"mapeadores_cola"}, False)}
+                only_net = {i["id"]: i for i in custom_map_cleaner.scan_custom_maps(steam, None, {"net4all"}, False)}
+                nothing = {i["id"]: i for i in custom_map_cleaner.scan_custom_maps(steam, None, set(), False)}
+        self.assertTrue(only_cola["1000001"]["is_protected"])                               # in the PSE and cOLa collections: one tick is enough
+        self.assertFalse(only_cola["1000002"]["is_protected"])
+        self.assertTrue(only_net["1000002"]["is_protected"])
+        self.assertFalse(nothing["1000001"]["is_protected"])                                # nothing ticked: deletable
+        self.assertFalse(nothing["1000003"]["is_protected"])                                # in no collection: a temp download
+        for scan in (only_cola, only_net, nothing):
+            self.assertTrue(scan["1000004"]["is_server_asset"] and scan["1000004"]["is_protected"])
+        self.assertEqual(nothing["1000004"]["name"], "Some server assets")
+
+
+if __name__ == "__main__":
+    unittest.main()

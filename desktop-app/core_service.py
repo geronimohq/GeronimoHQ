@@ -114,12 +114,20 @@ class Core:
         for s in server_browser.get_all_servers():
             out.append({"id": s.get("id"), "name": s.get("name"), "host": s.get("host"), "port": int(s.get("port") or 0),
                         "region": s.get("region") or "", "flag": s.get("flag") or "", "discord": s.get("discord") or "", "website": s.get("website") or "",
-                        "featured": bool(s.get("is_featured")), "custom": bool(s.get("is_custom")), "group": "global", "cluster": ""})
+                        "featured": bool(s.get("is_featured")), "custom": bool(s.get("is_custom")), "group": "global", "cluster": "",
+                        "packs": self._packs(str(s.get("id") or ""))})
         for s in self._china_servers():
             out.append({"id": s["id"], "name": s.get("name"), "host": s["host"], "port": int(s["port"]), "region": s["region"],
                         "flag": "", "discord": "", "website": "", "featured": False, "custom": False, "group": "china", "cluster": s["cluster"],
                         "cluster_id": s.get("cluster_id", ""), "cluster_desc": s.get("cluster_desc", "")})
         return out
+
+    @staticmethod
+    def _packs(sid: str) -> List[Dict[str, str]]:
+        """This server's own workshop collections (map list, default map, assets); the page shows a Map pack link when there are any."""
+        import workshop_collections
+        own = workshop_collections.load_config()["servers"].get(sid, [])
+        return [{"id": e["id"], "label": e["label"], "kind": e["kind"]} for e in own]
 
     def _find_server(self, sid: str) -> Optional[Dict[str, Any]]:
         for s in server_browser.get_all_servers():
@@ -237,6 +245,36 @@ class Core:
             return {"missing": not have, "wid": wid if wid.isdigit() else "", "name": name}
         except Exception:
             return None
+
+    def map_help(self, sid: str, map_name: str = "", wid: str = "") -> Dict[str, Any]:
+        """Everything the 'Map not installed' / 'Map pack' dialog shows: the single map (small) and this server's collections with how many
+        of their items are already installed. Network failures fall back to the snapshot shipped with the app."""
+        import workshop_collections
+        installed = self.installed_maps()["ids"]
+        name = (map_name or "").replace("\\", "/").split("/")[-1].strip().lower()
+        prefix = name[:3] if name[:3] in ("ze_", "zm_") else ""
+        cols = workshop_collections.state(sid, installed, prefix)
+        return {"map": ({"name": name, "wid": str(wid) if str(wid).isdigit() else ""} if name else None), "collections": cols}
+
+    def collection_size(self, cid: str) -> Dict[str, Any]:
+        """Rough download size of what is missing from one of the known collections (public item sizes; hidden items are 'unknown')."""
+        import workshop_collections
+        if not any(e["id"] == str(cid) for e in workshop_collections.all_entries()):
+            return {"ok": False}
+        r = workshop_collections.size_of_missing(str(cid), self.installed_maps()["ids"])
+        r["ok"] = True
+        return r
+
+    def collection_open(self, cid: str) -> Dict[str, Any]:
+        """Opens one of the known collections' Steam page (ids are checked against the list, never taken from the page as given)."""
+        import workshop_collections
+        entry = next((e for e in workshop_collections.all_entries() if e["id"] == str(cid)), None)
+        if not entry:
+            return {"ok": False}
+        ok = self.open_url(f"steam://url/CommunityFilePage/{entry['id']}")
+        self.log(f"[MAPS] Opened the Steam page of '{entry['label']}'. Press Subscribe there; Steam downloads the maps in the background.")
+        self.installed_maps(force=True)
+        return {"ok": ok}
 
     def map_get(self, map_name: str, wid: str = "") -> Dict[str, Any]:
         """Opens the map's Steam workshop page (Subscribe there), or a workshop search when its id is not known."""
@@ -823,7 +861,7 @@ class Core:
                 pass
 
     # ---------- custom map cleaner ----------
-    COMMUNITIES = ("gfl", "possession", "rss", "mapeadores_cola")
+    COMMUNITIES = ("gfl", "possession", "rss", "mapeadores_cola", "net4all")
 
     def maps_settings(self) -> Dict[str, Any]:
         comms = self.config.get("cleaner_protected_comms", list(self.COMMUNITIES))

@@ -127,6 +127,15 @@ class Api:
     def map_get(self, map_name: str, wid: str = "") -> Dict[str, Any]:
         return self.core.map_get(map_name, wid)
 
+    def map_help(self, sid: str, map_name: str = "", wid: str = "") -> Dict[str, Any]:
+        return self.core.map_help(sid, map_name, wid)
+
+    def collection_size(self, cid: str) -> Dict[str, Any]:
+        return self.core.collection_size(cid)
+
+    def collection_open(self, cid: str) -> Dict[str, Any]:
+        return self.core.collection_open(cid)
+
     def mem_trim(self, low: bool = True) -> None:
         """While the window is hidden or minimized: ask WebView2 for its low-memory mode and hand unused pages back to Windows
         (they come back on demand). Normal mode again as soon as the window is shown."""

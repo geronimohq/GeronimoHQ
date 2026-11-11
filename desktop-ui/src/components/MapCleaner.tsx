@@ -8,7 +8,7 @@ import { useModal } from './Modal';
 import type { MapRow } from '../types';
 
 type Filter = 'all' | 'temp' | 'sub' | 'assets' | 'dupes';
-const COMMS: [string, string][] = [['gfl', 'GFL'], ['possession', 'Possession (PSE)'], ['rss', 'RSS Revenant'], ['mapeadores_cola', 'Mapeadores / cOLa']];
+const COMMS: [string, string][] = [['gfl', 'GFL'], ['possession', 'Possession (PSE)'], ['rss', 'RSS Revenant'], ['mapeadores_cola', 'Mapeadores / cOLa'], ['net4all', 'Net4All']];
 const GB = 1024 ** 3;
 const isTemp = (m: MapRow) => !m.sub && !m.asset && m.workshop;
 const selectable = (m: MapRow) => !m.protected && !m.asset;
@@ -16,7 +16,7 @@ const fmt = (b: number) => (b >= GB ? `${(b / GB).toFixed(2)} GB` : `${(b / 1048
 
 export default function MapCleaner({ onClose }: { onClose: () => void }) {
   const [rows, setRows] = useState<MapRow[]>([]);
-  const [comms, setComms] = useState<string[]>(['gfl', 'possession', 'rss', 'mapeadores_cola']);
+  const [comms, setComms] = useState<string[]>(['gfl', 'possession', 'rss', 'mapeadores_cola', 'net4all']);
   const [recent, setRecent] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');
   const [q, setQ] = useState('');

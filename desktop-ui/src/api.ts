@@ -1,4 +1,4 @@
-import type { Track, AnalyzerResult, AppInfo, AutoexecState, HwInfo, VpkResult, UpdateInfo, PresenceState, MapsSettings, MpoState, SettingsValues, DashboardData, DnsState, EngineState, LogLine, LaunchState, MaintState, Match, PlayerRow, SniperStatus, Srv, Status } from './types';
+import type { Track, AnalyzerResult, AppInfo, AutoexecState, HwInfo, VpkResult, UpdateInfo, PresenceState, MapsSettings, MpoState, SettingsValues, DashboardData, DnsState, EngineState, LogLine, LaunchState, MaintState, Match, PlayerRow, SniperStatus, Srv, Status, MapHelp, PackSize } from './types';
 
 type Fn = (...a: unknown[]) => Promise<unknown>;
 declare global {
@@ -110,6 +110,9 @@ export const api = {
   winMin: () => call<void>('win_minimize'),
   memTrim: (low: boolean) => call<void>('mem_trim', low),
   mapGet: (map: string, wid: string) => call<{ ok: boolean; kind: string }>('map_get', map, wid),
+  mapHelp: (sid: string, map: string, wid: string) => call<MapHelp>('map_help', sid, map, wid),
+  collectionSize: (id: string) => call<PackSize>('collection_size', id),
+  collectionOpen: (id: string) => call<{ ok: boolean }>('collection_open', id),
   winMax: () => call<boolean>('win_maximize'),
   winClose: () => call<void>('win_close'),
   winResize: (edge: string) => call<void>('win_resize', edge),
@@ -169,6 +172,9 @@ async function mock(name: string, ...args: unknown[]): Promise<unknown> {
     case 'presence_broadcast': return { ok: true };
     case 'update_check': return { available: false, message: 'You are up to date (sample).', last: '' };
     case 'update_skip': return true;
+    case 'map_help': return { map: { name: 'ze_demo_map', wid: '' }, collections: [{ id: '1', label: 'Demo collection', kind: 'maps', total: 100, installed: 40, known: true, match: true }] };
+    case 'collection_size': return { ok: true, missing: 60, known: 60, unknown: 0, bytes: 12000000000 };
+    case 'collection_open': return { ok: true };
     case 'update_install': return { ok: false, error: 'Updates install only in the packaged app.' };
     case 'hw_info': return { cpu: 'AMD Ryzen 7 5700X3D 8-Core Processor [3D V-Cache Detected]', gpu: 'AMD Radeon RX 6600', profile: 'AMD 3D V-Cache detected. Windows Balanced allows AMD CPPC to properly schedule game threads.', recommended_plan: 'balanced' };
     case 'ze_customizer': return { ok: true, message: 'Sample', keys: ['F7', 'F8'], hud: 0, vm: true };

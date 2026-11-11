@@ -113,7 +113,12 @@ def _main() -> int:
     log_line("tray icon started" if api.tray.start() else "tray icon FAILED to start")
     web_tray.listen_for_show(api.show_window)
     import threading
-    threading.Thread(target=lambda: (api.core.presence.start(), api.core.update_check_startup()), daemon=True, name="late-start").start()   # not needed for the first paint
+    def _late():
+        api.core.presence.start()
+        api.core.update_check_startup()
+        import workshop_collections
+        workshop_collections.refresh_all_async()          # the server collections: at most one refresh a day
+    threading.Thread(target=_late, daemon=True, name="late-start").start()   # not needed for the first paint
     debug = bool(os.environ.get("CS2CC_DEBUG"))
     # WebView2 cannot share one data folder between a standard and an elevated process, so each gets its own.
     import app_config

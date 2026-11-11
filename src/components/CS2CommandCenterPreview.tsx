@@ -73,7 +73,8 @@ export const CS2CommandCenterPreview: React.FC = () => {
         'Humans only: bots are subtracted from the player count, with a MOSTLY BOTS badge and a bots-excluded note on bot-heavy servers.',
         'Time on map per server: exact for GFL (from ZE Graph) and measured from player connection times elsewhere; a leading ">=" marks a minimum.',
         'Geo radar (estimate): Country or Region view per server, filling the card width up to two lines. It is an estimate from name signals and time of day; no player is identified.',
-        'Missing-map warning: when a server plays a map that is not on your PC, an amber "Map not installed. Get it" link opens that map\'s Steam workshop page so you can subscribe before joining.',
+        'Missing-map warning: when a server plays a map that is not on your PC, an amber "Map not installed. Get it" link offers the single map (small) or the server\'s whole Steam collection, with how many items you have and roughly how many GB it would download.',
+        'Map pack link on each server: opens that server\'s Steam collections (maps, default map and shared server asset packs) for GFL, Possession, Mapeadores, cOLa-TeaM, Net4All and RSS assets.',
         'Planet China: pick a community cluster (EXG, FyS, MoeUB, ZL, 93X). Those servers block the live player list, so the Players dialog is not offered there.',
         'Connect, Copy IP, Players list, 3D map, soundtrack, community Discord and portal links on every row, plus the GFL slot priority and a Refresh all button.'
       ],
@@ -181,7 +182,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
       icon: <HardDrive className="w-5 h-5 text-emerald-400" />,
       summary: 'Scans your CS2 workshop maps to free SSD space, protects subscribed server packs, and checks every workshop pack for damaged or unfinished downloads.',
       details: [
-        'Protected packs: subscribed server map packs and server asset packs (GFL, Possession, RSS, Mapeadores / cOLa) are detected and cannot be ticked. An option also protects maps played in the last 14 days.',
+        'Protected packs: maps are protected by exact membership in each server\'s Steam collection (GFL, Possession, RSS, Mapeadores / cOLa, Net4All), and server asset packs cannot be ticked. An option also protects maps played in the last 14 days.',
         '1-click "Select all temp downloads (safe)" ticks only maps you are not subscribed to. Deleting asks for confirmation and cannot be undone.',
         'Verify Workshop VPK health: reads each pack\'s index and confirms that every data part is on disk and complete, so a download that stopped half way is found, not just a bad file header.',
         'Repair corrupted VPKs removes only the damaged workshop folders. It never follows links and skips anything changed in the last 15 minutes. Steam can download the map again afterwards.',
