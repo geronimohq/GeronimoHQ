@@ -33,7 +33,7 @@ declare const __APP_EXE_SHA256__: string;
 declare const __APP_EXE_SIZE_MB__: number;
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=2.0.5';
+  const downloadUrl = '/CS2_Command_Center.exe?v=2.0.6';
   const exeSha256 = typeof __APP_EXE_SHA256__ !== 'undefined' ? __APP_EXE_SHA256__ : '66B78485C7C1F5622C12B702D07C83B7CEC781E344DC7AFE35B0272B494E7A01';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -74,7 +74,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
         'Time on map per server: exact for GFL (from ZE Graph) and measured from player connection times elsewhere; a leading ">=" marks a minimum.',
         'Geo radar (estimate): Country or Region view per server, filling the card width up to two lines. It is an estimate from name signals and time of day; no player is identified.',
         'Missing-map warning: when a server plays a map that is not on your PC, an amber "Map not installed. Get it" link offers the single map (small) or the server\'s whole Steam collection, with how many items you have and roughly how many GB it would download. RSS has no collection, so its link opens the map\'s own workshop page.',
-        'Map pack and Server assets links on each server: the Map pack opens that server\'s Steam map collections (GFL, Possession, Mapeadores, cOLa-TeaM, Net4All); Server assets opens its asset packs (GFL, Possession, Mapeadores, Net4All, RSS).',
+        'Map pack and Server assets links on each server: the Map pack opens that server\'s Steam map collections (GFL, Possession, Mapeadores, cOLa-TeaM, Net4All); Server assets opens its asset packs (GFL, Possession, Mapeadores, cOLa-TeaM, Net4All, RSS).',
         'Planet China: pick a community cluster (EXG, FyS, MoeUB, ZL, 93X). Those servers block the live player list, so the Players dialog is not offered there.',
         'Connect, Copy IP (copies the ready-to-paste "connect ip:port" console command), Players list, 3D map, soundtrack, community Discord and portal links on every row, plus the GFL slot priority and a Refresh all button.'
       ],
@@ -285,11 +285,14 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v2.0.5
+              v2.0.6
+            </span>
+            <span className="text-xs font-code px-2 py-0.5 bg-amber-950 text-amber-300 border border-amber-500/50 rounded uppercase">
+              Experimental
             </span>
           </h2>
           <p className="text-sm font-tech text-slate-300 mt-1 max-w-2xl">
-            Want seamless PC integration without manual file editing? Explore the full capabilities of the standalone desktop companion below.
+            Want seamless PC integration without manual file editing? Explore the full capabilities of the standalone desktop companion below. This app is experimental: it is new and still being tested, so read what a tool does before you run it, and check carefully before deleting anything with the map cleaner.
           </p>
         </div>
 

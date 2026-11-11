@@ -129,6 +129,7 @@ class CoreDialog(Base):
         self.assertEqual(packs["mapeadores"], ["maps", "default", "item"])
         self.assertEqual(packs["possession"].count("item"), 3)
         self.assertNotIn("maps", packs["rss"])
+        self.assertEqual(packs["cola"], ["maps", "item"])
 
     def test_map_help_returns_the_single_map_and_the_collections(self):
         with mock.patch.object(self.core, "installed_maps", return_value={"ids": {"1"}, "names": set(), "known": True}), \
@@ -192,9 +193,9 @@ class ExactIds(Base):
 
 class AssetItems(Base):
     def test_single_asset_items_are_listed_protected_and_openable(self):
-        for sid, wid in (("gfl", "3160448201"), ("mapeadores", "3157469866"), ("net4all", "3161970271")):
+        for sid, wid in (("gfl", "3160448201"), ("mapeadores", "3157469866"), ("net4all", "3161970271"), ("cola", "3304608958")):
             self.assertIn(wid, [e["id"] for e in wc.entries_for(sid) if e["kind"] == "item"])
-        self.assertTrue({"3160448201", "3157469866", "3161970271", "3535955403", "3698341219", "3333820862"} <= wc.asset_ids())
+        self.assertTrue({"3160448201", "3157469866", "3161970271", "3304608958", "3535955403", "3698341219", "3333820862"} <= wc.asset_ids())
         core = core_service.Core()
         with mock.patch.object(core, "open_url", return_value=True) as ou, mock.patch.object(core, "installed_maps", return_value={"ids": set()}):
             self.assertTrue(core.collection_open("3160448201")["ok"])

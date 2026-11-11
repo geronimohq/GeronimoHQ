@@ -76,6 +76,12 @@
         "label": "cOLa-TeaM ZE maps",
         "kind": "maps",
         "community": "mapeadores_cola"
+      },
+      {
+        "id": "3304608958",
+        "label": "cOLa-TeaM server assets",
+        "kind": "item",
+        "community": "mapeadores_cola"
       }
     ],
     "net4all": [
