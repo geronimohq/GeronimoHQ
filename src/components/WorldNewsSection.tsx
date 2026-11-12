@@ -44,7 +44,7 @@ export const WorldNewsSection: React.FC<Props> = ({ theme }) => {
 
   return (
     <section id="world-news" className="relative w-full max-w-6xl mx-auto px-4 pt-2 pb-10 scroll-mt-4">
-      <div className={`bento-card ${isBanana ? 'bento-accent-banana' : 'bento-accent-pepe'}`}>
+      <div className={`bento-card ${isBanana ? 'bento-accent-banana' : 'bento-accent-pepe'} ${loaded ? '' : 'min-h-[560px]'}`}>{/* reserve room while loading so sections below do not jump */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-4 border-b border-[#1E2E26] pb-4">
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-2">

@@ -6,8 +6,9 @@ import { sfx } from '../sound';
 import { Info, WeeklyBanner } from '../components/Info';
 import { useAdminPrompt, useModal } from '../components/Modal';
 import MapCleaner from '../components/MapCleaner';
+import StateCheck from '../components/StateCheck';
 import PAGES from '../data/pages.json';
-import { LONG_TOOLS, STATUS_LABEL, TOOL_INFO } from '../toolText';
+import { LONG_TOOLS, RECORD_HINT, STATUS_LABEL, TOOL_INFO, TYPICAL_S, VPK_HOW, VPK_REPAIR_HOW, progressOf } from '../toolText';
 import type { MaintState, ToolRun } from '../types';
 
 const M = PAGES.maintenance;
@@ -87,10 +88,16 @@ export default function Maintenance({ busy, setBusy, go }: { busy: boolean; setB
     const r = await api.vpkVerify();
     setMapStat(r.message);
     openModal({ kind: r.corrupted ? 'warn' : 'ok', label: 'Workshop VPK health', title: r.corrupted ? `${r.corrupted} damaged VPK packs found` : 'All Workshop VPK packs are healthy',
-      body: `${r.message}${r.bad.length ? `\n\nDamaged: ${r.bad.join(', ')}\n\nUse Repair corrupted VPKs to let Steam download them again.` : ''}` });
+      body: `${r.message}${r.bad.length ? `\n\nDamaged:\n${r.bad.map((b) => `• ${b}`).join('\n')}\n\nUse Repair corrupted VPKs to let Steam download them again.` : ''}\n\n${VPK_HOW}` });
   };
+  const openTool = async (name: string, what: 'report' | 'record' | 'folder') => {
+    sfx.click();
+    const r = await api.maintToolOpen(name, what);
+    if (!r.ok) openModal({ kind: 'warn', label: TOOL_INFO[name]?.name ?? 'Windows tool', title: what === 'report' ? 'No report to open' : 'Could not open it', body: r.error });
+  };
+  const runProgress = running ? progressOf(running.pct, now - running.started, (st?.tool_last?.[running.name]?.seconds ?? 0) > 20 ? st!.tool_last[running.name].seconds : TYPICAL_S[running.name] ?? 600) : null;
   const repair = () => openModal({
-    kind: 'q', label: 'Confirm', title: 'Repair corrupted VPKs?', body: 'Removes only damaged or incomplete Workshop folders so Steam downloads them again cleanly. Healthy maps are not touched.',
+    kind: 'q', label: 'Confirm', title: 'Repair corrupted VPKs?', body: `Removes only damaged or incomplete Workshop folders so Steam downloads them again cleanly. Healthy maps are not touched.\n\n${VPK_REPAIR_HOW}`,
     confirm: { text: 'Repair', run: async () => { const r = await api.vpkRepair(); openModal({ kind: r.count ? 'ok' : (r.skipped ? 'warn' : 'ok'), label: 'Workshop VPK repair', title: r.count ? 'Repair complete' : (r.skipped ? 'Nothing was removed' : 'Nothing to repair'), body: r.message }); } },
   });
 
@@ -148,6 +155,7 @@ export default function Maintenance({ busy, setBusy, go }: { busy: boolean; setB
           <button className="btn cut amber pri" disabled={busy} title={M.cleanup_tip} onClick={run}>{busy ? 'Working…' : 'Run selected PC clean-up'}</button>
         </div>
       </div>
+      <StateCheck page="maintenance" intro="Measures what each clean-up would remove right now (temp files, update cache, web caches, thumbnails, Recycle Bin). Check before, run the clean-up, then check again to see the difference. Read-only." />
 
       <div className="glass card">
         <div className="sect" style={{ marginBottom: 10 }}>{M.tools_title}</div>
@@ -155,11 +163,13 @@ export default function Maintenance({ busy, setBusy, go }: { busy: boolean; setB
           <div role="status" aria-live="polite" style={{ border: '1px solid var(--cyan)', borderRadius: 10, padding: '10px 14px', marginBottom: 12, background: 'var(--cyan-dim)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
               <div className="t">Running: {TOOL_INFO[running.name].name}</div>
-              <div className="mono" style={{ fontSize: 12, color: 'var(--cyan)' }}>{running.pct != null ? `${running.pct.toFixed(running.pct % 1 ? 1 : 0)}% · ` : ''}elapsed {clock(now - running.started)}</div>
+              <div className="mono" style={{ fontSize: 12, color: 'var(--cyan)' }} title={runProgress?.real ? 'The percentage Windows itself reports.' : 'Windows has not reported a percentage yet, so this is an estimate from how long the tool usually takes (on this PC, if it ran before). It never reaches 100% on its own.'}>
+                {runProgress ? `${runProgress.real ? '' : 'about '}${runProgress.value.toFixed(runProgress.real && runProgress.value % 1 ? 1 : 0)}% · ${runProgress.real ? 'reported by Windows' : 'estimate'} · ` : ''}elapsed {clock(now - running.started)}
+              </div>
             </div>
-            <div className={running.pct == null ? 'bar ind' : 'bar'}><i style={running.pct == null ? undefined : { width: `${running.pct}%` }} /></div>
+            <div className="bar"><i style={{ width: `${runProgress?.value ?? 0}%`, transition: 'width 1s linear', opacity: runProgress?.real ? 1 : 0.75 }} /></div>
             <div className="d" style={{ color: 'var(--tx2)', marginTop: 8 }}>
-              Windows is working. {running.pct == null ? 'This tool does not report progress right now. ' : 'The percentage can stay still for several minutes. '}
+              Windows is working. {runProgress?.real ? 'This is the percentage Windows reports; it can stay still for several minutes. ' : 'Windows has not reported a percentage yet, so the bar shows an estimate from how long this usually takes. It only fills up when the tool really ends. '}
               Usually {TOOL_INFO[running.name].time}. You can use the app and the PC; do not shut down or sleep it, and keep this app open. A result window opens when it ends.
             </div>
           </div>
@@ -178,9 +188,14 @@ export default function Maintenance({ busy, setBusy, go }: { busy: boolean; setB
               <div className="d" key={k} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '2px 0' }}>
                 <span style={{ minWidth: 190 }}>{TOOL_INFO[k].name}</span>
                 <span style={{ color: tone }}>{l ? `${STATUS_LABEL[l.status] ?? l.headline} · ${new Date(l.at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · took ${clock(l.seconds)}` : 'not run yet on this PC'}</span>
+                {l?.report && <button className="lnk" title="Opens a text copy of this result that you can keep, print or share" onClick={() => void openTool(k, 'report')}>Report</button>}
+                <button className="lnk" title={`Opens what Windows itself recorded: ${RECORD_HINT[k]}`} onClick={() => void openTool(k, 'record')}>Windows&apos; record</button>
               </div>
             );
           })}
+          <div className="decal" style={{ marginTop: 8, textTransform: 'none', letterSpacing: 0, lineHeight: 1.5 }}>
+            Want it on paper? Every finished run is saved as a text file (<button className="lnk" onClick={() => void openTool('sfc', 'folder')}>{String.raw`Documents\CS2 Command Center\Reports`}</button>) that you can open, print or share; <b>Report</b> opens the last one. <b>Windows&apos; record</b> opens what Windows itself wrote, without this app: SFC&apos;s [SR] lines from CBS.log, DISM&apos;s dism.log, and for TRIM the Optimize Drives window (Last run column).
+          </div>
         </div>
       </div>
       <AnimatePresence>{cleaner && <MapCleaner onClose={() => setCleaner(false)} />}</AnimatePresence>

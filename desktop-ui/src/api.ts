@@ -71,6 +71,8 @@ export const api = {
   maintState: () => call<MaintState>('maint_state'),
   maintRun: (opts: Record<string, boolean>) => call<{ ok: boolean; error?: string }>('maint_run', opts),
   maintTool: (name: string) => call<{ ok: boolean; error?: string; started?: number }>('maint_tool', name),
+  stateCheck: (page: 'engine' | 'maintenance') => call<import('./types').StateCheck>('state_check', page),
+  maintToolOpen: (name: string, what: 'report' | 'record' | 'folder') => call<{ ok: boolean; error?: string; path?: string }>('maint_tool_open', name, what),
   launchState: () => call<LaunchState>('launch_state'),
   launchSave: (o: string) => call<{ ok: boolean; error?: string }>('launch_save', o),
   boost: () => call<{ ok: boolean; msg: string; already?: boolean }>('boost_run'),
@@ -154,6 +156,13 @@ async function mock(name: string, ...args: unknown[]): Promise<unknown> {
     case 'open_path': case 'open_url': return true;
     case 'relaunch_admin': return { ok: false };
     case 'maint_state': return { drives: [{ drive: 'C:', total_gb: 500, free_gb: 120, used_gb: 380, used_pct: 76, is_critical: false }, { drive: 'E:', total_gb: 1000, free_gb: 330, used_gb: 670, used_pct: 67, is_critical: false }], admin: false, days_maint: 4, tool_run: null, tool_last: {} };
+    case 'maint_tool_open': return { ok: true };
+    case 'state_check': return { ok: true, summary: '2 in place or clean, 2 not applied or can be cleaned, 1 for information.', at: new Date().toISOString(), rows: [
+      { key: 'gamedvr', label: 'Windows Game DVR background recording', state: 'ok', value: 'Off (set by the tweak)', how: "Windows Settings > Gaming > Captures: 'Record what happened' is off." },
+      { key: 'fullscreen', label: 'Fullscreen optimizations off for cs2.exe', state: 'off', value: 'Windows default (enabled)', how: 'Right-click cs2.exe > Properties > Compatibility.' },
+      { key: 'autoexec', label: 'Performance block in autoexec.cfg', state: 'ok', value: 'Present', how: 'Open autoexec.cfg in Notepad.' },
+      { key: 'dumps', label: 'CS2 crash dumps', state: 'off', value: '3 file(s), 41.2 MB can be cleaned', how: 'CS2 game\\csgo\\dumps' },
+      { key: 'power', label: 'Active Windows power plan', state: 'info', value: 'Balanced', how: 'Control Panel > Power Options.' }] };
     case 'maint_run': case 'maint_tool': setTimeout(() => window.__emit?.('job', { name: 'maint_run', ok: true }), 800); return { ok: true };
     case 'launch_state': return { current: '-novid -threads 4', vdf_found: true, warnings: ["'-threads' detected: Causes thread contention."], recommended: '-novid -nojoy', suggestions: [] };
     case 'launch_save': case 'autoexec_install': case 'autoexec_restore': case 'autoexec_fps': case 'dns_apply': case 'dns_restore': return { ok: true };

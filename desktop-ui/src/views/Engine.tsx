@@ -5,6 +5,7 @@ import { sfx } from '../sound';
 import { Info, WeeklyBanner } from '../components/Info';
 import PAGES from '../data/pages.json';
 import type { EngineState } from '../types';
+import StateCheck from '../components/StateCheck';
 
 export const TWEAKS = [
   { key: 'shaders', group: 'engine', title: 'Optimize shader pre-caching & purge caches', desc: 'Removes fragmented GPU/DirectX shaders. Recommended after game patches to eliminate micro-stutters.' },
@@ -88,6 +89,7 @@ export default function Engine({ opts, setOpts, onApplied, log, power, setPower,
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
         <button className="btn cut ghost" onClick={() => { sfx.click(); onApplied(); }}>&#9889; Apply selected tweaks</button>
       </div>
+      <StateCheck page="engine" intro="Reads the real settings on this PC (registry, autoexec.cfg, cache folders, power plan) and shows which tweaks are in place, with how to check each one in Windows yourself. Run it before and after applying. Read-only." />
     </section>
   );
 }

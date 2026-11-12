@@ -127,6 +127,9 @@ class Api:
     def map_get(self, map_name: str, wid: str = "") -> Dict[str, Any]:
         return self.core.map_get(map_name, wid)
 
+    def maint_tool_open(self, name: str, what: str) -> Dict[str, Any]:
+        return self.core.maint_tool_open(str(name or ""), str(what or ""))
+
     def workshop_open(self, wid: str) -> Dict[str, Any]:
         return self.core.workshop_open(str(wid or ""))
 
@@ -261,6 +264,9 @@ class Api:
         return self.core.servers_remove(sid)
 
     # engine tweaks
+    def state_check(self, page: str) -> Dict[str, Any]:
+        return self.core.state_check(str(page or ""))
+
     def engine_state(self) -> Dict[str, Any]:
         return self.core.engine_state()
 
