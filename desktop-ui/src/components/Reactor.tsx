@@ -23,11 +23,9 @@ const LEDS = (
   </g>
 );
 
-// Measured on a Ryzen 7 / RX 6600 with the window in front: CSS keyframe animations here cost about 20-28% of one CPU core and ~75 MB in the
-// page process, because every animation frame re-blurs the glass panels above the backdrop. Moving the rings from JS 4 times a second looks
-// almost the same and costs ~10%; while the window is in the background (for example while you play CS2) it does not move at all.
-const TICK_MS = 250;
-const SPEED: Record<string, number> = { r: -170, f: 80, '': 120 };     // seconds per turn, like the old CSS (r = reverse)
+// Smooth (display refresh rate) CSS animation while the window is in front. The animation is paused, so it costs nothing, while the
+// window is in the background or minimized (for example while you play CS2), when Settings > Performance turns it off, and when Windows
+// asks for reduced motion. Pausing keeps the rings where they are, so they continue from the same spot.
 export const BG_ANIM_EVENT = 'cs2cc-bg-anim';
 
 function ReactorImpl() {
@@ -35,39 +33,22 @@ function ReactorImpl() {
   useEffect(() => {
     const el = root.current;
     if (!el) return;
-    const rings = Array.from(el.querySelectorAll<SVGGElement>('.spin'));
-    const core = el.querySelector<SVGCircleElement>('.core');
-    const leds = Array.from(el.querySelectorAll<SVGRectElement>('.led'));
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     let enabled = !reduced;
-    let t = 0;                                                    // seconds of animation actually shown (not wall time), so it never jumps
-    let last = performance.now();
-    const draw = () => {
-      for (const g of rings) {
-        const d = SPEED[g.classList.contains('r') ? 'r' : g.classList.contains('f') ? 'f' : ''];
-        g.style.transform = `rotate(${((t / d) * 360) % 360}deg)`;
-      }
-      if (core) {
-        const b = (1 - Math.cos((t / 5) * Math.PI * 2)) / 2;
-        core.style.transform = `scale(${1 + 0.03 * b})`;
-        core.style.opacity = String(0.88 + 0.12 * b);
-      }
-      leds.forEach((l, i) => { l.style.opacity = Math.sin(t * 1.85 + i * 2.1) > 0 ? '1' : '.25'; });
-    };
-    const tick = () => {
-      const now = performance.now();
-      const dt = Math.min(1, (now - last) / 1000);
-      last = now;
-      if (!enabled || document.hidden || !document.hasFocus()) return;          // window in the background or minimized: stay still
-      t += dt;
-      draw();
-    };
-    draw();
-    const id = window.setInterval(tick, TICK_MS);
-    const onSetting = (e: Event) => { enabled = !reduced && (e as CustomEvent<boolean>).detail !== false; };
+    const sync = () => el.classList.toggle('still', !enabled || document.hidden || !document.hasFocus());
+    const onSetting = (e: Event) => { enabled = !reduced && (e as CustomEvent<boolean>).detail !== false; sync(); };
+    sync();
+    window.addEventListener('focus', sync);
+    window.addEventListener('blur', sync);
+    document.addEventListener('visibilitychange', sync);
     window.addEventListener(BG_ANIM_EVENT, onSetting);
-    void api.settingsGet().then((v) => { if (v && v.animated_background === false) enabled = false; }).catch(() => undefined);
-    return () => { window.clearInterval(id); window.removeEventListener(BG_ANIM_EVENT, onSetting); };
+    void api.settingsGet().then((v) => { if (v && v.animated_background === false) { enabled = false; sync(); } }).catch(() => undefined);
+    return () => {
+      window.removeEventListener('focus', sync);
+      window.removeEventListener('blur', sync);
+      document.removeEventListener('visibilitychange', sync);
+      window.removeEventListener(BG_ANIM_EVENT, onSetting);
+    };
   }, []);
   return (
     <div className="bgfx" aria-hidden="true" ref={root}>

@@ -33,7 +33,7 @@ declare const __APP_EXE_SHA256__: string;
 declare const __APP_EXE_SIZE_MB__: number;
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=2.0.12';
+  const downloadUrl = '/CS2_Command_Center.exe?v=2.0.13';
   const exeSha256 = typeof __APP_EXE_SHA256__ !== 'undefined' ? __APP_EXE_SHA256__ : '66B78485C7C1F5622C12B702D07C83B7CEC781E344DC7AFE35B0272B494E7A01';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -288,7 +288,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v2.0.12
+              v2.0.13
             </span>
             <span className="text-xs font-code px-2 py-0.5 bg-amber-950 text-amber-300 border border-amber-500/50 rounded uppercase">
               Experimental

@@ -58,8 +58,10 @@ export function useAdminPrompt() {
     confirm: { text: 'Relaunch as Administrator', run: async () => {
       const r = await api.relaunchAdmin(page);
       if (!r.ok) open({ kind: 'warn', label: 'Cancelled', title: 'Still running as a standard user', body: 'The Windows permission request was cancelled or declined.' });
-      else open({ kind: 'ok', label: 'Administrator', title: 'Opening the Administrator copy\u2026',
-        body: 'Windows said yes. The Administrator copy is starting on this same tab; the first time it can take a few seconds while Windows prepares it.\n\nThis window closes by itself as soon as the new one is ready, so nothing is lost in between. If the new copy does not appear within 30 seconds, this window stays open and keeps working as a standard user.' });
+      // Normally the Administrator copy is up within a second or two and this window simply closes. Only when it takes longer does a
+      // message say what is going on (this window is still here then, so the message can actually be read).
+      else window.setTimeout(() => open({ kind: 'ok', label: 'Administrator', title: 'Still opening the Administrator copy\u2026',
+        body: 'Windows said yes and the Administrator copy is starting on this same tab; the first time it can take a few seconds while Windows prepares it.\n\nThis window closes by itself as soon as the new one is ready, so nothing is lost in between. If the new copy does not appear within 30 seconds, this window stays open and keeps working as a standard user.' }), 4000);
     } },
   });
 }
