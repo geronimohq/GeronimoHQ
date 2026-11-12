@@ -62,7 +62,7 @@ export default function Settings({ onClose, onSaved, openDiscord, log }: { onClo
 
         <Sec t="Performance" />
         <Opt on={v.animated_background !== false} set={(x) => set('animated_background', x)} title="Animated reactor background"
-          desc="The rings turn slowly while this window is in front and stop by themselves when it is in the background or minimized (for example while you play). Turn off for the lowest CPU use; the background stays, just still." />
+          desc="The rings turn smoothly while this window is in front and pause by themselves when it is in the background or minimized (for example while you play). Turn off for the lowest CPU use; the background stays, just still." />
 
         <Sec t="Server & sniper" />
         <Opt on={v.sniper_sound_enabled} set={(x) => set('sniper_sound_enabled', x)} title="Slot Sniper audio notifications" desc="Plays an audio chime when a monitored server slot becomes available." />

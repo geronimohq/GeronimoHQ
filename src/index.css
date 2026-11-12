@@ -183,6 +183,9 @@
   border-top: 2px solid #FF2A85;
 }
 
+/* In the components layer so Tailwind utilities on a pill (active tab fill, hover colours) win over these defaults.
+   Unlayered, this background beat bg-[...] and active nav pills showed dark text on a dark pill. */
+@layer components {
 .hud-data-pill {
   background-color: #0E1512;
   border: 1px solid #1E2E26;
@@ -192,6 +195,7 @@
   font-size: 11px;
   align-items: center;
   gap: 8px;
+}
 }
 
 /* Custom Cyberpunk Font Classes */

@@ -1,9 +1,9 @@
 {
-  "version": "2.0.12",
+  "version": "2.0.13",
   "build_date": "2026-11-12",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "BA56162C5E9306ED7B585E47CEE741080165453B673DFCB3FCD48AB79234F71C",
-  "size": 21791805,
-  "notes": "SFC and DISM guide now follows Microsoft's recommended order (DISM, then SFC, restart only when Windows asks), explains every possible result and what to do next, and links Microsoft's own instructions.",
-  "signature": "2b319795c296b6ea1b6d0baaec59fe3d07616bb4633ac9e2e6afff66dabaf243de4c1efc7275b27a3df91162994611ee84eda5f32a36a5090e0353386bb1030e"
+  "sha256": "5BA8861CD73A52084AE5480CF141D7CE1B5A32C713D041846BA35CD78C339CA4",
+  "size": 21792953,
+  "notes": "The reactor background spins smoothly again (full frame rate) and still pauses while the app is in the background. Relaunch as Administrator no longer flashes a message. Website fixes.",
+  "signature": "9c46f183cd3d82a7e4228ad1cf8e213f3efee8fa6595840a545952753633ab23ea8fa6fd50d3e32724ba16129c854dd28c9718e9de89f27647cf8cba82ba670b"
 }
