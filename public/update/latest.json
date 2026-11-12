@@ -1,9 +1,9 @@
 {
-  "version": "2.0.13",
+  "version": "2.0.14",
   "build_date": "2026-11-12",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "5BA8861CD73A52084AE5480CF141D7CE1B5A32C713D041846BA35CD78C339CA4",
-  "size": 21792953,
-  "notes": "The reactor background spins smoothly again (full frame rate) and still pauses while the app is in the background. Relaunch as Administrator no longer flashes a message. Website fixes.",
-  "signature": "9c46f183cd3d82a7e4228ad1cf8e213f3efee8fa6595840a545952753633ab23ea8fa6fd50d3e32724ba16129c854dd28c9718e9de89f27647cf8cba82ba670b"
+  "sha256": "D819E76241287AE6E7BCD514EC4F530E09E0993B9C300F4C64B58E3BA4F23BC0",
+  "size": 21792628,
+  "notes": "DISM now reports 'Restart needed first' when Windows has changes waiting for a restart (code 0x800F0806), instead of 'Did not complete', and quotes Windows' own message.",
+  "signature": "c815391c2697534fc82c6559e4aab015e315d4fc33b4663c3523c7785c0c3e19f235b48805d96d7e6a340353891393b7bf10f0bacee2fab78388ad75060cd608"
 }

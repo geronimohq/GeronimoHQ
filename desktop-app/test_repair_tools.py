@@ -224,5 +224,25 @@ class ServiceFlow(unittest.TestCase):
         self.assertIsNone(core._busy_long)
 
 
+class DismPendingRestart(unittest.TestCase):
+    """Seen on a laptop right after DISM health restore + SFC: 0x800F0806 means Windows waits for a restart, not that something broke."""
+    OUT = ("Deployment Image Servicing and Management tool Version: 10.0.26100.9549 Image Version: 10.0.26200.9711 "
+           "Error: 0x800f0806 The operation could not be completed due to pending operations. The DISM log file can be found at C:/WINDOWS/Logs/DISM/dism.log")
+
+    def test_pending_operations_mean_restart_first(self):
+        import core_logic
+        for tool in ("winsxs", "dism"):
+            r = core_logic._classify_dism(tool, 2148468742, self.OUT, 2, 100, 100)
+            self.assertEqual(r["status"], "reboot")
+            self.assertIn("Restart the PC", r["next"])
+            self.assertEqual(r["evidence"][0], "Windows said: The operation could not be completed due to pending operations.")
+
+    def test_other_errors_quote_dism_sentence_not_the_banner(self):
+        import core_logic
+        r = core_logic._classify_dism("dism", 0x800F081F, self.OUT.replace("0x800f0806", "0x800f081f"), 5, None, None)
+        self.assertEqual(r["status"], "failed")
+        self.assertNotIn("Management tool Version", r["headline"])
+
+
 if __name__ == "__main__":
     unittest.main()
