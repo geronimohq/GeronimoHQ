@@ -1,9 +1,9 @@
 {
-  "version": "2.0.11",
+  "version": "2.0.12",
   "build_date": "2026-11-12",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "75DA94AE3916D0E6E65C84363419A6C1450171E21E075C0A55B03E2C2F0AB2B6",
-  "size": 21792402,
-  "notes": "Lighter and smoother: the reactor background uses about half the CPU and stops while the app is in the background (Settings > Performance). Smaller exe, faster start. SFC/DISM guide, saved reports and live status under every tweak and clean-up.",
-  "signature": "065cfed3a631d44c34536a1086e49e399489357e6ba42eeece9e60849a5c0ca9cfeb4108e26b3141fab43b93d7657027d55d1b487fba2968ae3a82b52ee00a0f"
+  "sha256": "BA56162C5E9306ED7B585E47CEE741080165453B673DFCB3FCD48AB79234F71C",
+  "size": 21791805,
+  "notes": "SFC and DISM guide now follows Microsoft's recommended order (DISM, then SFC, restart only when Windows asks), explains every possible result and what to do next, and links Microsoft's own instructions.",
+  "signature": "2b319795c296b6ea1b6d0baaec59fe3d07616bb4633ac9e2e6afff66dabaf243de4c1efc7275b27a3df91162994611ee84eda5f32a36a5090e0353386bb1030e"
 }
