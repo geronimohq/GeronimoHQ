@@ -1,9 +1,9 @@
 {
-  "version": "2.0.10",
+  "version": "2.0.11",
   "build_date": "2026-11-12",
   "url": "https://geronimohq.com/CS2_Command_Center.exe",
-  "sha256": "63E994D2E4E3B1E31DC05A67E66D08C77E47F2C9B6088C93D9C58578E47081B3",
-  "size": 27458667,
-  "notes": "Map Cleaner: maps used in the last 30 days are now always protected (also subscribed ones), clearer 'Last modified' date, Subscribed maps tab, clickable maps and a note about duplicates. Website: card and players window layout fixes.",
-  "signature": "fa3331dc2d499833af87bc06d11bde42d08fd56d10ce788ac61683c710004b028b582ba5d646405e6296d318226f3de684a2da6c839f6ca807920125e4c2ac0d"
+  "sha256": "75DA94AE3916D0E6E65C84363419A6C1450171E21E075C0A55B03E2C2F0AB2B6",
+  "size": 21792402,
+  "notes": "Lighter and smoother: the reactor background uses about half the CPU and stops while the app is in the background (Settings > Performance). Smaller exe, faster start. SFC/DISM guide, saved reports and live status under every tweak and clean-up.",
+  "signature": "065cfed3a631d44c34536a1086e49e399489357e6ba42eeece9e60849a5c0ca9cfeb4108e26b3141fab43b93d7657027d55d1b487fba2968ae3a82b52ee00a0f"
 }
