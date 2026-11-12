@@ -28,8 +28,8 @@ export interface DashboardData {
   days_opt: number | null; days_maint: number | null;
 }
 export interface ToolRun { name: string; started: number; pct: number | null }
-export interface ToolLast { at: string; status: string; ok: boolean; headline: string; seconds: number }
-export interface ToolResult { tool: string; title: string; status: string; ok: boolean; headline: string; detail: string; next: string; evidence: string[]; seconds: number; log_file: string }
+export interface ToolLast { at: string; status: string; ok: boolean; headline: string; seconds: number; report?: string }
+export interface ToolResult { tool: string; title: string; status: string; ok: boolean; headline: string; detail: string; next: string; evidence: string[]; seconds: number; log_file: string; report?: string }
 export interface MaintState { drives: Drive[]; admin: boolean; days_maint: number | null; tool_run: ToolRun | null; tool_last: Record<string, ToolLast> }
 export interface SniperStatus { text: string; state: 'idle' | 'armed' | 'triggered' | 'cooldown'; target: string; active: boolean }
 export interface PlayerRow { name: string; score: number; time: string; seconds?: number; index?: number }
@@ -42,7 +42,7 @@ export interface AutoexecState { state: string; status: string; path: string | n
 export interface MpoState { gpu: string; vendor: string; disabled: boolean; badge: string; detail: string; reg_path: string }
 export interface SettingsValues {
   start_with_windows: boolean; start_minimized: boolean; minimize_to_tray_on_close: boolean; open_on_page: string; sniper_sound_enabled: boolean;
-  server_refresh_speed: string; discord_rpc_enabled: boolean; check_updates_on_startup: boolean; speeds: string[]; pages: string[];
+  server_refresh_speed: string; discord_rpc_enabled: boolean; check_updates_on_startup: boolean; animated_background?: boolean; speeds: string[]; pages: string[];
 }
 export interface MapRow { id: string; name: string; status: string; type: string; sub: boolean; subscribed?: boolean; asset: boolean; protected: boolean; workshop: boolean; dupe: boolean; size: number; size_str: string; mtime: string }
 export interface MapsSettings { communities: string[]; protect_recent: boolean }
@@ -51,3 +51,5 @@ export interface UpdateInfo { available: boolean; version?: string; notes?: stri
 export interface HwInfo { cpu: string; gpu: string; profile: string; recommended_plan: 'balanced' | 'high' }
 export interface AnalyzerResult { found: boolean; condebug?: boolean; message: string; file_size_mb: number; frame_hitch_events: number; shader_compile_events: number; net_jitter_events: number; vpk_load_events: number; last_map: string; recommendation: string; log_path: string; grade: string }
 export interface VpkResult { message: string; healthy: number; corrupted: number; total_gb: number; bad: string[] }
+export interface CheckRow { key: string; label: string; state: 'ok' | 'off' | 'info' | 'na'; value: string; how: string; detail?: string }
+export interface StateCheck { ok: boolean; error?: string; rows?: CheckRow[]; summary?: string; at?: string }

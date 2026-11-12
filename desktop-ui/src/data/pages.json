@@ -78,7 +78,7 @@
   "map_title": "🗺️ CS2 CUSTOM MAP CLEANER (BETA) & STEAM WORKSHOP VPK HEALTH VERIFIER",
   "map_desc": "Inspect community workshop maps, check every workshop pack for unfinished or damaged downloads, and reclaim SSD space. Beta: check carefully before deleting anything.",
   "map_tip": "Opens the interactive Custom ZE Map Cleaner to safely inspect and delete unused .vpk map packages.",
-  "vpk_tip": "Scans steamapps/workshop/content/730/ and checks each pack's index and that all of its data parts are on disk and complete.",
+  "vpk_tip": "Checks every workshop pack: no leftover download files, a readable VPK index, and every data part (_000.vpk, ...) on disk and as long as the index needs. Finds downloads that stopped half way. Read-only: nothing is changed.",
   "repair_tip": "Removes only the packs Verify flagged (never links, never anything changed in the last 15 minutes) so Steam can download them again.",
   "cleanup_tip": "Executes all checked cleanup routines above safely.",
   "tools_title": "OFFICIAL WINDOWS SYSTEM TOOLS & DIAGNOSTICS",

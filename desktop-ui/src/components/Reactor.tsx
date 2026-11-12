@@ -1,4 +1,5 @@
-import { memo } from 'react';
+import { memo, useEffect, useRef } from 'react';
+import { api } from '../api';
 
 /** Reactor-core backdrop (vector): rotating rings, armor plating, rivets, blinking LEDs. Pure SVG + CSS, no layout cost on resize. */
 const CX = 800, CY = 410;
@@ -22,9 +23,54 @@ const LEDS = (
   </g>
 );
 
+// Measured on a Ryzen 7 / RX 6600 with the window in front: CSS keyframe animations here cost about 20-28% of one CPU core and ~75 MB in the
+// page process, because every animation frame re-blurs the glass panels above the backdrop. Moving the rings from JS 4 times a second looks
+// almost the same and costs ~10%; while the window is in the background (for example while you play CS2) it does not move at all.
+const TICK_MS = 250;
+const SPEED: Record<string, number> = { r: -170, f: 80, '': 120 };     // seconds per turn, like the old CSS (r = reverse)
+export const BG_ANIM_EVENT = 'cs2cc-bg-anim';
+
 function ReactorImpl() {
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    const rings = Array.from(el.querySelectorAll<SVGGElement>('.spin'));
+    const core = el.querySelector<SVGCircleElement>('.core');
+    const leds = Array.from(el.querySelectorAll<SVGRectElement>('.led'));
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    let enabled = !reduced;
+    let t = 0;                                                    // seconds of animation actually shown (not wall time), so it never jumps
+    let last = performance.now();
+    const draw = () => {
+      for (const g of rings) {
+        const d = SPEED[g.classList.contains('r') ? 'r' : g.classList.contains('f') ? 'f' : ''];
+        g.style.transform = `rotate(${((t / d) * 360) % 360}deg)`;
+      }
+      if (core) {
+        const b = (1 - Math.cos((t / 5) * Math.PI * 2)) / 2;
+        core.style.transform = `scale(${1 + 0.03 * b})`;
+        core.style.opacity = String(0.88 + 0.12 * b);
+      }
+      leds.forEach((l, i) => { l.style.opacity = Math.sin(t * 1.85 + i * 2.1) > 0 ? '1' : '.25'; });
+    };
+    const tick = () => {
+      const now = performance.now();
+      const dt = Math.min(1, (now - last) / 1000);
+      last = now;
+      if (!enabled || document.hidden || !document.hasFocus()) return;          // window in the background or minimized: stay still
+      t += dt;
+      draw();
+    };
+    draw();
+    const id = window.setInterval(tick, TICK_MS);
+    const onSetting = (e: Event) => { enabled = !reduced && (e as CustomEvent<boolean>).detail !== false; };
+    window.addEventListener(BG_ANIM_EVENT, onSetting);
+    void api.settingsGet().then((v) => { if (v && v.animated_background === false) enabled = false; }).catch(() => undefined);
+    return () => { window.clearInterval(id); window.removeEventListener(BG_ANIM_EVENT, onSetting); };
+  }, []);
   return (
-    <div className="bgfx" aria-hidden="true">
+    <div className="bgfx" aria-hidden="true" ref={root}>
       <svg className="bgsvg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
 <defs>
  <radialGradient id="core" cx="50%" cy="50%" r="50%"><stop offset="0" stopColor="#fff6dc"/><stop offset=".16" stopColor="#ffd27a"/><stop offset=".42" stopColor="#ff9420"/><stop offset=".78" stopColor="#9a4208" stopOpacity=".75"/><stop offset="1" stopColor="#3a1604" stopOpacity="0"/></radialGradient>

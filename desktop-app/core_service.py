@@ -406,6 +406,17 @@ class Core:
         return bool(server_browser.save_servers(customs))
 
     # ---------- engine tweaks ----------
+    def state_check(self, page: str) -> Dict[str, Any]:
+        """Read-only: what Engine Tweaks / PC Maintenance changed, measured on this PC right now (see verify_state.py)."""
+        import verify_state
+        try:
+            rows = verify_state.engine_check(self.paths) if page == "engine" else verify_state.maint_check(self.paths) if page == "maintenance" else None
+        except Exception as e:
+            return {"ok": False, "error": f"The check could not finish: {e}"}
+        if rows is None:
+            return {"ok": False, "error": "Unknown page."}
+        return {"ok": True, "rows": rows, "summary": verify_state.summary(rows), "at": datetime.datetime.now().isoformat(timespec="seconds")}
+
     def engine_state(self) -> Dict[str, Any]:
         plan = ("Balanced", "")
         try:
@@ -730,12 +741,22 @@ class Core:
                 res = core_logic.run_repair(name, progress)
                 for l in res["logs"]:
                     self.log(l)
+                report = ""
+                if res["status"] != "admin":
+                    try:                                                  # a text copy the user can keep, print or share
+                        import tool_reports
+                        import version
+                        report = tool_reports.write_report(res, f"v{version.APP_VERSION}")
+                        self.log(f"[REPORT] Saved the {tool_reports.TITLES.get(name, name)} result to {report}")
+                    except Exception as e:
+                        self.log(f"[REPORT] Could not save the report: {e}")
+                res["report"] = report
                 last = dict(self.config.get("maint_tool_last") or {})
                 last[name] = {"at": datetime.datetime.now().isoformat(timespec="seconds"), "status": res["status"], "ok": res["ok"],
-                              "headline": res["headline"], "seconds": res["seconds"]}
+                              "headline": res["headline"], "seconds": res["seconds"], "report": report}
                 self.config["maint_tool_last"] = last
                 app_config.save_config(self.config)
-                self.emit("tool_result", {k: v for k, v in res.items() if k != "logs"})
+                self.emit("tool_result", {k: v for k, v in res.items() if k not in ("logs", "sr_lines")})
             finally:
                 self._tool_run = None
 
@@ -743,6 +764,31 @@ class Core:
         if r.get("ok") and long:
             r["started"] = started
         return r
+
+    def maint_tool_open(self, name: str, what: str) -> Dict[str, Any]:
+        """what = "report": opens the saved text report of the last run; "record": opens Windows' own record of the tool."""
+        import os
+        import tool_reports
+        if name not in ("sfc", "dism", "winsxs", "trim"):
+            return {"ok": False, "error": "Unknown tool."}
+        if what == "report":
+            path = ((self.config.get("maint_tool_last") or {}).get(name) or {}).get("report") or ""
+            if not path or not tool_reports.is_report_path(path):
+                return {"ok": False, "error": "There is no saved report for this tool yet. Reports are written when a run finishes."}
+            try:
+                os.startfile(path)
+            except OSError as e:
+                return {"ok": False, "error": f"Windows could not open the report: {e}"}
+            return {"ok": True, "path": path}
+        if what == "folder":
+            try:
+                os.startfile(tool_reports.reports_dir())
+                return {"ok": True}
+            except OSError as e:
+                return {"ok": False, "error": f"Windows could not open the folder: {e}"}
+        if what == "record":
+            return tool_reports.open_windows_record(name)
+        return {"ok": False, "error": "Unknown request."}
 
     # ---------- launch options ----------
     def launch_state(self) -> Dict[str, Any]:

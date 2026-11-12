@@ -33,7 +33,7 @@ declare const __APP_EXE_SHA256__: string;
 declare const __APP_EXE_SIZE_MB__: number;
 
 export const CS2CommandCenterPreview: React.FC = () => {
-  const downloadUrl = '/CS2_Command_Center.exe?v=2.0.10';
+  const downloadUrl = '/CS2_Command_Center.exe?v=2.0.11';
   const exeSha256 = typeof __APP_EXE_SHA256__ !== 'undefined' ? __APP_EXE_SHA256__ : '66B78485C7C1F5622C12B702D07C83B7CEC781E344DC7AFE35B0272B494E7A01';
   const [activeTab, setActiveTab] = useState<string>('autoexec');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -188,7 +188,8 @@ export const CS2CommandCenterPreview: React.FC = () => {
         'Verify Workshop VPK health: reads each pack\'s index and confirms that every data part is on disk and complete, so a download that stopped half way is found, not just a bad file header.',
         'Repair corrupted VPKs removes only the damaged workshop folders. It never follows links and skips anything changed in the last 15 minutes. Steam can download the map again afterwards.',
         'Filter tabs (All maps, Not played in 30+ days, Subscribed maps, Server assets), search, and sort by size or date. Click a map\'s name to open its Steam workshop page. The date column is "Last modified": CS2 does not record when you played a map, so it is the date Steam or CS2 last touched the map\'s files, and only maps older than 30 days are listed as not played. If you ever see the same map twice, it is most probably a subscription from a different pack (for example GFL\'s own copy); delete with caution.',
-        'PC Maintenance also has the Windows tools SFC, DISM and SSD TRIM (Administrator). Each one asks first and says how long it takes, shows live progress and elapsed time while it runs, and ends with a plain result (no problems found, repaired, or could not fix) plus how the app knows: Windows\' own message, its exit code and, for SFC, the CBS.log lines of that run. If the result cannot be confirmed it says so instead of reporting success. The last result of each tool stays on screen.'
+        'PC Maintenance also has the Windows tools SFC, DISM and SSD TRIM (Administrator). Each one asks first and shows a progress bar: Windows\' own percentage when it reports one, otherwise an estimate from how long the tool usually takes, clearly marked. It ends with a plain result and how the app knows, every result is saved as a text report you can print (Documents\\CS2 Command Center\\Reports), and a Windows\' record button opens what Windows itself logged (CBS.log for SFC, dism.log for DISM, Optimize Drives for TRIM).',
+        'Under every Engine tweak and PC clean-up a live, read-only "Now:" line shows what is really on your PC (registry values, autoexec.cfg, cache, temp and Recycle Bin sizes), refreshed after every run, with Details and how to check it in Windows yourself. SFC and DISM come with a step-by-step guide to the right order (DISM, restart, SFC, restart).',
       ],
       parameters: [
         { name: 'VPK check', value: 'Index + data parts', desc: 'Finds truncated files and missing or short archive parts' },
@@ -287,7 +288,7 @@ export const CS2CommandCenterPreview: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-cyber font-black text-white tracking-wider flex items-center gap-3">
             CS2 COMMAND CENTER
             <span className="text-xs font-code px-2 py-0.5 bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/50 rounded uppercase">
-              v2.0.10
+              v2.0.11
             </span>
             <span className="text-xs font-code px-2 py-0.5 bg-amber-950 text-amber-300 border border-amber-500/50 rounded uppercase">
               Experimental

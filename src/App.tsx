@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { RetroGridCanvas } from './components/RetroGridCanvas';
-import { CyberNavbar, scrollToSectionById } from './components/CyberNavbar';
+import { CyberNavbar, RoamerPill, VibesPill, scrollToSectionById } from './components/CyberNavbar';
 import { PepeHeroStage } from './components/PepeHeroStage';
 import { BananaHeroStage } from './components/BananaHeroStage';
 import { DownloadRamSection } from './components/DownloadRamSection';
@@ -165,11 +165,7 @@ export const App: React.FC = () => {
       </Suspense>
 
       {/* Unified Top Command Dock & Telemetry Strip */}
-      <CyberNavbar
-        theme={theme}
-        gremlinEnabled={gremlinEnabled}
-        onToggleGremlin={() => setGremlinEnabled((prev) => !prev)}
-      />
+      <CyberNavbar theme={theme} />
 
       {/* Smooth Theme Transition Toast Notification */}
       {transitionBanner && (
@@ -236,6 +232,8 @@ export const App: React.FC = () => {
                   <PhoneCall className="w-3.5 h-3.5" />
                   <span>{theme === 'banana' ? '🐸 SWITCH TO PEPE HOLO' : '🍌 SWITCH TO BANANA PHONE'}</span>
                 </button>
+                <RoamerPill theme={theme} enabled={gremlinEnabled} onToggle={() => setGremlinEnabled((prev) => !prev)} />
+                <VibesPill theme={theme} />
               </div>
             </div>
 
@@ -326,7 +324,7 @@ export const App: React.FC = () => {
         {/* MODULE 2: INTERACTIVE WEB CS2 AUTOEXEC & ZE BINDS GENERATOR (#cfg-studio) */}
         <CS2AutoexecGeneratorSection />
 
-        {/* MODULE 3: CS2 COMMAND CENTER DESKTOP SUITE (1-Click App Download v2.0.10) */}
+        {/* MODULE 3: CS2 COMMAND CENTER DESKTOP SUITE (1-Click App Download v2.0.11) */}
         <CS2CommandCenterPreview />
 
       </main>

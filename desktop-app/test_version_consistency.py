@@ -17,7 +17,7 @@ class TestVersionConsistency(unittest.TestCase):
         """Verify version.py exports valid APP_VERSION and BUILD_DATE."""
         self.assertTrue(hasattr(version, "APP_VERSION"))
         self.assertTrue(hasattr(version, "BUILD_DATE"))
-        self.assertEqual(version.APP_VERSION, "2.0.10")
+        self.assertEqual(version.APP_VERSION, "2.0.11")
         self.assertTrue(len(version.BUILD_DATE) >= 8)
 
     def test_diagnostics_includes_version(self):

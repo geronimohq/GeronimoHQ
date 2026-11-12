@@ -11,36 +11,105 @@ import {
   PhoneCall,
   Activity,
   Smile,
+  Newspaper,
   Menu,
   X
 } from 'lucide-react';
 
 interface CyberNavbarProps {
   theme: 'pepe' | 'banana';
-  gremlinEnabled: boolean;
-  onToggleGremlin: () => void;
 }
 
 export const scrollToSectionById = (id: string) => {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const navEl = document.querySelector('header');
-  const navHeight = navEl ? navEl.offsetHeight : 104;
-  // Holo-deck and Transmission keep original spacing per user spec; other modules land snug (8px) below navbar
-  const targetGap = (id === 'hero-stage' || id === 'contact') ? 16 : 8;
-  const elementPosition = el.getBoundingClientRect().top + window.pageYOffset;
-  const offsetPosition = Math.max(0, elementPosition - navHeight - targetGap);
-  window.scrollTo({
-    top: offsetPosition,
-    behavior: 'smooth'
-  });
+  const targetTop = () => {
+    const el = document.getElementById(id);
+    if (!el) return null;
+    const navEl = document.querySelector('header');
+    const navHeight = navEl ? navEl.offsetHeight : 104;
+    // Holo-deck and Transmission keep original spacing per user spec; other modules land snug (8px) below navbar
+    const targetGap = (id === 'hero-stage' || id === 'contact') ? 16 : 8;
+    return Math.max(0, el.getBoundingClientRect().top + window.pageYOffset - navHeight - targetGap);
+  };
+  const first = targetTop();
+  if (first === null) return;
+  window.scrollTo({ top: first, behavior: 'smooth' });
+
+  // Sections above the target can still change height while the page scrolls (thumbnails, live server data, the news feed),
+  // which used to leave the visitor a little above or below the section. When the scroll ends, land exactly; never fight the
+  // visitor if they start scrolling themselves.
+  let done = false;
+  const stop = () => {
+    done = true;
+    window.removeEventListener('wheel', stop);
+    window.removeEventListener('touchstart', stop);
+    window.removeEventListener('keydown', stop);
+  };
+  const settle = () => {
+    if (done) return;
+    stop();
+    const t = targetTop();
+    if (t !== null && Math.abs(window.pageYOffset - t) > 4) window.scrollTo({ top: t, behavior: 'auto' });
+  };
+  window.addEventListener('wheel', stop, { once: true, passive: true });
+  window.addEventListener('touchstart', stop, { once: true, passive: true });
+  window.addEventListener('keydown', stop, { once: true });
+  if ('onscrollend' in window) window.addEventListener('scrollend', settle, { once: true });
+  window.setTimeout(settle, 1200);
 };
 
-export const CyberNavbar: React.FC<CyberNavbarProps> = ({
-  theme,
-  gremlinEnabled,
-  onToggleGremlin,
-}) => {
+/** The roamer toggle and the vibes pill (they live in the hero card, beside the theme switch). */
+export const RoamerPill: React.FC<{ theme: 'pepe' | 'banana'; enabled: boolean; onToggle: () => void }> = ({ theme, enabled, onToggle }) => {
+  const isBanana = theme === 'banana';
+  return (
+    <button
+      onClick={onToggle}
+      data-gremlin-ignore="true"
+      className={`hud-data-pill flex justify-between min-w-[170px] h-[34px] cursor-pointer transition-all ${
+        enabled
+          ? (isBanana ? 'border-[#FFE135]/60 text-[#FFE135] bg-[#0E1512] hover:bg-[#2A260E]' : 'border-[#2ECC71]/60 text-[#2ECC71] bg-[#0E1512] hover:bg-[#122A1E]')
+          : 'border-[#1E2E26] text-[#94A39E] bg-[#0E1512] hover:text-white'
+      }`}
+      title="Toggle the roaming interactive Pepe / Banana character"
+    >
+      <span className="flex items-center gap-1.5 truncate">
+        <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
+        <span className="font-bold truncate">{enabled ? 'ROAMER: ACTIVE' : 'ROAMER: STANDBY'}</span>
+      </span>
+      <span className={`text-[10px] px-1.5 rounded font-bold ${enabled ? (isBanana ? 'bg-[#FFE135]/20 text-[#FFE135]' : 'bg-[#2ECC71]/20 text-[#2ECC71]') : 'bg-black/40 text-[#94A39E]'}`}>
+        {enabled ? 'ON' : 'OFF'}
+      </span>
+    </button>
+  );
+};
+
+/** Deliberately useless and not a number shown elsewhere on the page; text and colours follow the theme. */
+export const VibesPill: React.FC<{ theme: 'pepe' | 'banana' }> = ({ theme }) => {
+  const isBanana = theme === 'banana';
+  return (
+    <div className="hud-data-pill flex justify-between min-w-[170px] h-[34px] text-[#94A39E]" title="Completely scientific, completely useless">
+      <span className="flex items-center gap-1.5 truncate">
+        <Smile className={`w-3.5 h-3.5 flex-shrink-0 ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`} />
+        <span className="truncate">VIBES: <strong className="text-white">GOOD</strong></span>
+      </span>
+      <span className={`font-bold flex-shrink-0 ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`}>{isBanana ? 'PEEL-OK' : 'RIBBIT'}</span>
+    </div>
+  );
+};
+
+// In page order (the scroll spy relies on it). The mobile menu lists all of them; on desktop the two in SECOND_ROW sit under the brand row.
+const NAV_ITEMS = [
+  { id: 'hero-stage', label: 'HOLO-DECK', icon: Radio },
+  { id: 'download-ram', label: 'DOWNLOAD RAM', icon: Cpu },
+  { id: 'server-radar', label: 'ZE SERVERS', icon: Wifi },
+  { id: 'ze-toolkit', label: 'ZE TOOLKIT', icon: Wrench },
+  { id: 'world-news', label: 'WORLD NEWS', icon: Newspaper },
+  { id: 'cfg-studio', label: 'CFG STUDIO', icon: Sliders },
+  { id: 'cs2-command', label: 'CS2 APP', icon: Shield },
+  { id: 'contact', label: 'TRANSMISSION', icon: Mail },
+];
+const SECOND_ROW = ['download-ram', 'world-news'];
+
+export const CyberNavbar: React.FC<CyberNavbarProps> = ({ theme }) => {
   const isBanana = theme === 'banana';
   const [timeStr, setTimeStr] = useState<string>('');
   const [activeSection, setActiveSection] = useState<string>('hero-stage');
@@ -86,7 +155,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
 
   // Real-Time Active Section Scroll Spy
   useEffect(() => {
-    const sectionIds = ['hero-stage', 'download-ram', 'server-radar', 'ze-toolkit', 'cfg-studio', 'cs2-command', 'contact'];
+    const sectionIds = NAV_ITEMS.map((i) => i.id);          // page order; the spy checks from the bottom up
     
     const handleScroll = () => {
       // 1. If manual smooth scroll is in progress from a nav click, ignore scroll-spy updates
@@ -159,15 +228,9 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
     }
   };
 
-  const navItems = [
-    { id: 'hero-stage', label: 'HOLO-DECK', icon: Radio },
-    { id: 'download-ram', label: 'DOWNLOAD RAM', icon: Cpu },
-    { id: 'server-radar', label: 'ZE SERVERS', icon: Wifi },
-    { id: 'ze-toolkit', label: 'ZE TOOLKIT', icon: Wrench },
-    { id: 'cfg-studio', label: 'CFG STUDIO', icon: Sliders },
-    { id: 'cs2-command', label: 'CS2 APP', icon: Shield },
-    { id: 'contact', label: 'TRANSMISSION', icon: Mail },
-  ];
+  const navItems = NAV_ITEMS;
+  const topItems = navItems.filter((i) => !SECOND_ROW.includes(i.id));
+  const secondRowItems = navItems.filter((i) => SECOND_ROW.includes(i.id));
 
   return (
     <header className="sticky top-0 z-50 w-full bg-[#070B09]/95 backdrop-blur-xl border-b border-[#1E2E26] py-2.5 transition-colors duration-500">
@@ -210,9 +273,9 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           {/* Floating Command Pill Dock (Desktop) */}
           <nav
             aria-label="Primary Command Dock"
-            className="hidden lg:flex items-center gap-1.5 p-1 rounded-xl bg-[#0E1512] border border-[#1E2E26] shadow-inner flex-shrink-0"
+            className="hidden xl:flex items-center gap-1.5 p-1 rounded-xl bg-[#0E1512] border border-[#1E2E26] shadow-inner flex-shrink-0"
           >
-            {navItems.map((item) => {
+            {topItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeSection === item.id;
               return (
@@ -233,16 +296,8 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             })}
           </nav>
 
-          {/* Mobile Actions: Quick RAM Pill & Accessible Menu Toggle */}
-          <div className="lg:hidden flex items-center gap-2">
-            <a
-              href="#download-ram"
-              onClick={(e) => handleNavClick(e, 'download-ram')}
-              className={`btn-cyber-34 ${isBanana ? 'btn-banana-cta' : 'btn-pepe-cta'}`}
-            >
-              <Cpu className="w-3.5 h-3.5" />
-              <span>RAM</span>
-            </a>
+          {/* Mobile: menu toggle (every section, RAM included, is inside the menu) */}
+          <div className="xl:hidden flex items-center gap-2">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label={mobileMenuOpen ? 'Close Navigation Menu' : 'Open Navigation Menu'}
@@ -258,7 +313,7 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
         {mobileMenuOpen && (
           <nav
             aria-label="Mobile Command Menu"
-            className="lg:hidden flex flex-col gap-1.5 p-2 rounded-xl bg-[#0E1512] border border-[#1E2E26] shadow-2xl"
+            className="xl:hidden flex flex-col gap-1.5 p-2 rounded-xl bg-[#0E1512] border border-[#1E2E26] shadow-2xl"
           >
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -282,8 +337,8 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
           </nav>
         )}
 
-        {/* TIER 2: UNIFIED HARDWARE & TELEMETRY HUD STRIP (Equal-Sized Monospace Data Pills) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-0.5">
+        {/* TIER 2: theme signal, DOWNLOAD RAM and WORLD NEWS (desktop), clock. Same 4 columns as before, so the row lines up with the top bar. */}
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 pt-0.5">
           {/* Pill 1: Active Theme Signal */}
           <div
             data-gremlin-ignore="true"
@@ -299,48 +354,28 @@ export const CyberNavbar: React.FC<CyberNavbarProps> = ({
             <span className={`w-2 h-2 rounded-full animate-ping flex-shrink-0 ${isBanana ? 'bg-[#FFE135]' : 'bg-[#2ECC71]'}`} />
           </div>
 
-          {/* Pill 2: Interactive Roaming Agent Toggle */}
-          <button
-            onClick={onToggleGremlin}
-            data-gremlin-ignore="true"
-            className={`hud-data-pill justify-between cursor-pointer transition-all ${
-              gremlinEnabled
-                ? (isBanana ? 'border-[#FFE135]/60 text-[#FFE135] bg-[#0E1512] hover:bg-[#2A260E]' : 'border-[#2ECC71]/60 text-[#2ECC71] bg-[#0E1512] hover:bg-[#122A1E]')
-                : 'border-[#1E2E26] text-[#94A39E] bg-[#0E1512] hover:text-white'
-            }`}
-            title="Toggle the roaming interactive Pepe / Banana character"
-          >
-            <span className="flex items-center gap-1.5 truncate">
-              <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
-              <span className="font-bold truncate">
-                {gremlinEnabled ? 'ROAMER: ACTIVE' : 'ROAMER: STANDBY'}
-              </span>
-            </span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${gremlinEnabled ? (isBanana ? 'bg-[#FFE135]/20 text-[#FFE135]' : 'bg-[#2ECC71]/20 text-[#2ECC71]') : 'bg-black/40 text-[#94A39E]'}`}>
-              {gremlinEnabled ? 'ON' : 'OFF'}
-            </span>
-          </button>
-
-          {/* Pill 3: Vibes. Deliberately useless and not a number that is shown elsewhere on the page
-              (the server counts live in the ZE servers section). Same pill size as the others, so it cannot
-              push ROAMER or LOCAL around; text and colours follow the active theme. */}
-          <div
-            className="hidden sm:flex hud-data-pill justify-between text-[#94A39E]"
-            title="Completely scientific, completely useless"
-          >
-            <span className="flex items-center gap-1.5 truncate">
-              <Smile className={`w-3.5 h-3.5 flex-shrink-0 ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`} />
-              <span className="truncate">
-                VIBES: <strong className="text-white">GOOD</strong>
-              </span>
-            </span>
-            <span className={`font-bold flex-shrink-0 ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`}>
-              {isBanana ? 'PEEL-OK' : 'RIBBIT'}
-            </span>
-          </div>
+          {secondRowItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+            return (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                onClick={(e) => handleNavClick(e, item.id)}
+                className={`hidden xl:flex hud-data-pill font-cyber justify-center tracking-wider transition-all ${
+                  isActive
+                    ? (isBanana ? 'bg-[#FFE135] border-[#FFE135] text-[#070B09] font-bold shadow-[0_0_14px_rgba(255,225,53,0.45)]' : 'bg-[#2ECC71] border-[#2ECC71] text-[#070B09] font-bold shadow-[0_0_14px_rgba(46,204,113,0.45)]')
+                    : (isBanana ? 'text-[#94A39E] hover:text-white hover:border-[#FFE135]/60' : 'text-[#94A39E] hover:text-white hover:border-[#2ECC71]/60')
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#070B09]' : (isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]')}`} />
+                <span>{item.label}</span>
+              </a>
+            );
+          })}
 
           {/* Pill 4: Real-Time Clock & Low-Latency Uplink */}
-          <div className="hidden sm:flex hud-data-pill justify-between text-[#94A39E]">
+          <div className="flex hud-data-pill justify-between text-[#94A39E]">
             <span className="flex items-center gap-1.5">
               <Activity className={`w-3.5 h-3.5 flex-shrink-0 ${isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}`} />
               <strong className={isBanana ? 'text-[#FFE135]' : 'text-[#2ECC71]'}>{timeStr || '18:00:00'}</strong>

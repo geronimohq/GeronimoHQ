@@ -55,6 +55,7 @@ SETTINGS_DEFAULTS: Dict[str, Any] = {
     # and the sniper volume slider were saved but never used by anything.
     "discord_rpc_enabled": True,
     "check_updates_on_startup": True,
+    "animated_background": True,          # the reactor backdrop moves (only while the window is in front); off = completely still
 }
 
 # Server query interval on the ZE Game Servers page, per the "Server query speed" setting.

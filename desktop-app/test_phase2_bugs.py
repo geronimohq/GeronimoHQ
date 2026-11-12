@@ -91,7 +91,8 @@ class Bug6SettingsPersist(AppTestBase):
     def test_dialog_covers_every_setting(self):
         with _quiet_boxes():
             v = self._open()
-            self.assertEqual(set(v), set(app_config.SETTINGS_DEFAULTS))
+            # animated_background belongs to the web window (the shipped app); the classic Tk dialog has no reactor to animate
+            self.assertEqual(set(v), set(app_config.SETTINGS_DEFAULTS) - {"animated_background"})
             self.root._settings_dialog_vars["start_with_windows"].set(False)
 
     def test_round_trip_every_setting(self):
@@ -476,8 +477,9 @@ class Bug5Geo(unittest.TestCase):
                 items = geo_estimate.estimate_countries(region, 64, [], None, now=datetime(2026, 11, 11, hour, 0, tzinfo=timezone.utc))
                 self.assertEqual(items[0]["code"], "CN", (region, hour, items))
                 self.assertGreaterEqual(items[0]["percentage"], 60, (region, hour, items))
-        jp = geo_estimate.estimate_countries("East Asia (Tokyo, JP)", 64, [], None)
-        self.assertEqual(jp[0]["code"], "JP")                                # the other Asian servers keep their own split
+        # Fixed clock: the estimate follows the time of day, so without it this line failed whenever it ran during Japan's night.
+        jp = geo_estimate.estimate_countries("East Asia (Tokyo, JP)", 64, [], None, now=datetime(2026, 11, 11, 12, 0, tzinfo=timezone.utc))
+        self.assertEqual(jp[0]["code"], "JP")                                # the other Asian servers keep their own split (21:00 in Tokyo)
 
     def test_no_invented_fixed_percentages_left(self):
         with open(os.path.join(HERE, "server_browser.py"), encoding="utf-8") as fh:

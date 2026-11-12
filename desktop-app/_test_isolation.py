@@ -21,6 +21,7 @@ app_config.is_windows_startup_enabled = lambda: False
 app_config.is_windows_startup_minimized = lambda: False
 app_config.migrate_legacy_startup_task = lambda: "none"  # never touch the real Task Scheduler
 atexit.register(shutil.rmtree, TEMP_DIR, True)
+os.environ["CS2CC_REPORTS_DIR"] = os.path.join(TEMP_DIR, "reports")      # tool reports never go to the real Documents folder
 
 # AUDIT rule D: app tests must not query real game servers, the backend or zegraph.
 # Set CS2CC_TEST_NETWORK=1 to allow live network (e.g. a deliberate end-to-end run).

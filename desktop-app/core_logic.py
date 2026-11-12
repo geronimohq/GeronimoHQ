@@ -141,15 +141,10 @@ def find_cs2_paths() -> Dict[str, Optional[str]]:
 
 # ----------------- CS2 OPTIMIZATIONS -----------------
 
-def clean_shader_caches() -> Tuple[int, int, List[str]]:
-    """Cleans DirectX, NVIDIA, AMD, and Intel shader caches. Returns (deleted_files, freed_bytes, logs)."""
-    logs = []
-    deleted_files = 0
-    freed_bytes = 0
-    
+def shader_cache_dirs() -> List[str]:
+    """The DirectX, NVIDIA, AMD and Intel shader cache folders this PC could have (only the ones that exist are touched)."""
     local_app_data = os.environ.get("LOCALAPPDATA", "")
     app_data = os.environ.get("APPDATA", "")
-    
     target_dirs = []
     if local_app_data:
         target_dirs.extend([
@@ -162,6 +157,15 @@ def clean_shader_caches() -> Tuple[int, int, List[str]]:
         ])
     if app_data:
         target_dirs.append(os.path.join(app_data, "NVIDIA", "ComputeCache"))
+    return target_dirs
+
+
+def clean_shader_caches() -> Tuple[int, int, List[str]]:
+    """Cleans DirectX, NVIDIA, AMD, and Intel shader caches. Returns (deleted_files, freed_bytes, logs)."""
+    logs = []
+    deleted_files = 0
+    freed_bytes = 0
+    target_dirs = shader_cache_dirs()
 
     for folder in target_dirs:
         if not os.path.exists(folder):
@@ -308,38 +312,56 @@ def revert_windows_game_dvr() -> List[str]:
         logs.append(f"[ERROR] Failed reverting GameDVR: {e}")
     return logs
 
+_LAYERS_KEY = r"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"
+_FSO_FLAG = "DISABLEDXMAXIMIZEDWINDOWEDMODE"
+_LEGACY_APP_VALUE = "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE"      # what versions up to 2.0.10 wrote
+
+
+def _layer_flags(value) -> List[str]:
+    return [t for t in str(value or "").split() if t != "~"]
+
+
 def disable_fullscreen_optimizations(cs2_exe_path: str) -> List[str]:
-    logs = []
+    """Adds the 'Disable fullscreen optimizations' compatibility flag for cs2.exe. Flags the user set themselves on cs2.exe
+    (for example 'Run as administrator') are kept: the app only adds its own flag."""
     if not cs2_exe_path or not os.path.exists(cs2_exe_path):
-        logs.append("[WARN] cs2.exe path not found.")
-        return logs
-
-    try:
-        key_path = r"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"
-        val = "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE"
-        if _reg_value(winreg.HKEY_CURRENT_USER, key_path, cs2_exe_path) == val:
-            return [f"[ALREADY] Fullscreen Optimizations are already disabled for {os.path.basename(cs2_exe_path)}; nothing was changed."]
-        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path) as k:
-            winreg.SetValueEx(k, cs2_exe_path, 0, winreg.REG_SZ, val)
-        logs.append(f"[SUCCESS] Disabled Fullscreen Optimizations for {os.path.basename(cs2_exe_path)}")
-    except Exception as e:
-        logs.append(f"[ERROR] Registry write failed: {e}")
-    return logs
-
-def revert_fullscreen_optimizations(cs2_exe_path: str) -> List[str]:
-    logs = []
-    if not cs2_exe_path:
         return ["[WARN] cs2.exe path not found."]
     try:
-        key_path = r"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE) as k:
-            winreg.DeleteValue(k, cs2_exe_path)
-        logs.append(f"[REVERTED] Restored default fullscreen settings for {os.path.basename(cs2_exe_path)}")
-    except FileNotFoundError:
-        logs.append(f"[ALREADY] No custom fullscreen flag was set for {os.path.basename(cs2_exe_path)}; nothing to restore.")
+        current = _reg_value(winreg.HKEY_CURRENT_USER, _LAYERS_KEY, cs2_exe_path)
+        flags = _layer_flags(current)
+        if _FSO_FLAG in flags:
+            return [f"[ALREADY] Fullscreen Optimizations are already disabled for {os.path.basename(cs2_exe_path)}; nothing was changed."]
+        value = "~ " + " ".join(flags + [_FSO_FLAG])
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _LAYERS_KEY) as k:
+            winreg.SetValueEx(k, cs2_exe_path, 0, winreg.REG_SZ, value)
+        kept = f" Your own compatibility settings on cs2.exe were kept ({' '.join(flags)})." if flags else ""
+        return [f"[SUCCESS] Disabled Fullscreen Optimizations for {os.path.basename(cs2_exe_path)}.{kept}"]
     except Exception as e:
-        logs.append(f"[ERROR] Failed reverting fullscreen flag: {e}")
-    return logs
+        return [f"[ERROR] Registry write failed: {e}"]
+
+
+def revert_fullscreen_optimizations(cs2_exe_path: str) -> List[str]:
+    """Removes only the app's flag again. Other compatibility flags on cs2.exe stay; the value is deleted only when nothing else is left."""
+    if not cs2_exe_path:
+        return ["[WARN] cs2.exe path not found."]
+    name = os.path.basename(cs2_exe_path)
+    try:
+        current = _reg_value(winreg.HKEY_CURRENT_USER, _LAYERS_KEY, cs2_exe_path)
+        if current is None or _FSO_FLAG not in _layer_flags(current):
+            return [f"[ALREADY] No fullscreen flag from this app is set for {name}; nothing to restore."]
+        drop = {_FSO_FLAG, "HIGHDPIAWARE"} if str(current).strip() == _LEGACY_APP_VALUE else {_FSO_FLAG}
+        left = [f for f in _layer_flags(current) if f not in drop]
+        if left:
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _LAYERS_KEY) as k:
+                winreg.SetValueEx(k, cs2_exe_path, 0, winreg.REG_SZ, "~ " + " ".join(left))
+            return [f"[REVERTED] Restored default fullscreen settings for {name}; your other compatibility settings were kept ({' '.join(left)})."]
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _LAYERS_KEY, 0, winreg.KEY_SET_VALUE) as k:
+            winreg.DeleteValue(k, cs2_exe_path)
+        return [f"[REVERTED] Restored default fullscreen settings for {name}"]
+    except FileNotFoundError:
+        return [f"[ALREADY] No custom fullscreen flag was set for {name}; nothing to restore."]
+    except Exception as e:
+        return [f"[ERROR] Failed reverting fullscreen flag: {e}"]
 
 def install_autoexec(cfg_dir: str) -> Tuple[bool, List[str]]:
     logs = []
@@ -893,12 +915,17 @@ def clean_windows_update_cache() -> Tuple[int, int, List[str]]:
     deleted = 0
     freed = 0
     sw_dir = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "SoftwareDistribution", "Download")
+    if not is_admin():
+        return 0, 0, ["[NOTICE] The Windows Update cache belongs to Windows, so only Administrator can clear it. It was skipped; use Relaunch as Administrator to include it."]
+    recent = time.time() - 2 * 3600
     if os.path.exists(sw_dir):
         try:
             for root, dirs, files in os.walk(sw_dir, topdown=False):
                 for f in files:
                     fp = os.path.join(root, f)
                     try:
+                        if os.path.getmtime(fp) > recent:
+                            continue                          # Windows Update may be downloading or installing it right now
                         sz = os.path.getsize(fp)
                         os.remove(fp)
                         deleted += 1
@@ -922,6 +949,7 @@ def clean_explorer_thumbnail_cache() -> Tuple[int, int, List[str]]:
     logs = []
     deleted = 0
     freed = 0
+    in_use = 0
     local_app_data = os.environ.get("LOCALAPPDATA", "")
     if local_app_data:
         exp_dir = os.path.join(local_app_data, "Microsoft", "Windows", "Explorer")
@@ -934,26 +962,44 @@ def clean_explorer_thumbnail_cache() -> Tuple[int, int, List[str]]:
                         deleted += 1
                         freed += sz
                     except (PermissionError, OSError):
+                        in_use += 1
                         continue
     mb = freed / (1024 * 1024)
     logs.append(f"[THUMBNAILS] Cleaned {deleted} thumbnail & icon cache files ({mb:.1f} MB freed).")
+    if in_use:
+        logs.append(f"[NOTICE] {in_use} thumbnail cache file(s) are kept open by Windows Explorer and were left alone. Windows rebuilds them itself; they can be cleared after signing out and in.")
     return deleted, freed, logs
 
-def empty_recycle_bin() -> Tuple[bool, List[str]]:
-    """Empties the Windows Recycle Bin across all drives without prompts."""
-    logs = []
+def recycle_bin_info() -> Optional[Tuple[int, int]]:
+    """(items, bytes) in the Recycle Bin of all drives, or None when Windows does not say."""
+    class SHQUERYRBINFO(ctypes.Structure):
+        _fields_ = [("cbSize", wintypes.DWORD), ("i64Size", ctypes.c_longlong), ("i64NumItems", ctypes.c_longlong)]
     try:
-        logs.append("[RECYCLE BIN] Purging Windows Recycle Bin across all drives...")
-        ret = ctypes.windll.shell32.SHEmptyRecycleBinW(None, None, 7)
-        if ret == 0 or ret == -2147418113:
-            logs.append("[SUCCESS] Windows Recycle Bin has been completely emptied.")
-            return True, logs
-        else:
-            logs.append(f"[INFO] Recycle Bin emptied (status code: {ret}).")
-            return True, logs
+        info = SHQUERYRBINFO()
+        info.cbSize = ctypes.sizeof(SHQUERYRBINFO)
+        if ctypes.windll.shell32.SHQueryRecycleBinW(None, ctypes.byref(info)) == 0:
+            return int(info.i64NumItems), int(info.i64Size)
+    except Exception:
+        pass
+    return None
+
+
+def empty_recycle_bin() -> Tuple[bool, List[str]]:
+    """Empties the Windows Recycle Bin across all drives without prompts, and checks afterwards that it really is empty."""
+    before = recycle_bin_info()
+    if before is not None and before[0] == 0:
+        return True, ["[ALREADY] The Recycle Bin is already empty; nothing was deleted."]
+    try:
+        ret = ctypes.windll.shell32.SHEmptyRecycleBinW(None, None, 7)      # no confirmation, no progress window, no sound
     except Exception as e:
-        logs.append(f"[ERROR] Could not empty Recycle Bin: {e}")
-        return False, logs
+        return False, [f"[ERROR] Could not empty Recycle Bin: {e}"]
+    after = recycle_bin_info()
+    if after is not None and after[0] == 0:
+        freed = (before[1] / (1024 * 1024)) if before else 0
+        return True, [f"[SUCCESS] Emptied the Recycle Bin{f': {before[0]} item(s), {freed:.1f} MB' if before else ''}. Checked afterwards: it is empty."]
+    if after is not None:
+        return False, [f"[WARN] The Recycle Bin still holds {after[0]} item(s) after emptying (status {ret}); some files are probably in use."]
+    return (ret == 0), ([f"[SUCCESS] Emptied the Recycle Bin."] if ret == 0 else [f"[WARN] Windows reported status {ret} while emptying the Recycle Bin."])
 
 def flush_dns_cache() -> Tuple[bool, List[str]]:
     """Flushes DNS resolver cache without resetting adapters or VPNs."""
@@ -975,12 +1021,11 @@ def flush_dns_cache() -> Tuple[bool, List[str]]:
             ["ipconfig", "/flushdns"],
             capture_output=True, text=True, creationflags=CREATE_NO_WINDOW
         )
-        if "Successfully" in res2.stdout or res2.returncode == 0:
+        if res2.returncode == 0:
             logs.append("[DNS] Successfully flushed DNS cache via ipconfig.")
             return True, logs
-        else:
-            logs.append(f"[DNS NOTICE] {res2.stdout.strip() or res2.stderr.strip() or 'Flushed'}")
-            return True, logs
+        logs.append(f"[DNS ERROR] Windows did not flush the DNS cache: {(res2.stdout or res2.stderr or '').strip()[:200] or f'exit code {res2.returncode}'}")
+        return False, logs
     except Exception as e:
         logs.append(f"[DNS ERROR] Failed to flush DNS: {e}")
         return False, logs
@@ -1067,7 +1112,10 @@ def cbs_evidence_since(offset: Optional[int]) -> Optional[Dict[str, Any]]:
             data = f.read()
     except OSError:
         return None
-    return parse_sr_lines([l for l in data.decode("utf-8", errors="replace").splitlines() if "[SR]" in l])
+    lines = [l for l in data.decode("utf-8", errors="replace").splitlines() if "[SR]" in l]
+    r = parse_sr_lines(lines)
+    r["sr_text"] = [l.strip()[:400] for l in lines[-300:]]           # for the saved report: SFC's own lines of this run
+    return r
 
 
 def _pct_in(text: str) -> Optional[float]:
@@ -1296,8 +1344,8 @@ def run_repair(tool: str, on_progress=None) -> Dict[str, Any]:
         args = ["dism", "/online", "/cleanup-image", "/startcomponentcleanup"]
         note = "[DISM] Purging superseded Windows update components from WinSxS. This can take several minutes."
     else:
-        args = ["defrag", "/C", "/O"]
-        note = "[TRIM] Running media-specific TRIM optimization (defrag /C /O)..."
+        args = ["defrag", "/C", "/O", "/U"]                                 # /U: defrag prints its progress, so the app can show it
+        note = "[TRIM] Running media-specific TRIM optimization (defrag /C /O /U)..."
     free_before = None
     if tool == "winsxs":
         try:
@@ -1310,7 +1358,9 @@ def run_repair(tool: str, on_progress=None) -> Dict[str, Any]:
         r = _result(tool, "timeout", False, f"{title} did not finish within {limit} minutes, so the app stopped waiting.",
                     "The scan was stopped by the app.", "Restart the PC and try again.", seconds=seconds)
     elif tool == "sfc":
-        r = _classify_sfc(rc, out, cbs_evidence_since(cbs_before), seconds)
+        sr = cbs_evidence_since(cbs_before)
+        r = _classify_sfc(rc, out, sr, seconds)
+        r["sr_lines"] = (sr or {}).get("sr_text", [])
     elif tool in ("dism", "winsxs"):
         free_after = None
         if tool == "winsxs":
