@@ -4,9 +4,10 @@ import { api } from '../api';
 import { sfx } from '../sound';
 import { useModal } from './Modal';
 import type { SettingsValues } from '../types';
+import { BG_ANIM_EVENT } from './Reactor';
 
 const DEFAULTS = { start_with_windows: false, start_minimized: false, minimize_to_tray_on_close: true, open_on_page: 'Dashboard', sniper_sound_enabled: true,
-  server_refresh_speed: 'Normal (5s)', discord_rpc_enabled: true, check_updates_on_startup: true };
+  server_refresh_speed: 'Normal (5s)', discord_rpc_enabled: true, check_updates_on_startup: true, animated_background: true };
 
 function Opt({ on, set, title, desc }: { on: boolean; set: (v: boolean) => void; title: string; desc: string }) {
   return (
@@ -34,6 +35,7 @@ export default function Settings({ onClose, onSaved, openDiscord, log }: { onClo
   const set = <K extends keyof SettingsValues>(k: K, val: SettingsValues[K]) => setV({ ...v, [k]: val });
   const save = async () => {
     const r = await api.settingsSave(v); sfx.toggle(); onSaved(r.refresh_seconds); onClose();
+    window.dispatchEvent(new CustomEvent(BG_ANIM_EVENT, { detail: v.animated_background !== false }));
     if (r.startup_ok === false) openModal({ kind: 'warn', label: 'Start with Windows', title: 'Could not change Start with Windows', body: 'Windows refused the startup entry. The other settings were saved. See the activity log.' });
   };
   // like 1.6.0: Reset only fills the dialog with the defaults; nothing changes until Save is clicked
@@ -57,6 +59,10 @@ export default function Settings({ onClose, onSaved, openDiscord, log }: { onClo
         <Opt on={v.minimize_to_tray_on_close} set={(x) => set('minimize_to_tray_on_close', x)} title="Minimize to the system tray when [-] is clicked" desc="Clicking [-] hides the window to the tray; clicking [X] closes the application completely." />
         <div className="row"><div className="grow"><div className="t" style={{ fontSize: 13 }}>Open on startup</div><div className="d" style={{ fontSize: 12 }}>Choose whether the app opens to the Dashboard or remembers your last active tab.</div></div>
           <div className="seg">{v.pages.map((s) => <button key={s} aria-pressed={v.open_on_page === s} onClick={() => { sfx.click(); set('open_on_page', s); }}>{s}</button>)}</div></div>
+
+        <Sec t="Performance" />
+        <Opt on={v.animated_background !== false} set={(x) => set('animated_background', x)} title="Animated reactor background"
+          desc="The rings turn slowly while this window is in front and stop by themselves when it is in the background or minimized (for example while you play). Turn off for the lowest CPU use; the background stays, just still." />
 
         <Sec t="Server & sniper" />
         <Opt on={v.sniper_sound_enabled} set={(x) => set('sniper_sound_enabled', x)} title="Slot Sniper audio notifications" desc="Plays an audio chime when a monitored server slot becomes available." />

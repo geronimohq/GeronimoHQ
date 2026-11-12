@@ -24,13 +24,10 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 .bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:#080a0e}
 .bgsvg{position:absolute;inset:0;width:100%;height:100%}
 .bgfx::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 95% 85% at 50% 40%,transparent 35%,rgba(3,4,6,.55) 100%),linear-gradient(rgba(7,9,11,.12),rgba(7,9,11,.3))}
-.spin{transform-box:fill-box;transform-origin:center;animation:spin 120s linear infinite}
-.spin.r{animation-direction:reverse;animation-duration:170s}.spin.f{animation-duration:80s}
-@keyframes spin{to{transform:rotate(360deg)}}
-.led{animation:led 3.4s ease-in-out infinite}.led.b{animation-delay:-1.1s}.led.c{animation-delay:-2.2s}
-@keyframes led{0%,100%{opacity:.25}50%{opacity:1}}
-.core{animation:breathe 5s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
-@keyframes breathe{0%,100%{opacity:.88;transform:scale(1)}50%{opacity:1;transform:scale(1.03)}}
+/* the rings, core and LEDs are moved by Reactor.tsx a few times a second (cheaper than keyframes under the blurred glass panels) */
+.spin{transform-box:fill-box;transform-origin:center}
+.led{opacity:.25}
+.core{transform-box:fill-box;transform-origin:center}
 /* soft ambient glow behind the featured map card (diffuse, no hard edges) */
 .featwrap{position:relative;isolation:isolate}
 .featwrap::before{content:"";position:absolute;inset:-48px -56px;z-index:-1;border-radius:50%;filter:blur(64px);opacity:.18;pointer-events:none;
@@ -319,13 +316,9 @@ html.max .statusbar{padding-bottom:8px}
 
 /* smoothness: skip painting rows that are off screen, keep the big spinner on its own layer, stop all motion while the window is hidden or minimized */
 .srv{content-visibility:auto;contain-intrinsic-size:auto 128px}
-.spin,.core{will-change:transform}
 html.idle *,html.idle *::before,html.idle *::after{animation-play-state:paused!important}
 
-/* CPU: the backdrop sits under every glass panel, so each animation frame re-blurs all of them. Same motion, far fewer frames. */
-.spin{animation-timing-function:steps(2400)}
-.core{animation-timing-function:steps(50)}
-.led{animation-timing-function:steps(10)}
+/* CPU: the backdrop sits under every glass panel, so each animation frame re-blurs all of them. Few frames for the little status dots. */
 .dot{animation-timing-function:steps(8)}
 .scrim.top{z-index:80}  /* message and confirm boxes sit above every other dialog (Map Cleaner, Players, Settings) */
 

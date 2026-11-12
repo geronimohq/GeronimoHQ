@@ -14,7 +14,9 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['tkinter', 'matplotlib', 'numpy'],
+    # Pillow is only used for the tray icon (PNG). AVIF/WebP decoders, colour management and FreeType are ~10 MB that would be unpacked
+    # on every start; Pillow treats them as optional and works without them.
+    excludes=['tkinter', 'matplotlib', 'numpy', 'PIL._avif', 'PIL._webp', 'PIL._imagingcms', 'PIL._imagingft', 'PIL.ImageQt', 'PIL.ImageTk'],
     noarchive=False,
     optimize=0,
 )

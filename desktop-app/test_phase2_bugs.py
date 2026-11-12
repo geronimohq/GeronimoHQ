@@ -91,7 +91,8 @@ class Bug6SettingsPersist(AppTestBase):
     def test_dialog_covers_every_setting(self):
         with _quiet_boxes():
             v = self._open()
-            self.assertEqual(set(v), set(app_config.SETTINGS_DEFAULTS))
+            # animated_background belongs to the web window (the shipped app); the classic Tk dialog has no reactor to animate
+            self.assertEqual(set(v), set(app_config.SETTINGS_DEFAULTS) - {"animated_background"})
             self.root._settings_dialog_vars["start_with_windows"].set(False)
 
     def test_round_trip_every_setting(self):

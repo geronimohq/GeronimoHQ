@@ -42,7 +42,7 @@ export interface AutoexecState { state: string; status: string; path: string | n
 export interface MpoState { gpu: string; vendor: string; disabled: boolean; badge: string; detail: string; reg_path: string }
 export interface SettingsValues {
   start_with_windows: boolean; start_minimized: boolean; minimize_to_tray_on_close: boolean; open_on_page: string; sniper_sound_enabled: boolean;
-  server_refresh_speed: string; discord_rpc_enabled: boolean; check_updates_on_startup: boolean; speeds: string[]; pages: string[];
+  server_refresh_speed: string; discord_rpc_enabled: boolean; check_updates_on_startup: boolean; animated_background?: boolean; speeds: string[]; pages: string[];
 }
 export interface MapRow { id: string; name: string; status: string; type: string; sub: boolean; subscribed?: boolean; asset: boolean; protected: boolean; workshop: boolean; dupe: boolean; size: number; size_str: string; mtime: string }
 export interface MapsSettings { communities: string[]; protect_recent: boolean }
