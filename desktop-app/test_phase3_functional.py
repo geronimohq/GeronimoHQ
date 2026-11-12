@@ -101,8 +101,13 @@ class P3_01_SettingsDoSomething(AppBase):
     def test_no_dead_settings_left(self):
         with open(os.path.join(HERE, "app.py"), encoding="utf-8") as fh:
             src = fh.read()
+        import glob
+        web = ""                                               # the shipped app's window (desktop-ui) may be the one that uses a setting
+        for f in glob.glob(os.path.join(HERE, "..", "desktop-ui", "src", "**", "*.tsx"), recursive=True):
+            with open(f, encoding="utf-8") as fh:
+                web += fh.read()
         for key in app_config.SETTINGS_DEFAULTS:
-            uses = src.count(f'"{key}"')
+            uses = src.count(f'"{key}"') + web.count(key)
             self.assertGreaterEqual(uses, 1, key)
         for dead in ("discord_presence_share", "sniper_sound_volume"):
             self.assertNotIn(f'"{dead}"', src)
