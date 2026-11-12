@@ -6,7 +6,7 @@ import { sfx } from '../sound';
 import { Info, WeeklyBanner } from '../components/Info';
 import { useAdminPrompt, useModal } from '../components/Modal';
 import MapCleaner from '../components/MapCleaner';
-import StateCheck from '../components/StateCheck';
+import { StatusBar, StatusLine, useLiveStatus } from '../components/StateCheck';
 import PAGES from '../data/pages.json';
 import { LONG_TOOLS, RECORD_HINT, STATUS_LABEL, TOOL_INFO, TYPICAL_S, VPK_HOW, VPK_REPAIR_HOW, progressOf } from '../toolText';
 import type { MaintState, ToolRun } from '../types';
@@ -21,17 +21,19 @@ const CLEAN = [
   { key: 'recycle', title: 'Empty the Windows Recycle Bin (purges deleted trash)', desc: 'Permanently frees space taken by discarded files in your Recycle Bin.' },
   { key: 'dns', title: 'Flush Windows DNS cache (refreshes server lookups)', desc: 'Flushes the local DNS resolver cache to fix community server connection timeouts.' },
 ] as const;
+// Repair tools first, in the order Microsoft recommends (DISM repairs SFC's source, then SFC, then the optional clean-up), then the others.
 const TOOLS = [
-  { key: 'cleanmgr', label: 'Launch Disk Cleanup', admin: false, tip: M.cleanmgr },
+  { key: 'dism', label: '1 · DISM health restore', admin: true, tip: M.dism },
+  { key: 'sfc', label: '2 · System File Checker (SFC)', admin: true, tip: M.sfc },
+  { key: 'winsxs', label: '3 · DISM WinSxS cleanup', admin: true, tip: M.winsxs },
   { key: 'trim', label: 'Run SSD TRIM (defrag /O)', admin: true, tip: M.trim },
+  { key: 'cleanmgr', label: 'Launch Disk Cleanup', admin: false, tip: M.cleanmgr },
   { key: 'startup', label: 'Startup apps manager', admin: false, tip: M.startup },
-  { key: 'sfc', label: 'System File Checker (SFC)', admin: true, tip: M.sfc },
-  { key: 'dism', label: 'DISM health restore', admin: true, tip: M.dism },
-  { key: 'winsxs', label: 'DISM WinSxS cleanup', admin: true, tip: M.winsxs },
 ] as const;
 
 export default function Maintenance({ busy, setBusy, go }: { busy: boolean; setBusy: (b: boolean) => void; go: (id: 'engine' | 'maintenance') => void }) {
   const [st, setSt] = useState<MaintState | null>(null);
+  const live = useLiveStatus('maintenance');
   const [daysOpt, setDaysOpt] = useState<number | null>(null);
   const [mapStat, setMapStat] = useState('Scanning maps & workshop content...');
   const [sel, setSel] = useState<Record<string, boolean>>({ temp: true, win_update: true, discord_steam: true, thumb: true, recycle: false, dns: true });
@@ -145,9 +147,10 @@ export default function Maintenance({ busy, setBusy, go }: { busy: boolean; setB
 
       <div className="glass card">
         <div className="sect" style={{ marginBottom: 4 }}>Safe disk &amp; cache clean-up</div>
+        <StatusBar at={live.at} busy={live.busy} error={live.error} onRefresh={() => void live.refresh()} note="Under each clean-up: what is there right now and what it would remove (read-only)." />
         {CLEAN.map((c) => (
           <div className="row" key={c.key}>
-            <div className="grow"><div className="t">{c.title}</div><div className="d">{c.desc}</div></div>
+            <div className="grow"><div className="t">{c.title}</div><div className="d">{c.desc}</div><StatusLine row={live.rows[c.key]} /></div>
             <button className="sw" role="switch" aria-checked={sel[c.key]} aria-label={c.title} onClick={() => { sfx.toggle(); setSel({ ...sel, [c.key]: !sel[c.key] }); }} />
           </div>
         ))}
@@ -155,10 +158,25 @@ export default function Maintenance({ busy, setBusy, go }: { busy: boolean; setB
           <button className="btn cut amber pri" disabled={busy} title={M.cleanup_tip} onClick={run}>{busy ? 'Working…' : 'Run selected PC clean-up'}</button>
         </div>
       </div>
-      <StateCheck page="maintenance" intro="Measures what each clean-up would remove right now (temp files, update cache, web caches, thumbnails, Recycle Bin). Check before, run the clean-up, then check again to see the difference. Read-only." />
 
       <div className="glass card">
         <div className="sect" style={{ marginBottom: 10 }}>{M.tools_title}</div>
+        <details className="guide" style={{ marginBottom: 12 }}>
+          <summary className="t" style={{ cursor: 'pointer' }}>How to use SFC and DISM the right way (read this first)</summary>
+          <div className="d" style={{ color: 'var(--tx2)', lineHeight: 1.6, marginTop: 6 }}>
+            <p style={{ margin: '0 0 6px' }}><b>Only when something is wrong</b> (crashes or blue screens, Windows features or updates failing, errors about missing or damaged system files). They are repair tools, not weekly maintenance, and on a healthy PC they simply find nothing.</p>
+            <p style={{ margin: '0 0 4px' }}><b>Before you start:</b> close CS2 and other games, plug a laptop in, keep the PC awake, and stay online (DISM downloads good files from Windows Update if it finds damage). Do not shut down while a tool runs.</p>
+            <ol style={{ margin: '4px 0 6px 18px', padding: 0 }}>
+              <li><b>DISM health restore</b> first. SFC repairs files from a local copy (the component store); if that copy is damaged, SFC cannot fix anything. DISM checks and repairs that copy.</li>
+              <li><b>Restart</b> if DISM asks for it.</li>
+              <li><b>System File Checker (SFC)</b>. It checks every protected system file and replaces damaged ones from the now healthy copy.</li>
+              <li><b>Restart</b> the PC so repaired files are used.</li>
+              <li>Optional: <b>DISM WinSxS clean-up</b>, only after the repairs. It frees space by removing older, superseded copies of updates (those older versions can then no longer be restored). Skip it if you are short on time.</li>
+            </ol>
+            <p style={{ margin: '0 0 4px' }}><b>If a step reports a problem</b>, you see it here: the result window and the line under the buttons turn amber or red (for example &quot;Problems found, not all fixed&quot;, &quot;Did not complete&quot;, &quot;Restart needed first&quot; or &quot;Timed out&quot;) and say what to do next, with Windows&apos; own message and exit code. If SFC still cannot fix files after DISM and a restart, run steps 1 to 4 once more; if it keeps failing, Windows&apos; own repair (Settings &gt; System &gt; Recovery &gt; Fix problems using Windows Update) is the next step.</p>
+            <p style={{ margin: 0 }}><b>SSD TRIM</b> is separate and safe any time: Windows normally does it weekly by itself.</p>
+          </div>
+        </details>
         {running && TOOL_INFO[running.name] && (
           <div role="status" aria-live="polite" style={{ border: '1px solid var(--cyan)', borderRadius: 10, padding: '10px 14px', marginBottom: 12, background: 'var(--cyan-dim)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>

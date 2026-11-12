@@ -51,5 +51,5 @@ export interface UpdateInfo { available: boolean; version?: string; notes?: stri
 export interface HwInfo { cpu: string; gpu: string; profile: string; recommended_plan: 'balanced' | 'high' }
 export interface AnalyzerResult { found: boolean; condebug?: boolean; message: string; file_size_mb: number; frame_hitch_events: number; shader_compile_events: number; net_jitter_events: number; vpk_load_events: number; last_map: string; recommendation: string; log_path: string; grade: string }
 export interface VpkResult { message: string; healthy: number; corrupted: number; total_gb: number; bad: string[] }
-export interface CheckRow { key: string; label: string; state: 'ok' | 'off' | 'info' | 'na'; value: string; how: string }
+export interface CheckRow { key: string; label: string; state: 'ok' | 'off' | 'info' | 'na'; value: string; how: string; detail?: string }
 export interface StateCheck { ok: boolean; error?: string; rows?: CheckRow[]; summary?: string; at?: string }

@@ -5,7 +5,7 @@ import { sfx } from '../sound';
 import { Info, WeeklyBanner } from '../components/Info';
 import PAGES from '../data/pages.json';
 import type { EngineState } from '../types';
-import StateCheck from '../components/StateCheck';
+import { StatusBar, StatusLine, useLiveStatus } from '../components/StateCheck';
 
 export const TWEAKS = [
   { key: 'shaders', group: 'engine', title: 'Optimize shader pre-caching & purge caches', desc: 'Removes fragmented GPU/DirectX shaders. Recommended after game patches to eliminate micro-stutters.' },
@@ -40,6 +40,7 @@ export default function Engine({ opts, setOpts, onApplied, log, power, setPower,
   daysOpt: number | null | undefined; daysMaint: number | null | undefined; go: (id: 'engine' | 'maintenance') => void;
 }) {
   const [state, setState] = useState<EngineState | null>(null);
+  const live = useLiveStatus('engine');
   const plan = power.plan;
   const setPlan = (p: 'balanced' | 'high') => setPower({ ...power, plan: p });
   const [ddOpen, setDdOpen] = useState(false);
@@ -59,11 +60,12 @@ export default function Engine({ opts, setOpts, onApplied, log, power, setPower,
       <Info title={PAGES.engine.note_title.replace(/^[^A-Za-z]*/, '')} text={PAGES.engine.note} open={false} tone="var(--cyan)" />
       {state && !state.cs2_found && <div className="glass card" role="alert" style={{ borderColor: 'rgba(239,68,68,.45)' }}>CS2 was not found, so the autoexec, fullscreen and dump tweaks are skipped. Shader cleaning and Game DVR still work.</div>}
       {state?.autoexec && <div className="decal" style={{ padding: '0 4px' }}>{state.autoexec.text}</div>}
+      <StatusBar at={live.at} busy={live.busy} error={live.error} onRefresh={() => void live.refresh()} note="Under each tweak: what is on this PC right now (read-only)." />
       {(['engine', 'win'] as const).map((g) => (
         <Group key={g} id={`acc-${g}`} title={g === 'engine' ? 'CS2 engine' : 'Windows'} count={TWEAKS.filter((t) => t.group === g).length}>
           {TWEAKS.filter((t) => t.group === g).map((t) => (
             <div className="row" key={t.key}>
-              <div className="grow"><div className="t">{t.title}</div><div className="d">{t.desc}</div></div>
+              <div className="grow"><div className="t">{t.title}</div><div className="d">{t.desc}</div><StatusLine row={live.rows[t.key]} /></div>
               <span className="mono" style={{ fontSize: 11, color: opts[t.key] ? 'var(--ok)' : 'var(--tx3)' }}>{opts[t.key] ? 'SELECTED' : 'OFF'}</span>
               <Switch on={opts[t.key]} label={t.title} onChange={(v) => setOpts({ ...opts, [t.key]: v })} />
             </div>
@@ -72,7 +74,7 @@ export default function Engine({ opts, setOpts, onApplied, log, power, setPower,
       ))}
       <div className="glass card brk">
         <div className="row" style={{ border: 0, padding: '4px 6px' }}>
-          <div className="grow"><div className="t">Windows CPU power scheme</div><div className="d">Recommended for your CPU: {power.plan === 'balanced' ? 'Balanced' : 'High performance'} | Active: {state?.power_plan ?? '…'}. {PAGES.engine.power_tip}</div></div>
+          <div className="grow"><div className="t">Windows CPU power scheme</div><div className="d">Recommended for your CPU: {power.plan === 'balanced' ? 'Balanced' : 'High performance'} | Active: {state?.power_plan ?? '…'}. {PAGES.engine.power_tip}</div><StatusLine row={live.rows.power} /></div>
           <label className="chk" title={PAGES.engine.power_check_tip}><input type="checkbox" checked={power.on} onChange={() => { sfx.toggle(); setPower({ ...power, on: !power.on }); }} />Include in one-click</label>
           <span className={`applied${applied ? ' on' : ''}`}>&#10003; Applied</span>
           <div className={`dd${ddOpen ? ' open' : ''}`}>
@@ -89,7 +91,6 @@ export default function Engine({ opts, setOpts, onApplied, log, power, setPower,
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
         <button className="btn cut ghost" onClick={() => { sfx.click(); onApplied(); }}>&#9889; Apply selected tweaks</button>
       </div>
-      <StateCheck page="engine" intro="Reads the real settings on this PC (registry, autoexec.cfg, cache folders, power plan) and shows which tweaks are in place, with how to check each one in Windows yourself. Run it before and after applying. Read-only." />
     </section>
   );
 }

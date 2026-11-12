@@ -157,8 +157,16 @@ async function mock(name: string, ...args: unknown[]): Promise<unknown> {
     case 'relaunch_admin': return { ok: false };
     case 'maint_state': return { drives: [{ drive: 'C:', total_gb: 500, free_gb: 120, used_gb: 380, used_pct: 76, is_critical: false }, { drive: 'E:', total_gb: 1000, free_gb: 330, used_gb: 670, used_pct: 67, is_critical: false }], admin: false, days_maint: 4, tool_run: null, tool_last: {} };
     case 'maint_tool_open': return { ok: true };
-    case 'state_check': return { ok: true, summary: '2 in place or clean, 2 not applied or can be cleaned, 1 for information.', at: new Date().toISOString(), rows: [
-      { key: 'gamedvr', label: 'Windows Game DVR background recording', state: 'ok', value: 'Off (set by the tweak)', how: "Windows Settings > Gaming > Captures: 'Record what happened' is off." },
+    case 'state_check': if (args[0] === 'maintenance') return { ok: true, summary: '', at: new Date().toISOString(), rows: [
+      { key: 'temp', label: 'Temp files', state: 'off', value: '7549 files, 735.8 MB can be cleaned', how: 'Win+R, %TEMP%', detail: 'Your temp folder: 733.6 MB older than 24 h of 1.10 GB in total. 868 newer files are left alone on purpose.' },
+      { key: 'win_update', label: 'Windows Update cache', state: 'off', value: '3 files, 5.0 MB (needs Administrator to clean)', how: 'C:\Windows\SoftwareDistribution\Download', detail: 'Not running as Administrator: this clean-up is skipped and says so.' },
+      { key: 'discord_steam', label: 'Web caches', state: 'off', value: '2613 files, 84.6 MB', how: 'They refill while the apps run.', detail: 'Discord Cache_Data 76.9 MB (412 files); Steam web cache 6.8 MB (1566 files).' },
+      { key: 'thumb', label: 'Thumbnails', state: 'info', value: '30 files, 8.1 MB', how: 'Explorer keeps some open.', detail: 'Thumbnails 5.0 MB (15 files), icons 3.1 MB (15 files).' },
+      { key: 'recycle', label: 'Recycle Bin', state: 'off', value: '16 item(s), 367.5 MB', how: 'Open the Recycle Bin.', detail: 'Emptying it is permanent.' },
+      { key: 'dns', label: 'DNS cache', state: 'info', value: 'Refills within seconds', how: 'ipconfig /flushdns', detail: '' }] };
+      return { ok: true, summary: '2 in place or clean, 2 not applied or can be cleaned, 1 for information.', at: new Date().toISOString(), rows: [
+      { key: 'gamedvr', label: 'Windows Game DVR background recording', state: 'ok', value: 'Off (set by the tweak)', how: "Windows Settings > Gaming > Captures: 'Record what happened' is off.", detail: 'Registry (HKEY_CURRENT_USER): GameDVR_Enabled=0, AppCaptureEnabled=0.' },
+      { key: 'shaders', label: 'GPU shader caches', state: 'info', value: '85 files, 66.1 MB', how: 'The driver rebuilds it while you play.', detail: 'AMD DxCache 65.1 MB (61 files); DirectX D3DSCache 1.0 MB (24 files)' },
       { key: 'fullscreen', label: 'Fullscreen optimizations off for cs2.exe', state: 'off', value: 'Windows default (enabled)', how: 'Right-click cs2.exe > Properties > Compatibility.' },
       { key: 'autoexec', label: 'Performance block in autoexec.cfg', state: 'ok', value: 'Present', how: 'Open autoexec.cfg in Notepad.' },
       { key: 'dumps', label: 'CS2 crash dumps', state: 'off', value: '3 file(s), 41.2 MB can be cleaned', how: 'CS2 game\\csgo\\dumps' },

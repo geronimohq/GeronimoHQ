@@ -51,8 +51,10 @@ class TweakUndo(unittest.TestCase):
     def test_fullscreen_optimizations_revert(self):
         exe = os.path.join(tempfile.mkdtemp(dir=_test_isolation.TEMP_DIR), "cs2.exe")
         open(exe, "wb").close()   # dummy file: the function checks that the path exists
-        on = self._run(core_logic.disable_fullscreen_optimizations, exe)
-        off = self._run(core_logic.revert_fullscreen_optimizations, exe)
+        with mock.patch.object(core_logic, "_reg_value", return_value=None):
+            on = self._run(core_logic.disable_fullscreen_optimizations, exe)
+        with mock.patch.object(core_logic, "_reg_value", return_value=on.get(exe)):         # revert reads back what apply wrote
+            off = self._run(core_logic.revert_fullscreen_optimizations, exe)
         self.assertIn(exe, on)
         self.assertIn(exe, off)
         self.assertNotEqual(on[exe], off[exe])

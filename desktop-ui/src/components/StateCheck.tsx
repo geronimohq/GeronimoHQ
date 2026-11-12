@@ -1,53 +1,69 @@
-import { useState } from 'react';
-import { api } from '../api';
+import { useCallback, useEffect, useState } from 'react';
+import { api, on } from '../api';
 import { sfx } from '../sound';
-import type { StateCheck as Result } from '../types';
+import type { CheckRow } from '../types';
 
-const MARK: Record<string, { sym: string; color: string; word: string }> = {
-  ok: { sym: '\u2713', color: 'var(--ok)', word: 'in place' },
-  off: { sym: '\u2022', color: 'var(--amber)', word: 'not applied / can be cleaned' },
-  info: { sym: 'i', color: 'var(--cyan)', word: 'information' },
-  na: { sym: '\u2013', color: 'var(--tx3)', word: 'cannot be checked here' },
-};
+const COLOR: Record<string, string> = { ok: 'var(--ok)', off: 'var(--amber)', info: 'var(--cyan)', na: 'var(--tx3)' };
 
-/** "Check" panel: reads the real state of this PC (read-only) so the user can see, before and after, what the tweaks or clean-ups changed. */
-export default function StateCheck({ page, intro }: { page: 'engine' | 'maintenance'; intro: string }) {
-  const [res, setRes] = useState<Result | null>(null);
+/**
+ * Live status of the Engine Tweaks / PC Maintenance items, read from this PC (read-only: registry values, autoexec.cfg, folder sizes,
+ * Recycle Bin, power plan). Loaded when the page opens and again after every apply or clean-up finishes, so the line under each item
+ * always shows what is really there now.
+ */
+export function useLiveStatus(page: 'engine' | 'maintenance') {
+  const [rows, setRows] = useState<Record<string, CheckRow>>({});
+  const [at, setAt] = useState<string>('');
   const [busy, setBusy] = useState(false);
-  const run = async () => {
-    sfx.click();
+  const [error, setError] = useState('');
+  const refresh = useCallback(async () => {
     setBusy(true);
-    try { setRes(await api.stateCheck(page)); } finally { setBusy(false); }
-  };
+    try {
+      const r = await api.stateCheck(page);
+      if (r.ok && r.rows) {
+        setRows(Object.fromEntries(r.rows.map((x) => [x.key, x])));
+        setAt(r.at ?? '');
+        setError('');
+      } else setError(r.error ?? 'The status could not be read.');
+    } finally { setBusy(false); }
+  }, [page]);
+  useEffect(() => {
+    void refresh();
+    const off = on('job', () => { void refresh(); });          // after one-click optimize, apply, clean-up or restore
+    return () => off();
+  }, [refresh]);
+  return { rows, at, busy, error, refresh };
+}
+
+/** "Now: ..." line under an item, with a Details toggle (what is in there, and how to check it in Windows without this app). */
+export function StatusLine({ row }: { row?: CheckRow }) {
+  const [open, setOpen] = useState(false);
+  if (!row) return null;
   return (
-    <div className="glass card">
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-        <div style={{ flex: 1, minWidth: 240 }}>
-          <div className="sect">Check what is applied</div>
-          <div className="d" style={{ color: 'var(--tx2)', marginTop: 4 }}>{intro}</div>
-        </div>
-        <button className="btn cut ghost sm" disabled={busy} onClick={() => void run()}>{busy ? 'Checking\u2026' : res ? 'Check again' : 'Check now'}</button>
+    <div style={{ marginTop: 4 }}>
+      <div className="mono" style={{ fontSize: 11.5, color: COLOR[row.state] ?? 'var(--tx2)', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <span>Now: {row.value}</span>
+        {(row.detail || row.how) && (
+          <button className="lnk" style={{ fontSize: 11 }} aria-expanded={open} onClick={(e) => { e.stopPropagation(); sfx.click(); setOpen(!open); }}>{open ? 'Hide details' : 'Details'}</button>
+        )}
       </div>
-      {res && !res.ok && <div className="d" style={{ color: 'var(--bad)', marginTop: 8 }}>{res.error}</div>}
-      {res?.ok && res.rows && (
-        <div style={{ marginTop: 10 }}>
-          <div className="decal" style={{ textTransform: 'none', letterSpacing: 0, marginBottom: 6 }}>
-            {res.summary} Checked {res.at ? new Date(res.at).toLocaleTimeString() : ''}. Nothing was changed by this check.
-          </div>
-          {res.rows.map((r) => {
-            const m = MARK[r.state] ?? MARK.info;
-            return (
-              <div className="row" key={r.key} style={{ alignItems: 'flex-start' }}>
-                <span className="mono" aria-label={m.word} title={m.word} style={{ color: m.color, width: 18, fontWeight: 700, textAlign: 'center' }}>{m.sym}</span>
-                <div className="grow">
-                  <div className="t">{r.label}: <span style={{ color: m.color }}>{r.value}</span></div>
-                  {r.how && <div className="d" style={{ color: 'var(--tx2)' }}>Check it yourself: {r.how}</div>}
-                </div>
-              </div>
-            );
-          })}
+      {open && (
+        <div className="d" style={{ color: 'var(--tx2)', fontSize: 12, lineHeight: 1.5, marginTop: 3 }}>
+          {row.detail && <div>{row.detail}</div>}
+          {row.how && <div>Check it yourself: {row.how}</div>}
         </div>
       )}
+    </div>
+  );
+}
+
+/** One line at the top of a list: when the status was read, and a refresh button. */
+export function StatusBar({ at, busy, error, onRefresh, note }: { at: string; busy: boolean; error: string; onRefresh: () => void; note: string }) {
+  return (
+    <div className="decal" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', textTransform: 'none', letterSpacing: 0, margin: '0 0 6px' }}>
+      <span style={{ flex: 1, minWidth: 220 }}>
+        {error ? <span style={{ color: 'var(--bad)' }}>{error}</span> : busy && !at ? 'Reading the current status from this PC…' : `${note} Read from this PC at ${at ? new Date(at).toLocaleTimeString() : '…'}; it refreshes by itself after every run.`}
+      </span>
+      <button className="lnk" disabled={busy} onClick={() => { sfx.click(); onRefresh(); }}>{busy ? 'Reading…' : 'Refresh status'}</button>
     </div>
   );
 }

@@ -10,7 +10,7 @@
    },
    {
     "q": "Can I undo all changes made by the application?",
-    "a": "Yes! Clicking the [⏪ Restore Defaults] button on the top right instantly restores Windows Game DVR, restores your default Windows power plan, reenables fullscreen optimizations, and resets the autoexec configuration back to clean stock defaults."
+    "a": "Yes! Clicking the [⏪ Restore Defaults] button on the top right instantly restores Windows Game DVR, restores your default Windows power plan, reenables fullscreen optimizations, and resets the autoexec configuration back to clean stock defaults. The fullscreen tweak only adds its own flag to cs2.exe's compatibility settings and Restore removes only that flag, so settings you made yourself on cs2.exe (for example 'Run as administrator') are kept both ways."
    },
    {
     "q": "Does this app communicate with external servers or collect telemetry?",
@@ -278,7 +278,7 @@
   "qa": [
    {
     "q": "What do SSD TRIM, SFC, and DISM do?",
-    "a": "SSD TRIM instructs your solid-state drive controller to reclaim unused memory blocks, maintaining peak NAND write speeds and low read latency. SFC (System File Checker) scans and repairs corrupted Windows core system files. DISM repairs the Windows Component Store image using official Microsoft files."
+    "a": "SSD TRIM instructs your solid-state drive controller to reclaim unused memory blocks, maintaining peak NAND write speeds and low read latency. SFC (System File Checker) scans and repairs corrupted Windows core system files. DISM repairs the Windows Component Store image using official Microsoft files. The right order when Windows has problems (also shown in the app under 'How to use SFC and DISM the right way'): 1) DISM health restore first, because SFC repairs files from Windows' local component store and cannot fix anything if that store is damaged; 2) restart if DISM asks; 3) SFC; 4) restart so repaired files are used; 5) optionally DISM WinSxS clean-up, only after the repairs (it removes older superseded update copies, which can then no longer be restored). They are repair tools for crashes, failing Windows features or damaged files, not weekly maintenance. Before starting: close games, plug a laptop in, keep the PC awake and stay online. If a step finds a problem it cannot fix, the result window and the line under the buttons turn amber or red and say what to do next. The buttons are numbered in this order."
    },
    {
     "q": "Does clearing Discord & Steam web cache log me out of my accounts?",
@@ -290,7 +290,7 @@
    },
    {
     "q": "Which temporary files does the Windows temp clean-up delete?",
-    "a": "Files in your %TEMP% folder and in Windows\\Temp that are older than 24 hours and not in use. Anything newer is left alone because a running program or an installer may still need it, and the app never touches its own unpacked files or the temporary folders of other single-file apps. Locked files are skipped. The other clean-ups say plainly when they could not do something: the Windows Update cache needs Administrator (it is skipped otherwise), thumbnail files that Explorer keeps open are left alone and counted, the Recycle Bin is checked afterwards to confirm it is really empty (and an already empty bin is reported as such), and a DNS flush that Windows refuses is reported as not done."
+    "a": "Files in your %TEMP% folder and in Windows\\Temp that are older than 24 hours and not in use. Anything newer is left alone because a running program or an installer may still need it, and the app never touches its own unpacked files or the temporary folders of other single-file apps. Locked files are skipped. The other clean-ups say plainly when they could not do something: the Windows Update cache needs Administrator (it is skipped otherwise), thumbnail files that Explorer keeps open are left alone and counted, the Recycle Bin is checked afterwards to confirm it is really empty (and an already empty bin is reported as such), and a DNS flush that Windows refuses is reported as not done. Windows Update download files changed in the last 2 hours are also left alone, because Windows Update may be using them right now."
    },
    {
     "q": "Windows asks for another administrator's password when I use Relaunch as Administrator. Is that a problem?",
@@ -310,7 +310,7 @@
    },
    {
     "q": "How can I check that Engine Tweaks and the PC clean-ups really did something?",
-    "a": "Both pages have a 'Check what is applied' panel. 'Check now' reads the real state of your PC right now and changes nothing. On Engine Tweaks it reads the registry values for Game DVR and for fullscreen optimizations on cs2.exe, looks for the app's block in autoexec.cfg, measures the GPU shader caches and the CS2 crash dumps, and shows the active power plan. On PC Maintenance it measures what each clean-up would remove: temp files older than 24 hours, the Windows Update download cache, Discord and Steam web caches, Explorer thumbnail caches and the Recycle Bin. Check before, apply or clean, then check again to see the difference. Every line also says how to check the same thing in Windows without the app (for example Settings > Gaming > Captures, or cs2.exe > Properties > Compatibility). Some things refill by themselves and that is normal: GPU drivers rebuild shader caches while you play, Discord and Steam refill their web caches, Explorer keeps some thumbnail files open, and Windows refills the DNS cache within seconds, so it is not measured."
+    "a": "You do not have to do anything: under every tweak on Engine Tweaks and every clean-up on PC Maintenance there is a 'Now:' line read from your PC (read-only), and it refreshes by itself when the page opens and after every apply, clean-up or restore. Green means the tweak is in place or there is nothing to clean, amber means not applied or something can be cleaned, blue is a measurement. 'Details' shows what is in there and how to check it in Windows without the app: the exact registry values for Game DVR and for cs2.exe's compatibility flags, the autoexec.cfg path, size, command count and backup, the shader cache size per GPU vendor, the newest crash dump, the power plan id, how much of your temp folder is older than 24 hours (and how many newer files are left alone on purpose), whether the Windows Update cache can be cleaned without Administrator, Discord and Steam cache sizes, thumbnail and icon cache sizes, and what is in the Recycle Bin. Some things refill by themselves and that is normal: GPU drivers rebuild shader caches while you play, Discord and Steam refill their web caches, Explorer keeps some thumbnail files open, and Windows refills the DNS cache within seconds. 'Refresh status' reads everything again."
    },
    {
     "q": "Why does the Log Analyzer show 'N/A' instead of a grade?",

@@ -71,11 +71,11 @@ class Maintenance(unittest.TestCase):
             with mock.patch.dict(os.environ, {"TEMP": temp, "SystemRoot": sysroot, "APPDATA": appdata, "LOCALAPPDATA": os.path.join(t, "loc")}), \
                     mock.patch.object(core_logic, "recycle_bin_info", return_value=(0, 0)):
                 rows = {r["key"]: r for r in vs.maint_check({"steam_path": None})}
-        self.assertEqual(rows["temp"]["value"], "1 files, 0.0 MB")
+        self.assertEqual(rows["temp"]["value"], "1 files, 0 KB can be cleaned")
         self.assertEqual(rows["win_update"]["state"], "off")
         self.assertEqual(rows["discord_steam"]["state"], "off")
         self.assertEqual(rows["recycle"]["state"], "ok")
-        self.assertEqual(rows["dns"]["state"], "na")
+        self.assertEqual(rows["dns"]["state"], "info")
 
     def test_core_state_check(self):
         core = core_service.Core()
@@ -120,6 +120,48 @@ class HonestCleanups(unittest.TestCase):
         self.assertEqual((n, freed), (0, 0))
         self.assertIn("Administrator", logs[0])
         rm.assert_not_called()
+
+
+class FullscreenKeepsUserFlags(unittest.TestCase):
+    def _run(self, fn, current):
+        writes = []
+        class K:
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+        with mock.patch.object(core_logic, "_reg_value", return_value=current),                 mock.patch.object(core_logic.winreg, "CreateKey", return_value=K()), mock.patch.object(core_logic.winreg, "OpenKey", return_value=K()),                 mock.patch.object(core_logic.winreg, "SetValueEx", side_effect=lambda k, n, r, t, v: writes.append(("set", v))),                 mock.patch.object(core_logic.winreg, "DeleteValue", side_effect=lambda k, n: writes.append(("delete", n))),                 mock.patch.object(core_logic.os.path, "exists", return_value=True):
+            logs = fn(r"C:\Games\cs2.exe")
+        return logs, writes
+
+    def test_apply_adds_only_its_flag_and_keeps_run_as_admin(self):
+        logs, w = self._run(core_logic.disable_fullscreen_optimizations, "~ RUNASADMIN")
+        self.assertEqual(w, [("set", "~ RUNASADMIN DISABLEDXMAXIMIZEDWINDOWEDMODE")])
+        self.assertIn("kept", logs[0])
+        logs, w = self._run(core_logic.disable_fullscreen_optimizations, None)
+        self.assertEqual(w, [("set", "~ DISABLEDXMAXIMIZEDWINDOWEDMODE")])
+
+    def test_revert_removes_only_its_flag(self):
+        _, w = self._run(core_logic.revert_fullscreen_optimizations, "~ RUNASADMIN DISABLEDXMAXIMIZEDWINDOWEDMODE")
+        self.assertEqual(w, [("set", "~ RUNASADMIN")])
+        _, w = self._run(core_logic.revert_fullscreen_optimizations, "~ DISABLEDXMAXIMIZEDWINDOWEDMODE")
+        self.assertEqual(w, [("delete", r"C:\Games\cs2.exe")])
+        _, w = self._run(core_logic.revert_fullscreen_optimizations, "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE")   # what older versions wrote
+        self.assertEqual(w, [("delete", r"C:\Games\cs2.exe")])
+        logs, w = self._run(core_logic.revert_fullscreen_optimizations, "~ RUNASADMIN")                              # not ours: untouched
+        self.assertEqual(w, [])
+        self.assertTrue(logs[0].startswith("[ALREADY]"))
+
+
+class WindowsUpdateCacheLeavesFreshFiles(unittest.TestCase):
+    def test_files_from_the_last_two_hours_are_kept(self):
+        with tempfile.TemporaryDirectory() as t:
+            dl = os.path.join(t, "SoftwareDistribution", "Download")
+            touch(os.path.join(dl, "old.cab"), 100, age_s=5 * 3600)
+            touch(os.path.join(dl, "busy.cab"), 100)
+            with mock.patch.dict(os.environ, {"SystemRoot": t}), mock.patch.object(core_logic, "is_admin", return_value=True):
+                n, _freed, _logs = core_logic.clean_windows_update_cache()
+            self.assertEqual(n, 1)
+            self.assertTrue(os.path.exists(os.path.join(dl, "busy.cab")))
+            self.assertFalse(os.path.exists(os.path.join(dl, "old.cab")))
 
 
 if __name__ == "__main__":
