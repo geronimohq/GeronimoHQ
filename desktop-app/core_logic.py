@@ -1074,6 +1074,13 @@ def _minutes(seconds: int) -> str:
     return f"{seconds // 60} min {seconds % 60} s" if seconds >= 60 else f"{seconds} s"
 
 
+def _dism_message(text: str) -> str:
+    """DISM's own error sentence, e.g. 'The operation could not be completed due to pending operations.' ('' when there is none).
+    DISM prints a version banner first; cutting the tail of the whole output used to start in the middle of that banner."""
+    m = re.search(r"Error:\s*(?:0x[0-9a-fA-F]+|\d+)\s*(.+?)(?:\s*The DISM log file can be found at\b|$)", text, re.S)
+    return " ".join(m.group(1).split())[:220] if m else ""
+
+
 def _verdict_sentence(text: str) -> str:
     """The tool's own last sentence, without the 'Verification 45% complete.' progress noise."""
     tail = re.split(r"\d{1,3}(?:[.,]\d)?\s*%\s*complete\.?", text)[-1].strip()
@@ -1194,6 +1201,10 @@ def run_tool(args: List[str], timeout: int, on_progress=None) -> Tuple[Optional[
     return rc, decode_console(bytes(buf)), False
 
 
+# DISM codes that mean "Windows has changes waiting for a restart" (often from Windows Update, or from the repair that just ran).
+# The clean-up and the repair can only run after that restart, so they are reported as "Restart needed first", not as a failure.
+_DISM_PENDING = {0x800F0806: "CBS_E_PENDING", 0x800F082F: "CBS_E_PENDING_VICTIM"}
+
 _DISM_HELP = {
     0x800F081F: ("Windows could not find the files it needs to repair itself.", "Connect to the internet, run Windows Update, restart, then try again."),
     0x800F0906: ("Windows could not download the repair files.", "Check your internet connection and try again."),
@@ -1283,7 +1294,7 @@ def _classify_dism(tool: str, rc: Optional[int], out: str, seconds: int, free_be
     low = text.lower()
     label = {"dism": "Windows Component Store check and repair", "winsxs": "WinSxS component clean-up"}[tool]
     ev = []
-    said = _verdict_sentence(text)
+    said = _dism_message(text) or _verdict_sentence(text)
     if said:
         ev.append(f"Windows said: {said}")
     code = "none" if rc is None else (f"{rc} (0x{rc & 0xFFFFFFFF:08X})" if rc else "0")
@@ -1305,9 +1316,15 @@ def _classify_dism(tool: str, rc: Optional[int], out: str, seconds: int, free_be
                            "Windows finished the check with no error. Nothing it could not fix.", restart or "If SFC could not fix files before, run SFC again now.", ev, **f)
         return _result(tool, "done", True, "DISM WinSxS component cleanup completed successfully.",
                        "Windows removed older, superseded copies of update files. Nothing it is using was removed.", restart, ev, **f)
-    why, fix = _DISM_HELP.get(rc & 0xFFFFFFFF, _DISM_HELP.get(rc, ("", "")))
     ev_code = f"0x{rc & 0xFFFFFFFF:08X}"
-    return _result(tool, "failed", False, f"{label} returned code {rc}: {text[-250:]}",
+    if (rc & 0xFFFFFFFF) in _DISM_PENDING:
+        what = "the clean-up" if tool == "winsxs" else "the check"
+        return _result(tool, "reboot", False, f"{label} needs a restart first ({ev_code}).",
+                       f"Windows has changes waiting for a restart (often from Windows Update, or from a repair that just ran), so it did not start {what}. "
+                       "Nothing was changed and nothing is wrong with your PC.",
+                       f"Restart the PC, then run {'DISM WinSxS clean-up' if tool == 'winsxs' else 'DISM health restore'} again.", ev, **f)
+    why, fix = _DISM_HELP.get(rc & 0xFFFFFFFF, _DISM_HELP.get(rc, ("", "")))
+    return _result(tool, "failed", False, f"{label} returned code {ev_code}: {said or text[-250:]}",
                    why or f"Windows stopped with error {ev_code}.", fix or f"Restart the PC and try again. Details are in {DISM_LOG}.", ev, **f)
 
 

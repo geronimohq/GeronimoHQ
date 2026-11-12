@@ -184,6 +184,7 @@ export default function Maintenance({ busy, setBusy, go }: { busy: boolean; setB
               <li><b>SFC: problems found and repaired</b> &rarr; restart once. Running SFC again afterwards is a good extra check.</li>
               <li><b>SFC: problems found, not all fixed</b> &rarr; run DISM, restart, run SFC again. If it still cannot fix them, use Windows&apos; own repair: Settings &gt; System &gt; Recovery &gt; Fix problems using Windows Update.</li>
               <li><b>DISM: could not download the repair files</b> &rarr; check the internet connection, install pending Windows updates, restart and try again.</li>
+              <li><b>DISM (health restore or WinSxS clean-up): &quot;Restart needed first&quot;</b> (code 0x800F0806) &rarr; Windows has changes waiting for a restart, often right after a repair or an update. Nothing is wrong: restart, then run it again. This is common for the WinSxS clean-up straight after DISM and SFC.</li>
             </ul>
             <p style={{ margin: '0 0 4px' }}>Every result shows here in plain words, with Windows&apos; own message and what to do next; the line under the buttons turns amber or red when something needs attention.</p>
             <p style={{ margin: '0 0 4px' }}>
